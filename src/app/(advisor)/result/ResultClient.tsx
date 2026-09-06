@@ -1294,7 +1294,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
-                                                {(faceAnalysis.recommendations).map((rec, idx) => (
+                                                {(faceAnalysis.recommendations).slice(0, 4).map((rec, idx) => (
                                                     <li key={idx}>{rec}</li>
                                                 ))}
                                             </ul>
