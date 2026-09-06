@@ -78,6 +78,8 @@ const NO_FACE_MANUAL_BUTTON_DELAY_MS = 5000;
 // 闭眼检测阈值：EAR（眼纵横比）低于此值判定为闭眼，禁止自动拍摄
 // 0.18 比文献常用 0.20 略宽松，兼容眼睛偏小的亚洲人群；取双眼最大值避免侧脸步骤远侧眼遮挡误判
 const EYE_CLOSED_EAR_THRESHOLD = 0.18;
+// chin（抬头）步骤的放宽阈值：抬头时 2D 投影下眼裂视觉上变窄，收紧阈值会误报闭眼
+const EYE_CLOSED_EAR_THRESHOLD_CHIN = 0.12;
 // 模糊检测：拉普拉斯方差低于此值判定为画面模糊，禁止自动拍摄（阈值从宽，仅供 A/B 校准）
 const MIN_SHARPNESS_VARIANCE = 40;
 // 模糊分析节流间隔（ms），画框区域 64x64 下采样，开销很小
@@ -90,6 +92,8 @@ const NO_FACE_IDLE_INTERVAL_MS = 500;
 // 低于 MIN 判定距离太远（裁剪放大后分辨率不足，AI 无法可靠分析），高于 MAX 判定过近。
 // 旧值 0.15 过于宽松，导致远距离小脸也能通过拍摄、最终在分析阶段被拒。
 const MIN_FACE_TO_ELLIPSE_RATIO = 0.35;
+// chin（抬头）步骤的放宽下限：抬头动作会让人脸框高度略缩，避免误报"距离太远"
+const MIN_FACE_TO_ELLIPSE_RATIO_CHIN = 0.28;
 const MAX_FACE_TO_ELLIPSE_RATIO = 1.05;
 
 // 步骤配置
@@ -781,10 +785,15 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         // 检查面部是否在椭圆框内（仅作为视觉引导，不作为硬性拍照门槛）
         const isInEllipse = isFaceInEllipse(displayBox, displayWidth, displayHeight);
 
-        // 检查面部大小是否合适——低于下限判定距离太远（分辨率不足），高于上限判定过近
+        // 检查面部大小是否合适——低于下限判定距离太远（分辨率不足），高于上限判定过近。
+        // chin（抬头）步骤用人脸框高度略缩，使用放宽的下限避免误报"距离太远"
         const ellipseHeight = videoHeight * 0.70;
         const faceToEllipseRatio = box.height / ellipseHeight;
-        const isFaceTooSmall = faceToEllipseRatio < MIN_FACE_TO_ELLIPSE_RATIO;
+        const minFaceRatio =
+          currentStepRef.current === "chin"
+            ? MIN_FACE_TO_ELLIPSE_RATIO_CHIN
+            : MIN_FACE_TO_ELLIPSE_RATIO;
+        const isFaceTooSmall = faceToEllipseRatio < minFaceRatio;
         const isFaceTooBig = faceToEllipseRatio > MAX_FACE_TO_ELLIPSE_RATIO;
         const isSizeOk = !isFaceTooSmall && !isFaceTooBig;
 
@@ -795,9 +804,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         // 检查当前头部朝向是否匹配当前步骤
         const isPoseCorrect = headPose === currentStep;
 
-        // 闭眼检测（EAR）：双眼均闭合时判定为闭眼，禁止自动拍摄
+        // 闭眼检测（EAR）：双眼均闭合时判定为闭眼，禁止自动拍摄。
+        // chin（抬头）步骤 2D 投影下眼裂变窄，使用放宽阈值避免误报"请睁大眼睛"
         const eyeAspectRatio = calculateEyeAspectRatio(detection.landmarks.positions);
-        const isEyesOpen = eyeAspectRatio >= EYE_CLOSED_EAR_THRESHOLD;
+        const earThreshold =
+          currentStep === "chin" ? EYE_CLOSED_EAR_THRESHOLD_CHIN : EYE_CLOSED_EAR_THRESHOLD;
+        const isEyesOpen = eyeAspectRatio >= earThreshold;
 
         // 画面清晰度（拉普拉斯方差，由独立节流任务 analyzeFrameSharpness 更新）
         const isSharp = isFrameSharpRef.current;
@@ -937,6 +949,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       } else {
         stableCountRef.current = 0;
         faceBoxRef.current = null;
+        // 无脸时清除质量提示，避免上一次检测的提示残留挂在屏幕上
+        setQualityHint((prev) => (prev === null ? prev : null));
 
         setFaceStatus((prev) => (prev === "detecting" ? prev : "detecting"));
       }
