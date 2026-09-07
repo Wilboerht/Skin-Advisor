@@ -9,6 +9,7 @@ import {
   Flame,
   Loader2,
   NotebookPen,
+  RefreshCw,
   ScanFace,
   Smile,
   TrendingUp,
@@ -113,6 +114,8 @@ export function DiaryModal() {
   const [trendsLoaded, setTrendsLoaded] = useState(false);
   const [tests, setTests] = useState<HistorySession[]>([]);
   const [testsLoaded, setTestsLoaded] = useState(false);
+  // 测肤列表加载失败标记：区分"查询失败"与"真的没有记录"，避免 401/网络抖动显示成空白态
+  const [testsError, setTestsError] = useState(false);
   const [testsTotal, setTestsTotal] = useState(0);
   const [testsLoadingMore, setTestsLoadingMore] = useState(false);
   const [testsExhausted, setTestsExhausted] = useState(false);
@@ -185,6 +188,28 @@ export function DiaryModal() {
     }
   }, []);
 
+  // 测肤记录首屏加载：带 60s 短缓存（重复开关弹层不重复请求）；
+  // 失败置 testsError（区别于"无记录"），重试时先作废缓存强制回源
+  const loadTests = useCallback(async (bustCache = false) => {
+    if (bustCache) bustShortCache();
+    setTestsError(false);
+    try {
+      const res = await fetchWithShortCache(`/api/advisor/history?page=1&limit=${TESTS_PAGE_SIZE}&lite=1`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const history: HistorySession[] = data.history ?? [];
+      setTests(history);
+      testsLoadedRef.current = history.length;
+      loadedTestIdsRef.current = new Set(history.map((t) => t.sessionId));
+      setTestsTotal(data.pagination?.total ?? 0);
+    } catch (e) {
+      console.error("Test history fetch error:", e);
+      setTestsError(true);
+    } finally {
+      setTestsLoaded(true);
+    }
+  }, []);
+
   // 打卡保存/删除后刷新：带回已加载过的条目数量 + 折叠回"近 30 天"（refreshKey 自增触发时间线收起）
   const refreshEntries = useCallback(() => {
     const limit = Math.max(ENTRIES_PAGE_SIZE, entriesOffsetRef.current + ENTRIES_PAGE_SIZE);
@@ -230,6 +255,7 @@ export function DiaryModal() {
     setTrendsLoaded(false);
     setTests([]);
     setTestsLoaded(false);
+    setTestsError(false);
     setTestsExhausted(false);
     loadedTestIdsRef.current = new Set();
     setHistoryView(false);
@@ -266,27 +292,12 @@ export function DiaryModal() {
         setTrendsLoaded(true);
       });
 
-    fetchWithShortCache(`/api/advisor/history?page=1&limit=${TESTS_PAGE_SIZE}&lite=1`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
-      .then((data) => {
-        if (cancelled) return;
-        const history: HistorySession[] = data.history ?? [];
-        setTests(history);
-        testsLoadedRef.current = history.length;
-        loadedTestIdsRef.current = new Set(history.map((t) => t.sessionId));
-        setTestsTotal(data.pagination?.total ?? 0);
-        setTestsLoaded(true);
-      })
-      .catch((e) => {
-        if (cancelled) return;
-        console.error("Test history fetch error:", e);
-        setTestsLoaded(true);
-      });
+    loadTests();
 
     return () => {
       cancelled = true;
     };
-  }, [isOpen, user, loadEntries, loadSummary]);
+  }, [isOpen, user, loadEntries, loadSummary, loadTests]);
 
   // 日历热力图：切换视图/月份时按需拉取该月条目；打卡保存/删除后随 refreshKey 重拉
   useEffect(() => {
@@ -613,6 +624,22 @@ export function DiaryModal() {
                           loading={calendarLoading}
                         />
                       ) : (
+                        <>
+                        {testsError && (
+                          <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-[#C9A86C]/30 bg-[#C9A86C]/[0.06] px-4 py-3">
+                            <span className="text-[13px] text-brand-charcoal/70 font-light">
+                              测肤记录加载失败，可能是网络波动或登录状态过期
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => loadTests(true)}
+                              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-charcoal text-white text-[12px] font-light hover:opacity-90 transition-opacity"
+                            >
+                              <RefreshCw className="w-3 h-3" strokeWidth={1.8} />
+                              重试
+                            </button>
+                          </div>
+                        )}
                         <DiaryTimeline
                           entries={entries}
                           tests={tests}
@@ -628,6 +655,7 @@ export function DiaryModal() {
                           onLoadMoreEntries={loadMoreEntries}
                           refreshKey={diaryRefreshKey}
                         />
+                        </>
                       )}
                     </section>
                   </div>
