@@ -40,6 +40,7 @@ const PUBLIC_PATHS = [
       "/api/auth/me",
       "/api/auth/logout",
       "/api/auth/session-init",
+      "/api/auth/profile-webhook", // 主站资料/会员变更 webhook（服务端到服务端，RS256 JWT 验签，无用户会话）
       "/api/auth/send-code",        // 注册/登录/重置 短信验证码
       "/api/auth/reset-password",   // 密码重置执行
       "/api/auth/wechat",           // 微信 OAuth 初始跳转
@@ -234,6 +235,9 @@ export async function proxy(request: NextRequest) {
         "/api/auth/wechat",
         "/api/auth/wechat/bind",
         "/api/auth/session-init",   // SSO 本地 session 引导（尚无本地 JWT）
+        // 主站资料/会员变更 webhook：服务端到服务端调用，无浏览器 Cookie，
+        // 无法通过 CSRF 校验；安全性由路由内 event_token 的 RS256 验签保证
+        "/api/auth/profile-webhook",
         // 匿名/埋点接口：sendBeacon 无法携带自定义 header
         "/api/advisor/analytics/track",
         // 测肤 AI 分析接口（游客测肤已下线，路由内强制登录；仍受 AI_ENDPOINTS 的 Origin/Referer/Content-Type 保护）
