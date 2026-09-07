@@ -12,7 +12,7 @@ const MAX_FULL_REPORTS = 10;
 const ARCHIVE_BATCH_LIMIT = 500;
 // 单个用户最多保留报告数（热层 + 冷层摘要合计，滚动续期策略下的安全阀）
 const MAX_USER_REPORTS = 100;
-// 普通会员（REGULAR）测肤数据留存天数，满期降级为冷层摘要；高级会员（ADVANCED）永久保留
+// 普通会员（REGULAR）测肤数据留存天数，满期降级为冷层摘要；银卡及以上会员（SILVER/GOLD/DIAMOND，含历史 ADVANCED）永久保留
 const REGULAR_RETENTION_DAYS = 365;
 
 interface CleanupStats {
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
 
         // ===== 3. 冷热分层：REGULAR 用户最近 10 条之外、或满 365 天的报告脱水为脱敏摘要 =====
         // 热层（最近 10 条）用户可见、数据完整；冷层仅留统计摘要（无敏感问卷字段），
-        // 用户不可见，供趋势对比与白皮书群体统计。高级会员（ADVANCED）档案永久保留、不参与归档。
+        // 用户不可见，供趋势对比与白皮书群体统计。银卡及以上会员（SILVER/GOLD/DIAMOND，含历史 ADVANCED）档案永久保留、不参与归档。
         // 单次限量，多轮 cron 收敛。
         const retentionCutoff = new Date(now - REGULAR_RETENTION_DAYS * 24 * 60 * 60 * 1000);
         const archivable = await prisma.$queryRaw<Array<{ sessionId: string }>>`
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
                   AND s."completedAt" IS NOT NULL
                   AND s."archivedAt" IS NULL
             ) t
-            WHERE t."membershipLevel" IS DISTINCT FROM 'ADVANCED'
+            WHERE (t."membershipLevel" IS NULL OR t."membershipLevel" NOT IN ('SILVER','GOLD','DIAMOND','ADVANCED'))
               AND (t.rn > ${MAX_FULL_REPORTS} OR t."completedAt" < ${retentionCutoff})
             LIMIT ${ARCHIVE_BATCH_LIMIT}
         `;
@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // ===== 4. 清理注册用户超量数据（普通会员最多保留 100 条，含冷层摘要；高级会员永久保留豁免）=====
+        // ===== 4. 清理注册用户超量数据（普通会员最多保留 100 条，含冷层摘要；银卡及以上会员永久保留豁免）=====
         // 使用 window function 一次性获取所有超量记录，避免 N+1 查询
         const excessSessions = await prisma.$queryRaw<Array<{ sessionId: string }>>`
             SELECT "sessionId"
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
                 LEFT JOIN "User" u ON u."id" = s."userId"
                 WHERE s."userId" IS NOT NULL
             ) t
-            WHERE t."membershipLevel" IS DISTINCT FROM 'ADVANCED'
+            WHERE (t."membershipLevel" IS NULL OR t."membershipLevel" NOT IN ('SILVER','GOLD','DIAMOND','ADVANCED'))
               AND t.rn > ${MAX_USER_REPORTS}
             ORDER BY t."createdAt" ASC
         `;

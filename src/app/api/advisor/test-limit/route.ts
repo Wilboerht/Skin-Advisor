@@ -20,12 +20,20 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             canTest: limit.canTest,
+            // allowed 与 canTest 同义，供新版前端/主站读取；旧字段保持兼容
+            allowed: limit.canTest,
             usedCount,
             dailyLimit,
             remaining: limit.remaining,
             quotaPeriod: limit.quotaPeriod ?? 'day',
             isGuest: limit.role === 'guest',
             error: limit.error,
+            message: limit.error,
+            // 游客：需登录后才能测肤
+            ...(limit.requireLogin ? { requireLogin: true } : {}),
+            // 登录用户：会员档位与用量明细
+            ...(limit.level ? { level: limit.level } : {}),
+            ...(limit.usage ? { usage: limit.usage } : {}),
         });
     } catch (error) {
         console.error("Failed to check test limit:", error);

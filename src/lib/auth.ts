@@ -48,8 +48,10 @@ export interface SessionUser {
     role: string;
     tokenVersion: number;
     dailyTestLimit?: number | null;
-    /** SSO 会员等级（REGULAR/ADVANCED），null 视为普通会员 */
+    /** SSO 会员等级（REGULAR 普通/SILVER 银卡/GOLD 金卡/DIAMOND 钻石），null/未知视为普通；历史值 ADVANCED 按金卡兜底 */
     membershipLevel?: string | null;
+    /** 主站累计消费金额（元），用于 SILVER 银卡测肤加赠 */
+    totalSpent?: number | null;
 }
 
 export async function incrementTokenVersion(userId: string): Promise<number | null> {

@@ -110,8 +110,8 @@ export function RegisterConversionModal({ scrollContainerRef }: RegisterConversi
     },
     {
       icon: Gift,
-      title: "会员专属礼遇",
-      desc: "参与肌智派抽奖活动，赢取精选护肤好礼",
+      title: "免费 AI 测肤",
+      desc: "注册即享 10 次免费 AI 测肤，会员升级可获更多次数",
     },
   ];
 

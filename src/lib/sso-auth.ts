@@ -42,6 +42,8 @@ export interface SsoProfileClaims {
     avatar?: string;
     phone?: string;
     membershipLevel?: string;
+    /** 主站累计消费金额（元，membership scope 的 total_spent claim） */
+    totalSpent?: number;
 }
 
 /**
@@ -94,6 +96,7 @@ export async function fetchSsoUserinfo(accessToken: string): Promise<SsoProfileC
             avatar: typeof data.avatar === "string" ? data.avatar : undefined,
             phone: typeof data.phone === "string" ? data.phone : undefined,
             membershipLevel: typeof data.membership_level === "string" ? data.membership_level : undefined,
+            totalSpent: typeof data.total_spent === "number" && Number.isFinite(data.total_spent) ? data.total_spent : undefined,
         };
     } catch {
         return null;
@@ -186,6 +189,11 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: S
     const avatarUrl = normalizeSsoAvatarUrl(profile?.avatar);
     // membershipLevel 仅来自服务端验证过的 userinfo（见 SsoProfileClaims 注释）
     const membershipLevel = profile?.membershipLevel || undefined;
+    // totalSpent 同理：仅接受 number，负值/小数兜底收敛，有值才覆盖本地
+    const totalSpent =
+        typeof profile?.totalSpent === "number" && Number.isFinite(profile.totalSpent)
+            ? Math.max(0, Math.floor(profile.totalSpent))
+            : undefined;
 
     const dbUser = await prisma.user.upsert({
         where: { id: payload.sub },
@@ -194,6 +202,7 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: S
             name,
             ...(avatarUrl ? { avatarUrl } : {}),
             ...(membershipLevel ? { membershipLevel } : {}),
+            ...(totalSpent !== undefined ? { totalSpent } : {}),
         },
         create: {
             id: payload.sub,
@@ -201,6 +210,7 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: S
             name: name || "",
             avatarUrl: avatarUrl || null,
             membershipLevel: membershipLevel || null,
+            totalSpent: totalSpent ?? 0,
             password: null,
             role: UserRole.USER,
             tokenVersion: 0,
@@ -212,6 +222,7 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: S
             name: true,
             avatarUrl: true,
             membershipLevel: true,
+            totalSpent: true,
             role: true,
             dailyTestLimit: true,
             tokenVersion: true,
@@ -245,6 +256,7 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
         tokenVersion: dbUser.tokenVersion,
         dailyTestLimit: dbUser.dailyTestLimit,
         membershipLevel: dbUser.membershipLevel,
+        totalSpent: dbUser.totalSpent,
     };
 }
 

@@ -55,6 +55,7 @@ export async function GET(req: NextRequest) {
                 avatar: info.avatar ?? profileClaims?.avatar,
                 phone: info.phone ?? profileClaims?.phone,
                 membershipLevel: info.membershipLevel,
+                totalSpent: info.totalSpent,
             });
         }
     }
@@ -71,6 +72,7 @@ export async function GET(req: NextRequest) {
             name: localUser?.name || payload.phone || "",
             avatar: localUser?.avatarUrl || null,
             membershipLevel: localUser?.membershipLevel || null,
+            totalSpent: localUser?.totalSpent ?? null,
             role: localUser?.role || "user",
         },
     });

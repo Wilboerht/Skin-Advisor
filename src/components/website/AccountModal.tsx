@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { ChevronRight, CircleUserRound, LogOut, NotebookPen, Settings2, Smartphone, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +21,28 @@ function maskPhone(phone?: string | null) {
   return phone.slice(0, 3) + "****" + phone.slice(-4);
 }
 
+// 四档会员徽章：中文名 + 配色（历史值 ADVANCED 按金卡兜底，与后端 normalizeMembershipLevel 一致）
+const MEMBER_BADGES: Record<string, { label: string; className: string }> = {
+  SILVER: { label: "银卡会员", className: "border-slate-400/70 text-slate-500" },
+  GOLD: { label: "金卡会员", className: "border-[#C9A86C]/70 text-[#8B7355]" },
+  DIAMOND: { label: "钻石会员", className: "border-sky-400/70 text-sky-600" },
+  ADVANCED: { label: "金卡会员", className: "border-[#C9A86C]/70 text-[#8B7355]" },
+};
+const REGULAR_BADGE = { label: "普通会员", className: "border-brand-charcoal/15 text-brand-charcoal/50" };
+
+function getMemberBadge(level?: string | null) {
+  return (level && MEMBER_BADGES[level]) || REGULAR_BADGE;
+}
+
+/** /api/advisor/test-limit 的 usage 字段（登录用户） */
+interface TestUsage {
+  totalUsed: number;
+  todayUsed: number;
+  lifetimeLimit: number | null;
+  dailyLimit: number | null;
+  unlimited: boolean;
+}
+
 /**
  * AccountModal — 「我的」账户弹层（替代原 /profile 独立页）
  * 已登录：头像、昵称、手机号（纯展示；资料编辑统一到 NIHPLOD 主站账号中心）、护肤档案入口、退出登录。
@@ -33,6 +56,20 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+
+  // 测肤用量（登录用户打开弹层时拉取；接口失败静默不展示该行）
+  const [testUsage, setTestUsage] = useState<TestUsage | null>(null);
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    let cancelled = false;
+    fetch("/api/advisor/test-limit")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.usage) setTestUsage(data.usage as TestUsage);
+      })
+      .catch(() => { /* 静默失败 */ });
+    return () => { cancelled = true; };
+  }, [isOpen, user]);
 
   const handleLogout = async () => {
     onClose();
@@ -122,25 +159,33 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                   )}
                 </div>
 
-                {/* 昵称（纯展示）+ 会员徽章（REGULAR 普通 / ADVANCED 高级，null 视为普通） */}
+                {/* 昵称（纯展示）+ 会员徽章（REGULAR 普通 / SILVER 银卡 / GOLD 金卡 / DIAMOND 钻石，历史 ADVANCED 按金卡兜底） */}
                 <p className="text-xl font-semibold text-[#1A1A1A] mb-1.5 flex items-center gap-2">
                   {user.name || "朋友"}
-                  {user.membershipLevel === "ADVANCED" ? (
-                    <span className="text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border border-[#C9A86C]/70 text-[#8B7355]">
-                      高级会员
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border border-brand-charcoal/15 text-brand-charcoal/50">
-                      普通会员
-                    </span>
-                  )}
+                  {(() => {
+                    const badge = getMemberBadge(user.membershipLevel);
+                    return (
+                      <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${badge.className}`}>
+                        {badge.label}
+                      </span>
+                    );
+                  })()}
                 </p>
 
                 {/* 手机号 */}
-                <div className="flex items-center gap-1.5 text-[13px] text-[#5E5E5E] mb-8">
+                <div className={`flex items-center gap-1.5 text-[13px] text-[#5E5E5E] ${testUsage ? "mb-1.5" : "mb-8"}`}>
                   <Smartphone className="w-3.5 h-3.5" />
                   <span>{maskPhone(user.phone)}</span>
                 </div>
+
+                {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量；接口失败不渲染 */}
+                {testUsage && (
+                  <p className="text-[12px] text-[#8A8A8A] font-light tracking-[0.05em] mb-6">
+                    {testUsage.unlimited
+                      ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
+                      : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
+                  </p>
+                )}
 
                 {/* 护肤档案入口：打开全局护肤档案弹层 */}
                 <button

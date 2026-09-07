@@ -159,6 +159,13 @@ export async function POST(request: NextRequest) {
         });
         const usageReserve = await reserveUsage(request, faceSessionId, body);
         if (!usageReserve.success) {
+            // 游客测肤需登录：返回 401（非 429），前端据此引导登录
+            if (usageReserve.requireLogin) {
+                return NextResponse.json(
+                    { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: usageReserve.error }, requireLogin: true },
+                    { status: 401 }
+                );
+            }
             const response = apiError(ErrorCode.RATE_LIMITED, usageReserve.error || "今日测试次数已用完，请明天再试", 429);
             Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
             return response;

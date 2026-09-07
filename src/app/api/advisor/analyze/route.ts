@@ -331,6 +331,13 @@ export async function POST(request: NextRequest) {
 
             const usageLimit = await checkUsageLimit(request, body as Record<string, unknown>);
             if (!usageLimit.canTest) {
+                // 游客测肤需登录：返回 401（非 429），前端据此引导登录
+                if (usageLimit.requireLogin) {
+                    return NextResponse.json(
+                        { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: usageLimit.error }, requireLogin: true },
+                        { status: 401 }
+                    );
+                }
                 return apiError(ErrorCode.RATE_LIMITED, usageLimit.error || "您已达到今日测试上限", 429);
             }
         }
@@ -362,6 +369,13 @@ export async function POST(request: NextRequest) {
         if (!isFreeRetryAllowed) {
             const reserved = await reserveUsage(request, effectiveSessionId, body as Record<string, unknown>);
             if (!reserved.success) {
+                // 兜底：checkUsageLimit 预检之后身份状态变化（如登出），游客按 401 处理
+                if (reserved.requireLogin) {
+                    return NextResponse.json(
+                        { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: reserved.error }, requireLogin: true },
+                        { status: 401 }
+                    );
+                }
                 const response = apiError(ErrorCode.RATE_LIMITED, reserved.error || "您已达到今日测试上限", 429);
                 Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
                 return response;

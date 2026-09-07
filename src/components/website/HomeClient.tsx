@@ -262,6 +262,9 @@ export default function HomeClient() {
     quotaPeriod?: 'day' | 'lifetime';
     isGuest?: boolean;
     error?: string | null;
+    /** 游客拒绝时后端置 true：测肤需登录，弹层展示登录引导而非次数信息 */
+    requireLogin?: boolean;
+    message?: string | null;
   } | null>(null);
   const [showLimitModal, setShowLimitModal] = useState(false);
   // 限额弹窗打开时锁定背景滚动（整页锁定已随改版移除）
@@ -655,12 +658,18 @@ export default function HomeClient() {
               <div className="px-10 pb-10 pt-2 flex flex-col items-center gap-6">
                 <div className="text-center space-y-2">
                   <h2 id="limit-modal-title" className="text-base font-bold" style={{ color: '#5c4937' }}>
-                    {testLimitInfo?.quotaPeriod === 'lifetime' ? '免费测肤次数已用完' : '今日测试次数已用完'}
+                    {testLimitInfo?.requireLogin
+                      ? '测肤需登录后使用'
+                      : testLimitInfo?.quotaPeriod === 'lifetime' ? '免费测肤次数已用完' : '今日测试次数已用完'}
                   </h2>
                   <p className="text-sm leading-relaxed" style={{ color: '#5c4937', opacity: 0.8 }}>
                     {(() => {
                       const info = testLimitInfo;
-                      const dailyLimit = info?.dailyLimit ?? (user ? 3 : 1);
+                      // 游客：测肤功能需登录，展示登录引导而非次数信息
+                      if (info?.requireLogin) {
+                        return <>{info.message || info.error || "测肤功能需登录后使用，注册即享 10 次免费 AI 测肤。"}</>;
+                      }
+                      const dailyLimit = info?.dailyLimit ?? 10;
                       const remaining = info?.remaining ?? 0;
                       // 被封禁/限制但仍有剩余次数：展示限制原因而非次数信息
                       if (remaining > 0) {
@@ -670,7 +679,7 @@ export default function HomeClient() {
                         return (
                           <>
                             免费测肤次数已用完（共 {dailyLimit} 次）
-                            <br />升级高级会员，享不限次测肤
+                            <br />升级金卡会员，享不限次测肤
                           </>
                         );
                       }
@@ -678,7 +687,7 @@ export default function HomeClient() {
                         <>
                           今日测试次数已用完（共 {dailyLimit} 次）
                           {!user && (
-                            <><br />注册即享 12 次免费测肤，高级会员不限次数</>
+                            <><br />注册即享 10 次免费测肤，会员升级可获更多次数，金卡及以上不限次</>
                           )}
                         </>
                       );
@@ -687,7 +696,7 @@ export default function HomeClient() {
                 </div>
 
                 <div className="flex flex-col gap-3 w-full">
-                  {!user && (
+                  {(!user || testLimitInfo?.requireLogin) && (
                     <button
                       onClick={() => {
                         setShowLimitModal(false);

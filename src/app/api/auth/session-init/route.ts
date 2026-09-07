@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
             avatar: profileClaims?.avatar ?? userinfo?.avatar,
             phone: profileClaims?.phone,
             membershipLevel: userinfo?.membershipLevel,
+            totalSpent: userinfo?.totalSpent,
         });
         if (!dbUser) {
             logger.error("[session-init] Failed to upsert local user", { sub: payload.sub });

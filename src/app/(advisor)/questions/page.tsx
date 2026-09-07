@@ -12,6 +12,7 @@ import { m, AnimatePresence } from "framer-motion";
 import { ChevronLeft, LogOut, Loader2 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
+import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { cn } from "@/lib/utils";
 import { scheduleFaceModelPreload } from "@/lib/preload-models";
 import { runWhenIdle } from "@/lib/idle";
@@ -129,6 +130,9 @@ export default function QuestionsPage() {
     // 测试次数预检（避免用户完成全流程后才被拒绝）
     const [limitExceeded, setLimitExceeded] = useState(false);
     const [limitMessage, setLimitMessage] = useState("");
+    // 游客预检返回 requireLogin：展示登录引导而非次数已用完
+    const [limitRequireLogin, setLimitRequireLogin] = useState(false);
+    const { openAuthModal } = useAuthModal();
 
     // 预检测试次数：在用户开始问卷前确认是否还有剩余次数
     // 空闲调度：内部会加载 FingerprintJS 并计算指纹（主线程任务），
@@ -148,6 +152,7 @@ export default function QuestionsPage() {
                     const data = await res.json();
                     if (!data.canTest) {
                         setLimitExceeded(true);
+                        setLimitRequireLogin(!!data.requireLogin);
                         setLimitMessage(data.error || "今日测试次数已用完，请明天再试。");
                     }
                 }
@@ -726,9 +731,19 @@ export default function QuestionsPage() {
                             ) : limitExceeded ? (
                                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
                                     <div className="text-4xl mb-4">⏳</div>
-                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">今日次数已用完</h3>
+                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
+                                        {limitRequireLogin ? "测肤需登录后使用" : "今日次数已用完"}
+                                    </h3>
                                     <p className="text-sm text-brand-charcoal/60 font-light mb-6">{limitMessage}</p>
                                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                        {limitRequireLogin && (
+                                            <button
+                                                onClick={() => openAuthModal("login")}
+                                                className="px-6 h-10 rounded-lg bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                            >
+                                                登录 / 注册
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => navPush("/")}
                                             className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"

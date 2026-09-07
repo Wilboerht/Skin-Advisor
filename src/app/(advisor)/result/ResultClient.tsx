@@ -1051,6 +1051,8 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         // 额度/限流类错误：重拍照片无法解决问题，按钮引导返回首页而非重测
         const errorMessage = analysisState.error || "";
         const isQuotaError = /测试次数|测试上限|次数已用完|免费重试|限流|明天再试/i.test(errorMessage);
+        // 游客/会话失效触发 401 requireLogin：重试无意义，引导登录
+        const isRequireLogin = /需登录|登录后使用/i.test(errorMessage);
         return (
             <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
@@ -1059,19 +1061,36 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">
-                                {isQuotaError ? "今日测试次数已用完" : "分析遇到了一些问题"}
+                                {isRequireLogin ? "测肤需登录后使用" : isQuotaError ? "今日测试次数已用完" : "分析遇到了一些问题"}
                             </h3>
                             <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                                 {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
                             </p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
-                            <button
-                                onClick={() => navPush(isQuotaError ? "/" : errorRetryTarget)}
-                                className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
-                            >
-                                {isQuotaError ? "返回首页" : errorRetryLabel}
-                            </button>
+                            {isRequireLogin ? (
+                                <>
+                                    <button
+                                        onClick={() => openAuthModal("login")}
+                                        className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    >
+                                        登录 / 注册
+                                    </button>
+                                    <button
+                                        onClick={() => navPush("/")}
+                                        className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    >
+                                        返回首页
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => navPush(isQuotaError ? "/" : errorRetryTarget)}
+                                    className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                >
+                                    {isQuotaError ? "返回首页" : errorRetryLabel}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

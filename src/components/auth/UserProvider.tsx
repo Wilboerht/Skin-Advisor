@@ -11,8 +11,10 @@ export interface User {
     name?: string;
     role: string;
     avatar?: string | null;
-    /** SSO 会员等级（REGULAR/ADVANCED），null 视为普通会员 */
+    /** SSO 会员等级（REGULAR 普通/SILVER 银卡/GOLD 金卡/DIAMOND 钻石），null/未知视为普通 */
     membershipLevel?: string | null;
+    /** 主站累计消费金额（元），用于 SILVER 银卡测肤加赠 */
+    totalSpent?: number | null;
 }
 
 interface AuthContextType {

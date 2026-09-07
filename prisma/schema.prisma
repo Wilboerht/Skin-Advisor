@@ -173,8 +173,12 @@ model User {
   
   avatarUrl       String?
 
-  // SSO 会员等级（主站 membership_level claim）：REGULAR 普通 / ADVANCED 高级；null 视为普通
+  // SSO 会员等级（主站 membership_level claim）：REGULAR 普通 / SILVER 银卡 / GOLD 金卡 / DIAMOND 钻石；
+  // null/未知视为普通；历史残留值 ADVANCED 按金卡兜底（下次 SSO 登录会刷新为新四档值）
   membershipLevel String?
+
+  // 主站累计消费金额（元，userinfo total_spent claim），用于 SILVER 银卡测肤加赠：每满 1000 元 +20 次
+  totalSpent      Int              @default(0)
 
   // NOTE: role should ideally be an enum (user, disabled).
   // Kept as String for broader database compatibility.
