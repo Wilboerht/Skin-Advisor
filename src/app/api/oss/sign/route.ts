@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { generateUploadSignature } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-import { extractGuestIdentifiers } from "@/lib/guest-limit";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
@@ -34,8 +33,12 @@ export async function POST(request: NextRequest) {
         }
 
         // 3. 游客路径隔离：使用可溯源但不暴露原始标识的短哈希作为前缀
-        const identifiers = extractGuestIdentifiers(request, { cookieId, fingerprint, guestId });
-        const rawId = sessionId || guestId || identifiers.cookieId || identifiers.fingerprint || crypto.randomUUID();
+        // 标识优先级与历史 extractGuestIdentifiers 一致：body 字段优先，请求头兜底
+        const rawId = sessionId || guestId || cookieId
+            || request.headers.get("x-guest-cookie-id")
+            || fingerprint
+            || request.headers.get("x-fingerprint")
+            || crypto.randomUUID();
         const idHash = crypto.createHash("sha256").update(String(rawId)).digest("hex").slice(0, 16);
         const date = new Date().toISOString().split("T")[0];
         const randomId = crypto.randomUUID();

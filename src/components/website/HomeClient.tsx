@@ -10,7 +10,6 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
-import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
 import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
@@ -256,7 +255,6 @@ export default function HomeClient() {
   // Test limit state（与 /api/advisor/test-limit 返回结构对齐）
   const [testLimitInfo, setTestLimitInfo] = useState<{
     canTest: boolean;
-    usedCount: number;
     dailyLimit: number;
     remaining: number;
     quotaPeriod?: 'day' | 'lifetime';
@@ -272,46 +270,12 @@ export default function HomeClient() {
   // 限额弹窗焦点圈定 + Escape 关闭
   const limitModalRef = useFocusTrap<HTMLDivElement>(showLimitModal, () => setShowLimitModal(false));
   const [onboardingOpenCount, setOnboardingOpenCount] = useState(0);
-  const [guestIdentity, setGuestIdentity] = useState<GuestIdentity | null>(null);
 
-  // Initialize guest identity on mount
-  // 指纹采集（FingerprintJS）在主线程耗时数百 ms，错峰到浏览器空闲时执行，
-  // 避免与首屏动画争抢主线程；Safari 不支持 requestIdleCallback，用 setTimeout 兜底
-  useEffect(() => {
-    const initGuestIdentity = async () => {
-      try {
-        const identity = await getGuestIdentity();
-        setGuestIdentity(identity);
-      } catch (error) {
-        console.error('Failed to get guest identity:', error);
-      }
-    };
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      const idleId = window.requestIdleCallback(() => initGuestIdentity(), { timeout: 3000 });
-      return () => window.cancelIdleCallback(idleId);
-    }
-    const timer = setTimeout(initGuestIdentity, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Check test limit with multi-factor identity
+  // Check test limit（后端按登录态判额，无需前端指纹参数）
   const checkTestLimit = useCallback(async (allowRefresh = true): Promise<boolean> => {
     const runCheck = async (canRefresh: boolean): Promise<boolean> => {
       try {
-        // Get fresh identity if not available
-        let identity = guestIdentity;
-        if (!identity) {
-          identity = await getGuestIdentity();
-          setGuestIdentity(identity);
-        }
-
-        const params = new URLSearchParams();
-        params.set('cookieId', identity.cookieId);
-        if (identity.fingerprint) {
-          params.set('fingerprint', identity.fingerprint);
-        }
-
-        const res = await fetch(`/api/advisor/test-limit?${params.toString()}`);
+        const res = await fetch(`/api/advisor/test-limit`);
         if (!res.ok) {
           const errorText = await res.text().catch(() => "未知错误");
           console.error("Test limit check failed:", res.status, errorText);
@@ -337,7 +301,7 @@ export default function HomeClient() {
     };
 
     return runCheck(allowRefresh);
-  }, [guestIdentity, user, refreshUser]);
+  }, [user, refreshUser]);
 
 
   // 防重复触发：限额检查是异步的，等待期间按钮仍可点，快速双击会并发跑两遍流程

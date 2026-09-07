@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
             where: { ip: hashIP(ip), analysisStartedAt: { lt: fourMinutesAgo }, completedAt: null },
             data: { analysisStartedAt: null },
         });
-        const usageReserve = await reserveUsage(request, faceSessionId, body);
+        const usageReserve = await reserveUsage(request, faceSessionId);
         if (!usageReserve.success) {
             // 游客测肤需登录：返回 401（非 429），前端据此引导登录
             if (usageReserve.requireLogin) {
@@ -171,8 +171,10 @@ export async function POST(request: NextRequest) {
             return response;
         }
         // 预占成功标记：仅在此之后的异常路径才需要回滚，
-        // 避免预占前的异常（如僵尸清理失败）触发无意义的 rollback
-        reserved = true;
+        // 避免预占前的异常（如僵尸清理失败）触发无意义的 rollback。
+        // alreadyReserved（刷新重试同 sessionId，幂等命中既有预占）时不得回滚：
+        // 该 TestRecord 由首次请求创建，此处回滚会误删他人预占导致漏扣一次。
+        reserved = !usageReserve.alreadyReserved;
 
         // Dynamic imports for file handling
         const fs = await import('fs/promises');
@@ -408,7 +410,7 @@ export async function POST(request: NextRequest) {
                 if (err.message?.includes("[Validation]")) {
                     const reason = err.message.replace("[Validation] ", "");
                     aiLogger.warn(`Face validation failed: ${reason}`);
-                    await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                    if (reserved) await rollbackUsage(request, faceSessionId);
                     return apiError("VALIDATION_FAILED", "图片验证失败", 400, reason || "未检测到清晰人脸，请重新拍摄");
                 }
                 // Retry if payload error
@@ -424,7 +426,7 @@ export async function POST(request: NextRequest) {
                     if (perImageAvgKB < 100) {
                         aiLogger.warn(`[FaceAnalyze] Payload error but images already small (avg ${perImageAvgKB.toFixed(0)}KB), not retrying`);
                         // 回滚预占（非用户原因）
-                        await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                        if (reserved) await rollbackUsage(request, faceSessionId);
                         const response = apiError("AI_PAYLOAD_ERROR", "AI 视觉服务请求异常，请稍后重试", 503);
                         response.headers.set("Retry-After", "30");
                         return response;
@@ -466,7 +468,7 @@ export async function POST(request: NextRequest) {
                         if (re.message?.includes("[Validation]")) {
                             const reason = re.message.replace("[Validation] ", "");
                             aiLogger.warn(`Face validation failed on retry: ${reason}`);
-                            await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                            if (reserved) await rollbackUsage(request, faceSessionId);
                             return apiError("VALIDATION_FAILED", "图片验证失败", 400, reason || "未检测到清晰人脸，请重新拍摄");
                         }
                         throw retryErr;
@@ -481,7 +483,7 @@ export async function POST(request: NextRequest) {
             if (validation && validation.isValid === false) {
                 aiLogger.warn(`Face validation failed: ${validation.message}`);
                 // 图片验证失败属于非用户主动消耗额度场景，回滚预占
-                await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                if (reserved) await rollbackUsage(request, faceSessionId);
                 return apiError("VALIDATION_FAILED", "图片验证失败", 400, validation.message || "未检测到清晰人脸，请重新拍摄");
             }
 
@@ -505,8 +507,8 @@ export async function POST(request: NextRequest) {
             const isBudgetExceeded = err.message?.includes("budget") || err.message?.includes("quota");
             if (isBudgetExceeded) {
                 aiLogger.warn("AI vision budget exceeded, rejecting request", { error: err.message });
-                if (faceSessionId) {
-                    await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                if (faceSessionId && reserved) {
+                    await rollbackUsage(request, faceSessionId);
                 }
                 const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "3600");
@@ -521,7 +523,7 @@ export async function POST(request: NextRequest) {
 
             // 队列超时特有错误（AI 未被调用，零消耗）
             if (err.message?.includes("Queue timeout") || err.message?.includes("Server busy")) {
-                await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                if (reserved) await rollbackUsage(request, faceSessionId);
                 const response = apiError("SERVER_BUSY", "服务器繁忙，请稍后再试", 503);
                 response.headers.set("Retry-After", "30");
                 return response;
@@ -529,7 +531,7 @@ export async function POST(request: NextRequest) {
 
             // AI 服务不可用（API 错误，Provider 未成功处理），回滚预占
             aiLogger.warn("AI service unavailable, rolling back usage");
-            await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+            if (reserved) await rollbackUsage(request, faceSessionId);
             const response = apiError("AI_UNAVAILABLE", "AI 分析服务暂时不可用，请稍后重试", 503);
             response.headers.set("Retry-After", "60");
             return response;
@@ -577,7 +579,7 @@ export async function POST(request: NextRequest) {
         }
         // 服务器内部错误，非用户原因，回滚预占（仅限预占成功后的异常）
         if (faceSessionId && reserved) {
-            await rollbackUsage(request, faceSessionId, body);
+            await rollbackUsage(request, faceSessionId);
         }
         // 使用脱敏 logger，避免 error 对象泄露请求上下文
         aiLogger.error("Critical error in face analysis", {

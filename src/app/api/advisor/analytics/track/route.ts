@@ -127,7 +127,6 @@ export async function POST(request: NextRequest) {
                         deviceType: clientInfo.deviceType,
                         browser: clientInfo.browser,
                         os: clientInfo.os,
-                        fingerprint: (data?.fingerprint as string) || null,
                         utmSource: (data?.utm_source as string) || null,
                         utmMedium: (data?.utm_medium as string) || null,
                         utmCampaign: (data?.utm_campaign as string) || null,

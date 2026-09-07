@@ -43,9 +43,15 @@ export async function GET(req: NextRequest) {
 
     // 本地缺头像/手机号/会员等级时兜底：向主站 userinfo 拉一次并落库（仅缺失时触发，避免每次请求都回源）
     // userinfo 的 phone 是掩码格式（不落库），但弹层展示本来就要打码，可直接用于显示；
-    // membershipLevel 只信 userinfo（服务端验证），不读 id_token Cookie
+    // membershipLevel 只信 userinfo（服务端验证），不读 id_token Cookie。
+    // 额外：profileSyncedAt 超过 6 小时未刷新也强制回源——老用户三项齐全后 totalSpent 不再更新，
+    // 银卡消费加赠会在两次登录（session-init）之间失效。
+    const PROFILE_SYNC_TTL_MS = 6 * 60 * 60 * 1000;
     let maskedPhone: string | null = null;
-    if (localUser && (!localUser.avatarUrl || !localUser.phoneNumber || !localUser.membershipLevel)) {
+    const profileStale =
+        !localUser?.profileSyncedAt ||
+        Date.now() - localUser.profileSyncedAt.getTime() > PROFILE_SYNC_TTL_MS;
+    if (localUser && (!localUser.avatarUrl || !localUser.phoneNumber || !localUser.membershipLevel || profileStale)) {
         const userinfoToken = refreshed?.access_token ?? token;
         const info = userinfoToken ? await fetchSsoUserinfo(userinfoToken) : null;
         if (info) {
@@ -56,7 +62,7 @@ export async function GET(req: NextRequest) {
                 phone: info.phone ?? profileClaims?.phone,
                 membershipLevel: info.membershipLevel,
                 totalSpent: info.totalSpent,
-            });
+            }, { profileSyncedAt: new Date() });
         }
     }
 

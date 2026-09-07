@@ -194,19 +194,13 @@ export async function GET(request: NextRequest) {
             where: { createdAt: { lt: auditLogCutoff } },
         });
 
-        // ===== 7. 清理过期 GuestUsage（保留 30 天）=====
-        const guestCutoff = new Date(now - 30 * 24 * 60 * 60 * 1000);
-        const deletedGuests = await prisma.guestUsage.deleteMany({
-            where: { lastTestAt: { lt: guestCutoff } },
-        });
-
-        // ===== 8. 清理僵尸 AppInstance（心跳超过 5 分钟未更新）=====
+        // ===== 7. 清理僵尸 AppInstance（心跳超过 5 分钟未更新）=====
         const staleInstanceCutoff = new Date(now - 5 * 60 * 1000);
         const deletedInstances = await prisma.appInstance.deleteMany({
             where: { lastPing: { lt: staleInstanceCutoff } },
         });
 
-        // ===== 9. 清理过期上传文件（保留 30 天，递归处理嵌套目录）=====
+        // ===== 8. 清理过期上传文件（保留 30 天，递归处理嵌套目录）=====
         // 旧实现只对根目录条目 unlink，guest/、advisor/ 等子目录会因 EISDIR 被吞掉永不清理
         let deletedFiles = 0;
         try {
@@ -250,7 +244,6 @@ export async function GET(request: NextRequest) {
                 ...stats,
                 aiLogs: deletedAiLogs.count,
                 auditLogs: deletedAuditLogs.count,
-                guests: deletedGuests.count,
                 instances: deletedInstances.count,
                 files: deletedFiles,
             },

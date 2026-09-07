@@ -32,7 +32,7 @@
 |---|---|---|
 | `GET /api/advisor/questions` | 问卷题目（DB 优先，静态降级） | 问卷页数据 |
 | `GET /api/advisor/check-config` | AI 配置与排队状态检查 | 入口预检 |
-| `GET /api/advisor/test-limit` | 测试次数预检 | 入口预检（identity 换 openid） |
+| `GET /api/advisor/test-limit` | 测试次数预检 | 入口预检（登录用户四档配额） |
 | `POST /api/advisor/face-analyze` | 面部分析（OpenAI 视觉） | 拍摄完成后调用 |
 | `POST /api/advisor/analyze` | 肌肤分析（异步会话） | 分析中页轮询 |
 | `GET /api/advisor/session/status` | 分析状态轮询 | 分析中页 |
@@ -83,7 +83,7 @@
 | # | 页面 | 说明 | 主要 API |
 |---|---|---|---|
 | 1 | 测肤首页 | 入口、隐私协议弹窗 | `check-config`、`test-limit` |
-| 2 | 性别选择 | 含游客态初始化 | — |
+| 2 | 性别选择 | 会话初始化（游客模式已下线，直接复用登录态） | — |
 | 3 | 问卷页 | 单选/多选、条件题、自动切题、本地暂存 | `questions` |
 | 4 | 扫脸引导 + 拍摄页 | 4 角度自动拍摄（核心页） | VisionKit、`oss/sign` |
 | 5 | 分析中页 | 进度与轮询 | `face-analyze`、`analyze`、`session/status` |
@@ -119,7 +119,7 @@
 
 1. 新增 `POST /api/auth/mp-login`：`wx.login` code → 换 openid（需配置小程序 appid/secret）→ 签发会话。
 2. 手机号绑定：`getPhoneNumber` 按钮授权 → 并入现有 `User.phoneNumber` 体系（与商城、H5 三端合一）；同一开放平台主体下用 unionid 关联 H5 微信登录账号。
-3. 游客体系：H5 的 cookieId + FingerprintJS 指纹在小程序替换为 openid，`test-limit` 限次逻辑复用。
+3. 测肤配额：游客模式已下线（一律需登录），小程序场景直接复用登录态与四档会员配额，`test-limit` 限次逻辑复用（身份为登录用户，不再使用 cookieId + FingerprintJS 指纹）。
 
 ### 5.3 海报生成
 
@@ -190,7 +190,7 @@
 - [ ] Taro 版本与分包结构：新建 Taro 工程嵌入商城，还是商城现有工程加分包。
 - [ ] 服务端人脸复核选型：face-api node 版（自托管零边际成本）vs 腾讯云人脸检测（免维护按量付费）。
 - [ ] 海报是否借迁移统一收口到服务端 sharp（影响 H5 现有海报逻辑）。
-- [ ] 游客限次策略：openid 维度是否沿用现有每日次数规则。
+- [x] ~~游客限次策略：openid 维度是否沿用现有每日次数规则~~ 已过时：游客模式已下线，小程序场景直接复用登录态与四档会员测肤配额，无需游客维度限次。
 
 ---
 

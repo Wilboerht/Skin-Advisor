@@ -19,9 +19,9 @@ const PUBLIC_PATHS = [
     "/register",               // SSO 注册跳转页
     "/forgot-password",        // 密码重置弹窗页
     "/reset-password",         // 密码重置弹窗页
-    "/questions",              // 问卷页（允许游客测试）
-    "/face-scan",              // 面部扫描页（允许游客）
-    "/result",                 // 结果页（允许游客查看分析结果）
+    "/questions",              // 问卷页（页面公开，实际测肤需登录）
+    "/face-scan",              // 面部扫描页（页面公开，实际测肤需登录）
+    "/result",                 // 结果页（页面公开，报告数据需登录）
     "/skin-types",             // 肤质类型列表
     "/skin-types/:path*",      // 具体肤质类型页
     "/services",               // 顾问服务
@@ -45,17 +45,17 @@ const PUBLIC_PATHS = [
       "/api/auth/wechat",           // 微信 OAuth 初始跳转
       "/api/auth/wechat/bind",      // 微信手机号绑定
       "/api/auth/wechat/callback",  // 微信 OAuth 回调
-    "/api/advisor/check-config", // AI 配置检查（游客可用）
-    "/api/advisor/questions",  // 问卷题目（游客可用）
-    "/api/advisor/test-limit", // 测试次数检查（游客可用）
-    "/api/advisor/face-analyze", // 面部分析（游客可用，受 Origin/Referer 保护）
-    "/api/advisor/analyze",    // 肌肤分析（游客可用，受 Origin/Referer 保护）
-      "/api/advisor/session/status", // 分析状态轮询（游客可用）
+    "/api/advisor/check-config", // AI 配置检查（公开数据）
+    "/api/advisor/questions",  // 问卷题目（公开数据）
+    "/api/advisor/test-limit", // 测肤配额预检（游客一律提示登录）
+    "/api/advisor/face-analyze", // 面部分析（需登录，受 Origin/Referer 保护）
+    "/api/advisor/analyze",    // 肌肤分析（需登录，受 Origin/Referer 保护）
+      "/api/advisor/session/status", // 分析状态轮询
       "/api/advisor/analytics/track", // 前端埋点（sendBeacon 无 Cookie）
-      "/api/advisor/kf-link",      // 顾问客服链接生成（游客结果页可用，路由内自带 sessionId 格式校验）
-      "/api/internal/:path*",      // 内部 API（x-internal-key 鉴权，供企业微信 AI 客服服务端调用）
-      "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
-      "/api/local-upload",       // 游客本地上传端点
+      "/api/advisor/kf-link",      // 顾问客服链接生成（结果页可用，路由内自带 sessionId 格式校验）
+      "/api/internal/:path*",      // 内部 API（旧路由 x-internal-key 鉴权，新路由 Bearer ADVISOR_INTERNAL_SECRET；供企业微信/商城服务端调用）
+      "/api/oss/sign",           // 上传签名（扫脸后保存图片）
+      "/api/local-upload",       // 本地上传端点
       "/api/products",           // 公开产品列表
       "/api/wechat/webhook",     // 微信回调（无需用户认证）
       "/api/admin/:path*",
@@ -236,10 +236,10 @@ export async function proxy(request: NextRequest) {
         "/api/auth/session-init",   // SSO 本地 session 引导（尚无本地 JWT）
         // 匿名/埋点接口：sendBeacon 无法携带自定义 header
         "/api/advisor/analytics/track",
-        // 允许游客使用的 AI 分析接口（仍受 AI_ENDPOINTS 的 Origin/Referer/Content-Type 保护）
+        // 测肤 AI 分析接口（游客测肤已下线，路由内强制登录；仍受 AI_ENDPOINTS 的 Origin/Referer/Content-Type 保护）
         "/api/advisor/face-analyze",
         "/api/advisor/analyze",
-        // 游客上传接口（无 JWT，无法通过 CSRF 校验）
+        // 测肤图片上传接口（无 JWT，无法通过 CSRF 校验）
         "/api/oss/sign",
         "/api/local-upload",
     ];

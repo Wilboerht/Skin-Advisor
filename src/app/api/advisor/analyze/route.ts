@@ -22,8 +22,7 @@ import { hashIP } from "@/lib/privacy";
 import { matchCharacterIP } from "@/lib/result-utils";
 import { getEnvContextFromLocation } from "@/lib/weather-context";
 
-import { checkUsageLimit, reserveUsage, rollbackUsage, type ReserveUsageResult } from "@/lib/usage-limit";
-import { extractGuestIdentifiers } from "@/lib/guest-limit";
+import { checkUsageLimit, reserveUsage, rollbackUsage, GUEST_REQUIRE_LOGIN_MESSAGE, type ReserveUsageResult } from "@/lib/usage-limit";
 import { aiLogger, logger } from "@/lib/logger";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import DOMPurify from 'isomorphic-dompurify';
@@ -267,7 +266,7 @@ export async function POST(request: NextRequest) {
         const { answers, faceAnalysis, sessionId, nickname, freeRetry, clientDate, privacyConsent, skinState } = result.data;
 
         // 提取客户端标识（用于会话归属与审计）
-        const identifiers = extractGuestIdentifiers(request, body as Record<string, unknown>);
+        const userAgent = request.headers.get("user-agent");
         const ipHash = hashIP(getClientIP(request));
 
         // 3. 速率限制 (基础防刷) — 即使免费重试也需要基础限流
@@ -297,6 +296,13 @@ export async function POST(request: NextRequest) {
         let isFreeRetryAllowed = false;
         let freeRetryExistingResult: Record<string, unknown> | null = null;
         if (freeRetry && sessionId) {
+            // 游客不再享受免费重试：历史 1 小时内的游客会话同样需登录（与主链路同文案同结构）
+            if (!user) {
+                return NextResponse.json(
+                    { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: GUEST_REQUIRE_LOGIN_MESSAGE }, requireLogin: true },
+                    { status: 401 }
+                );
+            }
             // Quick filter: reject obviously invalid requests before acquiring row lock.
             // Ownership verification is deferred to the DB transaction (lockResult) for atomicity.
             const existingSession = await prisma.advisorSession.findUnique({
@@ -315,30 +321,45 @@ export async function POST(request: NextRequest) {
             isFreeRetryAllowed = true;
         }
 
+        // face-analyze 已用同一 sessionId 预占额度（TestRecord 已写入）时，analyze 复用该预占：
+        // 跳过限额预检与重复预占，避免把自己的预占计入已用数导致"最后一次额度"被误拒。
+        // 仅当会话尚未完成时成立——已完成的会话必须走正常限额 + 缓存路径，
+        // 防止用历史已完成 sessionId 的 TestRecord 绕过限额白嫖新分析。
+        // 同时校验 TestRecord 归属当前登录用户：游客/他人 sessionId 不能借此绕过登录与限额。
+        let hasPriorReservation = false;
+        if (!isFreeRetryAllowed && sessionId && user) {
+            const [priorRecord, priorSession] = await Promise.all([
+                prisma.testRecord.findUnique({ where: { sessionId }, select: { userId: true } }),
+                prisma.advisorSession.findUnique({ where: { sessionId }, select: { completedAt: true } }),
+            ]);
+            hasPriorReservation = priorRecord?.userId === user.id && !priorSession?.completedAt;
+        }
+
         if (!isFreeRetryAllowed) {
             // 清理僵尸会话：超过阈值仍未完成的 analysis（服务器崩溃、网络中断等）
             // 不清除则这些会话的 analysisStartedAt 会持续占用配额。
             // 阈值 4 分钟 > 最坏耗时（队列等待 60s + face 65s + LLM 90s），避免误杀在途分析。
-            // 注意：游客时 user?.id 为 undefined，Prisma 会忽略 undefined 字段导致退化为全表清理；
-            // 游客会话需按 userId: null + IP 哈希匹配。
-            const staleBefore = new Date(Date.now() - 4 * 60 * 1000);
-            await prisma.advisorSession.updateMany({
-                where: user
-                    ? { userId: user.id, analysisStartedAt: { lt: staleBefore }, completedAt: null }
-                    : { userId: null, ip: ipHash, analysisStartedAt: { lt: staleBefore }, completedAt: null },
-                data: { analysisStartedAt: null },
-            });
+            // 游客已被下方限额预检 401 拦截，不再按 userId: null + IP 哈希清理历史游客会话。
+            if (user) {
+                const staleBefore = new Date(Date.now() - 4 * 60 * 1000);
+                await prisma.advisorSession.updateMany({
+                    where: { userId: user.id, analysisStartedAt: { lt: staleBefore }, completedAt: null },
+                    data: { analysisStartedAt: null },
+                });
+            }
 
-            const usageLimit = await checkUsageLimit(request, body as Record<string, unknown>);
-            if (!usageLimit.canTest) {
-                // 游客测肤需登录：返回 401（非 429），前端据此引导登录
-                if (usageLimit.requireLogin) {
-                    return NextResponse.json(
-                        { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: usageLimit.error }, requireLogin: true },
-                        { status: 401 }
-                    );
+            if (!hasPriorReservation) {
+                const usageLimit = await checkUsageLimit(request);
+                if (!usageLimit.canTest) {
+                    // 游客测肤需登录：返回 401（非 429），前端据此引导登录
+                    if (usageLimit.requireLogin) {
+                        return NextResponse.json(
+                            { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: usageLimit.error }, requireLogin: true },
+                            { status: 401 }
+                        );
+                    }
+                    return apiError(ErrorCode.RATE_LIMITED, usageLimit.error || "您已达到今日测试上限", 429);
                 }
-                return apiError(ErrorCode.RATE_LIMITED, usageLimit.error || "您已达到今日测试上限", 429);
             }
         }
 
@@ -367,20 +388,26 @@ export async function POST(request: NextRequest) {
 
         let reservedResult: ReserveUsageResult | null = null;
         if (!isFreeRetryAllowed) {
-            const reserved = await reserveUsage(request, effectiveSessionId, body as Record<string, unknown>);
-            if (!reserved.success) {
-                // 兜底：checkUsageLimit 预检之后身份状态变化（如登出），游客按 401 处理
-                if (reserved.requireLogin) {
-                    return NextResponse.json(
-                        { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: reserved.error }, requireLogin: true },
-                        { status: 401 }
-                    );
+            if (hasPriorReservation) {
+                // 复用 face-analyze 的既有预占（等价 alreadyReserved）：
+                // 不再重复计数，且本请求任何失败路径都不得回滚这条他人创建的预占
+                reservedResult = { success: true, role: "member", alreadyReserved: true };
+            } else {
+                const reserved = await reserveUsage(request, effectiveSessionId);
+                if (!reserved.success) {
+                    // 兜底：checkUsageLimit 预检之后身份状态变化（如登出），游客按 401 处理
+                    if (reserved.requireLogin) {
+                        return NextResponse.json(
+                            { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: reserved.error }, requireLogin: true },
+                            { status: 401 }
+                        );
+                    }
+                    const response = apiError(ErrorCode.RATE_LIMITED, reserved.error || "您已达到今日测试上限", 429);
+                    Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
+                    return response;
                 }
-                const response = apiError(ErrorCode.RATE_LIMITED, reserved.error || "您已达到今日测试上限", 429);
-                Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
-                return response;
+                reservedResult = reserved;
             }
-            reservedResult = reserved;
         }
 
         // 分布式锁：防止同一 sessionId 并发重复跑 AI
@@ -473,7 +500,7 @@ export async function POST(request: NextRequest) {
             // 返回缓存时退还本次预占：仅当本请求实际新增了计数时才回滚
             //（P2002 幂等命中时 alreadyReserved=true，回滚会误删其他请求的预占）
             if (reservedResult && !reservedResult.alreadyReserved) {
-                await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                await rollbackUsage(request, effectiveSessionId);
             }
             console.log(`[analyze] Returning cached result after lock for session ${effectiveSessionId}`);
             return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
@@ -604,7 +631,7 @@ export async function POST(request: NextRequest) {
                 const isQueueOnlyCancel = err.message === "Request cancelled during queue wait.";
                 if (isQueueOnlyCancel) {
                     if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                        await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                        await rollbackUsage(request, effectiveSessionId);
                     }
                 }
                 return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消，请重试", 499);
@@ -612,7 +639,7 @@ export async function POST(request: NextRequest) {
             if (err.message?.includes("[AIBudget]")) {
                 aiLogger.warn("AI budget exceeded, rejecting request", { error: err.message });
                 if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                    await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                    await rollbackUsage(request, effectiveSessionId);
                 }
                 const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "3600");
@@ -622,7 +649,7 @@ export async function POST(request: NextRequest) {
             if (err.message?.includes("[CircuitBreaker]")) {
                 aiLogger.warn("Circuit breaker open, rejecting request", { error: err.message });
                 if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                    await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                    await rollbackUsage(request, effectiveSessionId);
                 }
                 const response = apiError("AI_CIRCUIT_OPEN", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "60");
@@ -776,11 +803,8 @@ export async function POST(request: NextRequest) {
         // 9. Persist Result to DB (all users including guests)
         // effectiveSessionId 总是存在，无需条件检查
         {
-            // 游客报告保留 1 小时，注册用户报告保留 3 个月（与 AI 降级路径统一）
-            const GUEST_RETENTION_HOURS = 1;
-            const expiresAt = user?.id
-                ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-                : new Date(Date.now() + GUEST_RETENTION_HOURS * 60 * 60 * 1000);
+            // 报告保留 90 天（游客已被前置 401 拦截，此处仅登录用户可达；TS 兜底同样按 90 天）
+            const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
 
             // Persist result to DB — do NOT swallow errors (ghost analysis bug)
             try {
@@ -824,8 +848,8 @@ export async function POST(request: NextRequest) {
                             expiresAt: expiresAt,
                             ip: ipHash,
                             userId: user?.id || null,
-                            userAgent: identifiers.userAgent,
-                            ...parseUserAgent(identifiers.userAgent)
+                            userAgent,
+                            ...parseUserAgent(userAgent)
                         }
                     });
                 });

@@ -55,6 +55,9 @@ export async function GET(req: NextRequest) {
             phone: profileClaims?.phone,
             membershipLevel: userinfo?.membershipLevel,
             totalSpent: userinfo?.totalSpent,
+        }, {
+            // 登录路径全量同步：userinfo 回源成功才标记同步时间，失败则留给 /api/auth/me 重试
+            profileSyncedAt: userinfo ? new Date() : undefined,
         });
         if (!dbUser) {
             logger.error("[session-init] Failed to upsert local user", { sub: payload.sub });

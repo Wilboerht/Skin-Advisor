@@ -178,7 +178,11 @@ export async function getSsoUser(req?: NextRequest): Promise<SsoAuthUser | null>
     };
 }
 
-export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: SsoProfileClaims) {
+export async function upsertLocalUser(
+    payload: VerifiedTokenPayload,
+    profile?: SsoProfileClaims,
+    options?: { profileSyncedAt?: Date }
+) {
     if (!payload.sub) return null;
 
     // 昵称优先取 id_token 的 nickname，其次手机号；access token introspect 不含 nickname
@@ -203,6 +207,8 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: S
             ...(avatarUrl ? { avatarUrl } : {}),
             ...(membershipLevel ? { membershipLevel } : {}),
             ...(totalSpent !== undefined ? { totalSpent } : {}),
+            // userinfo 回源成功时由调用方传入当前时间，标记资料已同步（/api/auth/me 据此做 6 小时强制刷新）
+            ...(options?.profileSyncedAt ? { profileSyncedAt: options.profileSyncedAt } : {}),
         },
         create: {
             id: payload.sub,
@@ -211,6 +217,7 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: S
             avatarUrl: avatarUrl || null,
             membershipLevel: membershipLevel || null,
             totalSpent: totalSpent ?? 0,
+            profileSyncedAt: options?.profileSyncedAt ?? null,
             password: null,
             role: UserRole.USER,
             tokenVersion: 0,
@@ -223,6 +230,7 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: S
             avatarUrl: true,
             membershipLevel: true,
             totalSpent: true,
+            profileSyncedAt: true,
             role: true,
             dailyTestLimit: true,
             tokenVersion: true,

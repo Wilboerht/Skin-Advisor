@@ -60,7 +60,8 @@ const UNLIMITED_DAILY_LIMIT = 10;
 const LEGACY_DEFAULT_DAILY_LIMIT = 10;
 
 // ===== 错误文案（单点配置）=====
-const GUEST_REQUIRE_LOGIN_MESSAGE = '测肤功能需登录后使用，注册即享 10 次免费 AI 测肤。';
+// 导出供 analyze 路由 freeRetry 分支的游客 401 复用，保证全链路同文案
+export const GUEST_REQUIRE_LOGIN_MESSAGE = '测肤功能需登录后使用，注册即享 10 次免费 AI 测肤。';
 const REGULAR_EXHAUSTED_MESSAGE = `免费测肤次数已用完（共 ${REGULAR_TOTAL_LIMIT} 次），升级银卡会员可享更多测肤次数。`;
 const SILVER_EXHAUSTED_MESSAGE = '测肤次数已用完，每消费满 ¥1,000 可加赠 20 次，或升级金卡享不限次测肤。';
 const DAILY_EXHAUSTED_MESSAGE = '今日测肤次数已用完，明天再来。';
@@ -147,8 +148,7 @@ export function getMemberQuota(
  * 4. 金卡/钻石（GOLD/DIAMOND，历史 ADVANCED 兜底）：总量不限，每日 10 次
  * 5. 管理员自定义 dailyTestLimit（≠ 系统默认 10）作为每日上限，优先于会员默认值
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function checkUsageLimit(request: NextRequest, _body?: Record<string, unknown>): Promise<UsageLimitResult> {
+export async function checkUsageLimit(request: NextRequest): Promise<UsageLimitResult> {
     // 本地开发环境不限制次数
     if (process.env.NODE_ENV !== "production") {
         return { canTest: true, remaining: 999, dailyLimit: 999, role: 'member' };
@@ -171,27 +171,24 @@ export async function checkUsageLimit(request: NextRequest, _body?: Record<strin
 
     // 2. 登录用户：按新四档口径（lifetime 与 daily 两个维度）
     const userId = user.id;
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
     // 日界固定北京时间，避免 UTC 部署时凌晨时段额度计算漂移
     const today = startOfTodayShanghai();
     const quota = getMemberQuota(user);
 
-    const [count, inProgressCount, lifetimeCount] = await Promise.all([
+    // 只按 TestRecord 计数：所有正式分析路径都先经 reserveUsage 写入 TestRecord（预占即扣数），
+    // 若再叠加 advisorSession 在途计数会把同一分析计两次（预占的 TestRecord + 在途 session）。
+    // freeRetry 分支不写 TestRecord 是设计使然（重试免费、本来就不计次），不受影响。
+    const [count, lifetimeCount] = await Promise.all([
         withDbRetry(() =>
             prisma.testRecord.count({
                 where: { userId, testDate: { gte: today } }
             })
         ),
-        withDbRetry(() =>
-            prisma.advisorSession.count({
-                where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null }
-            })
-        ),
         withDbRetry(() => prisma.testRecord.count({ where: { userId } }))
     ]);
 
-    const usedToday = count + inProgressCount;
-    const usedTotal = lifetimeCount + inProgressCount;
+    const usedToday = count;
+    const usedTotal = lifetimeCount;
     const dailyRemaining = quota.dailyLimit == null ? Infinity : Math.max(0, quota.dailyLimit - usedToday);
     const totalRemaining = quota.lifetimeLimit == null ? Infinity : Math.max(0, quota.lifetimeLimit - usedTotal);
     const remaining = Math.min(dailyRemaining, totalRemaining);
@@ -238,9 +235,7 @@ export async function checkUsageLimit(request: NextRequest, _body?: Record<strin
  */
 export async function reserveUsage(
     request: NextRequest,
-    sessionId: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _body?: Record<string, unknown>
+    sessionId: string
 ): Promise<ReserveUsageResult> {
     // 本地开发环境不限制次数
     if (process.env.NODE_ENV !== "production") {
@@ -258,19 +253,18 @@ export async function reserveUsage(
         return await withDbRetry(async () => {
             return await prisma.$transaction(async (tx) => {
                 const today = startOfTodayShanghai();
-                const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
                 const userId = user.id;
 
                 // 从数据库读取最新额度与消费金额，避免 JWT 缓存滞后
-                const [dbUser, count, inProgressCount, lifetimeCount] = await Promise.all([
+                // 与 checkUsageLimit 同口径：仅按 TestRecord 计数（预占即落库），不叠加在途 session
+                const [dbUser, count, lifetimeCount] = await Promise.all([
                     tx.user.findUnique({ where: { id: userId }, select: { dailyTestLimit: true, membershipLevel: true, totalSpent: true } }),
                     tx.testRecord.count({ where: { userId, testDate: { gte: today } } }),
-                    tx.advisorSession.count({ where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null } }),
                     tx.testRecord.count({ where: { userId } })
                 ]);
                 const quota = getMemberQuota(dbUser);
-                const usedToday = count + inProgressCount;
-                const usedTotal = lifetimeCount + inProgressCount;
+                const usedToday = count;
+                const usedTotal = lifetimeCount;
                 if (quota.dailyLimit != null && usedToday >= quota.dailyLimit) {
                     return { success: false, error: DAILY_EXHAUSTED_MESSAGE, role: 'member' };
                 }
@@ -309,13 +303,11 @@ export async function reserveUsage(
  * 规则：
  * 1. 按 sessionId 精确冲销：仅当本 session 的 TestRecord 真实存在时才回滚
  * 2. 天然幂等：重复调用时删除 0 行，不会重复扣减
- * 3. 游客不再预占额度（需登录），无 GuestUsage 回滚分支；历史 GuestUsage 数据保留不写入
+ * 3. 游客不再预占额度（需登录），无 GuestUsage 回滚分支（该表已随游客测肤下线删除）
  */
 export async function rollbackUsage(
     request: NextRequest,
-    sessionId: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _body?: Record<string, unknown>
+    sessionId: string
 ): Promise<boolean> {
     try {
         await withDbRetry(async () => {
@@ -337,6 +329,7 @@ export async function rollbackUsage(
  * 用户测肤用量汇总（供内部接口 / 会员面板复用）
  *
  * 统计口径：仅 TestRecord 实际落库计数（终身 + 北京时间当日），不含在途分析。
+ * 与 checkUsageLimit().usage 口径一致（两者都只按 TestRecord 计），会员面板展示与预检结果不会互相打架。
  * 用户不存在（从未用过子站）时 level 返回 null，quota 按 REGULAR 档计算。
  */
 export interface SkinTestUsageSummary {
