@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 
 // --- Types ---
 
@@ -48,15 +48,22 @@ const UserContext = createContext<AuthContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    // 单飞：并发 loadUser（挂载 + 定时器 + visibilitychange）共享同一次请求，
+    // 避免 /api/auth/me 的 refresh_token 轮换被并发调用打爆
+    const inflightRef = useRef<Promise<void> | null>(null);
 
     const loadUser = useCallback(async () => {
+        if (inflightRef.current) return inflightRef.current;
+
+        inflightRef.current = (async () => {
         // 10s 超时兜底；超时不视为未登录，保留现有会话状态（避免弱网误踢）
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
         try {
             const res = await fetch("/api/auth/me", { cache: "no-store", signal: controller.signal });
             if (!res.ok) {
-                setUser(null);
+                // 429 限流 / 5xx 等临时故障不代表已登出，保留现有登录状态，
+                // 交给下一次定时续期或操作时再确认
                 return;
             }
             const data = (await res.json()) as { user: User | null };
@@ -66,15 +73,48 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 // 请求超时：保持现有登录状态不变
                 return;
             }
-            setUser(null);
+            // 网络异常（断网/DNS/主站不可达）同样保留现有状态，避免误踢
+            return;
         } finally {
             clearTimeout(timeoutId);
             setLoading(false);
+        }
+        })();
+
+        try {
+            await inflightRef.current;
+        } finally {
+            inflightRef.current = null;
         }
     }, []);
 
     useEffect(() => {
         loadUser();
+
+        // 定时续期：SSO access token 仅 15 分钟，期间若不触发 /api/auth/me
+        // 轮换，测肤等长流程中的 API 调用会被误判为未登录。
+        // 每 10 分钟（且在页面可见时）静默刷新一次，保持会话活跃。
+        const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+        const intervalId = setInterval(() => {
+            if (document.visibilityState === "visible") {
+                loadUser();
+            }
+        }, REFRESH_INTERVAL_MS);
+
+        // 从后台切回 / 网络恢复时立即刷新一次，第一时间修复过期会话
+        const handleVisible = () => {
+            if (document.visibilityState === "visible") {
+                loadUser();
+            }
+        };
+        document.addEventListener("visibilitychange", handleVisible);
+        window.addEventListener("online", handleVisible);
+
+        return () => {
+            clearInterval(intervalId);
+            document.removeEventListener("visibilitychange", handleVisible);
+            window.removeEventListener("online", handleVisible);
+        };
     }, [loadUser]);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

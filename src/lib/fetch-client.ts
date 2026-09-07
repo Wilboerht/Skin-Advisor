@@ -7,12 +7,13 @@
  *
  * SSO 迁移说明：
  * - SSO token 存于 httpOnly Cookie；access_token 过期由 /api/auth/me 用
- *   refresh_token 静默轮换（UserProvider 挂载及 refresh() 时触发）。
- * - 本封装不再调用 /api/auth/refresh；收到 401 时由业务层决定跳转登录或降级处理。
+ *   refresh_token 静默轮换（UserProvider 挂载、定时续期及 refresh() 时触发）。
+ * - 写操作收到 401（本地 JWT 1h 过期 / CSRF 校验失败）时，自动调
+ *   /api/auth/session-init?json=1 静默重建本地会话并重试一次；
+ *   session-init 内部会在 SSO access token 过期时用 refresh token 轮换。
  */
 
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf-client";
-import { AUTH_COOKIE_NAME } from "@/lib/auth-config";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const UPLOAD_TIMEOUT_MS = 60_000; // 上传大图片需要更长时间
@@ -29,21 +30,37 @@ export function getCsrfToken(): string | null {
 
 /**
  * 本地会话重建：本地 JWT 过期（1h）后 CSRF 校验会返回 401，
- * 此时若 SSO token 仍有效，请求 session-init 重新签发本地双 token。
- * 返回 true 表示重建成功（CSRF cookie 已重新下发）。
+ * 此时若 SSO 会话仍有效（必要时用 refresh token 轮换），session-init 会
+ * 重新签发本地双 token + CSRF cookie。
+ *
+ * 成功判定依赖 json=1 模式返回的 { ok: true }——本地 auth_token 是
+ * httpOnly Cookie，document.cookie 读不到，不能用它判断重建结果。
+ *
+ * 单飞：并发 401 的多个写请求共享同一次重建，避免重复打 session-init
+ * 触发其 10 次/分钟/IP 限流，也避免并发签发导致 CSRF cookie 互相覆盖。
  */
-async function rebuildLocalSession(): Promise<boolean> {
-    if (typeof window === "undefined") return false;
-    try {
-        await fetch(
-            `/api/auth/session-init?return_to=${encodeURIComponent(window.location.pathname)}`,
-            { redirect: "manual" }
-        );
-        // 重建成功的标志：本地 JWT cookie 被重新签发
-        return getCookie(AUTH_COOKIE_NAME) !== null;
-    } catch {
-        return false;
-    }
+let rebuildInflight: Promise<boolean> | null = null;
+
+function rebuildLocalSession(): Promise<boolean> {
+    if (typeof window === "undefined") return Promise.resolve(false);
+    if (rebuildInflight) return rebuildInflight;
+
+    rebuildInflight = (async () => {
+        try {
+            const res = await fetch(
+                `/api/auth/session-init?json=1&return_to=${encodeURIComponent(window.location.pathname)}`,
+                { redirect: "manual" }
+            );
+            if (!res.ok) return false;
+            const data = (await res.json()) as { ok?: boolean };
+            return data?.ok === true;
+        } catch {
+            return false;
+        } finally {
+            rebuildInflight = null;
+        }
+    })();
+    return rebuildInflight;
 }
 
 export async function fetchWithCsrf(

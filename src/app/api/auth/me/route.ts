@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ssoVerifier, getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, normalizeSsoAvatarUrl, upsertLocalUser, SSO_BASE_URL, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokens } from "@/lib/sso-auth";
+import { ssoVerifier, getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, normalizeSsoAvatarUrl, upsertLocalUser, SSO_BASE_URL, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokensSingleFlight } from "@/lib/sso-auth";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import prisma from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-response";
@@ -21,12 +21,13 @@ export async function GET(req: NextRequest) {
     let payload = token ? await ssoVerifier.verify(token) : null;
 
     // access_token（15 分钟）过期后，用 refresh_token 静默轮换，避免页面停留期间掉登录态
-    let refreshed: Awaited<ReturnType<typeof refreshSsoTokens>> = null;
+    // 单飞：并发 /api/auth/me 共享同一次轮换，避免一次性 refresh_token 互相踩踏
+    let refreshed: Awaited<ReturnType<typeof refreshSsoTokensSingleFlight>> = null;
     if (!payload?.sub) {
         const cookieStore = await cookies();
         const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
         if (refreshToken) {
-            refreshed = await refreshSsoTokens(refreshToken);
+            refreshed = await refreshSsoTokensSingleFlight(refreshToken);
             if (refreshed) {
                 payload = await ssoVerifier.verify(refreshed.access_token);
             }

@@ -122,6 +122,65 @@ export interface RefreshedTokens {
 }
 
 /**
+ * 单飞缓存：同一 refresh token 的并发轮换共享同一个 Promise。
+ * 主站 refresh_token 是一次性原子轮换——并发请求各自独立轮换会互相踩踏
+ * （只有一个能成功，其余拿到 user:null 被误判为"未登录"）。
+ * 轮换完成后结果保留 30 秒：紧随其后的请求仍带着旧 Cookie 到达时，
+ * 直接复用已轮换的新 token，而不是拿已作废的旧 refresh token 再换一次。
+ */
+const inflightRefresh = new Map<string, Promise<RefreshedTokens | null>>();
+const REFRESH_RESULT_TTL_MS = 30 * 1000;
+
+export function refreshSsoTokensSingleFlight(refreshToken: string): Promise<RefreshedTokens | null> {
+    const existing = inflightRefresh.get(refreshToken);
+    if (existing) return existing;
+
+    const promise = refreshSsoTokens(refreshToken);
+    inflightRefresh.set(refreshToken, promise);
+    promise.finally(() => {
+        setTimeout(() => {
+            if (inflightRefresh.get(refreshToken) === promise) {
+                inflightRefresh.delete(refreshToken);
+            }
+        }, REFRESH_RESULT_TTL_MS);
+    });
+    return promise;
+}
+
+/**
+ * access_token 过期/失效时的自愈：读 refresh_token Cookie 轮换新 token，
+ * 并尽力把新 token 种回 httpOnly Cookie（Route Handler 可写；
+ * Server Component 上下文 Cookie 只读，静默跳过，由下一次可写请求持久化）。
+ */
+export async function refreshSessionFromCookie(): Promise<VerifiedTokenPayload | null> {
+    try {
+        const cookieStore = await cookies();
+        const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
+        if (!refreshToken) return null;
+
+        const rotated = await refreshSsoTokensSingleFlight(refreshToken);
+        if (!rotated) return null;
+
+        const payload = await ssoVerifier.verify(rotated.access_token);
+        if (!payload?.sub) return null;
+
+        try {
+            const cookieOpts = { httpOnly: true, secure: !SSO_INSECURE_LOCAL_DEV, sameSite: "lax" as const, path: "/" };
+            cookieStore.set(ACCESS_TOKEN_COOKIE, rotated.access_token, { ...cookieOpts, maxAge: rotated.expires_in });
+            cookieStore.set(REFRESH_TOKEN_COOKIE, rotated.refresh_token, { ...cookieOpts, maxAge: rotated.refresh_expires_in ?? 30 * 24 * 3600 });
+            if (rotated.id_token) {
+                cookieStore.set(ID_TOKEN_COOKIE, rotated.id_token, { ...cookieOpts, maxAge: rotated.expires_in });
+            }
+        } catch {
+            // Server Component 等只读上下文：本轮验证已通过，Cookie 持久化留给后续可写请求
+        }
+        return payload;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * 用 refresh_token 向主站换取新 token（原子轮换）。
  * 仅服务端调用；Confidential Client 必须携带 client_secret。
  * 失败（refresh_token 过期/被撤销/网络异常）返回 null，调用方按未登录处理。
@@ -246,7 +305,12 @@ export async function upsertLocalUser(
  * 若本地不存在该用户则自动创建（保留肤质测试等业务关联）。
  */
 export async function getSessionUser(req?: NextRequest): Promise<SessionUser | null> {
-    const payload = await verifySsoToken(req);
+    let payload = await verifySsoToken(req);
+    // access_token（15 分钟）过期后用 refresh_token 静默轮换，
+    // 避免用户在测肤等长流程中被误判为未登录（401 requireLogin）
+    if (!payload?.sub) {
+        payload = await refreshSessionFromCookie();
+    }
     if (!payload?.sub) return null;
 
     const dbUser = await upsertLocalUser(payload);
