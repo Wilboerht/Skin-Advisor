@@ -94,5 +94,19 @@ try {
   console.log('⚠️  uploads 符号链接创建失败（不影响构建）：', err.message);
 }
 
+// 4. 同步 .env.production → .next/standalone/.env.production
+// 原因：standalone server.js 启动时 process.chdir 到 .next/standalone，
+// Next 运行时会从该目录加载 .env.production；ecosystem 的 env_file 不可靠（PM2 restart 不重读）。
+// 不复制的话，根目录改了环境变量后 standalone 仍读旧副本（曾导致新变量“不生效”）。
+// 注意：.next/ 已在 .gitignore 中，副本不会入库。
+const envSrc = path.join(ROOT, '.env.production');
+const envDest = path.join(STANDALONE, '.env.production');
+if (fs.existsSync(envSrc)) {
+  fs.copyFileSync(envSrc, envDest);
+  console.log('🔐 .env.production 已同步到 standalone（不会入库）');
+} else {
+  console.log('⚠️  根目录无 .env.production，跳过（本地开发可忽略）');
+}
+
 console.log('\n✅ standalone 静态文件准备完成！');
 console.log('   部署时只需上传 .next/standalone/ 目录 + .env.production');
