@@ -47,18 +47,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: calc(1.75rem + env(safe-area-inset-top, 0px)) 16px 28px;
+    padding: calc(1.75rem + env(safe-area-inset-top, 0px)) 0 28px;
     background: rgba(232, 226, 217, 0.88);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 }
 
-/* 顶部栏内层：与 questions 页内容同宽（max-w-5xl=1024 + 同边距）。
-   三段式网格布局保证 logo 真居中：左=回首页，中=logo，右=用户身份区 */
+/* 顶部栏内层：与 questions 页顶部栏一致——全宽（无 max-width），水平边距 16/48/80px。
+   三段式网格布局保证 logo 相对视口真居中：左=回首页，中=logo，右=用户身份区 */
 .topBarInner {
     position: relative;
     width: 100%;
-    max-width: 1024px;
     padding: 0 16px;
     display: grid;
     grid-template-columns: 1fr auto 1fr;
