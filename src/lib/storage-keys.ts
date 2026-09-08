@@ -13,6 +13,13 @@ export const STORAGE_KEYS = {
     ADVISOR_GENDER: 'advisor_gender',
     ADVISOR_STEP: 'advisor_step',
     ADVISOR_GENDER_MISMATCH_ACK: 'advisor_gender_mismatch_ack',
+    // 两页版式（证书封面 + 报告正文）：
+    // 游客记录"上一次测肤派系"，跨会话对比判定派系是否变化（旧版纯派系键，读取兼容保留）
+    ADVISOR_LAST_PERSONA: 'advisor_last_persona',
+    // 游客"上一次测肤摘要"结构化快照（{persona, score, skinAge, at}），趋势对比板块数据源
+    ADVISOR_LAST_SUMMARY: 'advisor_last_summary',
+    // 已展示过封面页的 sessionId（同一报告不再重复展示封面；免费重试时需清除）
+    ADVISOR_COVER_ACK: 'advisor_cover_ack',
     // 测肤拍摄时肌肤状态（纯素颜/带妆等，扫脸引导弹窗选择）
     ADVISOR_SKIN_STATE: 'advisor_skin_state',
 

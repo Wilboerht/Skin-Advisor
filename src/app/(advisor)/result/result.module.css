@@ -12,12 +12,22 @@
     --result-border: #3d2f25;
 
     width: 100%;
-    min-height: 100vh;
+    /* 两页版式：容器作为滚动容器，页面间吸附（proximity 避免超长页被卡死） */
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
     overflow-x: hidden;
+    scroll-snap-type: y proximity;
     background-color: var(--result-bg);
     color: var(--result-text-primary);
     font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
     line-height: 1.5;
+}
+
+/* 翻页吸附点：封页面（第一面）与报告页（第二面）起始对齐 */
+.coverPage,
+.reportPage {
+    scroll-snap-align: start;
 }
 
 .main {

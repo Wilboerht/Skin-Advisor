@@ -14,6 +14,20 @@ function addCJKSpace(text: string): string {
     .replace(/([a-zA-Z0-9])([\u4e00-\u9fff\u3400-\u4dbf])/g, "$1 $2");
 }
 
+function formatCertDate(iso?: string): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+}
+
+function formatCertId(sessionId?: string): string | null {
+  if (!sessionId) return null;
+  const last6 = sessionId.replace(/[^a-zA-Z0-9]/g, "").slice(-6);
+  return last6.length >= 4 ? last6.toUpperCase() : null;
+}
+
 interface SharePosterProps {
   nickname: string;
   score?: number;
@@ -27,11 +41,15 @@ interface SharePosterProps {
   posterTemplate?: string;
   posterOverlay?: string;
   qrDataUrl?: string | null;
+  /** 测肤日期（ISO），显示为 YYYY.MM.DD */
+  certDate?: string;
+  /** 报告会话 ID，截取后 6 位作为证书编号 */
+  certId?: string;
 }
 
 export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   function SharePoster(
-    { nickname, score, percentile, skinTypeName, skinAge, waterOil, persona, summary, avatar, posterTemplate, posterOverlay, qrDataUrl },
+    { nickname, score, percentile, skinTypeName, skinAge, waterOil, persona, summary, avatar, posterTemplate, posterOverlay, qrDataUrl, certDate, certId },
     ref
   ) {
     const [templateFailed, setTemplateFailed] = useState(false);
@@ -145,6 +163,16 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           {qrDataUrl && (
             <div className="absolute top-[71.9%] left-[72.7%] -translate-x-1/2">
               <img src={qrDataUrl} alt="二维码" loading="eager" decoding="sync" className="w-20 h-20 rounded-lg" />
+            </div>
+          )}
+
+          {(certDate || certId) && (
+            <div className="absolute bottom-[4.5%] right-[5%] text-right">
+              <p className="text-[9px] font-light text-[#00263E]/70 whitespace-nowrap tracking-wide">
+                {certDate ? formatCertDate(certDate) : ""}
+                {certDate && certId ? " · " : ""}
+                {certId ? `No.${formatCertId(certId)}` : ""}
+              </p>
             </div>
           )}
         </div>

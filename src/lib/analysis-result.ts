@@ -5,6 +5,22 @@
 
 import type { ConsultantReport } from "@/lib/advisor-utils";
 
+/**
+ * 上一次测肤摘要（趋势对比板块数据源）。
+ * 登录用户由 /reports/:id 服务端从最近一次已完成会话解析（热层/归档冷层字段兼容）；
+ * 游客由前端 localStorage 快照提供。
+ */
+export interface PreviousTestSummary {
+    /** 上一次测肤的派系 key（8 派 IP），无则 null */
+    persona?: string | null;
+    /** 上一次综合评分（面部影像） */
+    score?: number | null;
+    /** 上一次肌肤年龄 */
+    skinAge?: number | null;
+    /** 上一次完成时间（ISO） */
+    at?: string | null;
+}
+
 export interface ComprehensiveResult {
     skinProfile: {
         type: string;
@@ -35,8 +51,12 @@ export interface ComprehensiveResult {
     dataSource: "comprehensive" | "questionnaire" | "hybrid";
     persona?: string;
     expiresAt?: string;
+    /** 分析完成时间（ISO），证书/报告展示用；缺省时前端不展示日期（避免把"查看时间"伪造成"测肤时间"） */
+    analyzedAt?: string;
     /** 拍摄时肌肤状态（bare/sunscreen/washed/light_makeup/heavy_makeup），结果页提示用 */
     skinState?: string;
+    /** 测肤时使用的昵称（analyze 落库；结果页/海报展示用） */
+    nickname?: string;
     /** 报告版本：2 = 顾问叙事报告（consultantReport 存在），缺省/v1 = 旧板块渲染 */
     reportVersion?: number;
     /** 顾问叙事报告数据（v2 专属；历史报告无此字段，走旧渲染） */
@@ -90,7 +110,9 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
         products: (record.products as ComprehensiveResult["products"]) || [],
         persona: record.persona as string | undefined,
         expiresAt: record.expiresAt as string | undefined,
+        analyzedAt: record.analyzedAt as string | undefined,
         skinState: typeof record.skinState === "string" ? record.skinState : undefined,
+        nickname: typeof record.nickname === "string" ? record.nickname : undefined,
         reportVersion: typeof record.reportVersion === "number" ? record.reportVersion : undefined,
         consultantReport: (record.consultantReport as ConsultantReport | undefined) || undefined,
     };

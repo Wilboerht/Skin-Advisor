@@ -834,7 +834,10 @@ export async function POST(request: NextRequest) {
             dataSource: "hybrid",
             persona: personaKey,          // IP 形象 key (8-pie)
             userLocation: geoLocation,
-            nickname: nickname || "护肤达人", // Include user nickname for sharing
+            // 昵称优先用客户端填写值；未填时回退到服务端会话里的用户昵称（主站资料），
+            // 避免客户端 localStorage 为空时报告昵称退化为"您"
+            nickname: nickname || user?.name || "护肤达人", // Include user nickname for sharing
+            analyzedAt: new Date().toISOString(), // 证书/报告展示用（随结果持久化，游客流程也可用）
             skinState: finalFaceAnalysis && typeof skinState === "string" ? skinState : undefined, // 拍摄时肌肤状态（仅面部扫描流程有意义）
             // 顾问叙事报告标记与数据（v2）；fallback 路径不携带，前端走旧渲染
             ...(consultantReport ? { reportVersion: 2, consultantReport } : {}),

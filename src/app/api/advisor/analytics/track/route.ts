@@ -27,6 +27,7 @@ const EventSchema = z.object({
         "analysis_complete",       // 分析完成
         "result_view",             // 查看结果
         "result_share",            // 分享结果
+        "result_flip",             // 两页版式：封面/报告页切换（含首测 cohort 标记）
         "product_click",           // 点击产品
     ]),
     data: z.record(z.string(), z.unknown()).optional(), // 附加数据
@@ -314,6 +315,34 @@ export async function POST(request: NextRequest) {
                         resultShared: true,
                         shareMethod: (data?.method as string) || null,
                     },
+                });
+                break;
+            }
+
+            case "result_flip": {
+                // 两页版式封面/报告页切换：追加到 interactions（与 face_scan_step 同源，
+                // 供"封面→报告转化率 + 首测/派系变化 cohort"统计）
+                const page = typeof data?.page === "string" ? data.page : null;
+                if (!page) break;
+                const existing = await prisma.advisorSession.findUnique({
+                    where: { sessionId },
+                    select: { interactions: true },
+                });
+                const history = Array.isArray(existing?.interactions) ? existing.interactions : [];
+                const next = [
+                    ...history,
+                    {
+                        type: "result_flip",
+                        page,
+                        firstTest: data?.firstTest === true,
+                        personaChanged: data?.personaChanged === true,
+                        at: now.toISOString(),
+                    },
+                ];
+                await prisma.advisorSession.upsert({
+                    where: { sessionId },
+                    create: { sessionId, interactions: next },
+                    update: { interactions: next },
                 });
                 break;
             }

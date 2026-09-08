@@ -20,6 +20,7 @@ type AnalyticsEvent =
   | "analysis_complete"
   | "result_view"
   | "result_share"
+  | "result_flip"
   | "product_click";
 
 // 会话ID存储键
@@ -183,15 +184,26 @@ export function useAdvisorAnalytics() {
     sendTrackEvent("analysis_complete", { source });
   }, []);
 
-  // 追踪结果查看
-  const trackResultView = useCallback(() => {
-    sendTrackEvent("result_view");
-  }, []);
+  // 追踪结果查看；meta 用于 cohort 分析（是否首测/派系变化）
+  const trackResultView = useCallback(
+    (meta?: { firstTest?: boolean; personaChanged?: boolean }) => {
+      sendTrackEvent("result_view", meta && Object.keys(meta).length ? meta : undefined);
+    },
+    []
+  );
 
   // 追踪结果分享
   const trackResultShare = useCallback((method: "image" | "link" | "weibo" | "native" | "wechat" | "xiaohongshu" | "douyin") => {
     sendTrackEvent("result_share", { method });
   }, []);
+
+  // 追踪封面/报告页切换（两页版式：封面→报告的转化与首测 cohort 验证）
+  const trackResultFlip = useCallback(
+    (page: "cover" | "report", meta?: { firstTest?: boolean; personaChanged?: boolean }) => {
+      sendTrackEvent("result_flip", { page, ...(meta || {}) });
+    },
+    []
+  );
 
   // 获取当前会话ID
   const getSessionId = useCallback(() => {
@@ -214,6 +226,7 @@ export function useAdvisorAnalytics() {
     trackAnalysisComplete,
     trackResultView,
     trackResultShare,
+    trackResultFlip,
     trackProductClick,
     getSessionId,
   };
