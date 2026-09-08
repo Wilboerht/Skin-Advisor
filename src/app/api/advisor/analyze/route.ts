@@ -5,7 +5,7 @@ import { ErrorCode } from "@/lib/error-codes";
 import { generateText, fallbackAnalysis, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
-import { parseConsultantReport, type ConsultantReport } from "@/lib/advisor-utils";
+import { parseConsultantReport, sanitizeConsultantReport, type ConsultantReport } from "@/lib/advisor-utils";
 import { buildConsultantPrompt, CONSULTANT_SYSTEM_PROMPT, type PersonaRoutineContext } from "@/config/ai-prompts";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -645,7 +645,7 @@ export async function POST(request: NextRequest) {
 
             const resultText = await generateText(systemPrompt, userPrompt, provider as AIProvider, abortController.signal, user?.id, effectiveSessionId);
             rawAiOutput = resultText;
-            consultantReport = parseConsultantReport(resultText);
+            consultantReport = sanitizeConsultantReport(parseConsultantReport(resultText));
             resultJson = consultantReport as unknown as Record<string, unknown>;
         } catch (e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));

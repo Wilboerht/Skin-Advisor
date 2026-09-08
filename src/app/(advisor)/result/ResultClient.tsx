@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { House, Gift, ArrowRight, AlertCircle, Sparkles, Info, X, ScanFace, FileText } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion as m } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavPush } from "@/hooks/use-nav-push";
@@ -73,6 +73,42 @@ async function waitForImages(container: HTMLElement): Promise<void> {
                 img.onerror = () => reject(new Error("海报图片加载未成功"));
             });
         })
+    );
+}
+
+// 两页版式共享页头：logo + 归属标题 + 拍摄时肌肤状态徽章
+function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStateValue?: string | null }) {
+    const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
+    return (
+        <div className="w-full flex flex-col items-center pt-12">
+            <Image
+                src="/NIHPLOD-logo.svg"
+                alt="NIHPLOD"
+                width={120}
+                height={30}
+                className="h-8 sm:h-10 w-auto object-contain"
+                priority
+            />
+            <p className="mt-6 mb-5 lg:mt-8 lg:mb-8 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
+                {nickname} 的专属肌智派在线测肤报告
+            </p>
+
+            {/* 拍摄时肌肤状态徽章：带妆/洗后/防晒等影响分析口径，向用户明示 */}
+            {skinStateLabel && (
+                <div className="flex flex-col items-center gap-1 -mt-2 mb-5 lg:-mt-4 lg:mb-7">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/15 bg-white/60 px-3 py-1 text-[11px] text-brand-charcoal/60 font-light tracking-[0.05em]">
+                        <Info className="w-3 h-3 text-brand-charcoal/40" strokeWidth={1.5} />
+                        本次测肤状态：{skinStateLabel}
+                    </span>
+                    {isMakeupState(skinStateValue) && (
+                        <p className="text-[11px] text-brand-charcoal/40 font-light tracking-[0.04em]">
+                            带妆拍摄，色斑、泛红与肤色相关结果仅供参考
+                        </p>
+                    )}
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -327,29 +363,23 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         };
     }, [prevSum, result?.persona]);
 
-    // 手动开关（报告页"我的证书"入口打开封面）；null = 用户未手动操作
-    const [coverOpen, setCoverOpen] = useState<boolean | null>(null);
     // 已展示过封面的 sessionId：同一报告不再重复展示（挂载时读取一次；翻页时仅写存储不更新本 state，
-    // 避免当前滚到报告时封面被中途卸载引发布局跳变）
+    // 避免当前在报告页时状态驱动重渲染）
     const [coverAckedSessionId, setCoverAckedSessionId] = useState<string | null>(null);
     useEffect(() => {
         try { setCoverAckedSessionId(localStorage.getItem(STORAGE_KEYS.ADVISOR_COVER_ACK)); } catch { /* ignore */ }
     }, []);
-    const isCoverOpen = coverOpen !== null ? coverOpen : (shouldShowCover && coverAckedSessionId !== sessionId);
+    const coverEligible = shouldShowCover && coverAckedSessionId !== sessionId;
 
-    const containerRef = useRef<HTMLDivElement>(null);
-    const coverRef = useRef<HTMLElement>(null);
-    const reportRef = useRef<HTMLElement>(null);
-    const [coverInView, setCoverInView] = useState(true);
+    // 页面切换：0 = 封面，1 = 报告。
+    // 初始一律 0（封面），mount 后按决策修正：非首测/非派系变化/已确认过封面的用户直接落到报告页
+    // （覆盖修正时以交叉淡入淡出接管，视觉上无缝；游客 SSR 本就渲染授权页，由客户端接管后重算）
+    const [pageIndex, setPageIndex] = useState<0 | 1>(0);
+    useEffect(() => {
+        if (prevSum === undefined) return; // 游客判定未就绪
+        if (!coverEligible) setPageIndex(1);
+    }, [prevSum, coverEligible]);
     const flippedToReportRef = useRef(false);
-    const pendingCoverScrollRef = useRef(false);
-
-    const scrollToEl = useCallback((el: HTMLElement | null) => {
-        if (!el) return;
-        const prefersReducedMotion =
-            typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        el.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
-    }, []);
 
     // 封面 → 报告（翻页）：只记一次；ack 仅写存储，供下次打开同一报告时抑制封面
     const handleFlipToReport = useCallback(() => {
@@ -358,42 +388,26 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         if (sessionId) {
             try { localStorage.setItem(STORAGE_KEYS.ADVISOR_COVER_ACK, sessionId); } catch { /* ignore */ }
         }
+        setPageIndex(1);
         trackResultFlip("report", coverMeta);
     }, [sessionId, coverMeta, trackResultFlip]);
 
-    // 报告 → 封面（手动打开证书入口）
+    // 报告 → 封面（手动打开证书入口；封面即便初未展示也允许回看）
     const handleOpenCover = useCallback(() => {
-        pendingCoverScrollRef.current = true;
         flippedToReportRef.current = false;
-        setCoverOpen(true);
+        setPageIndex(0);
         trackResultFlip("cover", coverMeta);
     }, [coverMeta, trackResultFlip]);
 
-    // 封面离开视口（滑到报告）即视为翻页完成，自动记录一次
-    useEffect(() => {
-        if (!isCoverOpen || !coverRef.current || !containerRef.current) return;
-        const root = containerRef.current;
-        const io = new IntersectionObserver(
-            (entries) => {
-                const entry = entries[0];
-                if (!entry) return;
-                setCoverInView(entry.isIntersecting);
-                if (!entry.isIntersecting) handleFlipToReport();
-            },
-            { root, threshold: 0.25 }
-        );
-        io.observe(coverRef.current);
-        return () => io.disconnect();
-    }, [isCoverOpen, handleFlipToReport]);
-
-    // 手动打开封面后等待渲染完成再滚动到位
-    useEffect(() => {
-        if (isCoverOpen && pendingCoverScrollRef.current) {
-            pendingCoverScrollRef.current = false;
-            const raf = requestAnimationFrame(() => scrollToEl(coverRef.current));
-            return () => cancelAnimationFrame(raf);
-        }
-    }, [isCoverOpen, scrollToEl]);
+    // 封面页手势：触摸上滑 或 桌面滚轮向上滚动 → 翻到报告
+    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const handleCoverMove = useCallback(
+        (deltaY: number, deltaX: number) => {
+            if (pageIndex !== 0) return;
+            if (deltaY < -60 && Math.abs(deltaY) > Math.abs(deltaX)) handleFlipToReport();
+        },
+        [pageIndex, handleFlipToReport]
+    );
 
     // result_view 埋点附带 cohort 标记（判定未就绪时仅上报 base 事件）
     const trackView = useCallback(() => {
@@ -1211,84 +1225,223 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
 
             {result && (
-                <div ref={containerRef} className={styles.container}>
-                    {/* Save Report Banner for unauthenticated users */}
-                    <SaveReportBanner className="hidden md:block" />
-
-                    {/* Logo */}
-                    <div className="w-full flex flex-col items-center pt-12">
-                        <Image
-                            src="/NIHPLOD-logo.svg"
-                            alt="NIHPLOD"
-                            width={120}
-                            height={30}
-                            className="h-8 sm:h-10 w-auto object-contain"
-                            priority
-                        />
-                        <p className="mt-6 mb-5 lg:mt-8 lg:mb-8 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center gap-2">
-                            <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
-                            {userNickname} 的专属肌智派在线测肤报告
-                        </p>
-
-                        {/* 拍摄时肌肤状态徽章：带妆/洗后/防晒等影响分析口径，向用户明示 */}
-                        {skinStateValue && SKIN_STATE_LABELS[skinStateValue] && (
-                            <div className="flex flex-col items-center gap-1 -mt-2 mb-5 lg:-mt-4 lg:mb-7">
-                                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/15 bg-white/60 px-3 py-1 text-[11px] text-brand-charcoal/60 font-light tracking-[0.05em]">
-                                    <Info className="w-3 h-3 text-brand-charcoal/40" strokeWidth={1.5} />
-                                    本次测肤状态：{SKIN_STATE_LABELS[skinStateValue]}
-                                </span>
-                                {isMakeupState(skinStateValue) && (
-                                    <p className="text-[11px] text-brand-charcoal/40 font-light tracking-[0.04em]">
-                                        带妆拍摄，色斑、泛红与肤色相关结果仅供参考
-                                    </p>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Validation Warning Banner */}
-                    {faceAnalysis?.validation && !faceAnalysis.validation.isValid && !dismissValidationWarning && (
-                        <div className="w-full bg-red-50 border-b border-red-100 relative z-[90]">
-                            <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
-                                <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <h4 className="text-sm font-semibold text-red-900 mb-0.5">照片质量提示</h4>
-                                    <p className="text-sm text-red-700 leading-relaxed">
-                                        {faceAnalysis.validation.message}
-                                    </p>
+                <div className={styles.container}>
+                    {/* ===== 两页切换：封面（第一面）/ 报告（第二面），交叉淡入淡出 ===== */}
+                    <AnimatePresence initial={false}>
+                        {pageIndex === 0 && (
+                            <m.div
+                                key="cover-layer"
+                                className={styles.pageLayer}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.25, ease: "easeInOut" }}
+                                onTouchStart={(e) => {
+                                    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                                }}
+                                onTouchEnd={(e) => {
+                                    const st = touchStartRef.current;
+                                    touchStartRef.current = null;
+                                    if (!st) return;
+                                    const dx = e.changedTouches[0].clientX - st.x;
+                                    const dy = e.changedTouches[0].clientY - st.y;
+                                    handleCoverMove(dy, dx);
+                                }}
+                                onWheel={(e) => {
+                                    // 桌面滚轮向下翻页：仅在封面层滚动到顶部且继续下滚时触发（不抢占内部滚动）
+                                    const atTop = e.currentTarget.scrollTop <= 0;
+                                    if (pageIndex === 0 && atTop && e.deltaY > 30) handleFlipToReport();
+                                }}
+                            >
+                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
+                                <div className={`${styles.main} lg:gap-8`}>
+                                    <section aria-label="肌智派证书（第一面）">
+                                        <ShareCardPage
+                                            nickname={userNickname}
+                                            score={faceAnalysis?.overallScore ?? undefined}
+                                            skinType={result?.skinProfile?.type || 'combination'}
+                                            budget={ipBudget}
+                                            skincareFrequency={ipSkincareFrequency}
+                                            gender={socialGender}
+                                            summary={result?.analysis?.summary}
+                                            rankPercentile={rankPercentile}
+                                            onDownloadPoster={handleSavePoster}
+                                            isPosterLoading={isGeneratingPoster}
+                                            certDate={certDate}
+                                            certId={sessionId}
+                                            onOpenReport={handleFlipToReport}
+                                            onReTest={handleReTest}
+                                        />
+                                    </section>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        setDismissValidationWarning(true);
-                                        try { sessionStorage.setItem('advisor_dismiss_validation', 'true'); } catch { /* ignore */ }
-                                    }}
-                                    className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
-                                    aria-label="关闭提示"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                            </m.div>
+                        )}
 
-                    {/* 翻页指示器（封面/报告两面），仅封面页展示时可用 */}
-                    {isCoverOpen && (
-                        <nav aria-label="报告翻页" className="fixed right-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2">
-                            <button
-                                aria-label="第一面：肌智派证书"
-                                onClick={() => { handleOpenCover(); scrollToEl(coverRef.current); }}
-                                className={`w-2 h-2 rounded-full border border-brand-charcoal/25 transition-colors ${coverInView ? "bg-[var(--color-brand-cocoa)] border-transparent" : "bg-white/40"}`}
-                            />
-                            <button
-                                aria-label="第二面：测肤报告"
-                                onClick={() => { handleFlipToReport(); scrollToEl(reportRef.current); }}
-                                className={`w-2 h-2 rounded-full border border-brand-charcoal/25 transition-colors ${!coverInView ? "bg-[var(--color-brand-cocoa)] border-transparent" : "bg-white/40"}`}
-                            />
-                        </nav>
-                    )}
+                        {pageIndex === 1 && (
+                            <m.div
+                                key="report-layer"
+                                className={styles.pageLayer}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                            >
+                                {/* Save Report Banner for unauthenticated users */}
+                                <SaveReportBanner className="hidden md:block" />
 
-                    {/* 报告页轻量证书入口：已翻过/未展示封面时仍可回看证书（分享裂变兜底） */}
-                    {!isCoverOpen && (
+                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
+
+                                {/* Validation Warning Banner */}
+                                {faceAnalysis?.validation && !faceAnalysis.validation.isValid && !dismissValidationWarning && (
+                                    <div className="w-full bg-red-50 border-b border-red-100 relative z-[90]">
+                                        <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
+                                            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                                            <div className="flex-1">
+                                                <h4 className="text-sm font-semibold text-red-900 mb-0.5">照片质量提示</h4>
+                                                <p className="text-sm text-red-700 leading-relaxed">
+                                                    {faceAnalysis.validation.message}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    setDismissValidationWarning(true);
+                                                    try { sessionStorage.setItem('advisor_dismiss_validation', 'true'); } catch { /* ignore */ }
+                                                }}
+                                                className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
+                                                aria-label="关闭提示"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Main Content（layout 已提供唯一 <main> 地标，这里用 div 避免嵌套） */}
+                                <div className={`${styles.main} lg:gap-8`}>
+                                    <section aria-label="测肤报告（第二面）">
+                                        <ReportPage
+                                            result={result}
+                                            faceAnalysis={faceAnalysis}
+                                            nickname={userNickname}
+                                            previousSummary={prevSum || null}
+                                            authInitialized={authInitialized}
+                                            isLoggedIn={!!user}
+                                            focusProblems={focusProblems}
+                                            onOpenLab={() => setShowLabData(true)}
+                                            onUnlock={() => openAuthModal("login")}
+                                        />
+                                    </section>
+                                </div>
+
+                                {/* 产品推荐 - 与专业版报告卡片（含边距）宽度对齐 */}
+                                <div className="w-full max-w-[900px] mx-auto px-6 lg:px-10">
+                                    <ProductRecommendationSection
+                                        products={(result.products || []).map(p => ({
+                                            id: p.id,
+                                            name: p.name,
+                                            category: p.category,
+                                            image: p.image,
+                                            images: p.images || null,
+                                            price: p.price ?? '',
+                                            reason: p.reason,
+                                            description: p.description || null,
+                                            keyIngredients: p.keyIngredients || [],
+                                            benefits: p.benefits || [],
+                                            affiliateLinks: p.affiliateLinks || null,
+                                            howToUse: p.howToUse || null,
+                                            source: p.source,
+                                        } satisfies ProductCardData))}
+                                        isLoading={loading}
+                                        faceAnalysis={faceAnalysis}
+                                        personaLabel={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
+                                        onProductClick={(productId) => {
+                                            const product = result.products?.find(p => p.id === productId);
+                                            if (product) {
+                                                trackProductClick(productId, product.name);
+                                            }
+                                        }}
+                                        centered
+                                    />
+                                </div>
+
+                                {/* Global Footer */}
+                                <footer className="w-full bg-transparent mt-0 pb-12">
+                                    <div className="max-w-[900px] mx-auto px-6 lg:px-10">
+                                        {/* Secondary actions */}
+                                        <div className="flex flex-col items-center justify-center gap-2.5 mt-10 mb-10">
+                                            <div className="flex flex-row flex-wrap justify-center gap-3">
+                                                <button
+                                                    onClick={() => navPush('/')}
+                                                    disabled={isNavigating}
+                                                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] sm:text-[13px] tracking-[0.1em] text-[var(--color-brand-cocoa)]/70 font-medium hover:text-[var(--color-brand-cocoa)] transition-colors"
+                                                >
+                                                    <House className="w-3.5 h-3.5" />
+                                                    回到首页
+                                                </button>
+                                                <button
+                                                    onClick={() => navPush('/?gift=1')}
+                                                    disabled={isNavigating}
+                                                    className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[var(--color-brand-cocoa)] hover:border-[var(--color-brand-cocoa)]/40 hover:bg-[var(--color-brand-cocoa)]/5 transition-all duration-300"
+                                                >
+                                                    <Gift className="w-4 h-4" />
+                                                    肌智派送好礼 · 参与抽奖
+                                                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Minimal Footer Text — 与首页 Footer 对齐 */}
+                                        <div className="text-center flex flex-col items-center gap-3">
+                                            <p className="text-[11px] font-light tracking-[0.15em] text-brand-charcoal/48" suppressHydrationWarning>
+                                                © {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+                                            </p>
+
+                                            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
+                                                <a
+                                                    href="https://beian.miit.gov.cn/"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="transition-colors hover:text-brand-charcoal/70"
+                                                >
+                                                    沪ICP备2026014764号-1
+                                                </a>
+                                                <span aria-hidden="true" className="hidden sm:inline">|</span>
+                                                <a
+                                                    href="http://www.beian.gov.cn/portal/registerSystemInfo"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-1 transition-colors hover:text-brand-charcoal/70"
+                                                >
+                                                    <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
+                                                    <span>沪公网安备31010702010178号</span>
+                                                </a>
+                                            </div>
+                                            <p className="text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
+                                                *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
+                                            </p>
+                                        </div>
+                                    </div>
+                                </footer>
+                            </m.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* 翻页指示器（封面/报告双面常显，可点切换；封面临时不可用时仍可回看证书） */}
+                    <nav aria-label="报告翻页" className="fixed right-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2">
+                        <button
+                            aria-label="第一面：肌智派证书"
+                            onClick={() => { if (pageIndex !== 0) handleOpenCover(); }}
+                            className={`w-2 h-2 rounded-full border border-brand-charcoal/25 transition-colors ${pageIndex === 0 ? "bg-[var(--color-brand-cocoa)] border-transparent" : "bg-white/40 hover:bg-brand-charcoal/30"}`}
+                        />
+                        <button
+                            aria-label="第二面：测肤报告"
+                            onClick={() => { if (pageIndex !== 1) handleFlipToReport(); }}
+                            className={`w-2 h-2 rounded-full border border-brand-charcoal/25 transition-colors ${pageIndex === 1 ? "bg-[var(--color-brand-cocoa)] border-transparent" : "bg-white/40 hover:bg-brand-charcoal/30"}`}
+                        />
+                    </nav>
+
+                    {/* 报告页轻量证书入口（分享裂变兜底） */}
+                    {pageIndex === 1 && (
                         <button
                             onClick={handleOpenCover}
                             className="fixed right-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-40 inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/15 bg-white/80 backdrop-blur px-3 py-1.5 text-[11px] text-brand-charcoal/70 font-medium hover:text-brand-charcoal hover:border-brand-charcoal/30 transition-colors"
@@ -1299,142 +1452,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         </button>
                     )}
 
-                    {/* Main Content（layout 已提供唯一 <main> 地标，这里用 div 避免嵌套） */}
-                    <div className={`${styles.main} lg:gap-8`}>
-                        {/* 第一面：肌智派证书（分享版卡片 + IP 形象） */}
-                        {isCoverOpen && (
-                            <section ref={coverRef} className={styles.coverPage} aria-label="肌智派证书（第一面）">
-                                <ShareCardPage
-                                    nickname={userNickname}
-                                    score={faceAnalysis?.overallScore ?? undefined}
-                                    skinType={result?.skinProfile?.type || 'combination'}
-                                    budget={ipBudget}
-                                    skincareFrequency={ipSkincareFrequency}
-                                    gender={socialGender}
-                                    summary={result?.analysis?.summary}
-                                    rankPercentile={rankPercentile}
-                                    onDownloadPoster={handleSavePoster}
-                                    isPosterLoading={isGeneratingPoster}
-                                    certDate={certDate}
-                                    certId={sessionId}
-                                    onOpenReport={() => { handleFlipToReport(); scrollToEl(reportRef.current); }}
-                                    onReTest={handleReTest}
-                                />
-                            </section>
-                        )}
-
-                        {/* 第二面：测肤报告（趋势对比[如有] + 专业版报告卡 + 诊断/建议正文） */}
-                        <section ref={reportRef} className={styles.reportPage} aria-label="测肤报告（第二面）">
-                            <ReportPage
-                                result={result}
-                                faceAnalysis={faceAnalysis}
-                                nickname={userNickname}
-                                previousSummary={prevSum || null}
-                                authInitialized={authInitialized}
-                                isLoggedIn={!!user}
-                                focusProblems={focusProblems}
-                                onOpenLab={() => setShowLabData(true)}
-                                onUnlock={() => openAuthModal("login")}
-                            />
-                        </section>
-                    </div>
-
                     {/* 定制化分析数据详情 Modal - Page Level */}
                     <LabDataModal
                         open={showLabData}
                         onClose={() => setShowLabData(false)}
                         faceAnalysis={faceAnalysis}
                     />
-
-                    {/* 产品推荐 - 与上方专业版报告卡片（含边距）宽度对齐 */}
-                    <div className="w-full max-w-[900px] mx-auto px-6 lg:px-10">
-                        <ProductRecommendationSection
-                            products={(result.products || []).map(p => ({
-                                id: p.id,
-                                name: p.name,
-                                category: p.category,
-                                image: p.image,
-                                images: p.images || null,
-                                price: p.price ?? '',
-                                reason: p.reason,
-                                description: p.description || null,
-                                keyIngredients: p.keyIngredients || [],
-                                benefits: p.benefits || [],
-                                affiliateLinks: p.affiliateLinks || null,
-                                howToUse: p.howToUse || null,
-                                source: p.source,
-                            } satisfies ProductCardData))}
-                            isLoading={loading}
-                            faceAnalysis={faceAnalysis}
-                            personaLabel={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
-                            onProductClick={(productId) => {
-                                const product = result.products?.find(p => p.id === productId);
-                                if (product) {
-                                    trackProductClick(productId, product.name);
-                                }
-                            }}
-                            centered
-                        />
-                    </div>
-
-                    {/* Global Footer */}
-                    <footer className="w-full bg-transparent mt-0 pb-12">
-                        <div className="max-w-[900px] mx-auto px-6 lg:px-10">
-                            {/* Secondary actions */}
-                            <div className="flex flex-col items-center justify-center gap-2.5 mt-10 mb-10">
-                                <div className="flex flex-row flex-wrap justify-center gap-3">
-                                    <button
-                                        onClick={() => navPush('/')}
-                                        disabled={isNavigating}
-                                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] sm:text-[13px] tracking-[0.1em] text-[var(--color-brand-cocoa)]/70 font-medium hover:text-[var(--color-brand-cocoa)] transition-colors"
-                                    >
-                                        <House className="w-3.5 h-3.5" />
-                                        回到首页
-                                    </button>
-                                    <button
-                                        onClick={() => navPush('/?gift=1')}
-                                        disabled={isNavigating}
-                                        className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[var(--color-brand-cocoa)] hover:border-[var(--color-brand-cocoa)]/40 hover:bg-[var(--color-brand-cocoa)]/5 transition-all duration-300"
-                                    >
-                                        <Gift className="w-4 h-4" />
-                                        肌智派送好礼 · 参与抽奖
-                                        <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Minimal Footer Text — 与首页 Footer 对齐 */}
-                            <div className="text-center flex flex-col items-center gap-3">
-                                <p className="text-[11px] font-light tracking-[0.15em] text-brand-charcoal/48" suppressHydrationWarning>
-                                    © {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-                                </p>
-
-                                <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
-                                    <a
-                                        href="https://beian.miit.gov.cn/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="transition-colors hover:text-brand-charcoal/70"
-                                    >
-                                        沪ICP备2026014764号-1
-                                    </a>
-                                    <span aria-hidden="true" className="hidden sm:inline">|</span>
-                                    <a
-                                        href="http://www.beian.gov.cn/portal/registerSystemInfo"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-1 transition-colors hover:text-brand-charcoal/70"
-                                    >
-                                        <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
-                                        <span>沪公网安备31010702010178号</span>
-                                    </a>
-                                </div>
-                                <p className="text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
-                                    *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
-                                </p>
-                            </div>
-                        </div>
-                    </footer>
 
                     {posterError && (
                         <div className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg">

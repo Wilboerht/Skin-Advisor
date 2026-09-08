@@ -397,6 +397,7 @@ export const CONSULTANT_SYSTEM_PROMPT = `
 
 【内容与语气约束】
 - 全部使用纯中文，禁止英文术语缩写（成分名除外）
+- 引用证据时用中文部位名和中文维度名（如"T区""色斑状况"），严禁出现字段名（tZone、forehead、eyeArea、waterOil 等程序标识符）
 - 成分推荐必须限定在品牌成分体系内，不推荐体系外成分
 - 禁止任何营销话术和编造的数据（如"超越全国X%用户""千万级数据库"）
 - 禁止"评分XX分""维度分数为XX"这类机器表述；分数只能以"XX 62 分，意味着……"的解读方式出现
@@ -482,14 +483,25 @@ export function buildConsultantPrompt(params: {
           const sub = key === "acne" && (d.blackheads != null || d.pimples != null)
             ? `（子分：黑头/闭口 ${d.blackheads ?? 'N/A'}，炎性痘痘 ${d.pimples ?? 'N/A'}，越高问题越少）`
             : "";
-          return `- ${label}(${key}): ${d.score ?? 'N/A'}分${sub}${d.details ? ` | 视觉判读: ${d.details}` : ""}`;
+          return `- ${label}: ${d.score ?? 'N/A'}分${sub}${d.details ? ` | 视觉判读: ${d.details}` : ""}`;
         })
         .join("\n")
     : "";
 
   // 区域观察全量注入（v1 截断到 500 字符导致顾问丢失证据，v2 不截断）
+  // 键名翻译成中文部位名再注入：若保留 tZone/forehead 等英文 key，
+  // 模型会在正文里直接引用字段名（"区域分析中tZone描述为…"），破坏纯中文约束
+  const ZONE_LABELS: Record<string, string> = {
+    forehead: "额头", tZone: "T区", leftCheek: "左脸颊",
+    rightCheek: "右脸颊", eyeArea: "眼周", jawline: "下颌线",
+  };
   const zoneContext = params.faceAnalysis?.zoneAnalysis
-    ? wrapUserData("zoneAnalysis", sanitizePromptInput(JSON.stringify(params.faceAnalysis.zoneAnalysis)))
+    ? wrapUserData("zoneAnalysis", sanitizePromptInput(JSON.stringify(
+        Object.fromEntries(
+          Object.entries(params.faceAnalysis.zoneAnalysis as unknown as Record<string, unknown>)
+            .map(([k, v]) => [ZONE_LABELS[k] || k, v])
+        )
+      )))
     : "无";
 
   const skinConditionsContext = params.faceAnalysis?.skinConditions?.length

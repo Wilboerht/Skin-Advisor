@@ -600,6 +600,49 @@ export type ConsultantIssue = z.infer<typeof ConsultantIssueSchema>;
 export type ConsultantReport = z.infer<typeof ConsultantReportSchema>;
 
 /**
+ * 程序字段名 → 中文标签。AI 可能在正文里引用原始字段名（如"tZone""wrinkles"），
+ * 即使 prompt 禁止也难以百分百杜绝，落库前做防御性替换。
+ */
+const RAW_KEY_LABELS: Record<string, string> = {
+    forehead: "额头", tZone: "T区", leftCheek: "左脸颊",
+    rightCheek: "右脸颊", eyeArea: "眼周", jawline: "下颌线",
+    ...DIMENSION_LABELS,
+};
+
+/** 替换文本中出现的英文字段名为中文标签（仅整词替换，不误伤成分英文名） */
+export function sanitizeConsultantText(text: string): string {
+    let out = text;
+    for (const [key, label] of Object.entries(RAW_KEY_LABELS)) {
+        out = out.replace(new RegExp(`(?<![a-zA-Z])${key}(?![a-zA-Z])`, "g"), label);
+    }
+    return out;
+}
+
+/** 深度清洗顾问报告的所有文本字段（title/六段推理链/strengths/routineNote/productReasons.reason） */
+export function sanitizeConsultantReport(report: ConsultantReport): ConsultantReport {
+    return {
+        ...report,
+        overview: sanitizeConsultantText(report.overview),
+        issues: report.issues.map((issue) => ({
+            ...issue,
+            title: sanitizeConsultantText(issue.title),
+            observation: sanitizeConsultantText(issue.observation),
+            directCauses: sanitizeConsultantText(issue.directCauses),
+            indirectCauses: sanitizeConsultantText(issue.indirectCauses),
+            skincarePlan: sanitizeConsultantText(issue.skincarePlan),
+            lifestylePlan: sanitizeConsultantText(issue.lifestylePlan),
+            medicalBoundary: sanitizeConsultantText(issue.medicalBoundary),
+        })),
+        strengths: report.strengths.map(sanitizeConsultantText),
+        routineNote: report.routineNote ? sanitizeConsultantText(report.routineNote) : report.routineNote,
+        productReasons: report.productReasons?.map((p) => ({
+            ...p,
+            reason: p.reason ? sanitizeConsultantText(p.reason) : p.reason,
+        })),
+    };
+}
+
+/**
  * 解析顾问叙事报告（v2）：提取 JSON → 归一化 → schema 校验。
  *
  * 归一化步骤容忍模型的常见输出偏差，避免整份报告因小瑕疵降级为 v1：
