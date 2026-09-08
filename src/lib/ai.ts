@@ -525,8 +525,14 @@ async function callProviderInternal(
     }
 
     // OpenAI 兼容接口 (DeepSeek, Qwen)
-    // 合并外部 abort signal 和内部 30s 超时，防止 SDK 无限挂起
-    const { controller, cleanup } = createMergedAbortController(30000);
+    // 内部超时与视觉链路（90s，ai-vision.ts）对齐：
+    // 顾问叙事报告（v2）在 qwen-plus 上生成 3-6K tokens 需要 60s+，30s 必超时。
+    // 可用 AI_TEXT_TIMEOUT_MS 覆盖（analyze 路由 maxDuration=90s，保持 10s 余量）。
+    const TEXT_TIMEOUT_MS = (() => {
+        const envTimeout = Number(process.env.AI_TEXT_TIMEOUT_MS);
+        return Number.isInteger(envTimeout) && envTimeout >= 5000 && envTimeout <= 120000 ? envTimeout : 80000;
+    })();
+    const { controller, cleanup } = createMergedAbortController(TEXT_TIMEOUT_MS);
     const startedAt = Date.now();
     try {
         const client = createOpenAIClient(provider, apiKey);

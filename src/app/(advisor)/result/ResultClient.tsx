@@ -317,9 +317,12 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     const hasTrackedView = useRef(false);
 
     // Gender Mismatch State：存储已确认过的 sessionId，换 session 后自动重新提示
-    const [ackedSessionId, setAckedSessionId] = useState<string | null>(() => {
-        try { return localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK); } catch { return null; }
-    });
+    // 注意：初始值必须是 SSR 安全的 null，挂载后再从 localStorage 同步，
+    // 否则服务端（null）与客户端（已存值）渲染不一致会触发 React #418 水合错误
+    const [ackedSessionId, setAckedSessionId] = useState<string | null>(null);
+    useEffect(() => {
+        try { setAckedSessionId(localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK)); } catch { /* ignore */ }
+    }, []);
 
     // New State for interactivity
 
@@ -332,9 +335,11 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     const [savedPosterForSave, setSavedPosterForSave] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     const [preloadedPosterBlob, setPreloadedPosterBlob] = useState<Blob | null>(null);
-    const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
-        try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
-    });
+    const [dismissValidationWarning, setDismissValidationWarning] = useState(false);
+    // SSR 水合安全：初始值固定 false，挂载后再从 sessionStorage 同步（同 ackedSessionId）
+    useEffect(() => {
+        try { setDismissValidationWarning(sessionStorage.getItem('advisor_dismiss_validation') === 'true'); } catch { /* ignore */ }
+    }, []);
     const posterRef = useRef<HTMLDivElement>(null);
     const retryButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -360,11 +365,12 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     );
 
     // 拍摄时肌肤状态：优先取分析结果落库值（历史报告），缺失时回退本地存储（当前会话）
-    const skinStateValue = useMemo(() => {
-        if (result?.skinState) return result.skinState;
-        if (typeof window === "undefined") return null;
-        try { return localStorage.getItem(STORAGE_KEYS.ADVISOR_SKIN_STATE) || null; } catch { return null; }
-    }, [result]);
+    // 本地存储部分挂载后再读，避免 SSR（null）与客户端水合（已存值）不一致触发 React #418
+    const [storedSkinState, setStoredSkinState] = useState<string | null>(null);
+    useEffect(() => {
+        try { setStoredSkinState(localStorage.getItem(STORAGE_KEYS.ADVISOR_SKIN_STATE) || null); } catch { /* ignore */ }
+    }, []);
+    const skinStateValue = result?.skinState ?? storedSkinState;
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;

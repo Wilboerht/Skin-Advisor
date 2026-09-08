@@ -56,13 +56,6 @@ async function sendOfficialWechatTemplate(
   const path = "/api/v1/internal/wechat/send-template";
   const bodyText = JSON.stringify({ userId, score, primaryConcern, reportUrl });
 
-  const signed = await createSignedInternalApiHeaders("advisor", "POST", path, bodyText);
-  if (!signed) {
-    aiLogger.error("[WechatTemplate] 未配置内部 API 密钥，无法签名请求");
-    circuitBreaker.recordFailure(WECHAT_TEMPLATE_CIRCUIT_KEY);
-    return;
-  }
-
   let lastError: unknown;
 
   for (let attempt = 0; attempt < WECHAT_TEMPLATE_MAX_RETRIES; attempt++) {
@@ -70,6 +63,15 @@ async function sendOfficialWechatTemplate(
     const timeoutId = setTimeout(() => controller.abort(), WECHAT_TEMPLATE_TIMEOUT_MS);
 
     try {
+      // 每次重试都重新签名：官网有 nonce 防重放校验，
+      // 复用同一组签名头会导致重试被判 REPLAY_ATTACK（401）
+      const signed = await createSignedInternalApiHeaders("advisor", "POST", path, bodyText);
+      if (!signed) {
+        aiLogger.error("[WechatTemplate] 未配置内部 API 密钥，无法签名请求");
+        circuitBreaker.recordFailure(WECHAT_TEMPLATE_CIRCUIT_KEY);
+        return;
+      }
+
       const res = await fetch(`${officialApiUrl}${path}`, {
         method: "POST",
         headers: signed.headers,
