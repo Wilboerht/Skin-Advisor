@@ -183,7 +183,7 @@ export default function ShareCardPage({
                             </div>
                             {onOpenReport && (
                                 <p className="text-[11px] font-light tracking-[0.06em] text-[var(--color-brand-cocoa)]/50">
-                                    上滑或点击「查看完整报告」进入专业版报告
+                                    点击「查看完整报告」，查看你的专属肌肤档案
                                 </p>
                             )}
                             {(dateText || idText) && (

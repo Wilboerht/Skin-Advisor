@@ -8,7 +8,7 @@
  * SSO 迁移说明：
  * - SSO token 存于 httpOnly Cookie；access_token 过期由 /api/auth/me 用
  *   refresh_token 静默轮换（UserProvider 挂载、定时续期及 refresh() 时触发）。
- * - 写操作收到 401（本地 JWT 1h 过期 / CSRF 校验失败）时，自动调
+ * - 写操作收到 401（本地 JWT 2h 过期 / CSRF 校验失败）时，自动调
  *   /api/auth/session-init?json=1 静默重建本地会话并重试一次；
  *   session-init 内部会在 SSO access token 过期时用 refresh token 轮换。
  */
@@ -29,7 +29,7 @@ export function getCsrfToken(): string | null {
 }
 
 /**
- * 本地会话重建：本地 JWT 过期（1h）后 CSRF 校验会返回 401，
+ * 本地会话重建：本地 JWT 过期（2h）后 CSRF 校验会返回 401，
  * 此时若 SSO 会话仍有效（必要时用 refresh token 轮换），session-init 会
  * 重新签发本地双 token + CSRF cookie。
  *

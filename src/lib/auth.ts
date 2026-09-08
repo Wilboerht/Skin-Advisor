@@ -110,7 +110,7 @@ export async function signLocalSession(
             tokenVersion: user.tokenVersion,
             dailyTestLimit: user.dailyTestLimit ?? null,
             csrf: csrfToken,
-        }, "1h");
+        }, "2h");
 
         const refreshToken = await signRefreshToken({
             sub: user.id,

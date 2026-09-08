@@ -38,7 +38,7 @@ export function getJwtIssuer(): string {
 }
 
 /**
- * 签发 Access Token（短期，15 分钟）
+ * 签发 Access Token（短期，默认 15 分钟；本地会话签发处传入 2h）
  */
 export async function signToken(payload: Record<string, unknown>, expiresIn: string | number = "15m"): Promise<string> {
     const token = new SignJWT({ ...payload, type: "access" })
@@ -110,7 +110,7 @@ export async function verifyRefreshToken(token: string): Promise<JWTPayload | nu
 }
 
 /**
- * Access Token Cookie 配置（1 小时，与 SSO access token 对齐）
+ * Access Token Cookie 配置（2 小时，与 SSO access token 对齐）
  */
 export function accessCookieOptions(secure: boolean = true) {
     return {
@@ -118,7 +118,7 @@ export function accessCookieOptions(secure: boolean = true) {
         secure,
         sameSite: "strict" as const,
         path: "/",
-        maxAge: 60 * 60,
+        maxAge: 2 * 60 * 60,
     };
 }
 

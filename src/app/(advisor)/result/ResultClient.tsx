@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { House, Gift, ArrowRight, AlertCircle, Sparkles, Info, X, ScanFace, FileText } from "lucide-react";
+import { ArrowUp, House, Gift, ArrowRight, AlertCircle, Sparkles, Info, X, ScanFace, FileText } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { AnimatePresence, motion as m } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -359,6 +359,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 初始为封面页；翻页后如返回报告页路径？不会——用户可随时点指示器/「我的证书」回看封面
     const [pageIndex, setPageIndex] = useState<0 | 1>(0);
     const flippedToReportRef = useRef(false);
+    const reportLayerRef = useRef<HTMLDivElement>(null);
 
     // 封面 → 报告（翻页）：只记一次（防重复 click/touch/wheel 多路触发）
     const handleFlipToReport = useCallback(() => {
@@ -375,15 +376,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         trackResultFlip("cover", coverMeta);
     }, [coverMeta, trackResultFlip]);
 
-    // 封面页手势：触摸上滑 或 桌面滚轮向上滚动 → 翻到报告
-    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-    const handleCoverMove = useCallback(
-        (deltaY: number, deltaX: number) => {
-            if (pageIndex !== 0) return;
-            if (deltaY < -60 && Math.abs(deltaY) > Math.abs(deltaX)) handleFlipToReport();
-        },
-        [pageIndex, handleFlipToReport]
-    );
+    // 翻页仅接受明确操作（按钮 / 指示器 / 证书入口），不监听滚轮与手势，
+    // 避免用户查看封面时误滑动直接翻页丢失当前阅读位置
 
     // result_view 埋点附带 cohort 标记（判定未就绪时仅上报 base 事件）
     const trackView = useCallback(() => {
@@ -1209,22 +1203,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.25, ease: "easeInOut" }}
-                                onTouchStart={(e) => {
-                                    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-                                }}
-                                onTouchEnd={(e) => {
-                                    const st = touchStartRef.current;
-                                    touchStartRef.current = null;
-                                    if (!st) return;
-                                    const dx = e.changedTouches[0].clientX - st.x;
-                                    const dy = e.changedTouches[0].clientY - st.y;
-                                    handleCoverMove(dy, dx);
-                                }}
-                                onWheel={(e) => {
-                                    // 桌面滚轮向下翻页：仅在封面层滚动到顶部且继续下滚时触发（不抢占内部滚动）
-                                    const atTop = e.currentTarget.scrollTop <= 0;
-                                    if (pageIndex === 0 && atTop && e.deltaY > 30) handleFlipToReport();
-                                }}
                             >
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
                                 <div className={`${styles.main} lg:gap-8`}>
@@ -1253,6 +1231,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         {pageIndex === 1 && (
                             <m.div
                                 key="report-layer"
+                                ref={reportLayerRef}
                                 className={styles.pageLayer}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -1289,7 +1268,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     </div>
                                 )}
 
-                                {/* Main Content（layout 已提供唯一 <main> 地标，这里用 div 避免嵌套） */}
+                                {/* Main Content（layout 已提供唯一 <main> 地标，这里用 div 避免嵌套）。
+                                    所有板块统一在 styles.main 容器内，由 gap（24/32px）规范间距、滚动同宽对齐 */}
                                 <div className={`${styles.main} lg:gap-8`}>
                                     <section aria-label="测肤报告（第二面）">
                                         <ReportPage
@@ -1304,10 +1284,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             onUnlock={() => openAuthModal("login")}
                                         />
                                     </section>
-                                </div>
 
-                                {/* 产品推荐 - 与专业版报告卡片（含边距）宽度对齐 */}
-                                <div className="w-full max-w-[900px] mx-auto px-6 lg:px-10">
+                                    {/* 产品推荐 - 与报告卡同一容器宽度（不再各自控制 padding） */}
                                     <ProductRecommendationSection
                                         products={(result.products || []).map(p => ({
                                             id: p.id,
@@ -1335,11 +1313,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         }}
                                         centered
                                     />
-                                </div>
 
-                                {/* Global Footer */}
-                                <footer className="w-full bg-transparent mt-0 pb-12">
-                                    <div className="max-w-[900px] mx-auto px-6 lg:px-10">
+                                    {/* Global Footer */}
+                                    <footer className="w-full bg-transparent mt-0 pb-12">
                                         {/* Secondary actions */}
                                         <div className="flex flex-col items-center justify-center gap-2.5 mt-10 mb-10">
                                             <div className="flex flex-row flex-wrap justify-center gap-3">
@@ -1393,36 +1369,52 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                                 *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
                                             </p>
                                         </div>
-                                    </div>
-                                </footer>
+                                    </footer>
+                                </div>
                             </m.div>
                         )}
                     </AnimatePresence>
 
                     {/* 翻页指示器（封面/报告双面常显，可点切换；封面临时不可用时仍可回看证书） */}
-                    <nav aria-label="报告翻页" className="fixed right-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2">
+                    <nav
+                        aria-label="报告翻页"
+                        className="fixed right-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2.5 p-1.5 rounded-full border border-brand-charcoal/10 bg-white/50 backdrop-blur-sm"
+                    >
                         <button
                             aria-label="第一面：肌智派证书"
                             onClick={() => { if (pageIndex !== 0) handleOpenCover(); }}
-                            className={`w-2 h-2 rounded-full border border-brand-charcoal/25 transition-colors ${pageIndex === 0 ? "bg-[var(--color-brand-cocoa)] border-transparent" : "bg-white/40 hover:bg-brand-charcoal/30"}`}
-                        />
+                            className={`p-1 rounded-full transition-colors ${pageIndex === 0 ? "bg-[var(--color-brand-cocoa)]" : "bg-transparent hover:bg-brand-charcoal/15"}`}
+                        >
+                            <span className={`block w-2.5 h-2.5 rounded-full border border-brand-charcoal/25 ${pageIndex === 0 ? "bg-white/40" : "bg-white/70"}`} />
+                        </button>
                         <button
                             aria-label="第二面：测肤报告"
                             onClick={() => { if (pageIndex !== 1) handleFlipToReport(); }}
-                            className={`w-2 h-2 rounded-full border border-brand-charcoal/25 transition-colors ${pageIndex === 1 ? "bg-[var(--color-brand-cocoa)] border-transparent" : "bg-white/40 hover:bg-brand-charcoal/30"}`}
-                        />
+                            className={`p-1 rounded-full transition-colors ${pageIndex === 1 ? "bg-[var(--color-brand-cocoa)]" : "bg-transparent hover:bg-brand-charcoal/15"}`}
+                        >
+                            <span className={`block w-2.5 h-2.5 rounded-full border border-brand-charcoal/25 ${pageIndex === 1 ? "bg-white/40" : "bg-white/70"}`} />
+                        </button>
                     </nav>
 
-                    {/* 报告页轻量证书入口（分享裂变兜底） */}
+                    {/* 报告页浮动操作区：回顶部 + 证书入口（分享裂变兜底），竖向堆叠不遮挡内容 */}
                     {pageIndex === 1 && (
-                        <button
-                            onClick={handleOpenCover}
-                            className="fixed right-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-40 inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/15 bg-white/80 backdrop-blur px-3 py-1.5 text-[11px] text-brand-charcoal/70 font-medium hover:text-brand-charcoal hover:border-brand-charcoal/30 transition-colors"
-                            aria-label="查看我的肌智派证书"
-                        >
-                            <FileText className="w-3.5 h-3.5" strokeWidth={1.75} />
-                            我的证书
-                        </button>
+                        <div className="fixed right-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-40 flex flex-col items-end gap-2">
+                            <button
+                                onClick={() => reportLayerRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+                                className="w-9 h-9 inline-flex items-center justify-center rounded-full border border-brand-charcoal/15 bg-white/80 backdrop-blur text-brand-charcoal/60 hover:text-brand-charcoal transition-colors"
+                                aria-label="回到顶部"
+                            >
+                                <ArrowUp className="w-4 h-4" strokeWidth={2} />
+                            </button>
+                            <button
+                                onClick={handleOpenCover}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/15 bg-white/80 backdrop-blur px-3 py-1.5 text-[11px] text-brand-charcoal/70 font-medium hover:text-brand-charcoal hover:border-brand-charcoal/30 transition-colors"
+                                aria-label="查看我的肌智派证书"
+                            >
+                                <FileText className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                我的证书
+                            </button>
+                        </div>
                     )}
 
                     {/* 定制化分析数据详情 Modal - Page Level */}

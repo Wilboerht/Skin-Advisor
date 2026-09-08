@@ -93,7 +93,7 @@ export default function ComparisonCard({ prev, score, skinAge, persona, at }: Co
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <div className="flex items-center gap-2">
-                    <span className="inline-flex h-[22px] px-2 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/15 text-[11px] font-bold text-[var(--color-brand-charcoal)]">
+                    <span className="relative z-10 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-xs font-bold text-[var(--color-brand-charcoal)] lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap">
                         趋势对比
                     </span>
                     <span className="text-[13px] text-[var(--color-brand-cocoa)]">

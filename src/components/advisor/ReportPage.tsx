@@ -64,7 +64,7 @@ export default function ReportPage({
                 <>
                     {/* 顾问叙事报告（v2）：诊断卡推理链取代旧板块 1/2/4 与 Lab 伪数据 */}
                     {isV2Report && result.consultantReport && (
-                        <div className="mt-6 lg:mt-14 mb-6">
+                        <div className="mt-6 mb-6 lg:mt-8 lg:mb-8">
                             <ConsultantReport
                                 report={result.consultantReport}
                                 dimensions={faceAnalysis?.dimensions as Record<string, { score?: number; grade?: string; details?: string } | undefined> | undefined}
@@ -75,7 +75,7 @@ export default function ReportPage({
 
                     {/* 1、详细诊断报告（v1；历史旧数据回退渲染） */}
                     {!isV2Report && (
-                        <div className="mt-6 lg:mt-14 mb-6">
+                        <div className="mt-6 mb-6 lg:mt-8 lg:mb-8">
                             <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                 1、详细诊断报告 <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
                             </h4>
@@ -105,7 +105,7 @@ export default function ReportPage({
 
                     {/* 2、专家护肤建议（v1） */}
                     {!isV2Report && (
-                        <div className="mb-8">
+                        <div className="mb-6 lg:mb-8">
                             <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                 2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
                             </h4>
@@ -164,9 +164,9 @@ export default function ReportPage({
                     {faceAnalysis?.zoneAnalysis && (
                         <>
                             {!authInitialized ? (
-                                <div className="mb-8 min-h-[200px]" />
+                                <div className="mb-6 lg:mb-8 min-h-[200px]" />
                             ) : isLoggedIn ? (
-                                <div className="mb-8">
+                                <div className="mb-6 lg:mb-8">
                                     <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-4 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                         {isV2Report ? "区域皮肤地图" : "3、区域重点关注"} <span className="text-xs lg:text-base">(Area Focus)</span>
                                     </h4>
@@ -201,7 +201,7 @@ export default function ReportPage({
                                     </div>
                                 </div>
                             ) : (
-                                <div className="mb-8">
+                                <div className="mb-6 lg:mb-8">
                                     <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-4 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                         {isV2Report ? "区域皮肤地图" : "3、区域重点关注"} <span className="text-xs lg:text-base">(Area Focus)</span>
                                     </h4>
@@ -224,7 +224,7 @@ export default function ReportPage({
 
                     {/* 4、重点问题关注（v1；v2 由诊断卡取代） */}
                     {!isV2Report && faceAnalysis && (
-                        <div className="mb-8">
+                        <div className="mb-6 lg:mb-8">
                             <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                 4、重点问题关注 <span className="text-xs lg:text-base">(Key Concerns)</span>
                             </h4>
