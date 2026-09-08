@@ -18,8 +18,6 @@ export const STORAGE_KEYS = {
     ADVISOR_LAST_PERSONA: 'advisor_last_persona',
     // 游客"上一次测肤摘要"结构化快照（{persona, score, skinAge, at}），趋势对比板块数据源
     ADVISOR_LAST_SUMMARY: 'advisor_last_summary',
-    // 已展示过封面页的 sessionId（同一报告不再重复展示封面；免费重试时需清除）
-    ADVISOR_COVER_ACK: 'advisor_cover_ack',
     // 测肤拍摄时肌肤状态（纯素颜/带妆等，扫脸引导弹窗选择）
     ADVISOR_SKIN_STATE: 'advisor_skin_state',
 

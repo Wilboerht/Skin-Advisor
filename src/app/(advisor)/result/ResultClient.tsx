@@ -340,17 +340,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         try { localStorage.setItem(STORAGE_KEYS.ADVISOR_LAST_SUMMARY, JSON.stringify(snap)); } catch { /* ignore */ }
     }, [serverPreviousSummary, guestPrevSnapshot, result, faceAnalysis, certDate]);
 
-    /** 生效的"上一次摘要"：服务端优先；游客无快照时为 null（首次） */
+    /** 生效的"上一次摘要"：服务端优先；游客无快照时为 null（首次）。
+     *  仅用于趋势对比板块与 cohort 埋点；封面页每次测肤都先展示，不受本判定影响 */
     const prevSum = serverPreviousSummary !== undefined ? serverPreviousSummary : guestPrevSnapshot;
-
-    /** 首次测肤 / 上一次派系与本次不一致 → 显示封面页 */
-    const shouldShowCover = useMemo(() => {
-        if (!sessionId || !result) return false;
-        if (prevSum === undefined) return false; // 游客挂载前未就绪
-        const prevPersona = prevSum?.persona ?? null;
-        const current = result.persona || null;
-        return prevPersona == null ? true : prevPersona !== current;
-    }, [sessionId, result, prevSum]);
 
     /** cohort 指标（统计用）：是否首测 / 派系是否变化 */
     const coverMeta = useMemo(() => {
@@ -363,34 +355,18 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         };
     }, [prevSum, result?.persona]);
 
-    // 已展示过封面的 sessionId：同一报告不再重复展示（挂载时读取一次；翻页时仅写存储不更新本 state，
-    // 避免当前在报告页时状态驱动重渲染）
-    const [coverAckedSessionId, setCoverAckedSessionId] = useState<string | null>(null);
-    useEffect(() => {
-        try { setCoverAckedSessionId(localStorage.getItem(STORAGE_KEYS.ADVISOR_COVER_ACK)); } catch { /* ignore */ }
-    }, []);
-    const coverEligible = shouldShowCover && coverAckedSessionId !== sessionId;
-
-    // 页面切换：0 = 封面，1 = 报告。
-    // 初始一律 0（封面），mount 后按决策修正：非首测/非派系变化/已确认过封面的用户直接落到报告页
-    // （覆盖修正时以交叉淡入淡出接管，视觉上无缝；游客 SSR 本就渲染授权页，由客户端接管后重算）
+    // 页面切换：0 = 封面（IP 证书页，每次测肤都先展示），1 = 报告。
+    // 初始为封面页；翻页后如返回报告页路径？不会——用户可随时点指示器/「我的证书」回看封面
     const [pageIndex, setPageIndex] = useState<0 | 1>(0);
-    useEffect(() => {
-        if (prevSum === undefined) return; // 游客判定未就绪
-        if (!coverEligible) setPageIndex(1);
-    }, [prevSum, coverEligible]);
     const flippedToReportRef = useRef(false);
 
-    // 封面 → 报告（翻页）：只记一次；ack 仅写存储，供下次打开同一报告时抑制封面
+    // 封面 → 报告（翻页）：只记一次（防重复 click/touch/wheel 多路触发）
     const handleFlipToReport = useCallback(() => {
         if (flippedToReportRef.current) return;
         flippedToReportRef.current = true;
-        if (sessionId) {
-            try { localStorage.setItem(STORAGE_KEYS.ADVISOR_COVER_ACK, sessionId); } catch { /* ignore */ }
-        }
         setPageIndex(1);
         trackResultFlip("report", coverMeta);
-    }, [sessionId, coverMeta, trackResultFlip]);
+    }, [coverMeta, trackResultFlip]);
 
     // 报告 → 封面（手动打开证书入口；封面即便初未展示也允许回看）
     const handleOpenCover = useCallback(() => {
@@ -510,9 +486,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_STEP);
-        // 免费重试复用同一 sessionId：清除封面已展示标记，新结果派系变化时可再次展示封面
-        try { localStorage.removeItem(STORAGE_KEYS.ADVISOR_COVER_ACK); } catch { /* ignore */ }
-        setCoverAckedSessionId(null);
 
         // 保留原 sessionId，供免费重试流程复用（后端需校验该 session 已完成过分析且未使用过重试）
         const currentSessionId = sessionId;
