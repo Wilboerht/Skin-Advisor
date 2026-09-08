@@ -30,11 +30,12 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    /* 顶部栏固定占用：内容从栏下方开始 */
-    padding-top: 56px;
+    /* 顶部栏占用：与 questions 页头高度一致（pt 28 + logo 28 + pb 28 = 84；md+ logo 36 → 92），含 safe-area */
+    padding-top: calc(84px + env(safe-area-inset-top, 0px));
 }
 
 /* 顶部栏：全局固定（两层页面共享），logo 居中，毛玻璃底。
+   高度结构/内边距/logo 尺寸与 questions 页头部完全一致；
    z-index 45：高于页面内容与悬浮操作（dots/chip 40），低于所有弹窗（ProductDetail 60 起），
    保证弹窗遮罩能完整覆盖顶部栏 */
 .topBar {
@@ -42,23 +43,22 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 56px;
     z-index: 45;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: calc(1.75rem + env(safe-area-inset-top, 0px)) 16px 28px;
     background: rgba(232, 226, 217, 0.88);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(61, 47, 37, 0.06);
 }
 
-/* 顶部栏内层：与页面主列同宽（max-w 900 + 同边距）。
+/* 顶部栏内层：与 questions 页内容同宽（max-w-5xl=1024 + 同边距）。
    三段式网格布局保证 logo 真居中：左=回首页，中=logo，右=用户身份区 */
 .topBarInner {
     position: relative;
     width: 100%;
-    max-width: 900px;
+    max-width: 1024px;
     padding: 0 16px;
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -66,24 +66,34 @@
     gap: 8px;
 }
 
-@media (min-width: 1024px) {
-    .pageLayer {
-        padding-top: 64px;
-    }
-
+@media (max-width: 767.98px) {
     .topBar {
-        height: 64px;
+        /* 与 questions 页头一致：仅移动端有下边框 */
+        border-bottom: 1px solid rgba(61, 47, 37, 0.06);
+    }
+}
+
+@media (min-width: 768px) {
+    .pageLayer {
+        padding-top: calc(92px + env(safe-area-inset-top, 0px));
     }
 
     .topBarInner {
-        padding: 0 24px;
+        padding: 0 48px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .topBarInner {
+        padding: 0 80px;
     }
 }
 
 .main {
-    max-width: 900px;
+    /* 与 questions 页内容同宽：max-w-5xl + 相同响应式边距（16/48/80） */
+    max-width: 1024px;
     margin: 0 auto;
-    padding: 0 24px 32px;
+    padding: 0 48px 32px;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -93,5 +103,11 @@
 @media (max-width: 768px) {
     .main {
         padding: 0 16px 24px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .main {
+        padding: 0 80px 32px;
     }
 }
