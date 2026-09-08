@@ -343,23 +343,26 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const flippedToReportRef = useRef(false);
     const reportLayerRef = useRef<HTMLDivElement>(null);
 
-    // 封面 → 报告（翻页）：只记一次（防重复 click/touch/wheel 多路触发）
+    // 封面 → 报告（翻页）：翻页动作恒有效；"封面→报告"转化埋点每会话只记一次
+    // （flippedToReportRef 一旦置位不再复位，来回切换封面不重复计入转化）
     const handleFlipToReport = useCallback(() => {
-        if (flippedToReportRef.current) return;
-        flippedToReportRef.current = true;
+        if (!flippedToReportRef.current) {
+            flippedToReportRef.current = true;
+            trackResultFlip("report", coverMeta);
+        }
         setPageIndex(1);
-        trackResultFlip("report", coverMeta);
     }, [coverMeta, trackResultFlip]);
 
     // 报告 → 封面（手动打开证书入口；封面即便初未展示也允许回看）
     const handleOpenCover = useCallback(() => {
-        flippedToReportRef.current = false;
         setPageIndex(0);
         trackResultFlip("cover", coverMeta);
     }, [coverMeta, trackResultFlip]);
 
     // 翻页仅接受明确操作（按钮 / 指示器 / 证书入口），不监听滚轮与手势，
     // 避免用户查看封面时误滑动直接翻页丢失当前阅读位置
+    // 注意：flippedToReportRef 一旦置位不再复位——"封面→报告"转化每会话只上报一次，
+    // 来回切换封面不重复计入转化（cover 打开事件单独上报）
 
     // result_view 埋点附带 cohort 标记（判定未就绪时仅上报 base 事件）
     const trackView = useCallback(() => {
@@ -1255,7 +1258,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
                                 {/* Validation Warning Banner */}
                                 {faceAnalysis?.validation && !faceAnalysis.validation.isValid && !dismissValidationWarning && (
-                                    <div className="w-full bg-red-50 border-b border-red-100 relative z-[90]">
+                                    <div className="w-full bg-red-50 border-b border-red-100 relative z-10">
                                         <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
                                             <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                                             <div className="flex-1">

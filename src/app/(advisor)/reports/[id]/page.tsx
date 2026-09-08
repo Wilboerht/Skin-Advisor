@@ -25,10 +25,15 @@ const getReportCached = cache((id: string, userId: string) =>
 
 // 本次报告之前最近一次已完成测肤的摘要：两页版式封面判定基准 + 趋势对比板块数据源。
 // 归档冷层（压缩摘要）保留 persona/overallScore，字段解析与热层兼容；游客无 DB 上下文，走 localStorage（ResultClient 处理）。
+// before = 当前报告的完成时间：只取早于它的测肤，保证打开历史报告时对比基准语义正确
 const getPreviousSummary = cache(
-    async (id: string, userId: string): Promise<PreviousTestSummary | null> => {
+    async (id: string, userId: string, before: Date | null): Promise<PreviousTestSummary | null> => {
         const prev = await prisma.advisorSession.findFirst({
-            where: { userId, sessionId: { not: id }, completedAt: { not: null } },
+            where: {
+                userId,
+                sessionId: { not: id },
+                completedAt: { not: null, ...(before ? { lt: before } : {}) },
+            },
             orderBy: { completedAt: "desc" },
             select: { analysisResult: true, completedAt: true },
         });
@@ -65,6 +70,8 @@ export default async function ReportDetailPage(props: {
     }
 
     let previousSummary: PreviousTestSummary | null = null;
+    // 当前报告的完成时间：作为"上一次"查询的时间上界
+    let currentCompletedAt: Date | null = null;
 
     if (id) {
         try {
@@ -90,6 +97,7 @@ export default async function ReportDetailPage(props: {
                 result.expiresAt = session.expiresAt?.toISOString();
                 // 完成时间以 DB 记录为准（历史报告来自旧数据时结果内可能无 analyzedAt）
                 result.analyzedAt = session.completedAt?.toISOString() || result.analyzedAt;
+                currentCompletedAt = session.completedAt;
                 initialData = {
                     result,
                     faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null,
@@ -105,7 +113,7 @@ export default async function ReportDetailPage(props: {
 
     // 封面页展示基准 + 趋势对比数据源：上一次测肤摘要（首次测试为 null；查询失败降级为 null，不影响出页）
     try {
-        previousSummary = await getPreviousSummary(id, user.id);
+        previousSummary = await getPreviousSummary(id, user.id, currentCompletedAt);
     } catch (e) {
         logger.error(`Failed to fetch previous summary: ${String(e)}`);
         previousSummary = null;

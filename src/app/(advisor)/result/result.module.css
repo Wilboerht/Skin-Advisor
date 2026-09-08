@@ -34,14 +34,16 @@
     padding-top: 56px;
 }
 
-/* 顶部栏：全局固定（两层页面共享），logo 居中，毛玻璃底 */
+/* 顶部栏：全局固定（两层页面共享），logo 居中，毛玻璃底。
+   z-index 45：高于页面内容与悬浮操作（dots/chip 40），低于所有弹窗（ProductDetail 60 起），
+   保证弹窗遮罩能完整覆盖顶部栏 */
 .topBar {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 56px;
-    z-index: 100;
+    z-index: 45;
     display: flex;
     align-items: center;
     justify-content: center;

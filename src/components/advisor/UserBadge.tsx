@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
@@ -25,6 +25,8 @@ export default function UserBadge({ personaLabel }: UserBadgeProps) {
     // 预取档案页，点击跳转即时反馈
     const { push: navPush, isPending } = useNavPush(["/profile"]);
     const [avatarFailed, setAvatarFailed] = useState(false);
+    // 用户/头像变化时重置失败标记（避免换账号后沿用上一个头像的失败态）
+    useEffect(() => { setAvatarFailed(false); }, [user?.avatar]);
 
     const badge = useMemo(() => {
         const level = user?.membershipLevel;
@@ -38,12 +40,12 @@ export default function UserBadge({ personaLabel }: UserBadgeProps) {
     // 桌面端第二行：会员等级 · 派系
     const subtitle = [badge?.label, personaLabel].filter(Boolean).join(" · ");
 
-    // 未初始化：骨架占位，避免挂载后跳动
+    // 未初始化：骨架占位（宽度与登录态实际占用接近，避免挂载后跳动）
     if (!isInitialized) {
         return (
             <div
                 aria-hidden="true"
-                className="w-[92px] h-8 lg:w-[150px] rounded-full bg-brand-charcoal/5 animate-pulse"
+                className="w-[140px] h-8 lg:w-[180px] rounded-full bg-brand-charcoal/5 animate-pulse"
             />
         );
     }

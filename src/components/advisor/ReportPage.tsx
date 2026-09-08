@@ -43,7 +43,7 @@ export default function ReportPage({
     const isV2Report = result.reportVersion === 2 && !!result.consultantReport;
 
     return (
-        <>
+        <div className="flex flex-col gap-6 lg:gap-8">
             {/* 趋势对比：与上次测肤的派系/评分/肌肤年龄变化（有上一次数据时展示） */}
             {previousSummary && (
                 <ComparisonCard
@@ -266,6 +266,6 @@ export default function ReportPage({
                 </>
             }
         />
-        </>
+        </div>
     );
 }
