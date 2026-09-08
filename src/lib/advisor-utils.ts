@@ -600,6 +600,54 @@ export type ConsultantIssue = z.infer<typeof ConsultantIssueSchema>;
 export type ConsultantReport = z.infer<typeof ConsultantReportSchema>;
 
 /**
+ * 解析顾问叙事报告（v2）：提取 JSON → 归一化 → schema 校验。
+ *
+ * 归一化步骤容忍模型的常见输出偏差，避免整份报告因小瑕疵降级为 v1：
+ * - severity 中英文/大小写归一（"轻度"/"Mild" → mild），缺省 moderate
+ * - 缺失/空字符串的推理链字段补默认值（medicalBoundary 补"暂不需要就医"）
+ * - 缺 title/observation 的 issue 整条丢弃（没有观察就没有证据，不符合铁律）
+ * - relatedDimensions / strengths 缺省为空数组
+ */
+export function parseConsultantReport(content: string): ConsultantReport {
+    const raw = extractJsonFromResponse<Record<string, unknown>>(content);
+
+    const severityMap: Record<string, ConsultantIssue["severity"]> = {
+        mild: "mild", moderate: "moderate", severe: "severe",
+        "轻度": "mild", "轻微": "mild", "中度": "moderate", "重度": "severe", "严重": "severe",
+    };
+
+    const normalizedIssues = (Array.isArray(raw.issues) ? raw.issues : [])
+        .filter((i): i is Record<string, unknown> =>
+            !!i && typeof i === "object"
+            && typeof (i as Record<string, unknown>).title === "string"
+            && typeof (i as Record<string, unknown>).observation === "string")
+        .map((i) => {
+            const issue = { ...i };
+            const sev = String(issue.severity ?? "").trim().toLowerCase();
+            issue.severity = severityMap[sev] ?? severityMap[String(issue.severity ?? "").trim()] ?? "moderate";
+            if (typeof issue.directCauses !== "string" || !issue.directCauses) issue.directCauses = "详见上方观察。";
+            if (typeof issue.indirectCauses !== "string" || !issue.indirectCauses) issue.indirectCauses = "目前没有明显的生活习惯诱因。";
+            if (typeof issue.skincarePlan !== "string" || !issue.skincarePlan) issue.skincarePlan = "详见每日方案。";
+            if (typeof issue.lifestylePlan !== "string" || !issue.lifestylePlan) issue.lifestylePlan = "详见每日方案。";
+            if (typeof issue.medicalBoundary !== "string" || !issue.medicalBoundary) issue.medicalBoundary = "暂不需要就医，坚持护理观察即可。";
+            if (!Array.isArray(issue.relatedDimensions)) issue.relatedDimensions = [];
+            return issue;
+        });
+
+    const normalized = {
+        ...raw,
+        issues: normalizedIssues,
+        strengths: Array.isArray(raw.strengths) ? raw.strengths : [],
+    };
+
+    const parsed = ConsultantReportSchema.safeParse(normalized);
+    if (!parsed.success) {
+        throw new Error(`AI response schema validation failed: ${parsed.error.message}`);
+    }
+    return parsed.data;
+}
+
+/**
  * 安全提取并校验 AI 返回的 JSON
  * @param content - AI 原始文本
  * @param schema - Zod 校验 schema

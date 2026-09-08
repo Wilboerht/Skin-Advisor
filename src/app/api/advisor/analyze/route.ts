@@ -5,7 +5,7 @@ import { ErrorCode } from "@/lib/error-codes";
 import { generateText, fallbackAnalysis, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
-import { validateAndExtractJson, ConsultantReportSchema, type ConsultantReport } from "@/lib/advisor-utils";
+import { parseConsultantReport, type ConsultantReport } from "@/lib/advisor-utils";
 import { buildConsultantPrompt, CONSULTANT_SYSTEM_PROMPT, type PersonaRoutineContext } from "@/config/ai-prompts";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -616,6 +616,8 @@ export async function POST(request: NextRequest) {
         let resultJson: Record<string, unknown> = {};
         // 顾问叙事报告（v2）解析成功时非空；fallback 规则引擎产出 v1 结构，此变量保持 null
         let consultantReport: ConsultantReport | null = null;
+        // 解析失败时记录 AI 原始输出片段，便于定位模型返回了什么（截断/字段不符/非 JSON）
+        let rawAiOutput: string | undefined;
         let queueAcquired = false;
         try {
             // P3: 请求队列处理 - 申请令牌（防止并发过高打爆 LLM API）
@@ -640,7 +642,8 @@ export async function POST(request: NextRequest) {
             }
 
             const resultText = await generateText(systemPrompt, userPrompt, provider as AIProvider, abortController.signal, user?.id, effectiveSessionId);
-            consultantReport = validateAndExtractJson(resultText, ConsultantReportSchema);
+            rawAiOutput = resultText;
+            consultantReport = parseConsultantReport(resultText);
             resultJson = consultantReport as unknown as Record<string, unknown>;
         } catch (e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));
@@ -676,12 +679,20 @@ export async function POST(request: NextRequest) {
                 return response;
             }
             // 区分错误类型进行日志记录
-            const errorCategory = err.message?.includes("Failed to extract valid JSON")
+            // AI_SCHEMA_INVALID：AI 返回了完整 JSON 但字段不符合 schema（区别于截断导致的 AI_JSON_PARSE）
+            const errorCategory = err.message?.includes("AI response schema validation failed")
+                ? "AI_SCHEMA_INVALID" : err.message?.includes("Failed to extract valid JSON")
                 ? "AI_JSON_PARSE" : err.message?.includes("401") || err.message?.includes("403")
                 ? "AI_AUTH" : err.message?.includes("429")
                 ? "AI_RATE_LIMIT" : err.message?.includes("timeout") || err.message?.includes("ETIMEDOUT")
                 ? "AI_TIMEOUT" : "AI_UNKNOWN";
-            aiLogger.warn(`AI Generation failed [${errorCategory}], falling back to rule engine`, { error: err.message });
+            aiLogger.warn(`AI Generation failed [${errorCategory}], falling back to rule engine`, {
+                error: err.message,
+                // JSON 解析/schema 校验失败时附原始输出片段（截断看尾部，schema 看头部），上限 500 字符
+                ...(["AI_JSON_PARSE", "AI_SCHEMA_INVALID"].includes(errorCategory) && rawAiOutput
+                    ? { aiOutputHead: rawAiOutput.slice(0, 300), aiOutputTail: rawAiOutput.slice(-200) }
+                    : {}),
+            });
             // 使用规则引擎生成完整降级报告，而非空对象
             try {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
