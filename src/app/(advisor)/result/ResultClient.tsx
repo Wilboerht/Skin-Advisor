@@ -1196,7 +1196,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 alt="NIHPLOD"
                                 width={120}
                                 height={30}
-                                className="h-7 sm:h-8 w-auto object-contain justify-self-center"
+                                className="h-7 md:h-9 w-auto object-contain justify-self-center"
                                 priority
                             />
 
