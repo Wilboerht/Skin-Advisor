@@ -462,10 +462,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         let cancelled = false;
         const timer = setTimeout(async () => {
             try {
+                // 海报 DOM 尚未挂载（加载态/分析中等早期分支渲染中）时跳过本次预生成，
+                // 后续数据变化会重新触发；用户点击保存时也有现场生成兜底
+                if (!posterRef.current) return;
                 // 先等海报内图片加载完成，避免生成空白 blob
-                if (posterRef.current) {
-                    await waitForImages(posterRef.current);
-                }
+                await waitForImages(posterRef.current);
                 const blob = await generatePosterBlob();
                 if (cancelled) return;
 

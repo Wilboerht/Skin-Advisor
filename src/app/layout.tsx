@@ -153,6 +153,7 @@ export default function RootLayout({
           <ToastProvider>
             <UserProvider>
               <AuthModalProvider>
+                <DiaryModalProvider>
                 <WebsiteLayoutClient>
                   <main
                     id="main-content"
@@ -167,11 +168,10 @@ export default function RootLayout({
                   {/* URL 认证参数（?auth= / ?login=wechat_bind 等）的全局监听器，无 UI */}
                   <AuthUrlDetector />
                 </Suspense>
-                {/* 护肤档案弹层：全局开关（Dock/账户弹层均为入口） */}
-                <DiaryModalProvider>
-                  <DiaryModal />
-                  {/* 全端底部 Dock：置于 <main> 外，避开 main 的 pointer-events hack；组件内按路由自我排除 */}
-                  <BottomDock />
+                {/* 护肤档案弹层：全局开关（Dock/账户弹层均为入口）；Provider 需包住页面内容，结果页 UserBadge 内的 AccountModal 也消费该 context */}
+                <DiaryModal />
+                {/* 全端底部 Dock：置于 <main> 外，避开 main 的 pointer-events hack；组件内按路由自我排除 */}
+                <BottomDock />
                 </DiaryModalProvider>
               </AuthModalProvider>
             </UserProvider>

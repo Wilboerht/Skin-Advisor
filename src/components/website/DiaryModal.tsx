@@ -43,12 +43,17 @@ interface DiarySummary {
 }
 
 // 60s 短缓存：趋势与测肤列表重复开关弹层时不重复请求（打卡/删除通过刷新路径绕开）
+// 注意缓存解析后的 JSON 而非 Response——Response body 只能消费一次，缓存 Response 会导致二次读取抛 "body stream already read"
 const SHORT_CACHE_TTL_MS = 60_000;
-const shortCache = new Map<string, { ts: number; promise: Promise<Response> }>();
-function fetchWithShortCache(url: string): Promise<Response> {
+const shortCache = new Map<string, { ts: number; promise: Promise<unknown> }>();
+function fetchWithShortCache(url: string): Promise<unknown> {
   const hit = shortCache.get(url);
   if (hit && Date.now() - hit.ts < SHORT_CACHE_TTL_MS) return hit.promise;
-  const promise = fetch(url);
+  const promise = fetch(url).then((res) => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json() as Promise<unknown>;
+  });
+  promise.catch(() => shortCache.delete(url));
   shortCache.set(url, { ts: Date.now(), promise });
   return promise;
 }
@@ -194,9 +199,10 @@ export function DiaryModal() {
     if (bustCache) bustShortCache();
     setTestsError(false);
     try {
-      const res = await fetchWithShortCache(`/api/advisor/history?page=1&limit=${TESTS_PAGE_SIZE}&lite=1`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = (await fetchWithShortCache(`/api/advisor/history?page=1&limit=${TESTS_PAGE_SIZE}&lite=1`)) as {
+        history?: HistorySession[];
+        pagination?: { total?: number };
+      };
       const history: HistorySession[] = data.history ?? [];
       setTests(history);
       testsLoadedRef.current = history.length;
@@ -280,9 +286,9 @@ export function DiaryModal() {
 
     // 趋势与测肤首屏带 60s 短缓存，重复开关弹层不重复请求
     fetchWithShortCache("/api/user/skin-trends")
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
-      .then((data) => {
+      .then((raw) => {
         if (cancelled) return;
+        const data = raw as { data?: TrendsData | null };
         setTrends(data.data ?? null); // 测肤 < 2 次时后端返回 data: null
         setTrendsLoaded(true);
       })
