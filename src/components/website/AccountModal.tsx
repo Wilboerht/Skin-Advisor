@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { ChevronRight, CircleUserRound, LogOut, NotebookPen, Settings2, Smartphone, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -57,6 +58,11 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
+  // Portal 到 body：fixed 定位在带 transform/backdrop-filter 的祖先（如结果页顶部栏的毛玻璃底）
+  // 内会被重新相对该祖先定位，导致弹窗"挂"在顶部栏上而不是视口居中
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // 测肤用量（登录用户打开弹层时拉取；接口失败静默不展示该行）
   const [testUsage, setTestUsage] = useState<TestUsage | null>(null);
   useEffect(() => {
@@ -83,7 +89,9 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
     login();
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <LazyMotion features={domAnimation}>
       <AnimatePresence>
         {isOpen && (
@@ -231,6 +239,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
           </div>
         )}
       </AnimatePresence>
-    </LazyMotion>
+    </LazyMotion>,
+    document.body
   );
 }
