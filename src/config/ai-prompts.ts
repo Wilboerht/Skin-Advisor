@@ -457,8 +457,11 @@ export function buildConsultantPrompt(params: {
     const reasonsHint = p.recommendReasons && Object.keys(p.recommendReasons).length > 0
       ? `, 推荐理由参考: ${JSON.stringify(p.recommendReasons)}`
       : "";
-    return `- ID: ${p.id}, 名称: ${p.name}, 价格: ${p.price || '咨询'}, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}${truncatedDesc ? `, 描述: ${truncatedDesc}` : ""}${reasonsHint}`;
+    return `- ID: ${p.id}, 名称: ${p.name}, 价格: ${p.price || '咨询'}${p.benefits ? `, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}` : ""}${p.suitableSkinTypes ? `, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}` : ""}${truncatedDesc ? `, 描述: ${truncatedDesc}` : ""}${reasonsHint}`;
   }).join("\n");
+
+  const genderMap: Record<string, string> = { female: "女", male: "男" };
+  const genderText = genderMap[params.gender || ""] || params.gender || "未提供";
 
   const medicalText = medicalBeautyMap[params.medicalBeauty || "none"] || params.medicalBeauty || "无";
   const sleepText = sleepMap[params.sleep || ""] || params.sleep || "未知";
@@ -504,7 +507,7 @@ ${params.personaContent.formulaSuggestions?.length ? `- 公式要点：${params.
   return `请为以下用户生成一份顾问面诊式测肤报告（Report v2）。
 
 用户概况：
-- 性别：${params.gender || "未提供"}
+- 性别：${genderText}
 - 肤质：${params.skinTypeLabel || "未知"}
 - 年龄段：${params.ageRange || "未知"}
 - 所在地：${params.location ? wrapUserData("location", sanitizePromptInput(params.location)) : "未知"}
