@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
-import { useNavPush } from "@/hooks/use-nav-push";
+import { AccountModal } from "@/components/website/AccountModal";
 
 interface UserBadgeProps {
     /** 当前派系中文名（如"水润派"）；未就绪/无派系时不展示 */
@@ -22,8 +22,8 @@ const MEMBERSHIP_BADGES: Record<string, { letter: string; color: string; label: 
 export default function UserBadge({ personaLabel }: UserBadgeProps) {
     const { user, isInitialized } = useAuth();
     const { openAuthModal } = useAuthModal();
-    // 预取档案页，点击跳转即时反馈
-    const { push: navPush, isPending } = useNavPush(["/profile"]);
+    // 登录态点击打开账户弹层（AccountModal，替代原 /profile 页；该页已重定向到首页）
+    const [showAccount, setShowAccount] = useState(false);
     const [avatarFailed, setAvatarFailed] = useState(false);
     // 用户/头像变化时重置失败标记（避免换账号后沿用上一个头像的失败态）
     useEffect(() => { setAvatarFailed(false); }, [user?.avatar]);
@@ -63,51 +63,45 @@ export default function UserBadge({ personaLabel }: UserBadgeProps) {
     }
 
     return (
-        <button
-            onClick={() => navPush("/profile")}
-            disabled={isPending}
-            className="group flex items-center gap-2 rounded-full py-1 pl-1 pr-2 lg:pr-3 hover:bg-brand-charcoal/5 transition-colors"
-            aria-label={`${nickname}的个人档案`}
-        >
-            {/* 头像（含等级角标） */}
-            <span className="relative shrink-0">
-                {user.avatar && !avatarFailed ? (
-                    <Image
-                        src={user.avatar}
-                        alt=""
-                        width={28}
-                        height={28}
-                        unoptimized
-                        className="w-7 h-7 lg:w-8 lg:h-8 rounded-full object-cover border border-brand-charcoal/10"
-                        onError={() => setAvatarFailed(true)}
-                    />
-                ) : (
-                    <span className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-[var(--color-brand-cocoa)]/15 border border-brand-charcoal/10 flex items-center justify-center text-[12px] lg:text-[13px] font-medium text-[var(--color-brand-cocoa)]">
-                        {initial}
-                    </span>
-                )}
-                {badge && (
-                    <span
-                        className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border border-white flex items-center justify-center text-[8px] font-bold text-white leading-none"
-                        style={{ backgroundColor: badge.color }}
-                        title={badge.label}
-                    >
-                        {badge.letter}
-                    </span>
-                )}
-            </span>
-
-            {/* 移动端仅昵称；桌面端昵称 + 等级·派系两行 */}
-            <span className="flex flex-col items-start leading-tight">
-                <span className="max-w-[96px] lg:max-w-[140px] truncate text-[12px] font-medium text-brand-charcoal group-hover:text-[var(--color-brand-cocoa)] transition-colors">
-                    {nickname}
+        <>
+            <button
+                onClick={() => setShowAccount(true)}
+                className="group flex items-center gap-2 rounded-full py-1 pl-1 pr-2 lg:pr-3 hover:bg-brand-charcoal/5 transition-colors"
+                aria-label={`${nickname}的账户`}
+            >
+                {/* 头像 */}
+                <span className="relative shrink-0">
+                    {user.avatar && !avatarFailed ? (
+                        <Image
+                            src={user.avatar}
+                            alt=""
+                            width={28}
+                            height={28}
+                            unoptimized
+                            className="w-7 h-7 lg:w-8 lg:h-8 rounded-full object-cover border border-brand-charcoal/10"
+                            onError={() => setAvatarFailed(true)}
+                        />
+                    ) : (
+                        <span className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-[var(--color-brand-cocoa)]/15 border border-brand-charcoal/10 flex items-center justify-center text-[12px] lg:text-[13px] font-medium text-[var(--color-brand-cocoa)]">
+                            {initial}
+                        </span>
+                    )}
                 </span>
-                {subtitle && (
-                    <span className="hidden lg:block max-w-[140px] truncate text-[10px] font-light tracking-[0.04em] text-brand-charcoal/50">
-                        {subtitle}
+
+                {/* 移动端仅昵称；桌面端昵称 + 等级·派系两行 */}
+                <span className="flex flex-col items-start leading-tight">
+                    <span className="max-w-[96px] lg:max-w-[140px] truncate text-[12px] font-medium text-brand-charcoal group-hover:text-[var(--color-brand-cocoa)] transition-colors">
+                        {nickname}
                     </span>
-                )}
-            </span>
-        </button>
+                    {subtitle && (
+                        <span className="hidden lg:block max-w-[140px] truncate text-[10px] font-light tracking-[0.04em] text-brand-charcoal/50">
+                            {subtitle}
+                        </span>
+                    )}
+                </span>
+            </button>
+
+            <AccountModal isOpen={showAccount} onClose={() => setShowAccount(false)} />
+        </>
     );
 }
