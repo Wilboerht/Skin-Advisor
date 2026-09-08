@@ -136,13 +136,6 @@ function CompactProductCard({
                             {product.name}
                         </h4>
 
-                        {/* 匹配度 */}
-                        {typeof product.matchScore === "number" && product.matchScore > 0 && (
-                            <span className="mb-1 inline-flex items-center rounded-full bg-[var(--color-brand-cocoa)]/8 px-2 py-0.5 text-[10px] font-medium text-[var(--color-brand-cocoa)]">
-                                匹配度 {product.matchScore}%
-                            </span>
-                        )}
-
                         {/* 功效标签 */}
                         {product.benefits && product.benefits.length > 0 && (
                             <p className="mb-1 truncate text-xs text-[#C8A97E] lg:text-xs">
@@ -150,8 +143,8 @@ function CompactProductCard({
                             </p>
                         )}
 
-                        {/* 推荐理由 */}
-                        <p className="line-clamp-1 text-xs text-[var(--color-brand-taupe)] lg:text-[#666]">
+                        {/* 推荐理由：引用本次诊断的具体发现，最多展示 3 行 */}
+                        <p className="line-clamp-3 text-xs leading-relaxed text-[var(--color-brand-taupe)] lg:text-[#666]">
                             {product.reason}
                         </p>
 

@@ -67,6 +67,11 @@ export function getSkinTypeByRoute(route: string): SkinTypeData | undefined {
   return skinTypes.find((t) => t.route === route);
 }
 
+/** 按 IP key（matchCharacterIP 的英文标识，如 sensitive/oily）查找派系内容 */
+export function getSkinTypeByIpKey(ipKey: string): SkinTypeData | undefined {
+  return skinTypes.find((t) => t.ipKey === ipKey);
+}
+
 export function getSkinTypeIndex(route: string): number {
   return routeOrder.indexOf(route);
 }

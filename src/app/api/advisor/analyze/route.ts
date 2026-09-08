@@ -5,8 +5,9 @@ import { ErrorCode } from "@/lib/error-codes";
 import { generateText, fallbackAnalysis, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
-import { validateAndExtractJson, TextAnalysisOutputSchema } from "@/lib/advisor-utils";
-import { buildTextAnalysisPrompt, TEXT_ANALYSIS_SYSTEM_PROMPT, REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION } from "@/config/ai-prompts";
+import { validateAndExtractJson, ConsultantReportSchema, type ConsultantReport } from "@/lib/advisor-utils";
+import { buildConsultantPrompt, CONSULTANT_SYSTEM_PROMPT, type PersonaRoutineContext } from "@/config/ai-prompts";
+import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import prisma from "@/lib/prisma";
 import { getSkinTypeLabel, getConcernLabel, type FaceAnalysisResult } from "@/lib/advisor-utils";
@@ -545,7 +546,21 @@ export async function POST(request: NextRequest) {
 
         const concernLabels = concerns.map(c => getConcernLabel(c));
 
-        const userPrompt = buildTextAnalysisPrompt({
+        // 派系护肤方案骨架（result-content.json 的 m4 早晚节奏 + m7 护肤公式），
+        // 注入 prompt 让 AI 在既定方案上做个性化微调，而非从零编写
+        const personaContent = ((): PersonaRoutineContext | undefined => {
+            const personaData = getSkinTypeByIpKey(personaKey);
+            if (!personaData) return undefined;
+            return {
+                typeName: personaData.typeName,
+                morning: personaData.m4?.morning,
+                night: personaData.m4?.night,
+                formulaCore: personaData.m7?.formulaCore,
+                formulaSuggestions: personaData.m7?.suggestions?.map((s) => `${s.title}：${s.content}`),
+            };
+        })();
+
+        const userPrompt = buildConsultantPrompt({
             skinTypeLabel,
             ageRange: answers.ageRange,
             concerns: concernLabels,
@@ -584,19 +599,23 @@ export async function POST(request: NextRequest) {
                 summary: faceAnalysis.summary,
                 zoneAnalysis: faceAnalysis.zoneAnalysis,
                 skinAge: faceAnalysis.skinAge,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                skinConditions: (faceAnalysis as any).skinConditions,
             } as Partial<FaceAnalysisResult> : undefined,
             products: candidateProducts,
-            skinState
+            skinState,
+            personaContent
         });
 
-        const systemPrompt = user
-            ? TEXT_ANALYSIS_SYSTEM_PROMPT + '\n\n' + REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION
-            : TEXT_ANALYSIS_SYSTEM_PROMPT;
+        // 顾问叙事报告（Report v2）：面诊口吻 + 推理链 + 证据驱动，统一由一个模型产出全部文案
+        const systemPrompt = CONSULTANT_SYSTEM_PROMPT;
 
         // 调用 AI
         const provider = process.env.AI_PROVIDER || "qwen";
 
         let resultJson: Record<string, unknown> = {};
+        // 顾问叙事报告（v2）解析成功时非空；fallback 规则引擎产出 v1 结构，此变量保持 null
+        let consultantReport: ConsultantReport | null = null;
         let queueAcquired = false;
         try {
             // P3: 请求队列处理 - 申请令牌（防止并发过高打爆 LLM API）
@@ -621,7 +640,8 @@ export async function POST(request: NextRequest) {
             }
 
             const resultText = await generateText(systemPrompt, userPrompt, provider as AIProvider, abortController.signal, user?.id, effectiveSessionId);
-            resultJson = validateAndExtractJson(resultText, TextAnalysisOutputSchema) as Record<string, unknown>;
+            consultantReport = validateAndExtractJson(resultText, ConsultantReportSchema);
+            resultJson = consultantReport as unknown as Record<string, unknown>;
         } catch (e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));
             if (err.message?.includes("cancelled") || err.name === 'AbortError') {
@@ -696,8 +716,8 @@ export async function POST(request: NextRequest) {
             [key: string]: unknown;
         };
 
-        if (resultJson.products && Array.isArray(resultJson.products)) {
-            const mappedProducts = (resultJson.products as AiProductItem[]).map((p) => {
+        if (resultJson.productReasons && Array.isArray(resultJson.productReasons)) {
+            const mappedProducts = (resultJson.productReasons as AiProductItem[]).map((p) => {
                 // strict match against candidate pool to enforce RAG boundaries
                 const catalogProduct = candidateProducts.find((cp) => String(cp.id) === String(p.id));
                 if (catalogProduct) {
@@ -768,10 +788,14 @@ export async function POST(request: NextRequest) {
 
         }
 
-        // Safe concernAnalysis extraction with Array.isArray guard
+        // Safe concernAnalysis extraction with Array.isArray guard（仅 v1 fallback 路径有此字段）
         const concernAnalysisItems = Array.isArray(resultJson.concernAnalysis)
             ? resultJson.concernAnalysis
             : [];
+
+        // v2 顾问报告：details 由各问题的 observation 组成，供旧消费方（历史列表、日记补建）使用
+        const consultantObservations = consultantReport?.issues.map((i) => i.observation) ?? [];
+        const consultantLifestylePlans = consultantReport?.issues.map((i) => i.lifestylePlan) ?? [];
 
         const standardizedResult = {
             skinProfile: {
@@ -781,12 +805,16 @@ export async function POST(request: NextRequest) {
                 skinAge: faceAnalysis?.skinAge?.estimated ?? 25
             },
             analysis: {
-                summary: resultJson.summary || "根据您的问卷及面部数据，我们为您生成了这份综合分析报告。",
-                details: [
-                    resultJson.skinTypeAnalysis || "",
-                    ...concernAnalysisItems
-                ].filter(Boolean),
-                lifestyleTips: Array.isArray(resultJson.lifestyleTips) ? resultJson.lifestyleTips as string[] : [],
+                summary: consultantReport?.overview || (resultJson.summary as string | undefined) || "根据您的问卷及面部数据，我们为您生成了这份综合分析报告。",
+                details: consultantReport
+                    ? consultantObservations
+                    : [
+                        resultJson.skinTypeAnalysis || "",
+                        ...concernAnalysisItems
+                    ].filter(Boolean),
+                lifestyleTips: consultantReport
+                    ? consultantLifestylePlans
+                    : (Array.isArray(resultJson.lifestyleTips) ? resultJson.lifestyleTips as string[] : []),
             },
             products: finalProducts,
             faceAnalysis: finalFaceAnalysis, // Ensure faceAnalysis is propagated
@@ -794,7 +822,9 @@ export async function POST(request: NextRequest) {
             persona: personaKey,          // IP 形象 key (8-pie)
             userLocation: geoLocation,
             nickname: nickname || "护肤达人", // Include user nickname for sharing
-            skinState: finalFaceAnalysis && typeof skinState === "string" ? skinState : undefined // 拍摄时肌肤状态（仅面部扫描流程有意义）
+            skinState: finalFaceAnalysis && typeof skinState === "string" ? skinState : undefined, // 拍摄时肌肤状态（仅面部扫描流程有意义）
+            // 顾问叙事报告标记与数据（v2）；fallback 路径不携带，前端走旧渲染
+            ...(consultantReport ? { reportVersion: 2, consultantReport } : {}),
         };
 
         // 清理 AI 输出中的潜在危险内容（存储型 XSS 防护）

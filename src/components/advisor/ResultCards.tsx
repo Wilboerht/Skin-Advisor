@@ -182,7 +182,7 @@ export default function ResultCards({
             )}
 
             <p className="text-[14px] leading-relaxed text-[var(--color-brand-cocoa)] mb-5 lg:mb-6 max-w-full lg:max-w-[420px]">
-              {summary || '整体状态极佳，肌肤屏障健康，水油平衡度完美。'}
+              {summary || '详细分析见下方报告。'}
             </p>
 
             {/* Download Poster Button */}
@@ -244,7 +244,7 @@ export default function ResultCards({
                 深度肌肤检测报告
               </h2>
               <p className="text-[var(--color-brand-cocoa)] text-xs lg:text-xs max-w-xs leading-relaxed mb-4 lg:mb-8 font-medium tracking-wide relative z-10">
-                基于千万级亚洲肌肤数据库，全方位解析您的肌肤问题。
+                基于面部影像十维检测与您的问卷数据，全方位解析您的肌肤状态。
               </p>
             </div>
 

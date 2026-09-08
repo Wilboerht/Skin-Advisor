@@ -51,16 +51,7 @@ export function ProductRecommendationSection({
             return;
         }
 
-        // calculateScore 的理论最高分估算：
-        // 关注点匹配每匹配一项 +30（通常 2-4 项），年龄段 +25，肤质 +20，预算 +15，推荐 +10。
-        // 常规自然匹配下最高分约为 150；强制推荐商品会被额外 +1000 提升排序，
-        // 这里用 150 作为匹配度百分比的归一化基准，使其封顶在 99%。
-        const MAX_HEURISTIC_SCORE = 150;
-
         const processed = products.map(product => {
-            const baseScore = product.score ?? 0;
-            const matchScore = baseScore > 0 ? Math.min(99, Math.round((baseScore / MAX_HEURISTIC_SCORE) * 100)) : 0;
-
             let dimensionLink: ProductCardData['dimensionLink'] = null;
             if (faceAnalysis?.dimensions) {
                 const categoryToDimension: Record<string, string> = {
@@ -85,12 +76,11 @@ export function ProductRecommendationSection({
 
             return {
                 ...product,
-                matchScore,
                 dimensionLink
             } as ProductCardData;
         });
 
-        // 保持后端排序（AI 精选在前，算法补充在后），不再按 matchScore 重排
+        // 保持后端排序（AI 精选在前，算法补充在后）
         setProcessedProducts(processed);
     }, [products, faceAnalysis]);
 
@@ -139,12 +129,12 @@ export function ProductRecommendationSection({
                 className="text-center mb-6"
             >
                 <h2 className="text-lg lg:text-2xl font-bold text-brand-espresso tracking-wide">
-                    {personaLabel ? `你的「${personaLabel}」甄选推荐` : "甄选产品推荐"}
+                    {personaLabel ? `你的「${personaLabel}」方案落点` : "方案里的产品落点"}
                 </h2>
                 <p className="text-xs lg:text-sm text-[#8c7a6b] mt-2">
                     {personaLabel
-                        ? "基于您的肌肤检测结果，从专属方案中精选最适合入手的 3 件"
-                        : "基于您的肤质分析，为您精选以下产品"}
+                        ? "以上方案中提到的产品，是对应你本次诊断发现的具体落点"
+                        : "基于本次诊断发现，这些产品是你方案中的具体落点"}
                 </p>
             </m.div>
 

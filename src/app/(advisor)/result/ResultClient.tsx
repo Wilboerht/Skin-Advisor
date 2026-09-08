@@ -42,6 +42,7 @@ import { SharePoster } from "@/components/advisor/poster/SharePoster";
 import { toBlob } from "html-to-image";
 import { toDataURL } from "qrcode";
 import ResultCards from "@/components/advisor/ResultCards";
+import { ConsultantReport } from "@/components/advisor/ConsultantReport";
 
 // Import the new CSS Module
 import styles from "./result.module.css";
@@ -337,14 +338,19 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     const posterRef = useRef<HTMLDivElement>(null);
     const retryButtonRef = useRef<HTMLButtonElement>(null);
 
+    // 顾问叙事报告（v2）：consultantReport 存在时启用新渲染，旧报告/fallback 报告走原有板块
+    const isV2Report = result?.reportVersion === 2 && !!result?.consultantReport;
+
     const rankPercentile = useMemo(
         () => {
+            // v2 报告不再展示伪统计百分位（"超越全国 X% 用户"是固定公式，非真实统计）
+            if (isV2Report) return undefined;
             if (result?.dataSource === "questionnaire") return undefined;
             const rawScore = faceAnalysis?.overallScore;
             if (rawScore === undefined || rawScore === null) return undefined;
             return getRankPercentile(rawScore);
         },
-        [faceAnalysis?.overallScore, result?.dataSource]
+        [faceAnalysis?.overallScore, result?.dataSource, isV2Report]
     );
 
     // 重点问题关注：暗沉/黑头/痘痘等具体问题（维度分数 <70 或 AI 症状检测），按严重程度排序
@@ -1317,7 +1323,19 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
                             comprehensiveReport={
                                 <>
-                                    {/* 1、详细诊断报告 */}
+                                    {/* 顾问叙事报告（v2）：诊断卡推理链取代旧板块 1/2/4 与 Lab 伪数据 */}
+                                    {isV2Report && result.consultantReport && (
+                                        <div className="mt-6 lg:mt-14 mb-6">
+                                            <ConsultantReport
+                                                report={result.consultantReport}
+                                                dimensions={faceAnalysis?.dimensions as Record<string, { score?: number; grade?: string; details?: string } | undefined> | undefined}
+                                                personaRoute={result.persona}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* 1、详细诊断报告（v1） */}
+                                    {!isV2Report && (
                                     <div className="mt-6 lg:mt-14 mb-6">
                                         <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                             1、详细诊断报告 <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
@@ -1344,8 +1362,10 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                             </p>
                                         )}
                                     </div>
+                                    )}
 
-                                    {/* 2、专家护肤建议 */}
+                                    {/* 2、专家护肤建议（v1） */}
+                                    {!isV2Report && (
                                     <div className="mb-8">
                                         <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                             2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
@@ -1399,6 +1419,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                             </div>
                                         )}
                                     </div>
+                                    )}
 
                                     {/* 3. Zone Analysis Grid - always present when data exists, avoids CLS */}
                                     {faceAnalysis?.zoneAnalysis && (
@@ -1408,7 +1429,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                             ) : user ? (
                                                 <div className="mb-8">
                                                     <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-4 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-                                                        3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
+                                                        {isV2Report ? "区域皮肤地图" : "3、区域重点关注"} <span className="text-xs lg:text-base">(Area Focus)</span>
                                                     </h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                         {Object.entries({
@@ -1443,7 +1464,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                             ) : (
                                                 <div className="mb-8">
                                                     <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-4 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-                                                        3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
+                                                        {isV2Report ? "区域皮肤地图" : "3、区域重点关注"} <span className="text-xs lg:text-base">(Area Focus)</span>
                                                     </h4>
                                                     <div className="rounded-xl border border-dashed border-[#C9A86C]/40 bg-gradient-to-br from-[#FBF8F3] to-[var(--color-brand-cream)] p-6 text-center">
                                                         <Lock className="w-8 h-8 text-[#C9A86C] mx-auto mb-3" />
@@ -1462,8 +1483,8 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         </>
                                     )}
 
-                                    {/* 4、重点问题关注 */}
-                                    {faceAnalysis && (
+                                    {/* 4、重点问题关注（v1；v2 由诊断卡取代，且该静态知识库与品牌成分白名单口径冲突） */}
+                                    {!isV2Report && faceAnalysis && (
                                         <div className="mb-8">
                                             <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                                 4、重点问题关注 <span className="text-xs lg:text-base">(Key Concerns)</span>
@@ -1477,8 +1498,8 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         </div>
                                     )}
 
-                                    {/* Lab-Grade Analysis Metrics */}
-                                    {result?.dataSource !== "questionnaire" && faceAnalysis && (
+                                    {/* Lab-Grade Analysis Metrics（v1；v2 移除伪仪器值入口） */}
+                                    {!isV2Report && result?.dataSource !== "questionnaire" && faceAnalysis && (
                                         <button
                                             type="button"
                                             onClick={() => setShowLabData(true)}

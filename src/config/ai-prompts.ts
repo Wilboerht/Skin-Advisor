@@ -370,3 +370,213 @@ export const REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION = `
    - recommendations 中至少包含1条结合品牌成分体系的具体护肤流程建议
 ${ANTI_PROMPT_INJECTION_RULE}
 `;
+
+// ============================================================================
+// 顾问叙事报告（Report v2）提示词
+// 与 v1 的区别：从"板块填充"改为"推理链"——每个问题必须走完
+// 观察（证据）→ 直接/间接诱因 → 护理/生活方案 → 就医边界。
+// ============================================================================
+
+export const CONSULTANT_SYSTEM_PROMPT = `
+你是${BRAND_CONFIG.name}的资深皮肤顾问，有十五年面诊经验。你正在给一位用户当面解读TA的测肤报告。
+
+你的说话方式：
+- 像面诊一样自然、有温度，直接说"你"，不端架子也不讨好
+- 看到一个地方有问题就说哪里，问题有几个说几个；皮肤好的地方也如实肯定
+- 每个结论都建立在数据上，但你是在"解读"数据，不是"朗读"数据
+
+【铁律：证据驱动】
+1. 每个报告的问题，"我看到的"部分必须引用至少一条具体证据：某个维度的评分与判读、某个区域的观察结果、或用户问卷中的原话。证据不足的问题，宁可不写进报告，绝不编造
+2. issues 数量为 0-4 个：没有问题就返回空数组并如实说明整体状态良好；不要为凑数把正常状态写成问题
+3. 引用评分时必须配解释（"色斑 62 分，主要是两颊颧骨处有可见的色素沉着点"），禁止干巴巴地罗列数字
+
+【铁律：推理链完整】
+每个问题必须按这个顺序讲清楚：
+1. 我看到的（observation）：问题是什么、在哪个部位、严重程度如何，引用证据
+2. 直接诱因（directCauses）：皮肤学机制——这个问题在皮肤上是怎么发生的
+3. 间接诱因（indirectCauses）：结合用户的问卷（睡眠/日晒/饮食/压力/护肤习惯/医美史），指出TA生活中哪些因素在喂养这个问题。问卷数据和问题明显无关时不要强行关联，写"目前没有明显的生活习惯诱因"
+4. 护理方案（skincarePlan）：具体成分（限品牌成分体系内）+ 使用频率 + 早晚时机
+5. 生活方案（lifestylePlan）：可执行的作息/饮食/防晒习惯调整，不说正确的废话
+6. 就医边界（medicalBoundary）：什么情况建议去皮肤科面诊。没有风险信号就如实写"暂不需要就医，坚持护理观察即可"。只做就医提示，绝不给出疾病诊断结论
+
+【内容与语气约束】
+- 全部使用纯中文，禁止英文术语缩写（成分名除外）
+- 成分推荐必须限定在品牌成分体系内，不推荐体系外成分
+- 禁止任何营销话术和编造的数据（如"超越全国X%用户""千万级数据库"）
+- 禁止"评分XX分""维度分数为XX"这类机器表述；分数只能以"XX 62 分，意味着……"的解读方式出现
+
+输出格式：严格按用户提示中的 JSON 结构输出，不包含额外 Markdown 标记。
+${ANTI_PROMPT_INJECTION_RULE}
+`;
+
+/** 派系护肤方案骨架（由调用方从 result-content.json 按 persona 提取后传入） */
+export interface PersonaRoutineContext {
+  typeName: string;
+  morning?: string;
+  night?: string;
+  formulaCore?: string;
+  formulaSuggestions?: string[];
+}
+
+export function buildConsultantPrompt(params: {
+  skinTypeLabel?: string;
+  ageRange?: string;
+  concerns?: string[];
+  gender?: string;
+  location?: string;
+  budget?: string;
+  medicalBeauty?: string;
+  sleep?: string;
+  stressLevel?: string;
+  waterIntake?: string;
+  exerciseFrequency?: string;
+  dietaryHabits?: string;
+  sunExposure?: string;
+  skincareFrequency?: string;
+  allergies?: string | string[];
+  pregnancyStatus?: string;
+  medicationHistory?: string;
+  faceAnalysis?: Partial<FaceAnalysisResult>;
+  products?: unknown[];
+  isLoggedIn?: boolean;
+  skinState?: string;
+  /** 派系护肤方案骨架（m4 早晚节奏 + m7 护肤公式），AI 据此做个性化微调而非从零编写 */
+  personaContent?: PersonaRoutineContext;
+}) {
+  // 产品候选列表（与 v1 相同的精简逻辑）
+  const MAX_PRODUCT_DESC_CHARS = 120;
+  type ProductPromptItem = {
+    id: string | number;
+    name: string;
+    benefits?: string | string[];
+    suitableSkinTypes?: string | string[];
+    description?: string;
+    price?: string | number;
+    recommendReasons?: Record<string, string> | null;
+  };
+  const productSource = params.products && params.products.length > 0 ? params.products : [];
+  const productsContext = (productSource as ProductPromptItem[]).slice(0, 6).map((p) => {
+    const desc = p.description || "";
+    const truncatedDesc = desc.length > MAX_PRODUCT_DESC_CHARS ? desc.slice(0, MAX_PRODUCT_DESC_CHARS) + "..." : desc;
+    const reasonsHint = p.recommendReasons && Object.keys(p.recommendReasons).length > 0
+      ? `, 推荐理由参考: ${JSON.stringify(p.recommendReasons)}`
+      : "";
+    return `- ID: ${p.id}, 名称: ${p.name}, 价格: ${p.price || '咨询'}, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}${truncatedDesc ? `, 描述: ${truncatedDesc}` : ""}${reasonsHint}`;
+  }).join("\n");
+
+  const medicalText = medicalBeautyMap[params.medicalBeauty || "none"] || params.medicalBeauty || "无";
+  const sleepText = sleepMap[params.sleep || ""] || params.sleep || "未知";
+  const stressText = stressMap[params.stressLevel || ""] || "未知";
+  const waterText = waterMap[params.waterIntake || ""] || "未知";
+  const exerciseText = exerciseMap[params.exerciseFrequency || ""] || "未知";
+  const dietText = dietMap[params.dietaryHabits || ""] || "未知";
+  const sunText = sunMap[params.sunExposure || ""] || "未知";
+  const freqText = freqMap[params.skincareFrequency || ""] || "未知";
+  const budgetText = budgetMap[params.budget || ""] || "未知";
+
+  // 维度证据：分数 + AI 视觉判读详情（details 是"为什么是这个分"的关键素材）
+  const dimensionsContext = params.faceAnalysis?.dimensions
+    ? Object.entries(params.faceAnalysis.dimensions)
+        .map(([key, dim]) => {
+          const label = DIMENSION_LABELS[key] || key;
+          const d = dim as { score?: number; grade?: string; details?: string; blackheads?: number; pimples?: number };
+          const sub = key === "acne" && (d.blackheads != null || d.pimples != null)
+            ? `（子分：黑头/闭口 ${d.blackheads ?? 'N/A'}，炎性痘痘 ${d.pimples ?? 'N/A'}，越高问题越少）`
+            : "";
+          return `- ${label}(${key}): ${d.score ?? 'N/A'}分${sub}${d.details ? ` | 视觉判读: ${d.details}` : ""}`;
+        })
+        .join("\n")
+    : "";
+
+  // 区域观察全量注入（v1 截断到 500 字符导致顾问丢失证据，v2 不截断）
+  const zoneContext = params.faceAnalysis?.zoneAnalysis
+    ? wrapUserData("zoneAnalysis", sanitizePromptInput(JSON.stringify(params.faceAnalysis.zoneAnalysis)))
+    : "无";
+
+  const skinConditionsContext = params.faceAnalysis?.skinConditions?.length
+    ? wrapUserData("skinConditions", sanitizePromptInput(JSON.stringify(params.faceAnalysis.skinConditions)))
+    : "无";
+
+  const personaContext = params.personaContent ? `
+用户所属护肤派系「${params.personaContent.typeName}」的既定方案骨架（请以此为基础，在 routineNote 中结合本次诊断说明需要微调的地方）：
+${params.personaContent.morning ? `- 晨间节奏：${params.personaContent.morning}` : ""}
+${params.personaContent.night ? `- 夜间节奏：${params.personaContent.night}` : ""}
+${params.personaContent.formulaCore ? `- 护肤公式：${params.personaContent.formulaCore}` : ""}
+${params.personaContent.formulaSuggestions?.length ? `- 公式要点：${params.personaContent.formulaSuggestions.join("；")}` : ""}
+` : "";
+
+  return `请为以下用户生成一份顾问面诊式测肤报告（Report v2）。
+
+用户概况：
+- 性别：${params.gender || "未提供"}
+- 肤质：${params.skinTypeLabel || "未知"}
+- 年龄段：${params.ageRange || "未知"}
+- 所在地：${params.location ? wrapUserData("location", sanitizePromptInput(params.location)) : "未知"}
+- 关注问题：${params.concerns?.join(", ") || "无"}
+${params.allergies ? `- 过敏史：${wrapUserData("allergies", sanitizePromptInput(Array.isArray(params.allergies) ? params.allergies.join("、") : params.allergies))}` : ""}
+${params.pregnancyStatus === "yes" ? `- ⚠️ 孕期：是（在此基础上额外排除孕期禁忌成分，见下方规则）` : params.pregnancyStatus === "unknown" ? "- 孕期状态：不确定（按孕期标准谨慎推荐）" : ""}
+
+生活状态（间接诱因分析的素材）：
+- 医美经历(近3月)：${medicalText}
+- 睡眠习惯：${sleepText}
+- 精神压力：${stressText}
+- 饮水习惯：${waterText}
+- 运动频率：${exerciseText}
+- 饮食习惯：${dietText}
+- 日晒程度：${sunText}
+- 当前护肤流程：${freqText}
+- 护肤预算：${budgetText}
+${params.skinState && SKIN_STATE_LABELS[params.skinState] ? `- 拍摄时肌肤状态：${SKIN_STATE_LABELS[params.skinState]}` : ""}
+${params.medicationHistory && params.medicationHistory !== "none" ? `- 用药史：${wrapUserData("medicationHistory", sanitizePromptInput(params.medicationHistory))}（可能影响皮肤状态）` : ""}
+
+面部检测数据：
+- 综合评分: ${params.faceAnalysis?.overallScore ?? 'N/A'}/100
+- 肌龄: ${params.faceAnalysis?.skinAge?.estimated ?? 'N/A'} 岁
+${dimensionsContext}
+- 区域观察（6 区域）: ${zoneContext}
+- 检测到的皮肤症状: ${skinConditionsContext}
+${buildSkinStateTextNote(params.skinState) ? `\n⚠️ 拍摄状态规则：${buildSkinStateTextNote(params.skinState)}` : ""}
+${personaContext}
+品牌成分体系（所有成分推荐必须在此范围内）：
+${BRAND_INGREDIENT_WHITELIST}
+
+逻辑判断规则：
+1. 若有医美经历，护理方案以温和修护为主，避免刺激性成分
+2. 若睡眠"较差"或压力"较高"，在相关问题的间接诱因中点名关联（抗氧化、暗沉、夜间修护）
+3. ${PREGNANCY_EXCLUSION_RULE}
+4. 日晒程度高而防晒不足时，在色斑/光老化相关问题的诱因与方案中强调
+5. 饮水不足或高糖高油饮食，关联到暗沉与痤疮风险
+6. 结合所在地气候给出针对性建议
+7. 产品选择遵循"先合适再预算匹配"原则，最多 3 款${params.isLoggedIn ? '\n8. 当前为已登录会员，分析可以更深入、引用更多细节数据。' : ''}
+
+可用产品列表（productReasons 的 id 必须完全匹配其中 ID；无合适产品时返回空数组）：
+${productsContext}
+
+请输出严格符合以下结构的 JSON（不要 Markdown 代码块包裹）：
+{
+  "overview": "开场总判断，3-4句话：整体底子如何、最需关注的1-2个问题是什么、一个如实肯定的优势。像顾问见面第一句话，不堆数字",
+  "issues": [
+    {
+      "title": "问题名（自然语言，如「两颊色斑倾向」）",
+      "severity": "mild | moderate | severe",
+      "observation": "我看到的：问题是什么、在哪个部位、什么程度。必须引用至少一条具体证据（维度评分+判读 / 区域观察 / 问卷原话）",
+      "directCauses": "直接诱因：皮肤学机制，这个问题在皮肤上是怎么发生的",
+      "indirectCauses": "间接诱因：结合用户问卷指出生活中的喂养因素；确实无关时写「目前没有明显的生活习惯诱因」",
+      "skincarePlan": "护理方案：具体成分（限品牌体系内）+ 使用频率 + 早晚时机",
+      "lifestylePlan": "生活方案：可执行的作息/饮食/防晒调整，不说正确的废话",
+      "medicalBoundary": "什么情况建议皮肤科面诊；无风险信号时如实写暂不需要就医。只做就医提示，不做疾病诊断",
+      "relatedDimensions": ["关联维度key，从 waterOil/skinTone/spots/wrinkles/uvDamage/sensitivity/darkCircles/firmness/acne/radiance 中选"]
+    }
+  ],
+  "strengths": ["优势项1-2条，一句带过，如实肯定，不夸大"],
+  "routineNote": "结合本次诊断，对用户派系既定早晚方案需要微调的地方（1-2句）；无派系骨架时给出最基础的一步建议",
+  "productReasons": [{"id": "产品ID", "reason": "为什么这款适合TA：必须引用本次诊断中的具体发现，如「针对你两颊的色斑倾向，这款含烟酰胺的精华正好对应」"}]
+}
+
+输出要求：
+- issues 0-4 个，按严重程度从高到低排序；只报告有证据的问题
+- 每个 issue 的六段推理链（observation/directCauses/indirectCauses/skincarePlan/lifestylePlan/medicalBoundary）都必填，每段 1-3 句话
+- overview 里引用分数不超过 1 处
+- 全文纯中文，语气温和专业，像面诊对话而不是化验单
+`;
+}

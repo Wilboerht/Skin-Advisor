@@ -534,7 +534,8 @@ async function callProviderInternal(
                     { role: "user", content: safeUserPrompt }
                 ],
                 temperature: settings.temperature,
-                max_tokens: Math.min(settings.maxTokens, 3000)
+                // 顾问叙事报告（v2）推理链输出约需 3-5K tokens，硬顶从 3000 提高到 6000
+                max_tokens: Math.min(settings.maxTokens, 6000)
             },
             { signal: controller.signal }
         );
