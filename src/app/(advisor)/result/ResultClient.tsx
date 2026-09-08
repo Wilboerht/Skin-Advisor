@@ -21,6 +21,7 @@ import { toBlob } from "html-to-image";
 import { toDataURL } from "qrcode";
 import ShareCardPage from "@/components/advisor/ShareCardPage";
 import ReportPage from "@/components/advisor/ReportPage";
+import UserBadge from "@/components/advisor/UserBadge";
 import { GenderMismatchModal, LabDataModal, PosterSaveModal } from "@/components/advisor/result-modals";
 import { ProductRecommendationSection } from "@/components/advisor/ProductRecommendationSection";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
@@ -277,6 +278,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // 证书日期：分析完成时间。缺失（老缓存/历史数据未携带）时不展示日期，避免把"查看时间"伪造成"测肤时间"
     const certDate = result?.analyzedAt;
+
+    // 当前派系中文名（顶部栏身份区/产品区/分享海报共用）
+    const personaLabel = result?.persona
+        ? skinTypes.find(t => t.ipKey === result.persona)?.typeName
+        : undefined;
 
     // ===== 两页版式（证书封面 + 报告正文）与趋势对比 =====
 
@@ -1169,26 +1175,31 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
             {result && (
                 <div className={styles.container}>
-                    {/* 顶部栏：全局固定，logo 居中 + 右侧回首页，跨两页共享（不随页面层滚动） */}
+                    {/* 顶部栏：全局固定，三段式（回首页 / logo / 用户身份区），跨两页共享（不随页面层滚动） */}
                     <header className={styles.topBar}>
                         <div className={styles.topBarInner}>
+                            <button
+                                onClick={() => navPush('/')}
+                                disabled={isNavigating}
+                                className="justify-self-start inline-flex items-center gap-1 py-2 pr-2 text-[11px] sm:text-[12px] font-light tracking-[0.08em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors"
+                                aria-label="回到首页"
+                            >
+                                <House className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                <span className="hidden sm:inline">回到首页</span>
+                            </button>
+
                             <Image
                                 src="/NIHPLOD-logo.svg"
                                 alt="NIHPLOD"
                                 width={120}
                                 height={30}
-                                className="h-7 sm:h-8 w-auto object-contain"
+                                className="h-7 sm:h-8 w-auto object-contain justify-self-center"
                                 priority
                             />
-                            <button
-                                onClick={() => navPush('/')}
-                                disabled={isNavigating}
-                                className="absolute right-0 inline-flex items-center gap-1 py-2 pl-2 text-[11px] sm:text-[12px] font-light tracking-[0.08em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors"
-                                aria-label="回到首页"
-                            >
-                                <House className="w-3.5 h-3.5" strokeWidth={1.75} />
-                                回到首页
-                            </button>
+
+                            <div className="justify-self-end">
+                                <UserBadge personaLabel={personaLabel} />
+                            </div>
                         </div>
                     </header>
 
@@ -1318,7 +1329,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         } satisfies ProductCardData))}
                                         isLoading={loading}
                                         faceAnalysis={faceAnalysis}
-                                        personaLabel={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
+                                        personaLabel={personaLabel}
                                         onProductClick={(productId) => {
                                             const product = result.products?.find(p => p.id === productId);
                                             if (product) {
@@ -1461,7 +1472,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             score={faceAnalysis?.overallScore ?? undefined}
                             percentile={rankPercentile}
                             waterOil={faceAnalysis?.dimensions?.waterOil?.score}
-                            skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
+                            skinTypeName={personaLabel}
                             skinAge={result?.skinProfile?.skinAge}
                             avatar={socialGender ? getCharacterImage({
                                 score: faceAnalysis?.overallScore ?? 0,
