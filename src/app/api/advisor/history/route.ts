@@ -43,10 +43,10 @@ async function lazyClaimGuestSessions(userId: string, ip: string): Promise<void>
                 const face = (result.faceAnalysis ?? null) as { overallScore?: unknown } | null | undefined;
                 if (typeof face?.overallScore !== "number") continue;
                 const skinProfile = (result.skinProfile ?? null) as { typeLabel?: unknown } | null | undefined;
-                const skinType = (result.skinType ?? null) as { typeLabel?: unknown } | null | undefined;
+                const skinAnalysis = (result.skinAnalysis ?? null) as { typeLabel?: unknown } | null | undefined;
                 const skinTypeLabel =
                     typeof skinProfile?.typeLabel === "string" ? skinProfile.typeLabel
-                    : typeof skinType?.typeLabel === "string" ? skinType.typeLabel
+                    : typeof skinAnalysis?.typeLabel === "string" ? skinAnalysis.typeLabel
                     : undefined;
                 upsertAutoDiaryEntry({
                     userId,
@@ -126,11 +126,11 @@ export async function GET(req: NextRequest) {
                 const result = s.analysisResult as Record<string, unknown> | null | undefined;
                 const face = (result?.faceAnalysis ?? null) as { overallScore?: unknown } | null | undefined;
                 const skinProfile = (result?.skinProfile ?? null) as { typeLabel?: unknown } | null | undefined;
-                const skinType = (result?.skinType ?? null) as { typeLabel?: unknown } | null | undefined;
+                const skinAnalysis = (result?.skinAnalysis ?? null) as { typeLabel?: unknown } | null | undefined;
                 const score = typeof face?.overallScore === "number" ? face.overallScore : undefined;
                 const typeLabel =
                     typeof skinProfile?.typeLabel === "string" ? skinProfile.typeLabel
-                    : typeof skinType?.typeLabel === "string" ? skinType.typeLabel
+                    : typeof skinAnalysis?.typeLabel === "string" ? skinAnalysis.typeLabel
                     : undefined;
                 return {
                     sessionId: s.sessionId,

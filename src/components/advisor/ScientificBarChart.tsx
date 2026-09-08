@@ -40,7 +40,7 @@ export function ScientificBarChart({ dimensions, activeDimension, onDimensionSel
     const chartData = useMemo(() => DIMENSION_ORDER.map(key => ({
         dimension: DIMENSION_LABELS[key],
         key: key,
-        score: dimensions[key]?.score ?? 50,
+        score: dimensions[key]?.score,
         fullMark: 100,
     })), [dimensions]);
 
@@ -106,14 +106,14 @@ export function ScientificBarChart({ dimensions, activeDimension, onDimensionSel
                                         className="select-none"
                                         style={{ transition: 'none' }}
                                     >
-                                        {value}
+                                        {data?.score === undefined ? '-' : value}
                                     </text>
                                 );
                             }}
                         />
                         {chartData.map((entry, index) => {
                             const isActive = activeDimension === entry.key;
-                            const baseColor = getScoreColor(entry.score);
+                            const baseColor = entry.score === undefined ? '#D9D4CC' : getScoreColor(entry.score);
                             return (
                                 <Cell
                                     key={`cell-${index}`}
@@ -133,12 +133,12 @@ export function ScientificBarChart({ dimensions, activeDimension, onDimensionSel
 
             {/* Severity indicator bar — positioned outside SVG, aligned via margins */}
             <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, paddingLeft: 125, paddingRight: 55 }}>
-                {/* Scale ticks */}
-                <div className="flex justify-between text-[11px] text-[#787774] mb-1">
-                    <span>0</span>
-                    <span>60</span>
-                    <span>80</span>
-                    <span>100</span>
+                {/* Scale ticks：按真实百分比定位，与渐变条分段及 ReferenceLine 对齐 */}
+                <div className="relative h-4 text-[11px] text-[#787774] mb-1">
+                    <span className="absolute left-0">0</span>
+                    <span className="absolute left-[60%] -translate-x-1/2">60</span>
+                    <span className="absolute left-[80%] -translate-x-1/2">80</span>
+                    <span className="absolute right-0">100</span>
                 </div>
                 {/* Gradient bar */}
                 <div className="h-1.5 w-full rounded-full overflow-hidden"

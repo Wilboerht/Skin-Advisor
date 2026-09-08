@@ -81,12 +81,12 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
         {/* 第二层：IP 形象 */}
         {avatar && !avatarFailed && (
-          <div className="absolute z-10" style={{ top: "10%", left: "4%" }}>
+          <div className="absolute z-10 w-[40%]" style={{ top: "10%", left: "4%" }}>
             <img
               src={avatar}
               alt=""
               loading="eager"
-              className="w-[40%] h-auto"
+              className="w-full h-auto"
               onError={() => setAvatarFailed(true)}
             />
           </div>
@@ -118,13 +118,13 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
           {skinAge !== undefined && (
             <div className="absolute top-[49.5%] left-[40%] -translate-x-1/2">
-              <p className="text-xs font-light text-[#00263E] whitespace-nowrap">{skinAge}岁</p>
+              <p className="text-xs font-light text-[#00263E] whitespace-nowrap">{Math.round(skinAge)}岁</p>
             </div>
           )}
 
           {waterOil !== undefined && (
             <div className="absolute top-[55.8%] left-[40%] -translate-x-1/2">
-              <p className="text-xs font-light text-[#00263E] whitespace-nowrap">{waterOil}分</p>
+              <p className="text-xs font-light text-[#00263E] whitespace-nowrap">{Math.round(waterOil)}分</p>
             </div>
           )}
 
@@ -136,7 +136,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
           <div className="absolute top-[46%] left-[61%] -translate-x-1/2">
             {score !== undefined ? (
-              <p className="text-[66px] font-bold text-[#00263E] whitespace-nowrap">{score}<span className="text-sm font-bold">分</span></p>
+              <p className="text-[66px] font-bold text-[#00263E] whitespace-nowrap">{Math.round(score)}<span className="text-sm font-bold">分</span></p>
             ) : (
               <p className="text-2xl font-bold text-[#00263E] whitespace-nowrap">问卷评估</p>
             )}
@@ -150,7 +150,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
           {summary && (
             <div className="absolute bottom-[25%] left-[13%] max-w-[160px]">
-              <p className="text-[8px] font-light text-[#00263E] leading-relaxed">{addCJKSpace(summary)}</p>
+              <p className="text-[8px] font-light text-[#00263E] leading-relaxed line-clamp-4">{addCJKSpace(summary)}</p>
             </div>
           )}
 

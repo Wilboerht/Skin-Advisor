@@ -66,7 +66,7 @@ export default function ResultCards({
   comprehensiveReport,
 }: ResultCardsProps) {
   const tZoneLabel = useMemo(
-    () => getTZoneLabel(dimensions?.waterOil?.score ?? 0),
+    () => dimensions?.waterOil?.score === undefined ? '-' : getTZoneLabel(dimensions.waterOil.score),
     [dimensions]
   );
 
@@ -126,28 +126,28 @@ export default function ResultCards({
             </motion.div>
 
             {/* Skin Age */}
-            {skinAge !== undefined && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.35 }}
-                className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
-                style={{
-                  background: '#EBE8E2',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
-                }}
-              >
-                <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                  <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">肌肤年龄</p>
-                  <div className="flex items-baseline">
-                    <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
-                      <AnimatedNumber value={skinAge} duration={1.5} />
-                    </span>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.35 }}
+              className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
+              style={{
+                background: '#EBE8E2',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+              }}
+            >
+              <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
+                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">肌肤年龄</p>
+                <div className="flex items-baseline">
+                  <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
+                    {skinAge === undefined ? '-' : <AnimatedNumber value={skinAge} duration={1.5} />}
+                  </span>
+                  {skinAge !== undefined && (
                     <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">岁</span>
-                  </div>
+                  )}
                 </div>
-              </motion.div>
-            )}
+              </div>
+            </motion.div>
 
             {/* T-zone Indicator */}
             <motion.div

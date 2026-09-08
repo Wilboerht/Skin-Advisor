@@ -209,4 +209,33 @@ describe("buildFocusProblems - 成因与解决方法", () => {
         expect(imbalance?.description).toBe("T区油脂分泌旺盛");
         expect(problems.filter((p) => p.key === "blackheads" || p.key === "acne")).toHaveLength(0);
     });
+
+    it("「红肿痘痘」症状只匹配痘痘卡，不污染泛红敏感卡", () => {
+        const dims = makeDimensions();
+        dims.acne = { score: 90, grade: "excellent", details: "" };
+        const conditions: SkinCondition[] = [
+            { condition: "红肿痘痘", severity: "moderate", area: "下巴", description: "下巴红肿痘痘" },
+        ];
+        const problems = buildFocusProblems(dims, {}, conditions);
+        const acne = problems.find((p) => p.key === "acne");
+        const redness = problems.find((p) => p.key === "redness");
+        expect(acne).toBeDefined();
+        expect(acne?.description).toBe("下巴红肿痘痘");
+        // sensitivity 分数 85 且症状被排除，泛红卡不出卡、不串痘痘描述
+        expect(redness).toBeUndefined();
+    });
+
+    it("泛红油痘无关的「红肿」症状仍归入泛红敏感卡", () => {
+        const dims = makeDimensions();
+        dims.acne = { score: 90, grade: "excellent", details: "" };
+        dims.sensitivity = { score: 85, grade: "excellent", details: "" };
+        const conditions: SkinCondition[] = [
+            { condition: "面部红肿", severity: "moderate", area: "两颊", description: "两颊红肿伴刺痛" },
+        ];
+        const problems = buildFocusProblems(dims, {}, conditions);
+        const redness = problems.find((p) => p.key === "redness");
+        expect(redness).toBeDefined();
+        expect(redness?.description).toBe("两颊红肿伴刺痛");
+        expect(problems.find((p) => p.key === "acne")).toBeUndefined();
+    });
 });

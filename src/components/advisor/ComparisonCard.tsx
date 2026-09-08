@@ -45,7 +45,7 @@ function DeltaBadge({ delta, goodWhenNegative = false }: { delta?: number; goodW
                 good ? "text-[#3d7a4d]" : "text-[#c45a4a]"
             )}
         >
-            {good ? (
+            {delta > 0 ? (
                 <TrendingUp className="w-3 h-3" strokeWidth={2} />
             ) : (
                 <TrendingDown className="w-3 h-3" strokeWidth={2} />
@@ -57,15 +57,15 @@ function DeltaBadge({ delta, goodWhenNegative = false }: { delta?: number; goodW
 
 export default function ComparisonCard({ prev, score, skinAge, persona, at }: ComparisonCardProps) {
     const scoreDelta = score !== undefined && typeof prev.score === "number"
-        ? score - prev.score
+        ? Math.round(score - prev.score)
         : undefined;
     const skinAgeDelta = skinAge !== undefined && typeof prev.skinAge === "number"
-        ? skinAge - prev.skinAge
+        ? Math.round(skinAge - prev.skinAge)
         : undefined;
     const personaChanged = !!prev.persona && !!persona && prev.persona !== persona;
 
-    const prevLabel = prev.persona ? getSkinTypeByIpKey(prev.persona)?.typeName || prev.persona : "—";
-    const curLabel = persona ? getSkinTypeByIpKey(persona)?.typeName || persona : "—";
+    const prevLabel = prev.persona ? getSkinTypeByIpKey(prev.persona)?.typeName ?? "未知肤质" : "—";
+    const curLabel = persona ? getSkinTypeByIpKey(persona)?.typeName ?? "未知肤质" : "—";
     const prevDate = formatDate(prev.at);
     const gapDays = daysBetween(at, prev.at);
 
@@ -113,23 +113,23 @@ export default function ComparisonCard({ prev, score, skinAge, persona, at }: Co
                     <p className="text-[11px] text-[#7a6552] font-medium mb-1.5">综合评分</p>
                     <div className="flex items-baseline gap-1.5">
                         <span className="text-xl lg:text-2xl font-bold text-[var(--color-brand-charcoal)] leading-none">
-                            {score !== undefined ? score : "—"}
+                            {score !== undefined ? Math.round(score) : "—"}
                         </span>
                         <DeltaBadge delta={scoreDelta} />
                     </div>
-                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">上次 {prev.score ?? "—"}</p>
+                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">上次 {typeof prev.score === "number" ? Math.round(prev.score) : "—"}</p>
                 </div>
 
                 <div className="rounded-xl p-3 lg:p-4 bg-[#EBE8E2] border border-brand-espresso/5">
                     <p className="text-[11px] text-[#7a6552] font-medium mb-1.5">肌肤年龄</p>
                     <div className="flex items-baseline gap-1.5">
                         <span className="text-xl lg:text-2xl font-bold text-[var(--color-brand-charcoal)] leading-none">
-                            {skinAge !== undefined ? skinAge : "—"}
+                            {skinAge !== undefined ? Math.round(skinAge) : "—"}
                         </span>
                         <span className="text-[11px] text-[#7a6552]/70">岁</span>
                         <DeltaBadge delta={skinAgeDelta} goodWhenNegative />
                     </div>
-                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">上次 {prev.skinAge ?? "—"} 岁</p>
+                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">上次 {typeof prev.skinAge === "number" ? Math.round(prev.skinAge) : "—"} 岁</p>
                 </div>
 
                 <div className="rounded-xl p-3 lg:p-4 bg-[#E6E2DA] border border-brand-espresso/5">

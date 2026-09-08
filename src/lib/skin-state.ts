@@ -28,6 +28,9 @@ export function isMakeupState(value: string | null | undefined): boolean {
 export function buildSkinStateVisionNote(value: string | null | undefined): string {
     const label = value ? SKIN_STATE_LABELS[value] : undefined;
     if (!label) return "";
+    if (value === "bare") {
+        return `# 用户拍摄时肌肤状态：${label}，无底妆/防晒/洗后刺激干扰，可直接按真实肌肤状况判断。`;
+    }
     let note = `# 用户拍摄时肌肤状态：${label}\n# 分析时必须考虑拍摄状态对判断的影响：`;
     if (value === "light_makeup" || value === "heavy_makeup") {
         note += "底妆会掩盖纹理、毛孔、泛红与色斑，sensitivity/spots/skinTone/acne 维度的判定需降低置信度，details 中可注明\"底妆可能影响该判断\"；";

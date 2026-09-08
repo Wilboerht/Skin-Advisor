@@ -90,10 +90,10 @@
 }
 
 .main {
-    /* 与 questions 页内容同宽：max-w-5xl + 相同响应式边距（16/48/80） */
-    max-width: 1024px;
+    /* 内容区域保持原有宽度（max-w 900 + 16/24px 边距），仅顶部栏与 questions 页对齐 */
+    max-width: 900px;
     margin: 0 auto;
-    padding: 0 48px 32px;
+    padding: 0 24px 32px;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -103,11 +103,5 @@
 @media (max-width: 768px) {
     .main {
         padding: 0 16px 24px;
-    }
-}
-
-@media (min-width: 1024px) {
-    .main {
-        padding: 0 80px 32px;
     }
 }

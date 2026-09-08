@@ -235,6 +235,32 @@ function sanitizeAiOutput(obj: unknown): unknown {
     return obj;
 }
 
+/**
+ * 清理 analysisStartedAt，避免 session 因中途失败/异常永久卡在 analyzing。
+ * 用 updateMany 而非 update：异常发生在 upsert 占位之前时行不存在，
+ * 0 行静默跳过，避免 P2025 触发的无意义重试。已完成的会话不动。
+ */
+async function clearAnalysisStartedAt(sessionId: string): Promise<void> {
+    let cleanedUp = false;
+    for (let attempt = 0; attempt < 3 && !cleanedUp; attempt++) {
+        try {
+            await prisma.advisorSession.updateMany({
+                where: { sessionId, analysisStartedAt: { not: null }, completedAt: null },
+                data: { analysisStartedAt: null }
+            });
+            cleanedUp = true;
+        } catch (cleanupErr) {
+            logger.error(`[analyze] DB cleanup attempt ${attempt + 1}/3 failed:`, cleanupErr);
+            if (attempt < 2) {
+                await new Promise(r => setTimeout(r, 100 * Math.pow(2, attempt)));
+            }
+        }
+    }
+    if (!cleanedUp) {
+        logger.error(`[analyze] CRITICAL: Failed to cleanup after 3 attempts, session ${sessionId} may be stuck`);
+    }
+}
+
 export async function POST(request: NextRequest) {
     // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
     const abortController = new AbortController();
@@ -659,6 +685,7 @@ export async function POST(request: NextRequest) {
                         await rollbackUsage(request, effectiveSessionId);
                     }
                 }
+                await clearAnalysisStartedAt(effectiveSessionId);
                 return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消，请重试", 499);
             }
             if (err.message?.includes("[AIBudget]")) {
@@ -666,6 +693,7 @@ export async function POST(request: NextRequest) {
                 if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
                     await rollbackUsage(request, effectiveSessionId);
                 }
+                await clearAnalysisStartedAt(effectiveSessionId);
                 const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "3600");
                 return response;
@@ -676,6 +704,7 @@ export async function POST(request: NextRequest) {
                 if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
                     await rollbackUsage(request, effectiveSessionId);
                 }
+                await clearAnalysisStartedAt(effectiveSessionId);
                 const response = apiError("AI_CIRCUIT_OPEN", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "60");
                 return response;
@@ -704,7 +733,8 @@ export async function POST(request: NextRequest) {
                     skinTypeAnalysis: `检测到的主要肤质特征为：${getSkinTypeLabel(fallbackFace.skinType.type)}。`,
                     concernAnalysis: fallbackFace.recommendations?.map((r: string) => `• ${r}`) || [],
                     lifestyleTips: fallbackFace.recommendations || [],
-                    faceAnalysis: fallbackFace,
+                    // 不携带 fallbackFace 本体：它是规则引擎伪造的面部分析（overallScore 75 等），
+                    // 进入结果会被前端当作真实扫脸数据渲染维度图 / Lab 入口 / 肌龄
                 };
             } catch (fallbackErr) {
                 logger.error("Fallback analysis also failed", fallbackErr);
@@ -777,8 +807,9 @@ export async function POST(request: NextRequest) {
 
         // 8. Construct Final Standardized Result (Matching ComprehensiveResult Interface)
 
-        // Enhance Face Analysis with Text AI Recommendations if missing
-        const finalFaceAnalysis = faceAnalysis || (resultJson.faceAnalysis as Record<string, unknown> | undefined) || null;
+        // 仅使用客户端传来的真实面部分析（用户真的扫过脸）；
+        // 不再从 resultJson.faceAnalysis 取——fallback 路径产出的是规则引擎伪造数据
+        const finalFaceAnalysis = faceAnalysis || null;
         if (finalFaceAnalysis) {
             const fa = finalFaceAnalysis as Record<string, unknown>;
             // 清理 labAnalysis 中的英文状态描述
@@ -815,7 +846,9 @@ export async function POST(request: NextRequest) {
                 type: finalSkinType,
                 typeLabel: skinTypeLabel,
                 concerns: concerns,
-                skinAge: faceAnalysis?.skinAge?.estimated ?? 25
+                // 无真实面部分析时不落肌龄假数（undefined 经 JSON 序列化后字段缺失，
+                // 前端 ResultCards 的 skinAge !== undefined 判断会正确隐藏）
+                skinAge: faceAnalysis?.skinAge?.estimated
             },
             analysis: {
                 summary: consultantReport?.overview || (resultJson.summary as string | undefined) || "根据您的问卷及面部数据，我们为您生成了这份综合分析报告。",
@@ -831,7 +864,13 @@ export async function POST(request: NextRequest) {
             },
             products: finalProducts,
             faceAnalysis: finalFaceAnalysis, // Ensure faceAnalysis is propagated
-            dataSource: "hybrid",
+            // 按实际生成路径取值，与前端消费闭环：
+            // consultantReport 非空 = 真实 AI 成功（有扫脸 hybrid / 纯问卷 comprehensive），
+            // 规则引擎 fallback（无论有无扫脸）统一 questionnaire ——
+            // 前端埋点把 questionnaire 记为 "fallback"，且 Lab 入口在 questionnaire 下隐藏
+            dataSource: consultantReport
+                ? (faceAnalysis ? "hybrid" : "comprehensive")
+                : "questionnaire",
             persona: personaKey,          // IP 形象 key (8-pie)
             userLocation: geoLocation,
             // 昵称优先用客户端填写值；未填时回退到服务端会话里的用户昵称（主站资料），
@@ -901,9 +940,11 @@ export async function POST(request: NextRequest) {
                 });
             } catch (txErr) {
                 logger.error("Failed to persist final analysis:", txErr);
+                // 落库失败：清理分析中标记，否则用户立即重试会命中 analyzing 分支死等
+                await clearAnalysisStartedAt(effectiveSessionId);
                 const response = apiError(ErrorCode.SERVICE_UNAVAILABLE, "分析结果保存未成功，请重试", 503, "DATABASE_PERSISTENCE_ERROR");
-            Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
-            return response;
+                Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
+                return response;
             }
 
             // ====== 护肤日记自动生成：测肤完成后写入/更新当日条目 ======
@@ -922,8 +963,8 @@ export async function POST(request: NextRequest) {
             }
 
             // ====== 微信公众号模板消息推送（通过官网内部 API v1） ======
-            if (user?.id) {
-                const score = faceAnalysis?.overallScore || 85;
+            if (user?.id && typeof faceAnalysis?.overallScore === "number") {
+                const score = Math.round(faceAnalysis.overallScore);
                 let primaryConcern = "肤色暗沉或不均";
                 if (concerns && concerns.length > 0) {
                     primaryConcern = concerns.join("、");
@@ -944,24 +985,7 @@ export async function POST(request: NextRequest) {
     } catch (error: unknown) {
         // 清理 analysisStartedAt，避免 session 因任何异常（AI 失败、超时、取消）永久卡在 analyzing
         if (effectiveSessionId) {
-            let cleanedUp = false;
-            for (let attempt = 0; attempt < 3 && !cleanedUp; attempt++) {
-                try {
-                    await prisma.advisorSession.update({
-                        where: { sessionId: effectiveSessionId },
-                        data: { analysisStartedAt: null }
-                    });
-                    cleanedUp = true;
-                } catch (cleanupErr) {
-                    logger.error(`[analyze] DB cleanup attempt ${attempt + 1}/3 failed:`, cleanupErr);
-                    if (attempt < 2) {
-                        await new Promise(r => setTimeout(r, 100 * Math.pow(2, attempt)));
-                    }
-                }
-            }
-            if (!cleanedUp) {
-                logger.error(`[analyze] CRITICAL: Failed to cleanup after 3 attempts, session ${effectiveSessionId} may be stuck`);
-            }
+            await clearAnalysisStartedAt(effectiveSessionId);
         }
 
         const err = error instanceof Error ? error : new Error(String(error));

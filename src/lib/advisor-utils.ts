@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * MySkin.Technology 专业皆肆分析类形定义
+ * MySkin.Technology 专业皮肤分析类型定义
  */
 
 export interface DimensionScore {
@@ -231,13 +231,42 @@ export function fixJsonString(jsonStr: string): string {
     // 1. 移除 Markdown 代码块标记
     fixed = fixed.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
 
-    // 2. 移除 trailing commas（对象和数组末尾的逗号）
-    fixed = fixed.replace(/,(\s*[}\]])/g, "$1");
+    // 2. 移除 trailing commas（对象和数组末尾的逗号），字符串字面量内的内容不动
+    fixed = removeTrailingCommas(fixed);
 
     // 3. 移除可能的 BOM 或其他不可见字符
     fixed = fixed.replace(/^\uFEFF/, "");
 
     return fixed;
+}
+
+/** 逐字符扫描并跳过字符串字面量，仅在字符串外移除 trailing comma（避免误改字符串值内的 ",]" 等内容） */
+function removeTrailingCommas(json: string): string {
+    let out = "";
+    let inString = false;
+    let escape = false;
+    for (let i = 0; i < json.length; i++) {
+        const ch = json[i];
+        if (inString) {
+            out += ch;
+            if (escape) escape = false;
+            else if (ch === "\\") escape = true;
+            else if (ch === '"') inString = false;
+            continue;
+        }
+        if (ch === '"') {
+            inString = true;
+            out += ch;
+            continue;
+        }
+        if (ch === ",") {
+            let j = i + 1;
+            while (j < json.length && /\s/.test(json[j])) j++;
+            if (json[j] === "}" || json[j] === "]") continue;
+        }
+        out += ch;
+    }
+    return out;
 }
 
 /**
@@ -318,8 +347,13 @@ export function determineSkinType(
     faceAnalysis?: FaceAnalysisResult
 ): string {
     // 1. 优先使用面部分析结果 (如果置信度足够高)
-    if (faceAnalysis?.skinType?.type && faceAnalysis.skinType.confidence >= 0.7) {
-        return faceAnalysis.skinType.type;
+    // confidence 历史上存在 0-100 与 0-1 两种口径，统一归一化到 0-1 再比较
+    if (faceAnalysis?.skinType?.type) {
+        const conf = faceAnalysis.skinType.confidence;
+        const normalizedConf = conf > 1 ? conf / 100 : conf;
+        if (normalizedConf >= 0.7) {
+            return faceAnalysis.skinType.type;
+        }
     }
 
     // 2. 使用问卷回答
@@ -497,6 +531,8 @@ const DimensionScoreSchema = z.object({
     percentile: z.number().optional(),
     grade: z.enum(["excellent", "good", "average", "fair", "poor"]).optional(),
     details: z.string().optional(),
+    blackheads: z.number().optional(),
+    pimples: z.number().optional(),
 });
 
 const ZoneDataSchema = z.object({
@@ -600,20 +636,25 @@ export type ConsultantIssue = z.infer<typeof ConsultantIssueSchema>;
 export type ConsultantReport = z.infer<typeof ConsultantReportSchema>;
 
 /**
- * 程序字段名 → 中文标签。AI 可能在正文里引用原始字段名（如"tZone""wrinkles"），
+ * 程序字段名 → 中文标签。AI 可能在正文里引用原始字段名（如"tZone""waterOil"），
  * 即使 prompt 禁止也难以百分百杜绝，落库前做防御性替换。
+ * 只收录机器 key 形态（camelCase / 下划线 / 点号）的字段名；
+ * acne、spots、firmness 等本身是合法英文单词的 key 不收录，避免误伤正常英文文本。
  */
 const RAW_KEY_LABELS: Record<string, string> = {
-    forehead: "额头", tZone: "T区", leftCheek: "左脸颊",
-    rightCheek: "右脸颊", eyeArea: "眼周", jawline: "下颌线",
-    ...DIMENSION_LABELS,
+    tZone: "T区", leftCheek: "左脸颊", rightCheek: "右脸颊",
+    eyeArea: "眼周", jawline: "下颌线",
+    waterOil: DIMENSION_LABELS.waterOil,
+    skinTone: DIMENSION_LABELS.skinTone,
+    uvDamage: DIMENSION_LABELS.uvDamage,
+    darkCircles: DIMENSION_LABELS.darkCircles,
 };
 
-/** 替换文本中出现的英文字段名为中文标签（仅整词替换，不误伤成分英文名） */
+/** 替换文本中出现的英文字段名为中文标签（整词替换，连字符邻接也不算整词，不误伤成分英文名） */
 export function sanitizeConsultantText(text: string): string {
     let out = text;
     for (const [key, label] of Object.entries(RAW_KEY_LABELS)) {
-        out = out.replace(new RegExp(`(?<![a-zA-Z])${key}(?![a-zA-Z])`, "g"), label);
+        out = out.replace(new RegExp(`(?<![a-zA-Z-])${key}(?![a-zA-Z-])`, "g"), label);
     }
     return out;
 }

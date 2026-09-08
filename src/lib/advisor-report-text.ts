@@ -101,9 +101,9 @@ const SKINCARE_FREQ_LABELS: Record<string, string> = {
 
 const BUDGET_LABELS: Record<string, string> = {
     budget: "追求性价比（单品500元以内）",
-    mid: "中等预算（单品300-1000元）",
-    premium: "品质优先（单品800-2000元）",
-    luxury: "不设上限",
+    mid: "中等预算（单品500-1000元）",
+    premium: "品质优先（单品1000-2000元）",
+    luxury: "不设上限（单品2000元以上）",
 };
 
 const WATER_LABELS: Record<string, string> = {
@@ -271,8 +271,10 @@ export function buildAdvisorReportText({
     if (nickname && nickname.trim() && nickname.trim() !== "您") {
         lines.push(`昵称：${nickname.trim()}`);
     }
-    if (gender) {
-        lines.push(`性别：${gender === "male" ? "男" : "女"}`);
+    if (gender === "male") {
+        lines.push("性别：男");
+    } else if (gender === "female") {
+        lines.push("性别：女");
     }
     if (profile.ageRange) {
         lines.push(`年龄段：${profile.ageRange}`);

@@ -6,7 +6,7 @@ import { fetchWithCsrf } from '@/lib/fetch-client';
 import { preprocessFaceImage } from '@/lib/image-processing';
 
 import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
-import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from '@/lib/storage-keys';
 import { localDateStr } from '@/lib/local-date';
 
 export interface AsyncAnalysisState {
@@ -177,7 +177,9 @@ export function useAsyncAnalysis() {
             signal?: AbortSignal;
         }
     ): Promise<SessionStatusResponse> => {
-        const { intervalMs = 3000, maxAttempts = 30 } = options || {};
+        // 60 × 3s = 180s 总轮询时长，与客户端 fetch 180s 超时对齐
+        // （服务端 maxDuration=90s + 最长 60s 队列等待，临界慢分析不应在完成前被判超时）
+        const { intervalMs = 3000, maxAttempts = 60 } = options || {};
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             if (options?.signal?.aborted) {
                 throw new Error('已取消等待');
@@ -230,6 +232,9 @@ export function useAsyncAnalysis() {
 
         const { promise: timeoutPromise, cancel: cancelTimeout } = createTimeoutPromise();
 
+        // 记录本次调用是否持有全局分析锁：未持有（其他会话在分析）时 finally 不得释放锁
+        let lockAcquired = false;
+
         const analysisPromise = async () => {
             let answersStr: string | null = null;
             let nickname = "您";
@@ -265,7 +270,6 @@ export function useAsyncAnalysis() {
 
             // 刷新页面时复用正在分析中的 sessionId，避免重复扣费/重复生成新会话
             // sessionStorage（标签页内刷新）+ localStorage 持久备份（关闭标签页后重新打开可恢复）
-            const ANALYZING_TTL_MS = 80 * 1000;
             let analyzingSessionId: string | null = null;
             let analyzingStartedAt = 0;
             try {
@@ -280,7 +284,7 @@ export function useAsyncAnalysis() {
                     const localEntry = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
                     if (localEntry) {
                         const parsed = JSON.parse(localEntry);
-                        if (parsed.sessionId && (Date.now() - parsed.startedAt) < ANALYZING_TTL_MS) {
+                        if (parsed.sessionId && (Date.now() - parsed.startedAt) < ANALYZING_SESSION_TTL_MS) {
                             analyzingSessionId = parsed.sessionId;
                             analyzingStartedAt = parsed.startedAt;
                         }
@@ -289,7 +293,7 @@ export function useAsyncAnalysis() {
                     // localStorage parse failed, ignore
                 }
             }
-            const isAnalyzingSessionValid = analyzingSessionId && (Date.now() - analyzingStartedAt) < ANALYZING_TTL_MS;
+            const isAnalyzingSessionValid = analyzingSessionId && (Date.now() - analyzingStartedAt) < ANALYZING_SESSION_TTL_MS;
 
             const sessionId = freeRetrySessionId
                 || (isAnalyzingSessionValid ? analyzingSessionId : null)
@@ -302,6 +306,7 @@ export function useAsyncAnalysis() {
                 setAnalysisState({ status: 'error', progress: 0, error: '上一次分析还在进行中，请稍等片刻后点击重试查看结果。' });
                 return;
             }
+            lockAcquired = true;
 
             // 记录本次分析中的 sessionId，供刷新页面时复用
             if (!freeRetrySessionId) {
@@ -634,14 +639,17 @@ export function useAsyncAnalysis() {
             throw error;
         } finally {
             isRunningRef.current = false;
-            releaseAnalysisLock();
-            // 分析流程结束（成功/失败/超时）后清除刷新复用标记
-            try {
-                sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
-                sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
-                localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
-            } catch (e) {
-                console.warn("sessionStorage/localStorage access failed", e);
+            // 仅在本次调用持有锁时释放并清理恢复标记，避免误删其他会话持有的锁
+            if (lockAcquired) {
+                releaseAnalysisLock();
+                // 分析流程结束（成功/失败/超时）后清除刷新复用标记
+                try {
+                    sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
+                    sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
+                    localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
+                } catch (e) {
+                    console.warn("sessionStorage/localStorage access failed", e);
+                }
             }
         }
     }, [trackAnalysisStart, trackAnalysisComplete, pollSessionResult, user]);

@@ -101,10 +101,10 @@ export async function POST(request: NextRequest) {
                                 ? bodyDateStr
                                 : session.completedAt.toISOString().slice(0, 10);
                         const skinProfile = (result.skinProfile ?? null) as { typeLabel?: unknown } | null | undefined;
-                        const skinType = (result.skinType ?? null) as { typeLabel?: unknown } | null | undefined;
+                        const skinAnalysis = (result.skinAnalysis ?? null) as { typeLabel?: unknown } | null | undefined;
                         const skinTypeLabel =
                             typeof skinProfile?.typeLabel === "string" ? skinProfile.typeLabel
-                            : typeof skinType?.typeLabel === "string" ? skinType.typeLabel
+                            : typeof skinAnalysis?.typeLabel === "string" ? skinAnalysis.typeLabel
                             : undefined;
                         upsertAutoDiaryEntry({ userId: user.id, dateStr, score: overallScore, skinTypeLabel, sessionId })
                             .catch((err) => logger.error("[Diary] claim 后补建日记失败:", err));

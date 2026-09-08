@@ -2,7 +2,7 @@
  * 根据综合评分计算全国排名百分比（连续幂函数曲线）
  *
  * 使用幂函数模拟真实分布：低分段拉开差距，高分段逐渐饱和。
- * 曲线示例：score=30→49% | 50→69% | 70→85% | 85→93% | 95→99%
+ * 曲线示例：score=30→45% | 50→68% | 70→86% | 85→95% | 95→99%
  * 幂指数 1.6 控制曲率：指数越大，高分段越密集。
  */
 export function getRankPercentile(score: number): number {
@@ -104,17 +104,40 @@ const IP_DEFINITIONS: CharacterIP[] = [
 const SORTED_IPS = [...IP_DEFINITIONS].sort((a, b) => a.priority - b.priority);
 
 /**
+ * 归一化肤质类型：AI 可能返回大小写变体或中文描述（"Dry"、"干性"、"混油皮"），
+ * 统一映射到 dry | oily | combination | combination_dry | combination_oily | sensitive | normal，
+ * 无法识别时返回空串，由分数兜底逻辑接管
+ */
+function normalizeSkinType(raw: string | undefined): string {
+    const value = (raw || "").trim().toLowerCase();
+    if (!value) return "";
+    if (/混合|混干|混油|combination|mixed|combo/.test(value) || (value.includes("油") && value.includes("干")) || /t\s?区|t-zone/.test(value)) {
+        if (/干|dry/.test(value)) return "combination_dry";
+        if (/油|oil/.test(value)) return "combination_oily";
+        return "combination";
+    }
+    if (/敏感|sensitive/.test(value)) return "sensitive";
+    if (/干|dry/.test(value)) return "dry";
+    if (/油|oil/.test(value)) return "oily";
+    if (/中性|normal/.test(value)) return "normal";
+    return value;
+}
+
+/**
  * 根据综合条件匹配角色 IP
  * 按优先级依次匹配，返回第一个命中的 IP
  */
 export function matchCharacterIP(params: IPMatchParams): CharacterIP {
+    const normalized = { ...params, skinType: normalizeSkinType(params.skinType) };
     for (const ip of SORTED_IPS) {
-        if (ip.match(params)) {
+        if (ip.match(normalized)) {
             return ip;
         }
     }
-    // 最终兜底：守护派
-    return IP_DEFINITIONS[IP_DEFINITIONS.length - 1];
+    // 肤质未命中任何派系时按分数兜底：高分落入中性的混合派，避免误给修护定位的守护派
+    return params.score >= 70
+        ? IP_DEFINITIONS.find((ip) => ip.key === "combination")!
+        : IP_DEFINITIONS.find((ip) => ip.key === "guardian")!;
 }
 
 /**

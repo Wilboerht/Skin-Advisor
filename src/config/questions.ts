@@ -162,8 +162,8 @@ export const DEFAULT_QUESTIONS: Question[] = [
         type: "single",
         options: [
             { value: "budget", label: "追求性价比", description: "注重性价比，单品 500元以内" },
-            { value: "mid", label: "中等预算", description: "兼顾成分与价格，单品 300-1000元" },
-            { value: "premium", label: "品质优先", description: "追求卓越功效，单品 800-2000元" },
+            { value: "mid", label: "中等预算", description: "兼顾成分与价格，单品 500-1000元" },
+            { value: "premium", label: "品质优先", description: "追求卓越功效，单品 1000-2000元" },
             { value: "luxury", label: "不设上限", description: "顶级奢华体验，不设预算上限" },
         ],
     },

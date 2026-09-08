@@ -59,6 +59,8 @@ interface FocusProblemEntry {
     solutions: Partial<Record<SolutionKey, string[]>>;
     /** 匹配 AI 症状名的关键词（按条目独立匹配，避免同维度问题互相串描述） */
     conditionKeywords: string[];
+    /** 命中即排除的关键词（如泛红条目排除"红肿痘痘"这类痤疮语境的症状） */
+    conditionExcludes?: string[];
 }
 
 const SOLUTION_GROUP_LABELS: Record<SolutionKey, string> = {
@@ -164,7 +166,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
             mood: ["保持情绪平稳，压力大时痘痘更易爆发"],
             stress: ["通过运动、倾诉等方式减压，减少压力性爆痘"],
         },
-        conditionKeywords: ["痘痘", "痤疮", "丘疹", "红肿"],
+        conditionKeywords: ["痘痘", "痤疮", "丘疹", "红肿痘"],
     },
     {
         key: "darkCircles",
@@ -277,6 +279,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
             stress: ["减压是敏感肌护理的重要一环，压力会加重泛红"],
         },
         conditionKeywords: ["泛红", "红血丝", "敏感", "刺痛", "发红", "红肿", "屏障"],
+        conditionExcludes: ["痘", "痤疮", "粉刺", "闭口"],
     },
     {
         key: "imbalance",
@@ -338,6 +341,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
 
 // AI 症状名（自由文本）按问题条目关键词匹配
 function matchEntryCondition(entry: FocusProblemEntry, condition: string): boolean {
+    if (entry.conditionExcludes?.some((kw) => condition.includes(kw))) return false;
     return entry.conditionKeywords.some((kw) => condition.includes(kw));
 }
 

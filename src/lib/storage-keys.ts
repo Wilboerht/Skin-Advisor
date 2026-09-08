@@ -51,3 +51,7 @@ export const STORAGE_KEYS = {
     // 会话认领标记（按 sessionId 存储）
     claimedSession: (sessionId: string) => `claimed_${sessionId}`,
 } as const;
+
+// 分析中会话恢复有效期：刷新/重开页面时复用进行中 sessionId 的时间窗口
+// （ResultClient 恢复入口与 useAsyncAnalysis 复用判定共用，避免两处不一致）
+export const ANALYZING_SESSION_TTL_MS = 90 * 1000;

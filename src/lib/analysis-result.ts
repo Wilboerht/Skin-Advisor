@@ -82,6 +82,34 @@ function normalizeDataSource(
     return "questionnaire";
 }
 
+function toFiniteNumber(value: unknown): number | undefined {
+    return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+/**
+ * 防御性归一化历史脏数据：旧记录可能缺 issues/strengths 数组或字段类型异常，
+ * 强转前补齐安全默认，保证组件渲染假设成立。
+ */
+function normalizeConsultantReport(raw: unknown): ConsultantReport | undefined {
+    if (!raw || typeof raw !== "object") return undefined;
+    const record = raw as Record<string, unknown>;
+    const issues = (Array.isArray(record.issues) ? record.issues : [])
+        .filter((i): i is Record<string, unknown> => !!i && typeof i === "object")
+        .map((i) => ({
+            ...i,
+            relatedDimensions: Array.isArray(i.relatedDimensions) ? i.relatedDimensions : [],
+        }));
+    return {
+        ...(record as unknown as ConsultantReport),
+        overview: typeof record.overview === "string" ? record.overview : "",
+        issues,
+        strengths: Array.isArray(record.strengths)
+            ? record.strengths.filter((s): s is string => typeof s === "string")
+            : [],
+        routineNote: typeof record.routineNote === "string" ? record.routineNote : undefined,
+    } as ConsultantReport;
+}
+
 /**
  * 标准化 analysisResult 数据结构，兼容新旧两种格式：
  * - 新格式: { skinProfile, analysis, products, dataSource }
@@ -99,7 +127,7 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
             type: (skinProfile?.type as string | undefined) || (skinProfile?.skinType as string | undefined) || "combination",
             typeLabel: (skinProfile?.typeLabel as string | undefined) || (skinProfile?.skinTypeLabel as string | undefined) || "混合性肌肤",
             concerns: (skinProfile?.concerns as string[] | undefined) || [],
-            skinAge: skinProfile?.skinAge as number | undefined,
+            skinAge: toFiniteNumber(skinProfile?.skinAge),
         },
         analysis: {
             summary: (analysis?.summary as string | undefined) || "分析完成。",
@@ -114,6 +142,6 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
         skinState: typeof record.skinState === "string" ? record.skinState : undefined,
         nickname: typeof record.nickname === "string" ? record.nickname : undefined,
         reportVersion: typeof record.reportVersion === "number" ? record.reportVersion : undefined,
-        consultantReport: (record.consultantReport as ConsultantReport | undefined) || undefined,
+        consultantReport: normalizeConsultantReport(record.consultantReport),
     };
 }

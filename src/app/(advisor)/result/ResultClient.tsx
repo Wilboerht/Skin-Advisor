@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/Toast";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { normalizeAnalysisResult, type ComprehensiveResult, type PreviousTestSummary } from "@/lib/analysis-result";
 import { getRankPercentile, getCharacterImage } from "@/lib/result-utils";
-import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from "@/lib/storage-keys";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import type { SessionUser } from "@/lib/auth";
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
@@ -110,15 +110,18 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // 入口守卫：必须通过首页引导弹窗后才能查看结果
     // 历史报告页面（/reports/:id）会传入 id 与 initialData，跳过此守卫
-    const accessDenied = useMemo(() => {
-        if (id || initialData) return false;
+    // SSR 水合安全：初始值 null 表示未判定（服务端无 localStorage），挂载后再判定，
+    // 未判定期间渲染加载态而非"未授权访问"（同 ackedSessionId / storedSkinState 模式）
+    const [accessDenied, setAccessDenied] = useState<boolean | null>((id || initialData) ? false : null);
+    useEffect(() => {
+        if (id || initialData) return;
         try {
             const hasResult = localStorage.getItem("advisor_result");
             const hasAnswers = localStorage.getItem("advisor_answers");
             const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
-            return !hasResult && !hasAnswers && !hasConsent;
+            setAccessDenied(!hasResult && !hasAnswers && !hasConsent);
         } catch {
-            return true;
+            setAccessDenied(true);
         }
     }, [id, initialData]);
     const { trackResultView, trackResultShare, trackResultFlip, trackProductClick } = useAdvisorAnalytics();
@@ -203,22 +206,35 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     }, [user, result]);
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
+    // 历史报告页（/reports/:id）：性别以该次测肤快照为准，而非 localStorage 里的当前偏好，
+    // 避免用户测后改性别再打开旧报告时误弹性别不一致弹窗
+    const isHistoricalReport = !!(id || initialData);
+    const snapshotGender = initialData?.answers?.gender;
+
     // 性别恢复：独立执行，保证 initialData（历史报告）提前 return 的路径也能恢复性别。
     // 缺失时回退到面部分析检测的性别，避免 IP 形象/海报头像长期为默认值。
     useEffect(() => {
         if (socialGender === 'male' || socialGender === 'female') return;
-        try {
-            const storedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
-            if (storedGender === 'male' || storedGender === 'female') {
-                setSocialGender(storedGender);
+        if (isHistoricalReport) {
+            // 历史报告：优先取该次测肤问卷快照里的性别；快照没有性别记录时不读当前偏好
+            if (snapshotGender === 'male' || snapshotGender === 'female') {
+                setSocialGender(snapshotGender);
                 return;
             }
-        } catch { /* ignore */ }
+        } else {
+            try {
+                const storedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
+                if (storedGender === 'male' || storedGender === 'female') {
+                    setSocialGender(storedGender);
+                    return;
+                }
+            } catch { /* ignore */ }
+        }
         const faGender = faceAnalysis?.gender?.value;
         if (faGender === 'male' || faGender === 'female') {
             setSocialGender(faGender);
         }
-    }, [socialGender, faceAnalysis]);
+    }, [socialGender, faceAnalysis, isHistoricalReport, snapshotGender]);
 
     // IP 匹配所需数据
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
@@ -229,6 +245,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // UI State
     const [loading, setLoading] = useState(!initialData);
+    // 首次客户端数据恢复是否完成：analysis effect 据此等待 loadClientData，
+    // 避免 ?status=analyzing 挂载时在缓存结果读出前就启动新分析（竞态重复扣费）
+    const [clientDataLoaded, setClientDataLoaded] = useState(false);
     const hasTrackedView = useRef(false);
 
     // Gender Mismatch State：存储已确认过的 sessionId，换 session 后自动重新提示
@@ -390,20 +409,23 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         return faGenderVal && normalizedConf > 0.85 && faGenderVal !== socialGender;
     }, [faceAnalysis, socialGender]);
 
+    // 历史报告页仅在快照本身记录了问卷性别时才可能提示（此时 socialGender 已以快照为准）；
+    // 快照无性别记录时不弹窗——性别不一致提示只属于当前测肤流程的 /result
     const showGenderMismatchModal = useMemo(
-        () => !loading && !!result && !!faceAnalysis && isGenderMismatch && !!sessionId && ackedSessionId !== sessionId,
-        [loading, result, faceAnalysis, isGenderMismatch, ackedSessionId, sessionId]
+        () => !loading && !!result && !!faceAnalysis && isGenderMismatch && !!sessionId && ackedSessionId !== sessionId
+            && (!isHistoricalReport || snapshotGender === 'male' || snapshotGender === 'female'),
+        [loading, result, faceAnalysis, isGenderMismatch, ackedSessionId, sessionId, isHistoricalReport, snapshotGender]
     );
 
-    const hasUsedFreeRetry = useMemo(() => {
-        if (!sessionId) return false;
+    // SSR 水合安全：初始值固定 false，挂载后再从 localStorage 同步（同 ackedSessionId）
+    const [hasUsedFreeRetry, setHasUsedFreeRetry] = useState(false);
+    useEffect(() => {
+        if (!sessionId) return;
         try {
             const freeRetry = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
             const freeRetrySessionId = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
-            return freeRetry && freeRetrySessionId === sessionId;
-        } catch {
-            return false;
-        }
+            setHasUsedFreeRetry(freeRetry && freeRetrySessionId === sessionId);
+        } catch { /* ignore */ }
     }, [sessionId]);
 
     // 页面进入后后台预加载海报素材
@@ -422,6 +444,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         preloadImage("/images/poster-overlay.png");
         preloadImage(avatarUrl);
     }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender]);
+
+    // 海报内容数据源（昵称/派系头像/面部分析等）变化时使预生成缓存失效，触发重新生成，
+    // 避免晚到的数据（昵称兜底同步、localStorage 答案异步恢复）无法进入已缓存的 blob
+    useEffect(() => {
+        setPreloadedPosterBlob(null);
+    }, [result, qrDataUrl, socialGender, userNickname, faceAnalysis, ipBudget, ipSkincareFrequency, sessionId]);
 
     // 后台预生成海报 blob：素材和二维码就绪后延迟执行，点击保存时直接使用
     // 性别就绪后才生成，避免把默认女版头像烘焙进海报缓存
@@ -457,7 +485,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [result, qrDataUrl, preloadedPosterBlob, socialGender]);
+    }, [result, qrDataUrl, preloadedPosterBlob, socialGender, userNickname, faceAnalysis, ipBudget, ipSkincareFrequency, sessionId]);
 
     const handleMismatchRetry = () => {
         // Clear previous answers to force a fresh start
@@ -465,6 +493,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_STEP);
+        // 一并清除拍摄时肌肤状态，避免上一次的状态（如"带妆"）透传给免费重试的新分析
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_SKIN_STATE);
 
         // 保留原 sessionId，供免费重试流程复用（后端需校验该 session 已完成过分析且未使用过重试）
         const currentSessionId = sessionId;
@@ -667,7 +697,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             }
         };
 
-        loadClientData();
+        loadClientData().finally(() => setClientDataLoaded(true));
     }, [initialData, router, trackView, searchParams, user, toast]);
 
     // --- Environment Data Integration ---
@@ -834,6 +864,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         setSavedPosterForSave(null);
     };
 
+    // 弹窗打开时直接离开页面的兜底：卸载时 revoke，避免 blob URL 泄漏
+    const savedPosterForSaveRef = useRef<string | null>(null);
+    useEffect(() => { savedPosterForSaveRef.current = savedPosterForSave; }, [savedPosterForSave]);
+    useEffect(() => () => {
+        if (savedPosterForSaveRef.current) URL.revokeObjectURL(savedPosterForSaveRef.current);
+    }, []);
+
     // --- Auto-Claim Session ---
     // Automatically link guest-initiated session to user account once logged in
     useEffect(() => {
@@ -879,6 +916,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // Trigger Async Analysis
     const analysisStartedRef = useRef(false);
+    const analysisAbortRef = useRef<AbortController | null>(null);
+    // 恢复轮询的中止只应发生在组件卸载时；analysis effect 因依赖变化重跑由
+    // analysisStartedRef 去重，cleanup 里 abort 会把正在进行的恢复打断（导致回退重复扣费）
+    useEffect(() => () => { analysisAbortRef.current?.abort(); }, []);
     const pendingResultRef = useRef<{
         result: ComprehensiveResult;
         faceAnalysis: FaceAnalysisResult | null;
@@ -904,7 +945,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         const status = searchParams.get('status');
         // Only trigger if we are in 'analyzing' mode, no result yet, and not already running/error
         // Crucial: check 'result' state which might have been populated by loadClientData recovery
-        if (status !== 'analyzing' || result || analysisState.status !== 'idle') return;
+        // clientDataLoaded：等待首次数据恢复完成，避免 loadClientData 尚未读出缓存结果就启动新分析；
+        // pendingResultRef：缓存结果在等待 auth 初始化时同样不启动新分析
+        if (status !== 'analyzing' || !clientDataLoaded || result || pendingResultRef.current) return;
+        if (analysisState.status !== 'idle') return;
         if (analysisStartedRef.current) return;
         analysisStartedRef.current = true;
 
@@ -914,6 +958,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             return;
         }
         const abortController = new AbortController();
+        analysisAbortRef.current = abortController;
 
         const execute = async () => {
             try {
@@ -926,8 +971,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 } catch (e) {
                     console.warn('sessionStorage access failed', e);
                 }
-                const ANALYZING_TTL_MS = 90 * 1000;
-                const shouldRecover = existingSessionId && (Date.now() - startedAt) < ANALYZING_TTL_MS;
+                const shouldRecover = existingSessionId && (Date.now() - startedAt) < ANALYZING_SESSION_TTL_MS;
 
                 if (shouldRecover) {
                     const recovered = await recoverSession(existingSessionId!, abortController.signal);
@@ -971,6 +1015,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     }
                     // If recovery returned null (pending/not_found/forbidden), fall through to fresh analysis
                 }
+
+                // 组件已卸载（卸载时中止了恢复轮询）则不再回退到全新分析，避免重复扣费
+                if (abortController.signal.aborted) return;
 
                 // 2. Normal fresh analysis flow
                 const analysisResult = await runAnalysis();
@@ -1017,11 +1064,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             }
         };
         execute();
-
-        return () => {
-            abortController.abort();
-        };
-    }, [searchParams, result, analysisState.status, runAnalysis, recoverSession, router, startMock]);
+    }, [searchParams, result, analysisState.status, clientDataLoaded, runAnalysis, recoverSession, router, startMock]);
 
     // Mock 完成后注入假数据，渲染结果页（动态加载 mock 数据，不影响生产包体积）
     useEffect(() => {
@@ -1036,6 +1079,15 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             router.replace('/result?mock=done', { scroll: false });
         });
     }, [analysisState.status, searchParams, router]);
+
+    // 入口守卫判定未就绪（SSR 或挂载前）：渲染加载态，避免水合不一致（React #418）
+    if (accessDenied === null) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7]">
+                <ScanFace className="w-12 h-12 text-[#D4B78F] animate-pulse" />
+            </div>
+        );
+    }
 
     // 入口守卫：拒绝访问时显示友好提示，而非静默跳转
     if (accessDenied) {
@@ -1228,7 +1280,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             skincareFrequency={ipSkincareFrequency}
                                             gender={socialGender}
                                             summary={result?.analysis?.summary}
-                                            rankPercentile={rankPercentile}
                                             onDownloadPoster={handleSavePoster}
                                             isPosterLoading={isGeneratingPoster}
                                             certDate={certDate}

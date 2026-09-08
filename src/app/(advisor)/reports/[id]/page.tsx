@@ -193,12 +193,26 @@ export async function generateMetadata(props: {
             } else if (session && session.analysisResult) {
                 const rawResult = session.analysisResult as unknown as Record<string, unknown>;
                 const faceAnalysis = rawResult.faceAnalysis as Record<string, unknown> | undefined;
+                // 新格式 skinProfile 优先，旧格式 skinAnalysis 兜底（与 normalizeAnalysisResult 一致）
+                const skinProfile = rawResult.skinProfile as Record<string, unknown> | undefined;
                 const skinAnalysis = rawResult.skinAnalysis as Record<string, unknown> | undefined;
-                const score = (faceAnalysis?.overallScore as number | undefined) || (skinAnalysis?.score as number | undefined) || 85;
-                const skinType = (skinAnalysis?.typeLabel as string | undefined) || "未知肤质";
+                const score = typeof faceAnalysis?.overallScore === "number" ? faceAnalysis.overallScore : undefined;
+                const skinType =
+                    (skinProfile?.typeLabel as string | undefined) ||
+                    (skinAnalysis?.typeLabel as string | undefined);
 
-                title = `${score}分！我的${skinType}护肤报告已生成`;
-                description = `AI 分析得分 ${score} 分，肤质类型：${skinType}。查看完整护肤方案与产品推荐。`;
+                if (typeof score === "number") {
+                    title = skinType
+                        ? `${score}分！我的${skinType}护肤报告已生成`
+                        : `${score}分！我的护肤报告已生成`;
+                    description = `AI 分析得分 ${score} 分${skinType ? `，肤质类型：${skinType}` : ""}。查看完整护肤方案与产品推荐。`;
+                } else {
+                    // 无真实面部分数（纯问卷/降级报告）时不伪造分数
+                    title = "我的专属测肤报告";
+                    description = skinType
+                        ? `肤质类型：${skinType}。查看完整护肤方案与产品推荐。`
+                        : "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
+                }
             }
         } catch (e) {
             logger.error(String(e));

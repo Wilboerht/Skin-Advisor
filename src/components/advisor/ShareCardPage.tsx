@@ -15,7 +15,6 @@ interface ShareCardPageProps {
     /** 性别未就绪时不渲染 IP 形象，避免男性用户首帧闪现女版角色 */
     gender?: string;
     summary?: string;
-    rankPercentile?: number;
     onDownloadPoster: () => void;
     isPosterLoading?: boolean;
     /** 测肤日期（ISO），缺省不展示 */
@@ -50,7 +49,6 @@ export default function ShareCardPage({
     skincareFrequency,
     gender = "",
     summary,
-    rankPercentile,
     onDownloadPoster,
     isPosterLoading = false,
     certDate,
@@ -58,28 +56,29 @@ export default function ShareCardPage({
     onOpenReport,
     onReTest,
 }: ShareCardPageProps) {
-    const ipParams: IPMatchParams = { score: score ?? 0, skinType, budget, skincareFrequency };
+    // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派
+    const ipParams: IPMatchParams = { score: score ?? 80, skinType, budget, skincareFrequency };
     const characterReady = gender === "male" || gender === "female";
     const characterImage = getCharacterImage({ ...ipParams, gender });
     const skinTypeName = getSkinTypeName(ipParams);
 
     const [characterImgSrc, setCharacterImgSrc] = useState(characterImage);
-    const [characterImgError, setCharacterImgError] = useState(false);
+    const [characterImgFailed, setCharacterImgFailed] = useState(false);
 
     useEffect(() => {
         setCharacterImgSrc(characterImage);
-        setCharacterImgError(false);
+        setCharacterImgFailed(false);
     }, [characterImage]);
 
+    // 兜底链：目标图加载失败 → 同性别守护派占位（8 派×2 性别图均存在）→ 仍失败则隐藏，避免跨性别回退与重复 set 相同 src
+    const guardianFallback = `/images/character/guardian/guardian_${gender === "male" ? "male" : "female"}.webp`;
     const handleCharacterImageError = useCallback(() => {
-        if (!characterImgError) {
-            setCharacterImgSrc((prev) => prev.replace("_male", "_female"));
-            setCharacterImgError(true);
+        if (characterImgSrc !== guardianFallback) {
+            setCharacterImgSrc(guardianFallback);
         } else {
-            // 最终兜底：守护派女版（与 matchCharacterIP 的兜底派系一致，文件确保存在）
-            setCharacterImgSrc("/images/character/guardian/guardian_female.webp");
+            setCharacterImgFailed(true);
         }
-    }, [characterImgError]);
+    }, [characterImgSrc, guardianFallback]);
 
     const dateText = formatCertDate(certDate);
     const idText = formatCertId(certId);
@@ -99,7 +98,7 @@ export default function ShareCardPage({
                         aria-hidden="true"
                     />
                 </div>
-                {characterReady ? (
+                {characterReady && !characterImgFailed ? (
                     <Image
                         src={characterImgSrc}
                         alt={skinTypeName}
@@ -131,22 +130,12 @@ export default function ShareCardPage({
                         </div>
 
                         <h2 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-1 lg:mb-2">
-                            你的肌肤类型是「{skinTypeName}」
+                            恭喜你完成首次肌智派「AI测肤」
                         </h2>
 
-                        {score === undefined ? (
-                            <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
-                                基于问卷的肤质评估
-                            </h3>
-                        ) : rankPercentile !== undefined ? (
-                            <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
-                                测肤评分超越了全国 <span className="text-lg lg:text-[24px] px-0.5 text-[var(--color-brand-charcoal)]">{rankPercentile}%</span> 的用户
-                            </h3>
-                        ) : (
-                            <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
-                                测肤评估已完成
-                            </h3>
-                        )}
+                        <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
+                            根据您的检测结果，您的肌智派系为「{skinTypeName}」！
+                        </h3>
 
                         <p className="text-[14px] leading-relaxed text-[var(--color-brand-cocoa)] mb-5 lg:mb-6 max-w-full lg:max-w-[420px]">
                             {summary || "详细分析见下方报告。"}
@@ -211,7 +200,7 @@ export default function ShareCardPage({
                     </div>
 
                     {/* Desktop: Character IP Image (absolute right) */}
-                    {characterReady && (
+                    {characterReady && !characterImgFailed && (
                         <div className="hidden lg:block absolute right-0 top-[40%] -translate-y-1/2 z-0 pointer-events-none">
                             <Image
                                 src={characterImgSrc}

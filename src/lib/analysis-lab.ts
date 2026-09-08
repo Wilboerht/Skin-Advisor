@@ -34,20 +34,23 @@ function computeGlogau(faceAnalysis: FaceAnalysisResult | null): LabMetric {
         };
     }
 
-    const uvDamage = dims?.uvDamage?.score ?? 0;
-    const value = dims
-        ? uvDamage > 40
-            ? "III 型"
-            : uvDamage > 30
-                ? "II 型"
-                : "I 型"
-        : "?";
+    // uvDamage 分数越高损伤越少；Glogau I 型最轻、III 型最重
+    // 阈值沿用 problem-solutions.ts 惯例：>=70 良好 / 40-69 中度 / <40 重度
+    const uvDamage = dims?.uvDamage?.score;
+    const value =
+        uvDamage === undefined
+            ? "?"
+            : uvDamage >= 70
+                ? "I 型"
+                : uvDamage >= 40
+                    ? "II 型"
+                    : "III 型";
 
     return {
         param: "光老化等级 (Glogau Scale)",
         value,
         ref: "I-III 型分级",
-        status: dims ? "AI 估算" : "-",
+        status: uvDamage === undefined ? "-" : "AI 估算",
     };
 }
 
@@ -112,64 +115,67 @@ function computeWrinkleGrade(faceAnalysis: FaceAnalysisResult | null): LabMetric
 
 function computeAcne(faceAnalysis: FaceAnalysisResult | null): LabMetric {
     const dims = getDimensions(faceAnalysis);
-    const acne = dims?.acne?.score ?? 0;
+    const acne = dims?.acne?.score;
 
-    const value = dims
-        ? acne >= 75
-            ? "轻微"
-            : acne >= 55
-                ? "中等"
-                : "严重"
-        : "?";
-    const status = dims ? (acne >= 60 ? "少量" : "偏多") : "-";
+    // value 与 status 共用同一套阈值分段，保证同一分数下语义一致
+    const band =
+        acne === undefined
+            ? null
+            : acne >= 75
+                ? { value: "轻微", status: "轻微" }
+                : acne >= 60
+                    ? { value: "少量", status: "少量" }
+                    : acne >= 40
+                        ? { value: "中等", status: "中等" }
+                        : { value: "严重", status: "严重" };
 
     return {
         param: "痘痘 / 痤疮 (Acne Severity)",
-        value,
+        value: band?.value ?? "?",
         ref: "≥ 60 为正常",
-        status,
+        status: band?.status ?? "-",
     };
 }
 
 function computeSpots(faceAnalysis: FaceAnalysisResult | null): LabMetric {
     const dims = getDimensions(faceAnalysis);
-    const spots = dims?.spots?.score ?? 0;
+    const spots = dims?.spots?.score;
 
-    const value = dims
-        ? spots >= 75
-            ? "少量"
-            : spots >= 50
-                ? "中等"
-                : "明显"
-        : "?";
-    const status = dims ? (spots >= 60 ? "少量" : "偏多") : "-";
+    const band =
+        spots === undefined
+            ? null
+            : spots >= 75
+                ? { value: "少量", status: "少量" }
+                : spots >= 60
+                    ? { value: "中等", status: "中等" }
+                    : { value: "明显", status: "明显" };
 
     return {
         param: "色斑 / 色素沉着 (Pigmentation)",
-        value,
+        value: band?.value ?? "?",
         ref: "≥ 60 为正常",
-        status,
+        status: band?.status ?? "-",
     };
 }
 
 function computeSensitivity(faceAnalysis: FaceAnalysisResult | null): LabMetric {
     const dims = getDimensions(faceAnalysis);
-    const sensitivity = dims?.sensitivity?.score ?? 0;
+    const sensitivity = dims?.sensitivity?.score;
 
-    const value = dims
-        ? sensitivity >= 70
-            ? "正常"
-            : sensitivity >= 45
-                ? "轻度敏感"
-                : "敏感"
-        : "?";
-    const status = dims ? (sensitivity >= 60 ? "正常" : "泛红") : "-";
+    const band =
+        sensitivity === undefined
+            ? null
+            : sensitivity >= 60
+                ? { value: "正常", status: "正常" }
+                : sensitivity >= 40
+                    ? { value: "轻度敏感", status: "轻度敏感" }
+                    : { value: "敏感", status: "敏感" };
 
     return {
         param: "泛红 / 敏感 (Redness/Sensitivity)",
-        value,
+        value: band?.value ?? "?",
         ref: "≥ 60 为正常",
-        status,
+        status: band?.status ?? "-",
     };
 }
 

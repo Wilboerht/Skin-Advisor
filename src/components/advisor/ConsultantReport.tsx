@@ -56,10 +56,11 @@ function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensio
     const chips = issue.relatedDimensions
         .map((key) => {
             const dim = dimensions[key];
-            if (!dim || typeof dim.score !== "number") return null;
+            const label = DIMENSION_LABELS[key];
+            if (!dim || typeof dim.score !== "number" || !label) return null;
             return {
                 key,
-                label: DIMENSION_LABELS[key] || key,
+                label,
                 score: dim.score,
                 grade: dim.grade ? GRADE_LABELS[dim.grade] || dim.grade : null,
             };
@@ -159,6 +160,9 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
     const hasRoutine = personaData?.m4 && (personaData.m4.morning || personaData.m4.night);
     const hasFormula = personaData?.m7 && (personaData.m7.formulaCore || personaData.m7.suggestions?.length);
     const hasAdvantages = personaData?.m5?.advantages?.length;
+    // 防御历史脏数据：normalizeAnalysisResult 已归一化，这里再兜底非数组场景
+    const issues = Array.isArray(report.issues) ? report.issues : [];
+    const strengths = Array.isArray(report.strengths) ? report.strengths : [];
 
     return (
         <div className="space-y-10 lg:space-y-12">
@@ -173,9 +177,9 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
             {/* 逐问题诊断卡 */}
             <section>
                 <SectionTitle>逐问题诊断</SectionTitle>
-                {report.issues.length > 0 ? (
+                {issues.length > 0 ? (
                     <div className="space-y-5">
-                        {report.issues.map((issue, idx) => (
+                        {issues.map((issue, idx) => (
                             <IssueCard key={`${issue.title}-${idx}`} issue={issue} dimensions={dimensions} />
                         ))}
                     </div>
@@ -238,12 +242,12 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
             )}
 
             {/* 优势：AI 如实肯定 + 派系优势解析 */}
-            {(report.strengths.length > 0 || hasAdvantages) && (
+            {(strengths.length > 0 || hasAdvantages) && (
                 <section>
                     <SectionTitle>你的优势</SectionTitle>
-                    {report.strengths.length > 0 && (
+                    {strengths.length > 0 && (
                         <ul className="space-y-2 mb-4">
-                            {report.strengths.map((s, i) => (
+                            {strengths.map((s, i) => (
                                 <li key={i} className="flex items-start gap-2 text-sm lg:text-[15px] leading-[1.85] text-[var(--color-brand-espresso)]">
                                     <HeartHandshake className="w-4 h-4 shrink-0 mt-1 text-[#C9A86C]" strokeWidth={1.8} />
                                     {s}

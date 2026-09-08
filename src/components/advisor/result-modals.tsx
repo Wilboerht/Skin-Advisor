@@ -22,16 +22,18 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
         <div className="sm:hidden mb-5">
             {order.map((key) => {
                 const item = dimensions[key];
-                const score = item?.score ?? 0;
-                const color = score >= 80 ? 'bg-[var(--color-brand-cocoa)]' : score >= 60 ? 'bg-amber-500' : 'bg-red-500';
+                const score = item?.score;
+                const color = score === undefined ? '' : score >= 80 ? 'bg-[var(--color-brand-cocoa)]' : score >= 60 ? 'bg-amber-500' : 'bg-red-500';
                 return (
                     <div key={key} className="py-3 border-b border-[#E8E2D9] last:border-0">
                         <div className="flex items-center justify-between mb-1.5">
                             <span className="text-[13px] text-[#4A4A4A]">{DIMENSION_LABELS[key]}</span>
-                            <span className="text-[13px] font-medium text-[#1A1A1A]">{score} 分</span>
+                            <span className="text-[13px] font-medium text-[#1A1A1A]">{score === undefined ? '-' : `${score} 分`}</span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-[#E8E2D9] overflow-hidden">
-                            <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
+                            {score !== undefined && (
+                                <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
+                            )}
                         </div>
                         <p className="mt-1.5 text-sm text-[#8A8A8A] leading-relaxed">{DIMENSION_DESCRIPTIONS[key]}</p>
                     </div>
