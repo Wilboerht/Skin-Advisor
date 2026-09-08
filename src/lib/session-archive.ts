@@ -21,6 +21,8 @@ export interface ArchivedSessionSummary {
     persona: string | null;
     /** 肤质类型标签（与报告页 metadata 读取路径兼容：skinAnalysis.typeLabel） */
     skinAnalysis: { typeLabel: string | null } | null;
+    /** 肌肤年龄（趋势对比卡肌龄对比数据源；读取路径与热层一致：skinProfile.skinAge） */
+    skinProfile: { skinAge: number | null } | null;
     /** 面部评分明细（形状与 skin-trends 读取兼容） */
     faceAnalysis: {
         overallScore: number | null;
@@ -106,6 +108,10 @@ export function buildArchivedSummary(
 
     const faceAnalysis = result?.faceAnalysis as Record<string, unknown> | undefined;
     const skinAnalysis = result?.skinAnalysis as Record<string, unknown> | undefined;
+    // 新格式 skinProfile 优先，旧格式 skinAnalysis 兜底（与 normalizeAnalysisResult 一致）
+    const skinProfileRaw = result?.skinProfile as Record<string, unknown> | undefined;
+    const skinAgeRaw = skinProfileRaw?.skinAge ?? skinAnalysis?.skinAge;
+    const skinAge = typeof skinAgeRaw === "number" && Number.isFinite(skinAgeRaw) ? skinAgeRaw : null;
 
     const hasProfile = ans !== null && ANSWERS_WHITELIST.some((k) => ans[k] !== undefined);
 
@@ -115,6 +121,7 @@ export function buildArchivedSummary(
         skinAnalysis: skinAnalysis
             ? { typeLabel: (skinAnalysis.typeLabel as string | undefined) ?? null }
             : null,
+        skinProfile: skinAge !== null ? { skinAge } : null,
         faceAnalysis: faceAnalysis
             ? {
                 overallScore: (faceAnalysis.overallScore as number | undefined) ?? null,

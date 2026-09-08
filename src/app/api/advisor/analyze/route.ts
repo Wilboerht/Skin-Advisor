@@ -878,8 +878,11 @@ export async function POST(request: NextRequest) {
             nickname: nickname || user?.name || "护肤达人", // Include user nickname for sharing
             analyzedAt: new Date().toISOString(), // 证书/报告展示用（随结果持久化，游客流程也可用）
             skinState: finalFaceAnalysis && typeof skinState === "string" ? skinState : undefined, // 拍摄时肌肤状态（仅面部扫描流程有意义）
-            // 顾问叙事报告标记与数据（v2）；fallback 路径不携带，前端走旧渲染
-            ...(consultantReport ? { reportVersion: 2, consultantReport } : {}),
+            // 顾问叙事报告标记与数据（v2）；fallback 路径显式置 null，
+            // 保证免费重试合并旧结果时（下方 mergedResult 展开）覆盖残留的 v2 报告，
+            // 避免前端 isV2Report 误判、用旧叙事渲染本次降级结果
+            reportVersion: consultantReport ? 2 : null,
+            consultantReport,
         };
 
         // 清理 AI 输出中的潜在危险内容（存储型 XSS 防护）
@@ -913,7 +916,7 @@ export async function POST(request: NextRequest) {
                         update: {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: mergedResult as any,
-                            analysisSource: "hybrid",
+                            analysisSource: faceAnalysis ? "hybrid" : "text",
                             completedAt: new Date(),
                             province: geoLocation?.region,
                             city: geoLocation?.city,
@@ -926,7 +929,7 @@ export async function POST(request: NextRequest) {
                             answers: answers as any,
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: mergedResult as any,
-                            analysisSource: "hybrid",
+                            analysisSource: faceAnalysis ? "hybrid" : "text",
                             completedAt: new Date(),
                             province: geoLocation?.region,
                             city: geoLocation?.city,

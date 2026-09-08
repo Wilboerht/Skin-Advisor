@@ -95,7 +95,7 @@ export interface FaceAnalysisResult {
 
 export interface LabAnalysisResult {
     // 仅保留可由照片视觉估算的指标
-    glogau?: { value: string; range?: string; status: string }; // I, II, III
+    glogau?: { value: string; range?: string; status: string }; // I-IV 型
     homogeneity?: { value?: number; unit?: string; range?: string; status: string }; // 定性描述（均匀/不均），旧数据兼容数值字段
     wrinkleGrade?: { value: string; range?: string; status: string }; // 1-3 级
 }

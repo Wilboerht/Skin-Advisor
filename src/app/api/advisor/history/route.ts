@@ -7,6 +7,18 @@ import { upsertAutoDiaryEntry } from "@/lib/diary";
 import { logger } from "@/lib/logger";
 
 /**
+ * 补建日记的日期口径：客户端未携带本地日历日（dateStr/clientDate）时，
+ * 回退为"完成时间的北京时间日历日"（与 src/lib/time.ts 的全站 Asia/Shanghai 口径一致，
+ * 不依赖服务器时区；UTC+8 用户与 analyze 主路径的 clientDate 结果一致）。
+ * 局限：服务端无法获知用户真实时区，非 UTC+8 用户跨日边界可能有 ±1 天偏差。
+ * 与 session/claim 路由的 dateStr 回退为同一实现，两处需保持同步。
+ */
+function diaryDateStrFallback(completedAt: Date): string {
+    const shifted = new Date(completedAt.getTime() + 8 * 60 * 60 * 1000);
+    return shifted.toISOString().slice(0, 10);
+}
+
+/**
  * 懒认领：把同 IP（哈希）的历史游客测肤绑定到当前登录用户。
  *
  * 背景：游客测肤的认领唯一入口是结果页的 session/claim，登录态不稳定
@@ -50,7 +62,7 @@ async function lazyClaimGuestSessions(userId: string, ip: string): Promise<void>
                     : undefined;
                 upsertAutoDiaryEntry({
                     userId,
-                    dateStr: session.completedAt.toISOString().slice(0, 10),
+                    dateStr: diaryDateStrFallback(session.completedAt),
                     score: face.overallScore,
                     skinTypeLabel,
                     sessionId: session.sessionId

@@ -12,7 +12,7 @@ import { useNavPush } from "@/hooks/use-nav-push";
 import { useToast } from "@/components/ui/Toast";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { normalizeAnalysisResult, type ComprehensiveResult, type PreviousTestSummary } from "@/lib/analysis-result";
-import { getRankPercentile, getCharacterImage } from "@/lib/result-utils";
+import { getCharacterImage } from "@/lib/result-utils";
 import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from "@/lib/storage-keys";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import type { SessionUser } from "@/lib/auth";
@@ -129,6 +129,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
     const { runAnalysis, analysisState, recoverSession, startMock } = useAsyncAnalysis();
+
+    // Mock 预览仅本地开发可用（与 face-scan 入口的门控一致），生产环境忽略 mock 参数走正常流程；
+    // mock=done 是 mock 数据注入后的 URL 标记，同样按 mock 会话处理（不写趋势快照/不上报埋点/不发起 session claim）
+    const isMock = process.env.NODE_ENV !== "production" &&
+        (searchParams.get('mock') === 'true' || searchParams.get('mock') === 'done');
 
     // Session ID state - needed early for QR code generation
     const [sessionId, setSessionId] = useState<string | undefined>(id);
@@ -274,20 +279,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     }, []);
     const posterRef = useRef<HTMLDivElement>(null);
 
-    // 顾问叙事报告（v2）：consultantReport 存在时启用新渲染，旧报告/fallback 报告走原有板块
-    const isV2Report = result?.reportVersion === 2 && !!result?.consultantReport;
-
-    const rankPercentile = useMemo(
-        () => {
-            // v2 报告不再展示伪统计百分位（"超越全国 X% 用户"是固定公式，非真实统计）
-            if (isV2Report) return undefined;
-            if (result?.dataSource === "questionnaire") return undefined;
-            const rawScore = faceAnalysis?.overallScore;
-            if (rawScore === undefined || rawScore === null) return undefined;
-            return getRankPercentile(rawScore);
-        },
-        [faceAnalysis?.overallScore, result?.dataSource, isV2Report]
-    );
+    // "超越全国 X% 用户"百分位是固定公式伪统计，v2 报告与分享海报均已下线，不再计算
 
     // 重点问题关注：暗沉/黑头/痘痘等具体问题（维度分数 <70 或 AI 症状检测），按严重程度排序
     const focusProblems = useMemo(
@@ -330,8 +322,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     }, [serverPreviousSummary]);
 
     // 游客：查看本次报告后记录结构化快照（当前派系/评分/肌肤年龄），作为下次测肤的对比基准
+    // mock 会话不写快照，避免假数据污染下次真实测肤的趋势对比基准
     useEffect(() => {
-        if (serverPreviousSummary !== undefined || guestPrevSnapshot === undefined || !result) return;
+        if (isMock || serverPreviousSummary !== undefined || guestPrevSnapshot === undefined || !result) return;
         const snap: PreviousTestSummary = {
             persona: result.persona || null,
             score: faceAnalysis?.overallScore ?? null,
@@ -339,7 +332,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             at: certDate || null,
         };
         try { localStorage.setItem(STORAGE_KEYS.ADVISOR_LAST_SUMMARY, JSON.stringify(snap)); } catch { /* ignore */ }
-    }, [serverPreviousSummary, guestPrevSnapshot, result, faceAnalysis, certDate]);
+    }, [isMock, serverPreviousSummary, guestPrevSnapshot, result, faceAnalysis, certDate]);
 
     /** 生效的"上一次摘要"：服务端优先；游客无快照时为 null（首次）。
      *  仅用于趋势对比板块与 cohort 埋点；封面页每次测肤都先展示，不受本判定影响 */
@@ -367,26 +360,27 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const handleFlipToReport = useCallback(() => {
         if (!flippedToReportRef.current) {
             flippedToReportRef.current = true;
-            trackResultFlip("report", coverMeta);
+            if (!isMock) trackResultFlip("report", coverMeta);
         }
         setPageIndex(1);
-    }, [coverMeta, trackResultFlip]);
+    }, [coverMeta, trackResultFlip, isMock]);
 
     // 报告 → 封面（手动打开证书入口；封面即便初未展示也允许回看）
     const handleOpenCover = useCallback(() => {
         setPageIndex(0);
-        trackResultFlip("cover", coverMeta);
-    }, [coverMeta, trackResultFlip]);
+        if (!isMock) trackResultFlip("cover", coverMeta);
+    }, [coverMeta, trackResultFlip, isMock]);
 
     // 翻页仅接受明确操作（按钮 / 指示器 / 证书入口），不监听滚轮与手势，
     // 避免用户查看封面时误滑动直接翻页丢失当前阅读位置
     // 注意：flippedToReportRef 一旦置位不再复位——"封面→报告"转化每会话只上报一次，
     // 来回切换封面不重复计入转化（cover 打开事件单独上报）
 
-    // result_view 埋点附带 cohort 标记（判定未就绪时仅上报 base 事件）
+    // result_view 埋点附带 cohort 标记（判定未就绪时仅上报 base 事件）；mock 会话不上报埋点
     const trackView = useCallback(() => {
+        if (isMock) return;
         trackResultView(coverMeta);
-    }, [coverMeta, trackResultView]);
+    }, [coverMeta, trackResultView, isMock]);
 
     // 拍摄时肌肤状态：优先取分析结果落库值（历史报告），缺失时回退本地存储（当前会话）
     // 本地存储部分挂载后再读，避免 SSR（null）与客户端水合（已存值）不一致触发 React #418
@@ -433,7 +427,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         if (!result) return;
 
         const avatarUrl = getCharacterImage({
-            score: faceAnalysis?.overallScore ?? 0,
+            // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派（与封面页一致）
+            score: faceAnalysis?.overallScore ?? 80,
             skinType: result?.skinProfile?.type || 'combination',
             budget: ipBudget,
             skincareFrequency: ipSkincareFrequency,
@@ -845,13 +840,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1);
             if (isWeChatMobile) {
                 setSavedPosterForSave(URL.createObjectURL(blob));
-                trackResultShare("image");
+                if (!isMock) trackResultShare("image");
                 return;
             }
 
             const safeName = sanitizeFilename(userNickname || "用户");
             await triggerDownload(blob, `${safeName}的肌智派证书.png`);
-            trackResultShare("image");
+            if (!isMock) trackResultShare("image");
         } catch (error) {
             console.error("海报生成失败:", error);
             setPosterError("海报生成遇到问题，请稍后重试。");
@@ -874,8 +869,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // --- Auto-Claim Session ---
     // Automatically link guest-initiated session to user account once logged in
+    // mock 会话不发起 claim（mock-session 不是真实会话）
     useEffect(() => {
-        if (!user || !sessionId) return;
+        if (!user || !sessionId || isMock) return;
 
         const abortController = new AbortController();
 
@@ -909,7 +905,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         return () => {
             abortController.abort();
         };
-    }, [user, sessionId, router]);
+    }, [user, sessionId, router, isMock]);
 
 
     // --- Async Analysis Integration ---
@@ -953,8 +949,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         if (analysisStartedRef.current) return;
         analysisStartedRef.current = true;
 
-        // Mock 模式：纯前端预览 AnalyzingOverlay，不调用后端
-        if (searchParams.get('mock') === 'true') {
+        // Mock 模式：纯前端预览 AnalyzingOverlay，不调用后端；仅开发环境生效，生产环境忽略 mock 参数
+        if (isMock && searchParams.get('mock') === 'true') {
             startMock();
             return;
         }
@@ -981,7 +977,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
                         // Save to localStorage for normal recovery
                         try {
-                            localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(rawResult));
+                            // DB 快照不含 sessionId，补齐后再写入（与正常分析路径 useAsyncAnalysis 保存前补 sessionId 一致），
+                            // 否则后续无 ?status=analyzing 的 /result 恢复会丢失 sessionId（海报二维码退化为 ?gift=1、
+                            // 证书编号缺失、性别弹窗被抑制、auto-claim 不执行）
+                            localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify({ ...rawResult, sessionId: recoveredSessionId }));
                         } catch (e) {
                             console.warn('localStorage save failed', e);
                         }
@@ -1065,11 +1064,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             }
         };
         execute();
-    }, [searchParams, result, analysisState.status, clientDataLoaded, runAnalysis, recoverSession, router, startMock]);
+    }, [searchParams, result, analysisState.status, clientDataLoaded, runAnalysis, recoverSession, router, startMock, isMock]);
 
-    // Mock 完成后注入假数据，渲染结果页（动态加载 mock 数据，不影响生产包体积）
+    // Mock 完成后注入假数据，渲染结果页（动态加载 mock 数据，不影响生产包体积）；仅开发环境生效
     useEffect(() => {
-        if (searchParams.get('mock') !== 'true') return;
+        if (!isMock || searchParams.get('mock') !== 'true') return;
         if (analysisState.status !== 'completed') return;
         import("./mock-result").then(({ MOCK_RESULT, MOCK_FACE_ANALYSIS }) => {
             setResult(MOCK_RESULT);
@@ -1079,7 +1078,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             setSessionId("mock-session");
             router.replace('/result?mock=done', { scroll: false });
         });
-    }, [analysisState.status, searchParams, router]);
+    }, [analysisState.status, searchParams, router, isMock]);
 
     // 入口守卫判定未就绪（SSR 或挂载前）：渲染加载态，避免水合不一致（React #418）
     if (accessDenied === null) {
@@ -1388,7 +1387,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         personaLabel={personaLabel}
                                         onProductClick={(productId) => {
                                             const product = result.products?.find(p => p.id === productId);
-                                            if (product) {
+                                            if (product && !isMock) {
                                                 trackProductClick(productId, product.name);
                                             }
                                         }}
@@ -1526,12 +1525,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             ref={posterRef}
                             nickname={userNickname || "用户"}
                             score={faceAnalysis?.overallScore ?? undefined}
-                            percentile={rankPercentile}
                             waterOil={faceAnalysis?.dimensions?.waterOil?.score}
                             skinTypeName={personaLabel}
                             skinAge={result?.skinProfile?.skinAge}
                             avatar={socialGender ? getCharacterImage({
-                                score: faceAnalysis?.overallScore ?? 0,
+                                // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派（与封面页一致）
+                                score: faceAnalysis?.overallScore ?? 80,
                                 skinType: result?.skinProfile?.type || 'combination',
                                 budget: ipBudget,
                                 skincareFrequency: ipSkincareFrequency,

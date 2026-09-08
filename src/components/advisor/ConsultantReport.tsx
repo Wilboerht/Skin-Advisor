@@ -185,7 +185,7 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
                     </div>
                 ) : (
                     <p className="text-sm text-[var(--color-brand-cocoa)] leading-relaxed">
-                        本次检测未发现需要重点关注的问题，您的肌肤状态良好，请继续保持现有护理习惯。
+                        本次检测未发现需要重点关注的问题，您的肌肤状态良好，继续保持规律作息与基础防晒保湿即可。
                     </p>
                 )}
             </section>

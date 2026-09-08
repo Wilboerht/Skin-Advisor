@@ -94,7 +94,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
   "summary":"诊断报告摘要(200字内，必填，必须引用具体评分数据和区域问题，不可只写通用描述)",
   "recommendations":["整体护理原则1","原则2","原则3","原则4","原则5"],
   "skinConditions":[{"condition":"症状名","severity":"mild|moderate|severe","area":"部位","description":"自然语言描述，不引用评分"}],
-  "labAnalysis":{"glogau":{"value":"I 型|II 型|III 型","status":"状态"},"homogeneity":{"status":"均匀/不均等定性描述"},"wrinkleGrade":{"value":"1级|2级|3级","status":"状态"}},
+  "labAnalysis":{"glogau":{"value":"I 型|II 型|III 型|IV 型","status":"状态"},"homogeneity":{"status":"均匀/不均等定性描述"},"wrinkleGrade":{"value":"1级|2级|3级","status":"状态"}},
   "zoneAnalysis":{
     "forehead":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
     "tZone":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
@@ -109,6 +109,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
 #   "pimples":0-100（炎性痘痘/红肿的程度，越高表示问题越少）。
 # 子分与综合 score 使用同一评分标准（85-100优秀, 70-84良好, 55-69一般, 40-54需关注, <40差），
 # 必须与综合 score 逻辑一致：若黑头明显而炎性痘少，blackheads 应明显低于 pimples。
+# labAnalysis.glogau 采用 Glogau 光老化分级临床标准 I–IV 四型：I 型=早期光老化（无明显皱纹）、II 型=动态纹（表情时可见）、III 型=静态纹（无表情也可见）、IV 型=全面重度皱纹伴灰黄色肤色。重度光老化必须如实判为 IV 型，不得低估。
 # zoneAnalysis 6 区域全必填；advice 必须包含具体成分建议和使用频率，如"含壬二酸洁面 + 每周2次膨润土泥膜"而非仅"控油"；condition 用自然语言一句话概括该区域的核心状态，如"T区偏油，有轻微毛孔堵塞迹象"而非"油脂评分72偏高"。
 # ⚠️ advice 成分约束（严格遵守）：advice 中提及的所有成分必须在以下品牌成分体系内选择，不可推荐体系外的成分：
 #   保湿修护：透明质酸钠（玻尿酸）、泛醇（维生素B5）、神经酰胺NP、依克多因、角鲨烷、二裂酵母发酵溶胞产物、半乳糖发酵滤液、α-葡聚糖寡糖、银耳多糖、氢化卵磷脂
@@ -250,7 +251,7 @@ export function buildTextAnalysisPrompt(params: {
 - 所在地：${params.location ? wrapUserData("location", sanitizePromptInput(params.location)) : "未知"}
 - 关注问题：${params.concerns?.join(", ") || "无"}
 ${params.allergies ? `- 过敏史：${wrapUserData("allergies", sanitizePromptInput(Array.isArray(params.allergies) ? params.allergies.join("、") : params.allergies))}` : ""}
-${params.pregnancyStatus === "yes" ? `- ⚠️ 孕期：是（在此基础上额外排除：维A酸/视黄醇/Retinol、水杨酸>2%、氢醌等，见下方核心规则第3条）` : params.pregnancyStatus === "unknown" ? "- 孕期状态：不确定（按孕期标准谨慎推荐）" : ""}
+${params.pregnancyStatus === "yes" ? `- ⚠️ 孕期：是（品牌成分白名单本身不含维A酸类/高浓度水杨酸/氢醌等孕期禁忌成分，无需额外规避；孕期真正需要注意的是避免精油/香精类成分，见下方核心规则第3条）` : params.pregnancyStatus === "unknown" ? "- 孕期状态：不确定（按孕期标准谨慎推荐）" : ""}
 
 生活状态：
 - 医美经历(近3月)：${medicalText}
@@ -323,7 +324,7 @@ ${productsContext}
 - concernAnalysis 像护肤博主的小贴士，不是医学论文
 - skinTypeAnalysis 读起来像医生在跟你聊天，不是背教科书
 - lifestyleTips 只写 2-3 条整体生活原则（作息、饮水、情绪等），不重复问题板块已给出的分类建议
-- 禁止出现"评分XX分""维度分数为XX"等机械表述，改用"表现不错""需要多加关注""是你的优势项"等自然表达
+- 禁止机械套用"评分XX分""维度分数为XX"这类报数句式；核心约束第1条允许的1-2个关键分数仍可提及，但必须融入自然语境解读其含义（如"水油平衡72分，说明你的屏障锁水能力不错"），也可改用"表现不错""需要多加关注""是你的优势项"等定性表达
 - 最多选 3 款产品
 - 无合适产品时 products 可为空数组
 `;
@@ -367,7 +368,7 @@ export const REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION = `
 
 3. **输出要求**：
    - 每个维度的 details 字段不少于30字，使用皮肤科术语但确保可理解
-    - summary 聚焦正面亮点，用一句话概括肌肤最佳维度和整体优势，不提负面预警
+    - summary 以正面亮点为主线：用一句话概括肌肤最佳维度和整体优势，同时遵循基础要求引用 1 个关键评分数据作支撑；不做负面预警的集中罗列（具体问题由 zoneAnalysis 与 skinConditions 承担）
    - zoneAnalysis 的 condition 和 advice 必须关联到会员的生活习惯数据
    - recommendations 中至少包含1条结合品牌成分体系的具体护肤流程建议
 ${ANTI_PROMPT_INJECTION_RULE}

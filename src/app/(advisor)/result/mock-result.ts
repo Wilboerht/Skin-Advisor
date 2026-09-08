@@ -54,7 +54,7 @@ export const MOCK_RESULT: ComprehensiveResult = {
             id: "mock-cream",
             name: "舒缓修护面霜",
             category: "面霜",
-            reason: "100% 无水纯净配方，成分表仅 11 项，最大限度降低刺激风险，夜间封层锁住修护成果。",
+            reason: "无水纯净配方，成分表仅 11 项，最大限度降低刺激风险，夜间封层锁住修护成果。",
             image: "/images/products/Face Cream.svg",
             price: "¥139",
             keyIngredients: ["角鲨烷", "红没药醇", "尿囊素"],

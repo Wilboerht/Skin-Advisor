@@ -8,6 +8,18 @@ import { logger } from "@/lib/logger";
 import { upsertAutoDiaryEntry } from "@/lib/diary";
 
 /**
+ * 补建日记的日期口径：客户端未携带本地日历日（body.dateStr）时，
+ * 回退为"完成时间的北京时间日历日"（与 src/lib/time.ts 的全站 Asia/Shanghai 口径一致，
+ * 不依赖服务器时区；UTC+8 用户与 analyze 主路径的 clientDate 结果一致）。
+ * 局限：服务端无法获知用户真实时区，非 UTC+8 用户跨日边界可能有 ±1 天偏差。
+ * 与 history 路由的懒认领补建为同一实现，两处需保持同步。
+ */
+function diaryDateStrFallback(completedAt: Date): string {
+    const shifted = new Date(completedAt.getTime() + 8 * 60 * 60 * 1000);
+    return shifted.toISOString().slice(0, 10);
+}
+
+/**
  * POST /api/advisor/session/claim
  * Link a guest session to a logged-in user
  */
@@ -94,12 +106,12 @@ export async function POST(request: NextRequest) {
                         | null | undefined;
                     const overallScore = face?.overallScore;
                     if (typeof overallScore === "number") {
-                        // 日期优先用客户端本地日历日（body.dateStr）；缺失时回退 completedAt 的 UTC 日
+                        // 日期优先用客户端本地日历日（body.dateStr）；缺失时回退 completedAt 的北京时间日历日
                         const bodyDateStr = (body as { dateStr?: unknown })?.dateStr;
                         const dateStr =
                             typeof bodyDateStr === "string" && /^\d{4}-\d{2}-\d{2}$/.test(bodyDateStr)
                                 ? bodyDateStr
-                                : session.completedAt.toISOString().slice(0, 10);
+                                : diaryDateStrFallback(session.completedAt);
                         const skinProfile = (result.skinProfile ?? null) as { typeLabel?: unknown } | null | undefined;
                         const skinAnalysis = (result.skinAnalysis ?? null) as { typeLabel?: unknown } | null | undefined;
                         const skinTypeLabel =

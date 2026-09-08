@@ -11,17 +11,28 @@ export const SessionIdSchema = z.string().min(1, "Session ID 不能为空");
 // 分析 API 验证规则
 // ============================================================================
 
+// 数值范围钳制：拒绝会破坏合法流程（AI 偶发输出 100.4 等），
+// 超界值钳回合法区间，防止伪造请求注入极端分数污染日记/推送/趋势基准
+const clampNumber = (min: number, max: number) =>
+    z.number().transform((n) => Math.min(max, Math.max(min, n)));
+// 分数/百分比类：0-100
+const scoreSchema = clampNumber(0, 100);
+// 置信度：历史存在 0-1 与 0-100 两种口径，统一钳到 0-100，下游 determineSkinType 负责归一化
+const confidenceSchema = clampNumber(0, 100);
+// 肌龄合理区间
+const skinAgeSchema = clampNumber(10, 90);
+
 const zoneDataSchema = z.object({
     condition: z.string().optional(),
     advice: z.string().optional(),
-    oil: z.number().optional(),
-    texture: z.number().optional(),
-    wrinkles: z.number().optional(),
-    spots: z.number().optional(),
-    redness: z.number().optional(),
-    darkCircles: z.number().optional(),
-    firmness: z.number().optional(),
-    contour: z.number().optional(),
+    oil: scoreSchema.optional(),
+    texture: scoreSchema.optional(),
+    wrinkles: scoreSchema.optional(),
+    spots: scoreSchema.optional(),
+    redness: scoreSchema.optional(),
+    darkCircles: scoreSchema.optional(),
+    firmness: scoreSchema.optional(),
+    contour: scoreSchema.optional(),
 }).passthrough();
 
 export const AnalyzeRequestSchema = z.object({
@@ -62,27 +73,27 @@ export const AnalyzeRequestSchema = z.object({
     faceAnalysis: z.object({
         skinType: z.object({
             type: z.string(),
-            confidence: z.number().optional(),
+            confidence: confidenceSchema.optional(),
             description: z.string().optional()
         }).optional(),
         gender: z.object({
             value: z.enum(["male", "female"]),
-            confidence: z.number()
+            confidence: confidenceSchema
         }).optional(),
         dimensions: z.record(z.string(), z.object({
-            score: z.number().optional(),
-            percentile: z.number().optional(),
+            score: scoreSchema.optional(),
+            percentile: scoreSchema.optional(),
             grade: z.enum(["excellent", "good", "average", "fair", "poor"]).optional(),
             details: z.string().optional(),
         })).optional(),
-        overallScore: z.number().optional(),
+        overallScore: scoreSchema.optional(),
         skinAge: z.object({
-            estimated: z.number().optional(),
+            estimated: skinAgeSchema.optional(),
             factors: z.array(z.string()).optional()
         }).optional(),
         hydration: z.object({
             level: z.string().optional(),
-            percent: z.number().optional()
+            percent: scoreSchema.optional()
         }).optional(),
         skinConditions: z.array(z.object({
             condition: z.string(),

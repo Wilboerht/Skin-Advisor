@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     try {
         const session = await prisma.advisorSession.findUnique({
-            where: { sessionId },
+            where: { sessionId, archivedAt: null }, // 冷层归档摘要对用户不可见，内部接口保持同一可见性语义
             select: { analysisResult: true, answers: true, expiresAt: true, createdAt: true },
         });
 

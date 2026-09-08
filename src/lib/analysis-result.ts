@@ -87,6 +87,15 @@ function toFiniteNumber(value: unknown): number | undefined {
 }
 
 /**
+ * 数组字段防御：旧脏数据可能是字符串/对象（如 details 存成整段文本），
+ * 直接强转会让消费端 .map/.slice 抛错或把首字符当首条渲染；
+ * 非数组一律归空，数组内非字符串元素剔除（同 normalizeConsultantReport 的 strengths 处理）。
+ */
+function toStringArray(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((s): s is string => typeof s === "string") : [];
+}
+
+/**
  * 防御性归一化历史脏数据：旧记录可能缺 issues/strengths 数组或字段类型异常，
  * 强转前补齐安全默认，保证组件渲染假设成立。
  */
@@ -126,16 +135,18 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
         skinProfile: {
             type: (skinProfile?.type as string | undefined) || (skinProfile?.skinType as string | undefined) || "combination",
             typeLabel: (skinProfile?.typeLabel as string | undefined) || (skinProfile?.skinTypeLabel as string | undefined) || "混合性肌肤",
-            concerns: (skinProfile?.concerns as string[] | undefined) || [],
+            concerns: toStringArray(skinProfile?.concerns),
             skinAge: toFiniteNumber(skinProfile?.skinAge),
         },
         analysis: {
             summary: (analysis?.summary as string | undefined) || "分析完成。",
-            details: (analysis?.details as string[] | undefined) || [],
-            lifestyleTips: (analysis?.lifestyleTips as string[] | undefined) || [],
+            details: toStringArray(analysis?.details),
+            lifestyleTips: toStringArray(analysis?.lifestyleTips),
         },
         dataSource: normalizeDataSource(record.dataSource, record.source),
-        products: (record.products as ComprehensiveResult["products"]) || [],
+        products: Array.isArray(record.products)
+            ? (record.products as ComprehensiveResult["products"])
+            : [],
         persona: record.persona as string | undefined,
         expiresAt: record.expiresAt as string | undefined,
         analyzedAt: record.analyzedAt as string | undefined,

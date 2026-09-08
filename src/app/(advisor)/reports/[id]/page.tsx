@@ -24,7 +24,9 @@ const getReportCached = cache((id: string, userId: string) =>
 );
 
 // 本次报告之前最近一次已完成测肤的摘要：两页版式封面判定基准 + 趋势对比板块数据源。
-// 归档冷层（压缩摘要）保留 persona/overallScore，字段解析与热层兼容；游客无 DB 上下文，走 localStorage（ResultClient 处理）。
+// 归档冷层（压缩摘要）保留 persona/overallScore/skinAge，字段解析与热层兼容，故不排除归档会话——
+// 归档摘要已含趋势对比所需的全部字段，排除反而会让超过保留窗口的老用户对比断档；
+// 游客无 DB 上下文，走 localStorage（ResultClient 处理）。
 // before = 当前报告的完成时间：只取早于它的测肤，保证打开历史报告时对比基准语义正确
 const getPreviousSummary = cache(
     async (id: string, userId: string, before: Date | null): Promise<PreviousTestSummary | null> => {
@@ -40,13 +42,18 @@ const getPreviousSummary = cache(
         if (!prev) return null;
         const raw = (prev.analysisResult as unknown as Record<string, unknown>) || {};
         const face = raw.faceAnalysis as Record<string, unknown> | undefined;
-        const skin = raw.skinProfile as Record<string, unknown> | undefined;
-        return {
+        // 新格式 skinProfile 优先，旧格式/归档兼容路径 skinAnalysis 兜底（与 normalizeAnalysisResult 一致）
+        const skin = (raw.skinProfile ?? raw.skinAnalysis) as Record<string, unknown> | undefined;
+        const summary: PreviousTestSummary = {
             persona: typeof raw.persona === "string" ? raw.persona : null,
             score: typeof face?.overallScore === "number" ? face.overallScore : null,
             skinAge: typeof skin?.skinAge === "number" ? skin.skinAge : null,
             at: prev.completedAt?.toISOString() ?? null,
         };
+        // 全空即无有效对比基准（降级旧记录）：与游客端快照守卫（ResultClient 恢复 localStorage 处的判断）一致，
+        // 避免渲染三格全 "—" 的无意义对比卡、结论误写"整体肌肤状态保持稳定"
+        if (summary.persona == null && summary.score == null && summary.skinAge == null) return null;
+        return summary;
     }
 );
 

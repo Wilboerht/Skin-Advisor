@@ -29,13 +29,13 @@ function computeGlogau(faceAnalysis: FaceAnalysisResult | null): LabMetric {
         return {
             param: "光老化等级 (Glogau Scale)",
             value: String(lab.glogau.value),
-            ref: "I-III 型分级",
+            ref: "I-IV 型分级",
             status: lab.glogau.status,
         };
     }
 
-    // uvDamage 分数越高损伤越少；Glogau I 型最轻、III 型最重
-    // 阈值沿用 problem-solutions.ts 惯例：>=70 良好 / 40-69 中度 / <40 重度
+    // uvDamage 分数越高损伤越少；Glogau I 型最轻、IV 型最重
+    // 阈值沿用 problem-solutions.ts 惯例：>=70 良好 / 40-69 中度 / 25-39 重度 / <25 极重度
     const uvDamage = dims?.uvDamage?.score;
     const value =
         uvDamage === undefined
@@ -44,12 +44,14 @@ function computeGlogau(faceAnalysis: FaceAnalysisResult | null): LabMetric {
                 ? "I 型"
                 : uvDamage >= 40
                     ? "II 型"
-                    : "III 型";
+                    : uvDamage >= 25
+                        ? "III 型"
+                        : "IV 型";
 
     return {
         param: "光老化等级 (Glogau Scale)",
         value,
-        ref: "I-III 型分级",
+        ref: "I-IV 型分级",
         status: uvDamage === undefined ? "-" : "AI 估算",
     };
 }
@@ -58,7 +60,7 @@ function computeHomogeneity(faceAnalysis: FaceAnalysisResult | null): LabMetric 
     const dims = getDimensions(faceAnalysis);
     const lab = getLabAnalysis(faceAnalysis);
 
-    const status = lab?.homogeneity?.status || (dims ? (dims.skinTone?.score ?? 0) > 80 ? "均匀" : "不均" : "-");
+    const status = lab?.homogeneity?.status || (dims ? (dims.skinTone?.score ?? 0) >= 70 ? "均匀" : "不均" : "-");
 
     return {
         param: "肤色均匀度 (Homogeneity)",
@@ -72,7 +74,7 @@ function computePeriorbitalContrast(faceAnalysis: FaceAnalysisResult | null): La
     const dims = getDimensions(faceAnalysis);
     const darkCircles = dims?.darkCircles?.score;
 
-    const status = darkCircles !== undefined ? (darkCircles > 80 ? "正常" : "明显") : "-";
+    const status = darkCircles !== undefined ? (darkCircles >= 70 ? "正常" : "明显") : "-";
 
     return {
         param: "眼周色素沉着 (Periorbital Pigmentation)",
@@ -118,12 +120,13 @@ function computeAcne(faceAnalysis: FaceAnalysisResult | null): LabMetric {
     const acne = dims?.acne?.score;
 
     // value 与 status 共用同一套阈值分段，保证同一分数下语义一致
+    // 分段对齐全站 70 分健康线与评分标准（70-84 良好 / 55-69 一般 / 40-54 需关注 / <40 差）
     const band =
         acne === undefined
             ? null
-            : acne >= 75
+            : acne >= 70
                 ? { value: "轻微", status: "轻微" }
-                : acne >= 60
+                : acne >= 55
                     ? { value: "少量", status: "少量" }
                     : acne >= 40
                         ? { value: "中等", status: "中等" }
@@ -132,7 +135,7 @@ function computeAcne(faceAnalysis: FaceAnalysisResult | null): LabMetric {
     return {
         param: "痘痘 / 痤疮 (Acne Severity)",
         value: band?.value ?? "?",
-        ref: "≥ 60 为正常",
+        ref: "≥ 70 为佳（仅轻微）",
         status: band?.status ?? "-",
     };
 }
@@ -144,16 +147,16 @@ function computeSpots(faceAnalysis: FaceAnalysisResult | null): LabMetric {
     const band =
         spots === undefined
             ? null
-            : spots >= 75
+            : spots >= 70
                 ? { value: "少量", status: "少量" }
-                : spots >= 60
+                : spots >= 55
                     ? { value: "中等", status: "中等" }
                     : { value: "明显", status: "明显" };
 
     return {
         param: "色斑 / 色素沉着 (Pigmentation)",
         value: band?.value ?? "?",
-        ref: "≥ 60 为正常",
+        ref: "≥ 70 为少量",
         status: band?.status ?? "-",
     };
 }
@@ -165,7 +168,7 @@ function computeSensitivity(faceAnalysis: FaceAnalysisResult | null): LabMetric 
     const band =
         sensitivity === undefined
             ? null
-            : sensitivity >= 60
+            : sensitivity >= 70
                 ? { value: "正常", status: "正常" }
                 : sensitivity >= 40
                     ? { value: "轻度敏感", status: "轻度敏感" }
@@ -174,7 +177,7 @@ function computeSensitivity(faceAnalysis: FaceAnalysisResult | null): LabMetric 
     return {
         param: "泛红 / 敏感 (Redness/Sensitivity)",
         value: band?.value ?? "?",
-        ref: "≥ 60 为正常",
+        ref: "≥ 70 为正常",
         status: band?.status ?? "-",
     };
 }
@@ -184,16 +187,16 @@ function computeOiliness(faceAnalysis: FaceAnalysisResult | null): LabMetric {
     const waterOil = dims?.waterOil?.score ?? 0;
 
     const value = dims
-        ? waterOil >= 60
+        ? waterOil >= 70
             ? "正常"
             : "失衡"
         : "?";
-    const status = dims ? (waterOil >= 60 ? "正常" : "失衡") : "-";
+    const status = dims ? (waterOil >= 70 ? "正常" : "失衡") : "-";
 
     return {
         param: "油光状态 (Oiliness)",
         value,
-        ref: "≥ 60 为正常",
+        ref: "≥ 70 为正常",
         status,
     };
 }
@@ -203,16 +206,16 @@ function computeRadiance(faceAnalysis: FaceAnalysisResult | null): LabMetric {
     const radiance = dims?.radiance?.score ?? 0;
 
     const value = dims
-        ? radiance >= 60
+        ? radiance >= 70
             ? "透亮"
             : "暗沉"
         : "?";
-    const status = dims ? (radiance >= 60 ? "透亮" : "暗沉") : "-";
+    const status = dims ? (radiance >= 70 ? "透亮" : "暗沉") : "-";
 
     return {
         param: "肤色亮度 / 暗沉 (Radiance)",
         value,
-        ref: "≥ 60 为透亮",
+        ref: "≥ 70 为透亮",
         status,
     };
 }
@@ -222,16 +225,16 @@ function computeFirmness(faceAnalysis: FaceAnalysisResult | null): LabMetric {
     const firmness = dims?.firmness?.score ?? 0;
 
     const value = dims
-        ? firmness >= 60
+        ? firmness >= 70
             ? "紧致"
             : "松弛"
         : "?";
-    const status = dims ? (firmness >= 60 ? "紧致" : "松弛") : "-";
+    const status = dims ? (firmness >= 70 ? "紧致" : "松弛") : "-";
 
     return {
         param: "皮肤紧致度 (Firmness)",
         value,
-        ref: "≥ 60 为紧致",
+        ref: "≥ 70 为紧致",
         status,
     };
 }

@@ -154,6 +154,8 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
             </div>
           )}
 
+          {/* "超越全国 X%" 伪统计已下线：ResultClient 不再传入 percentile；保留条件渲染仅作兼容，
+              percentile 为 undefined 时不渲染该元素 */}
           {percentile !== undefined && (
             <div className="absolute top-[47%] left-[78%] -translate-x-1/2">
               <p className="text-2xl font-bold text-[#00263E] whitespace-nowrap">{percentile}%</p>
