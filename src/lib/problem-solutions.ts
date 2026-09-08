@@ -239,7 +239,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
         solutions: {
             skincare: [
                 "每天使用 SPF30+ PA+++ 防晒霜并定时补涂",
-                "使用含烟酰胺或 α-熊果苷的淡斑精华，坚持 8 周以上",
+                "使用含烟酰胺或 α-熊果苷的提亮精华，坚持 8 周以上",
                 "已形成的深色斑建议咨询皮肤科或正规医美机构",
             ],
             sleep: ["充足睡眠有助于色素的夜间代谢"],

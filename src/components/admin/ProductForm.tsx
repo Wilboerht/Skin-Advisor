@@ -607,7 +607,7 @@ export default function ProductForm({
                 <section>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <TagInput label="核心成分" values={keyIngredients} onChange={setKeyIngredients} required error={errors.keyIngredients} placeholder="输入成分名称，按回车添加" />
-                        <TagInput label="主要功效" values={benefits} onChange={setBenefits} required error={errors.benefits} placeholder="如：保湿、抗老、美白..." />
+                        <TagInput label="主要功效" values={benefits} onChange={setBenefits} required error={errors.benefits} placeholder="如：保湿、抗老、提亮..." />
                         <TagInput label="不适合人群" values={negativeFor} onChange={setNegativeFor} placeholder="如：敏感肌、孕妇..." />
                     </div>
                 </section>
