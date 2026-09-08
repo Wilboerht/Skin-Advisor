@@ -32,25 +32,30 @@ function daysBetween(end?: string | null, start?: string | null): number | null 
     return days > 0 ? days : null;
 }
 
-function DeltaBadge({ delta, goodWhenNegative = false }: { delta?: number; goodWhenNegative?: boolean }) {
-    if (delta === undefined) return null;
+// 变化量主视觉：当前绝对值由下方「专业版报告」卡承载，此卡只表达"较上次的变化"，
+// 避免同屏重复展示当前分数/肌龄
+function DeltaFigure({ delta, unit, goodWhenNegative = false }: { delta?: number; unit: string; goodWhenNegative?: boolean }) {
+    if (delta === undefined) {
+        return <span className="text-xl lg:text-2xl font-bold text-[var(--color-brand-charcoal)] leading-none">—</span>;
+    }
     if (delta === 0) {
-        return <span className="text-[11px] text-[var(--color-brand-cocoa)]/50">持平</span>;
+        return <span className="text-xl lg:text-2xl font-bold text-[var(--color-brand-charcoal)]/60 leading-none">持平</span>;
     }
     const good = goodWhenNegative ? delta < 0 : delta > 0;
     return (
         <span
             className={cn(
-                "inline-flex items-center gap-0.5 text-[11px] font-medium",
+                "inline-flex items-center gap-1 text-xl lg:text-2xl font-bold leading-none",
                 good ? "text-[#3d7a4d]" : "text-[#c45a4a]"
             )}
         >
             {delta > 0 ? (
-                <TrendingUp className="w-3 h-3" strokeWidth={2} />
+                <TrendingUp className="w-4 h-4" strokeWidth={2} />
             ) : (
-                <TrendingDown className="w-3 h-3" strokeWidth={2} />
+                <TrendingDown className="w-4 h-4" strokeWidth={2} />
             )}
             {delta > 0 ? `+${delta}` : delta}
+            <span className="text-[11px] font-normal text-[#7a6552]/70">{unit}</span>
         </span>
     );
 }
@@ -107,29 +112,22 @@ export default function ComparisonCard({ prev, score, skinAge, persona, at }: Co
                 <CalendarDays className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} aria-hidden="true" />
             </div>
 
-            {/* 3 列数据 */}
+            {/* 3 列数据：主数字为"较上次变化量"，当前绝对值见下方专业版报告卡，不重复展示 */}
             <div className="grid grid-cols-3 gap-2 lg:gap-4 mb-4">
                 <div className="rounded-xl p-3 lg:p-4 bg-[#F0EDE8] border border-brand-espresso/5">
                     <p className="text-[11px] text-[#7a6552] font-medium mb-1.5">综合评分</p>
-                    <div className="flex items-baseline gap-1.5">
-                        <span className="text-xl lg:text-2xl font-bold text-[var(--color-brand-charcoal)] leading-none">
-                            {score !== undefined ? Math.round(score) : "—"}
-                        </span>
-                        <DeltaBadge delta={scoreDelta} />
-                    </div>
-                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">上次 {typeof prev.score === "number" ? Math.round(prev.score) : "—"}</p>
+                    <DeltaFigure delta={scoreDelta} unit="分" />
+                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">
+                        上次 {typeof prev.score === "number" ? Math.round(prev.score) : "—"} → 本次 {score !== undefined ? Math.round(score) : "—"}
+                    </p>
                 </div>
 
                 <div className="rounded-xl p-3 lg:p-4 bg-[#EBE8E2] border border-brand-espresso/5">
                     <p className="text-[11px] text-[#7a6552] font-medium mb-1.5">肌肤年龄</p>
-                    <div className="flex items-baseline gap-1.5">
-                        <span className="text-xl lg:text-2xl font-bold text-[var(--color-brand-charcoal)] leading-none">
-                            {skinAge !== undefined ? Math.round(skinAge) : "—"}
-                        </span>
-                        <span className="text-[11px] text-[#7a6552]/70">岁</span>
-                        <DeltaBadge delta={skinAgeDelta} goodWhenNegative />
-                    </div>
-                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">上次 {typeof prev.skinAge === "number" ? Math.round(prev.skinAge) : "—"} 岁</p>
+                    <DeltaFigure delta={skinAgeDelta} unit="岁" goodWhenNegative />
+                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">
+                        上次 {typeof prev.skinAge === "number" ? Math.round(prev.skinAge) : "—"} 岁 → 本次 {skinAge !== undefined ? Math.round(skinAge) : "—"} 岁
+                    </p>
                 </div>
 
                 <div className="rounded-xl p-3 lg:p-4 bg-[#E6E2DA] border border-brand-espresso/5">

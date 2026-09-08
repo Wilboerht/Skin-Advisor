@@ -25,6 +25,8 @@ interface ShareCardPageProps {
     onOpenReport?: () => void;
     /** 重新测试入口（正常消耗测试次数）；缺省时不展示 */
     onReTest?: () => void;
+    /** 复测用户（存在历史报告）：标题不再称"首次" */
+    isReturning?: boolean;
 }
 
 function formatCertDate(iso?: string): string | null {
@@ -55,6 +57,7 @@ export default function ShareCardPage({
     certId,
     onOpenReport,
     onReTest,
+    isReturning = false,
 }: ShareCardPageProps) {
     // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派
     const ipParams: IPMatchParams = { score: score ?? 80, skinType, budget, skincareFrequency };
@@ -130,7 +133,7 @@ export default function ShareCardPage({
                         </div>
 
                         <h2 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-1 lg:mb-2">
-                            恭喜你完成首次肌智派「AI测肤」
+                            {isReturning ? "欢迎回来，这是您最新的肌智派「AI测肤」报告" : "恭喜你完成首次肌智派「AI测肤」"}
                         </h2>
 
                         <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">

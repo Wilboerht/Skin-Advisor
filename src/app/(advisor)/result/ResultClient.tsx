@@ -1287,6 +1287,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             certId={sessionId}
                                             onOpenReport={handleFlipToReport}
                                             onReTest={handleReTest}
+                                            isReturning={!!prevSum}
                                         />
                                     </section>
                                 </div>

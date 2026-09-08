@@ -5,6 +5,7 @@ import { Activity, ChevronDown, ChevronRight, Lock } from "lucide-react";
 import ResultCards from "./ResultCards";
 import ComparisonCard from "./ComparisonCard";
 import { ConsultantReport } from "./ConsultantReport";
+import { DimensionRadarChart } from "./DimensionRadarChart";
 import { FocusProblemsSection } from "./FocusProblemsSection";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import type { ComprehensiveResult, PreviousTestSummary } from "@/lib/analysis-result";
@@ -62,6 +63,16 @@ export default function ReportPage({
             nickname={nickname}
             comprehensiveReport={
                 <>
+                    {/* 十维数据总览：雷达图直观呈现各维度强弱（有面部分析数据时展示，v1/v2 通用） */}
+                    {faceAnalysis?.dimensions && (
+                        <div className="mt-6 mb-6 lg:mt-8 lg:mb-8">
+                            <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
+                                十维数据总览 <span className="text-xs lg:text-base">(Dimension Overview)</span>
+                            </h4>
+                            <DimensionRadarChart dimensions={faceAnalysis.dimensions} />
+                        </div>
+                    )}
+
                     {/* 顾问叙事报告（v2）：诊断卡推理链取代旧板块 1/2/4 与 Lab 伪数据 */}
                     {isV2Report && result.consultantReport && (
                         <div className="mt-6 mb-6 lg:mt-8 lg:mb-8">
