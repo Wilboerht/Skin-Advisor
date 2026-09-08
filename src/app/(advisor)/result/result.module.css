@@ -30,6 +30,50 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+    /* 顶部栏固定占用：内容从栏下方开始 */
+    padding-top: 56px;
+}
+
+/* 顶部栏：全局固定（两层页面共享），logo 居中，毛玻璃底 */
+.topBar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(232, 226, 217, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(61, 47, 37, 0.06);
+}
+
+/* 顶部栏内层：与页面主列同宽（max-w 900 + 同边距），logo 居中、右侧操作贴内容边缘 */
+.topBarInner {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (min-width: 1024px) {
+    .pageLayer {
+        padding-top: 64px;
+    }
+
+    .topBar {
+        height: 64px;
+    }
+
+    .topBarInner {
+        padding: 0 24px;
+    }
 }
 
 .main {

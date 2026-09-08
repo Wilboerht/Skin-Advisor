@@ -76,38 +76,14 @@ async function waitForImages(container: HTMLElement): Promise<void> {
     );
 }
 
-// 两页版式共享页头：logo + 归属标题 + 拍摄时肌肤状态徽章
-function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStateValue?: string | null }) {
-    const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
+// 两页版式共享页头：归属标题（logo 已上移到固定顶部栏，见 styles.topBar）
+function ResultHeader({ nickname }: { nickname: string }) {
     return (
-        <div className="w-full flex flex-col items-center pt-12">
-            <Image
-                src="/NIHPLOD-logo.svg"
-                alt="NIHPLOD"
-                width={120}
-                height={30}
-                className="h-8 sm:h-10 w-auto object-contain"
-                priority
-            />
-            <p className="mt-6 mb-5 lg:mt-8 lg:mb-8 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center gap-2">
+        <div className="w-full flex flex-col items-center pt-6 lg:pt-8">
+            <p className="mt-0 mb-4 lg:mb-6 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center gap-2">
                 <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                 {nickname} 的专属肌智派在线测肤报告
             </p>
-
-            {/* 拍摄时肌肤状态徽章：带妆/洗后/防晒等影响分析口径，向用户明示 */}
-            {skinStateLabel && (
-                <div className="flex flex-col items-center gap-1 -mt-2 mb-5 lg:-mt-4 lg:mb-7">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/15 bg-white/60 px-3 py-1 text-[11px] text-brand-charcoal/60 font-light tracking-[0.05em]">
-                        <Info className="w-3 h-3 text-brand-charcoal/40" strokeWidth={1.5} />
-                        本次测肤状态：{skinStateLabel}
-                    </span>
-                    {isMakeupState(skinStateValue) && (
-                        <p className="text-[11px] text-brand-charcoal/40 font-light tracking-[0.04em]">
-                            带妆拍摄，色斑、泛红与肤色相关结果仅供参考
-                        </p>
-                    )}
-                </div>
-            )}
         </div>
     );
 }
@@ -1193,6 +1169,29 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
             {result && (
                 <div className={styles.container}>
+                    {/* 顶部栏：全局固定，logo 居中 + 右侧回首页，跨两页共享（不随页面层滚动） */}
+                    <header className={styles.topBar}>
+                        <div className={styles.topBarInner}>
+                            <Image
+                                src="/NIHPLOD-logo.svg"
+                                alt="NIHPLOD"
+                                width={120}
+                                height={30}
+                                className="h-7 sm:h-8 w-auto object-contain"
+                                priority
+                            />
+                            <button
+                                onClick={() => navPush('/')}
+                                disabled={isNavigating}
+                                className="absolute right-0 inline-flex items-center gap-1 py-2 pl-2 text-[11px] sm:text-[12px] font-light tracking-[0.08em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors"
+                                aria-label="回到首页"
+                            >
+                                <House className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                回到首页
+                            </button>
+                        </div>
+                    </header>
+
                     {/* ===== 两页切换：封面（第一面）/ 报告（第二面），交叉淡入淡出 ===== */}
                     <AnimatePresence initial={false}>
                         {pageIndex === 0 && (
@@ -1204,7 +1203,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.25, ease: "easeInOut" }}
                             >
-                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
+                                <ResultHeader nickname={userNickname} />
                                 <div className={`${styles.main} lg:gap-8`}>
                                     <section aria-label="肌智派证书（第一面）">
                                         <ShareCardPage
@@ -1241,7 +1240,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 {/* Save Report Banner for unauthenticated users */}
                                 <SaveReportBanner className="hidden md:block" />
 
-                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
+                                <ResultHeader nickname={userNickname} />
 
                                 {/* Validation Warning Banner */}
                                 {faceAnalysis?.validation && !faceAnalysis.validation.isValid && !dismissValidationWarning && (
@@ -1271,6 +1270,21 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 {/* Main Content（layout 已提供唯一 <main> 地标，这里用 div 避免嵌套）。
                                     所有板块统一在 styles.main 容器内，由 gap（24/32px）规范间距、滚动同宽对齐 */}
                                 <div className={`${styles.main} lg:gap-8`}>
+                                    {/* 拍摄时肌肤状态：影响分析口径的说明，置于报告正文最顶部（趋势对比/报告卡之前） */}
+                                    {skinStateValue && SKIN_STATE_LABELS[skinStateValue] && (
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/15 bg-white/60 px-3 py-1 text-[11px] text-brand-charcoal/60 font-light tracking-[0.05em]">
+                                                <Info className="w-3 h-3 text-brand-charcoal/40" strokeWidth={1.5} />
+                                                本次测肤状态：{SKIN_STATE_LABELS[skinStateValue]}
+                                            </span>
+                                            {isMakeupState(skinStateValue) && (
+                                                <p className="text-[11px] text-brand-charcoal/40 font-light tracking-[0.04em]">
+                                                    带妆拍摄，色斑、泛红与肤色相关结果仅供参考
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
                                     <section aria-label="测肤报告（第二面）">
                                         <ReportPage
                                             result={result}
