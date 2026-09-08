@@ -46,7 +46,7 @@ export const MOCK_RESULT: ComprehensiveResult = {
             reason: "神经酰胺 + 胆固醇 + 脂肪酸 3:1:1 黄金配比，模拟皮脂膜结构，直接修补屏障缺口。",
             image: "/images/products/Serum.svg",
             price: "¥168",
-            keyIngredients: ["神经酰胺 NP", "积雪草提取物", "透明质酸钠"],
+            keyIngredients: ["神经酰胺 NP", "马齿苋提取物", "透明质酸钠"],
             benefits: ["屏障修护", "舒缓泛红", "深层锁水"],
             source: "persona",
         },
@@ -129,7 +129,7 @@ export const MOCK_FACE_ANALYSIS: FaceAnalysisResult = {
         tZone: { condition: "鼻翼两侧毛孔轻微粗大", advice: "温和清洁，避免过度去脂", oil: 62, texture: 70 },
         leftCheek: { condition: "轻度泛红，屏障偏薄", advice: "重点修护区域，加强保湿封层", redness: 48, texture: 65 },
         rightCheek: { condition: "轻度泛红，与左颊对称", advice: "同左颊护理策略", redness: 45, texture: 67 },
-        eyeArea: { condition: "轻度暗沉", advice: "规律作息，可搭配咖啡因眼霜", darkCircles: 40 },
+        eyeArea: { condition: "轻度暗沉", advice: "规律作息，可搭配含烟酰胺的眼部产品", darkCircles: 40 },
         jawline: { condition: "状态良好", advice: "注意卸妆彻底，避免残留", texture: 80 },
     },
 };

@@ -29,7 +29,7 @@ function computeGlogau(faceAnalysis: FaceAnalysisResult | null): LabMetric {
         return {
             param: "光老化等级 (Glogau Scale)",
             value: String(lab.glogau.value),
-            ref: "Age Dependent",
+            ref: "I-III 型分级",
             status: lab.glogau.status,
         };
     }
@@ -46,8 +46,8 @@ function computeGlogau(faceAnalysis: FaceAnalysisResult | null): LabMetric {
     return {
         param: "光老化等级 (Glogau Scale)",
         value,
-        ref: "Age Dependent",
-        status: "",
+        ref: "I-III 型分级",
+        status: dims ? "AI 估算" : "-",
     };
 }
 
@@ -55,23 +55,12 @@ function computeHomogeneity(faceAnalysis: FaceAnalysisResult | null): LabMetric 
     const dims = getDimensions(faceAnalysis);
     const lab = getLabAnalysis(faceAnalysis);
 
-    if (lab?.homogeneity) {
-        return {
-            param: "肤色均匀度 (Homogeneity)",
-            value: `${lab.homogeneity.value}${lab.homogeneity.unit || "%"}`,
-            ref: lab.homogeneity.range || "< 15% C.V.",
-            status: lab.homogeneity.status,
-        };
-    }
-
-    const skinTone = dims?.skinTone?.score ?? 0;
-    const value = dims ? `${(8 + (100 - skinTone) * 0.15).toFixed(1)}% C.V.` : "?";
-    const status = dims ? (skinTone > 80 ? "均匀" : "不均") : "-";
+    const status = lab?.homogeneity?.status || (dims ? (dims.skinTone?.score ?? 0) > 80 ? "均匀" : "不均" : "-");
 
     return {
         param: "肤色均匀度 (Homogeneity)",
-        value,
-        ref: "< 15% C.V.",
+        value: status,
+        ref: "AI 视觉评估",
         status,
     };
 }
@@ -80,15 +69,12 @@ function computePeriorbitalContrast(faceAnalysis: FaceAnalysisResult | null): La
     const dims = getDimensions(faceAnalysis);
     const darkCircles = dims?.darkCircles?.score;
 
-    const value = darkCircles !== undefined
-        ? `${(1.2 + (100 - darkCircles) * 0.05).toFixed(1)} Delta E`
-        : "?";
     const status = darkCircles !== undefined ? (darkCircles > 80 ? "正常" : "明显") : "-";
 
     return {
-        param: "眼周色素对比度 (Periorbital Contrast)",
-        value,
-        ref: "< 3.0 Delta E",
+        param: "眼周色素沉着 (Periorbital Pigmentation)",
+        value: status,
+        ref: "AI 视觉评估",
         status,
     };
 }
@@ -101,7 +87,7 @@ function computeWrinkleGrade(faceAnalysis: FaceAnalysisResult | null): LabMetric
         return {
             param: "皱纹严重度分级 (Wrinkle Severity)",
             value: String(lab.wrinkleGrade.value),
-            ref: lab.wrinkleGrade.range || "Grade 1",
+            ref: "1-3 级分级",
             status: lab.wrinkleGrade.status,
         };
     }
@@ -109,17 +95,17 @@ function computeWrinkleGrade(faceAnalysis: FaceAnalysisResult | null): LabMetric
     const wrinkles = dims?.wrinkles?.score ?? 0;
     const value = dims
         ? wrinkles > 80
-            ? "Grade 1 (None)"
+            ? "1 级（基本无皱纹）"
             : wrinkles > 60
-                ? "Grade 2 (Fine)"
-                : "Grade 3 (Deep)"
+                ? "2 级（可见细纹）"
+                : "3 级（明显皱纹）"
         : "?";
     const status = dims ? (wrinkles > 60 ? "正常" : "明显") : "-";
 
     return {
         param: "皱纹严重度分级 (Wrinkle Severity)",
         value,
-        ref: "Grade 1",
+        ref: "1-3 级分级",
         status,
     };
 }

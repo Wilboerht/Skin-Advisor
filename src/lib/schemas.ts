@@ -102,7 +102,7 @@ export const AnalyzeRequestSchema = z.object({
         }).optional(),
         labAnalysis: z.object({
             glogau: z.object({ value: z.string(), status: z.string() }).optional(),
-            homogeneity: z.object({ value: z.number(), unit: z.string(), status: z.string() }).optional(),
+            homogeneity: z.object({ value: z.number().optional(), unit: z.string().optional(), range: z.string().optional(), status: z.string() }).optional(),
             wrinkleGrade: z.object({ value: z.string(), status: z.string() }).optional(),
         }).optional(),
     }).nullable().optional()

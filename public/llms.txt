@@ -6,7 +6,7 @@
 - [8 大肤质类型](https://nihplod.cn/skin-types): NIHPLOD 肌肤形象类型全览，从敏敏派到守护派，每一种肤质都有完整的护理体系
   - [敏敏派 — 敏感型](https://nihplod.cn/skin-types/minminpai): 敏感型肤质详解，屏障修护与舒缓护理方案
   - [极简派 — 健康型](https://nihplod.cn/skin-types/jijianpai): 健康型肤质详解，基础维护与防老化策略
-  - [社会派 — 暗沉型](https://nihplod.cn/skin-types/shehuapai): 暗沉型肤质详解，抗氧化与提亮方案
+  - [奢华派 — 理想肌肤型](https://nihplod.cn/skin-types/shehuapai): 理想肌肤型详解，精投维系与周期深层养护方案
   - [冻龄派 — 熟龄型](https://nihplod.cn/skin-types/donglingpai): 熟龄型肤质详解，抗皱紧致与深层滋养
   - [沙漠派 — 缺水型](https://nihplod.cn/skin-types/shamopai): 缺水型肤质详解，深层补水和锁水方案
   - [油条派 — 油性型](https://nihplod.cn/skin-types/youtiaopai): 油性型肤质详解，控油平衡与毛孔护理
@@ -19,7 +19,7 @@
 NIHPLOD 将肤质分为 8 种"肌肤形象类型"（IP Types），基于 AI 对 68 个面部特征点的深度学习检测：
 1. **敏敏派** — 敏感脆弱型肌肤，易红、易刺激
 2. **极简派** — 相对健康的肌肤状态，维护为主
-3. **社会派** — 肤色暗沉、光泽不足
+3. **奢华派** — 状态理想的肌肤，护理重点在于延续而非修复
 4. **冻龄派** — 已有细纹、松弛迹象的熟龄肌
 5. **沙漠派** — 缺水缺水，干燥起皮
 6. **油条派** — 油脂分泌旺盛，毛孔粗大
@@ -36,5 +36,5 @@ NIHPLOD 将肤质分为 8 种"肌肤形象类型"（IP Types），基于 AI 对 
 ## 技术说明
 - Next.js 16 App Router 全栈架构
 - PostgreSQL + Prisma ORM 数据持久化
-- OpenAI / Azure AI 驱动的智能分析
+- 通义千问（Qwen）/ DeepSeek 大模型驱动的智能分析
 - face-api.js 68 点面部特征检测

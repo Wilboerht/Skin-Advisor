@@ -67,7 +67,11 @@ const DEFAULT_AI_SETTINGS: AISettings = {
     visionModel: process.env.AI_VISION_MODEL || (envVisionProvider === "qwen" ? "qwen-vl-plus" : "deepseek-vl"),
     textSystemPrompt: TEXT_ANALYSIS_SYSTEM_PROMPT,
     visionSystemPrompt: "",
-    maxTokens: 2000,
+    // AI_MAX_TOKENS 环境变量可覆盖默认值（顾问叙事报告 v2 需要 5000-6000）
+    maxTokens: (() => {
+        const envMax = Number(process.env.AI_MAX_TOKENS);
+        return Number.isInteger(envMax) && envMax > 0 && envMax <= 8000 ? envMax : 2000;
+    })(),
     temperature: 0.3,
     apiKeys: {
         deepseek: process.env.DEEPSEEK_API_KEY,

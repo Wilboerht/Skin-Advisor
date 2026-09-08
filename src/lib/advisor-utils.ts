@@ -96,8 +96,8 @@ export interface FaceAnalysisResult {
 export interface LabAnalysisResult {
     // 仅保留可由照片视觉估算的指标
     glogau?: { value: string; range?: string; status: string }; // I, II, III
-    homogeneity?: { value: number; unit: string; range?: string; status: string }; // CV%
-    wrinkleGrade?: { value: string; range?: string; status: string }; // Grade 1-3
+    homogeneity?: { value?: number; unit?: string; range?: string; status: string }; // 定性描述（均匀/不均），旧数据兼容数值字段
+    wrinkleGrade?: { value: string; range?: string; status: string }; // 1-3 级
 }
 
 // 10 维度评分接口 (用于 ScientificBarChart)
@@ -175,24 +175,24 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
         summary: "您的皮肤整体状态良好，主要问题集中在水油平衡和T区出油。眼周循环和光泽度也有提升空间。",
         recommendations: [
             "针对您目前的肤质状况，建议您采取精细化的分区护理策略。",
-            "由于T区油脂分泌较旺盛且容易引发粉刺，建议早晚使用氨基酸洁面产品重点清洁额头与鼻翼，必要时可搭配低浓度水杨酸棉片进行局部湿敷，以控制油脂。",
+            "由于T区油脂分泌较旺盛且容易引发粉刺，建议早晚使用氨基酸洁面产品重点清洁额头与鼻翼，必要时可搭配含壬二酸的控油产品进行局部护理，以控制油脂。",
             "U区相对干燥敏感，应避免过度清洁，建议使用含有神经酰胺或透明质酸的修护型乳液进行保湿。",
-            "此外，您的眼周存在轻微循环不畅导致的黑眼圈，建议规律作息，并坚持使用含有咖啡因或胜肽成分的眼霜。",
+            "此外，您的眼周存在轻微循环不畅导致的黑眼圈，建议规律作息，并坚持使用含有烟酰胺或胜肽成分的眼部产品。",
             "最后，鉴于光老化迹象初显，请务必全年坚持使用SPF30+以上的防晒霜，以预防紫外线对胶原蛋白的进一步损伤。"
         ],
         skinConditions: [],
         zoneAnalysis: {
             forehead: { condition: "轻微出油", advice: "使用清爽控油产品，定期深层清洁", oil: 60, texture: 80, wrinkles: 10, spots: 15, redness: 10, firmness: 85, contour: 90 },
-            tZone: { condition: "出油旺盛", advice: "使用含水杨酸的控油平衡产品", oil: 70, texture: 40, wrinkles: 5, spots: 20, redness: 15, firmness: 80, contour: 85 },
+            tZone: { condition: "出油旺盛", advice: "使用含壬二酸的控油平衡产品", oil: 70, texture: 40, wrinkles: 5, spots: 20, redness: 15, firmness: 80, contour: 85 },
             leftCheek: { condition: "状态健康", advice: "保持日常保湿与防晒即可", oil: 30, texture: 90, wrinkles: 8, spots: 10, redness: 20, firmness: 85, contour: 88 },
             rightCheek: { condition: "状态健康", advice: "保持日常保湿与防晒即可", oil: 30, texture: 90, wrinkles: 8, spots: 10, redness: 20, firmness: 85, contour: 88 },
-            eyeArea: { condition: "轻微黑眼圈", advice: "使用含咖啡因或胜肽的眼霜修护", oil: 20, texture: 75, wrinkles: 20, darkCircles: 40, firmness: 80 },
+            eyeArea: { condition: "轻微黑眼圈", advice: "使用含烟酰胺或胜肽的眼部产品修护", oil: 20, texture: 75, wrinkles: 20, darkCircles: 40, firmness: 80 },
             jawline: { condition: "轮廓紧致", advice: "保持现状，可配合提拉按摩", oil: 25, firmness: 90, contour: 85 }
         },
         labAnalysis: {
             glogau: { value: "II 型", status: "轻中度" },
-            homogeneity: { value: 14, unit: "% C.V.", status: "均匀" },
-            wrinkleGrade: { value: "Grade 1", status: "无皱纹" }
+            homogeneity: { status: "均匀" },
+            wrinkleGrade: { value: "1 级", status: "基本无皱纹" }
         }
     };
 }
@@ -550,7 +550,7 @@ export const VisionAnalysisOutputSchema = z.object({
     }).optional(),
     labAnalysis: z.object({
         glogau: z.object({ value: z.string(), status: z.string() }).optional(),
-        homogeneity: z.object({ value: z.number(), unit: z.string(), status: z.string() }).optional(),
+        homogeneity: z.object({ value: z.number().optional(), unit: z.string().optional(), range: z.string().optional(), status: z.string() }).optional(),
         wrinkleGrade: z.object({ value: z.string(), status: z.string() }).optional(),
     }).optional(),
 }).passthrough();
