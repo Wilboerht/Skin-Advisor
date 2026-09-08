@@ -3,6 +3,8 @@
  * 同时被客户端组件和 API Route 使用，避免从 "use client" 组件导入服务端代码。
  */
 
+import type { ConsultantReport } from "@/lib/advisor-utils";
+
 export interface ComprehensiveResult {
     skinProfile: {
         type: string;
@@ -35,6 +37,10 @@ export interface ComprehensiveResult {
     expiresAt?: string;
     /** 拍摄时肌肤状态（bare/sunscreen/washed/light_makeup/heavy_makeup），结果页提示用 */
     skinState?: string;
+    /** 报告版本：2 = 顾问叙事报告（consultantReport 存在），缺省/v1 = 旧板块渲染 */
+    reportVersion?: number;
+    /** 顾问叙事报告数据（v2 专属；历史报告无此字段，走旧渲染） */
+    consultantReport?: ConsultantReport;
 }
 
 function normalizeDataSource(
@@ -85,5 +91,7 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
         persona: record.persona as string | undefined,
         expiresAt: record.expiresAt as string | undefined,
         skinState: typeof record.skinState === "string" ? record.skinState : undefined,
+        reportVersion: typeof record.reportVersion === "number" ? record.reportVersion : undefined,
+        consultantReport: (record.consultantReport as ConsultantReport | undefined) || undefined,
     };
 }

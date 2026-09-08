@@ -567,6 +567,39 @@ export const TextAnalysisOutputSchema = z.object({
 }).passthrough();
 
 /**
+ * 顾问叙事报告（Report v2）输出 Schema
+ *
+ * 与 v1（TextAnalysisOutputSchema）的区别：从"板块填充"改为"推理链"——
+ * 每个问题必须走完 观察（证据）→ 直接/间接诱因 → 护理/生活方案 → 就医边界。
+ * issues 动态数量：只报告有证据的问题，证据不足宁可不报。
+ */
+export const ConsultantIssueSchema = z.object({
+    title: z.string().min(1),
+    severity: z.enum(["mild", "moderate", "severe"]),
+    observation: z.string().min(1),
+    directCauses: z.string().min(1),
+    indirectCauses: z.string().min(1),
+    skincarePlan: z.string().min(1),
+    lifestylePlan: z.string().min(1),
+    medicalBoundary: z.string().min(1),
+    relatedDimensions: z.array(z.string()).default([]),
+}).passthrough();
+
+export const ConsultantReportSchema = z.object({
+    overview: z.string().min(1),
+    issues: z.array(ConsultantIssueSchema).max(5),
+    strengths: z.array(z.string()).default([]),
+    routineNote: z.string().optional(),
+    productReasons: z.array(z.object({
+        id: z.union([z.string(), z.number()]),
+        reason: z.string().optional(),
+    }).passthrough()).optional(),
+}).passthrough();
+
+export type ConsultantIssue = z.infer<typeof ConsultantIssueSchema>;
+export type ConsultantReport = z.infer<typeof ConsultantReportSchema>;
+
+/**
  * 安全提取并校验 AI 返回的 JSON
  * @param content - AI 原始文本
  * @param schema - Zod 校验 schema

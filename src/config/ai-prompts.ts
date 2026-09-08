@@ -4,6 +4,7 @@
  */
 
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
+import { DIMENSION_LABELS } from "@/lib/advisor-utils";
 import { SKIN_STATE_LABELS, buildSkinStateTextNote } from "@/lib/skin-state";
 
 export const BRAND_CONFIG = {
@@ -138,6 +139,39 @@ export const QWEN_VISION_PROMPT = VISION_ANALYSIS_SYSTEM_PROMPT;
 // 综合文本分析提示词
 // ============================================================================
 
+// 问卷选项 → 展示文本映射（buildTextAnalysisPrompt / buildConsultantPrompt 共用）
+const medicalBeautyMap: Record<string, string> = {
+    none: "无",
+    laser: "光子/激光类",
+    acid: "刷酸/焕肤类",
+    injection: "注射/微针类"
+};
+const sleepMap: Record<string, string> = {
+    good: "很好 (精力充沛)",
+    fair: "一般 (偶尔疲劳)",
+    poor: "较差 (经常熬夜/失眠)"
+};
+const stressMap: Record<string, string> = { low: "低（心态平和）", medium: "中等（偶尔有压力）", high: "较高（经常感到压力）" };
+const waterMap: Record<string, string> = { low: "偏少（<4杯/天）", medium: "适中（4-8杯/天）", high: "充足（>8杯/天）" };
+const exerciseMap: Record<string, string> = { low: "较少（几乎不运动）", medium: "适中（每周1-3次）", high: "充足（每周>3次）" };
+const dietMap: Record<string, string> = { balanced: "均衡饮食", highSugar: "偏甜/高糖", highOil: "偏油/高脂", spicy: "偏好辛辣" };
+const sunMap: Record<string, string> = { low: "较少户外活动", medium: "日常通勤暴露", high: "经常户外暴晒" };
+const freqMap: Record<string, string> = { basic: "简单护理（洁面+保湿）", moderate: "中等护理（精华+防晒）", advanced: "精细护理（多步骤）" };
+const budgetMap: Record<string, string> = { budget: "经济实惠（追求性价比，单品500元以内）", mid: "中等预算（兼顾成分与价格，300-1000元）", premium: "品质优先（追求卓越功效，800-2000元）", luxury: "不设上限（顶级奢华体验）" };
+
+/** 品牌成分白名单（v1/v2 prompt 共用，保证全站成分口径一致） */
+const BRAND_INGREDIENT_WHITELIST = `• 保湿修护：透明质酸钠（玻尿酸）、泛醇（维生素B5）、神经酰胺NP、依克多因、角鲨烷、二裂酵母发酵溶胞产物、半乳糖发酵滤液、α-葡聚糖寡糖、银耳多糖、氢化卵磷脂
+• 提亮抗氧：烟酰胺、α-熊果苷、光甘草定、抗坏血酸葡糖苷（AA2G）、抗坏血酸磷酸酯钠（SAP）、富勒烯、生育酚（维生素E）、曲克芦丁、人参根提取物、东京樱花叶提取物
+• 抗老紧致：羟丙基四氢吡喃三醇（玻色因）、棕榈酰三肽-5、乙酰基六肽-8、寡肽-1、赖氨酸多肽、可溶性胶原/水解胶原、纤细裸藻多糖
+• 控油祛痘：壬二酸（杜鹃花酸）、乳酸、木瓜蛋白酶、胡桃壳粉、膨润土、邻伞花烃-5-醇、葡萄柚籽提取物、迷迭香叶油
+• 舒缓退红：红没药醇、甘草酸二钾、依克多因、泛醇（维生素B5）、粉防己提取物、马齿苋提取物、艾叶提取物、库拉索芦荟叶汁粉、尿囊素、檀香油/乳香油`;
+
+/** 孕期排除规则（v1/v2 prompt 共用） */
+const PREGNANCY_EXCLUSION_RULE = `若孕期，在品牌成分体系基础上进一步排除以下成分（即使品牌配方中含也必须跳过该产品）：
+   🚫 酸类焕肤：乳酸（避免全身吸收风险）
+   🚫 精油类：迷迭香叶油、杜松果油、姜根油、肉豆蔻籽油、檀香油、柠檬籽油、乳香油、橙油、葡萄柚籽提取物（精油可能刺激子宫收缩或影响胎儿发育）
+   🚫 香精/Fragrance：孕期优先推荐无香精版本（邻苯二甲酸盐风险）
+   ✅ 孕期安全可用：壬二酸、烟酰胺、透明质酸钠（玻尿酸）、神经酰胺NP、角鲨烷、泛醇（维生素B5）、羟丙基四氢吡喃三醇（玻色因）、红没药醇、α-熊果苷、光甘草定、依克多因、棕榈酰三肽-5/乙酰基六肽-8、甘草酸二钾、马齿苋提取物、尿囊素`;
 
 export function buildTextAnalysisPrompt(params: {
   skinTypeLabel?: string;
@@ -191,30 +225,8 @@ export function buildTextAnalysisPrompt(params: {
   }).join("\n");
 
   // 映射医美和睡眠的显示文本
-  const medicalBeautyMap: Record<string, string> = {
-    none: "无",
-    laser: "光子/激光类",
-    acid: "刷酸/焕肤类",
-    injection: "注射/微针类"
-  };
-
-  const sleepMap: Record<string, string> = {
-    good: "很好 (精力充沛)",
-    fair: "一般 (偶尔疲劳)",
-    poor: "较差 (经常熬夜/失眠)"
-  };
-
   const medicalText = medicalBeautyMap[params.medicalBeauty || "none"] || params.medicalBeauty || "无";
   const sleepText = sleepMap[params.sleep || ""] || params.sleep || "未知";
-
-  // 生活状态标签化
-  const stressMap: Record<string, string> = { low: "低（心态平和）", medium: "中等（偶尔有压力）", high: "较高（经常感到压力）" };
-  const waterMap: Record<string, string> = { low: "偏少（<4杯/天）", medium: "适中（4-8杯/天）", high: "充足（>8杯/天）" };
-  const exerciseMap: Record<string, string> = { low: "较少（几乎不运动）", medium: "适中（每周1-3次）", high: "充足（每周>3次）" };
-  const dietMap: Record<string, string> = { balanced: "均衡饮食", highSugar: "偏甜/高糖", highOil: "偏油/高脂", spicy: "偏好辛辣" };
-  const sunMap: Record<string, string> = { low: "较少户外活动", medium: "日常通勤暴露", high: "经常户外暴晒" };
-  const freqMap: Record<string, string> = { basic: "简单护理（洁面+保湿）", moderate: "中等护理（精华+防晒）", advanced: "精细护理（多步骤）" };
-  const budgetMap: Record<string, string> = { budget: "经济实惠（追求性价比，单品500元以内）", mid: "中等预算（兼顾成分与价格，300-1000元）", premium: "品质优先（追求卓越功效，800-2000元）", luxury: "不设上限（顶级奢华体验）" };
 
   const stressText = stressMap[params.stressLevel || ""] || "未知";
   const waterText = waterMap[params.waterIntake || ""] || "未知";
@@ -358,4 +370,3 @@ export const REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION = `
    - recommendations 中至少包含1条结合品牌成分体系的具体护肤流程建议
 ${ANTI_PROMPT_INJECTION_RULE}
 `;
-
