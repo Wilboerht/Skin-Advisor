@@ -595,24 +595,25 @@ export function DiaryModal() {
                           <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
                         </div>
                       ) : aggregatedTrends ? (
-                        rangeCutoff === null ? (
-                          <div className="h-32" />
-                        ) : rangeTrends ? (
-                          <div>
+                        <div>
+                          {rangeCutoff === null ? (
+                            <div className="h-32" />
+                          ) : rangeTrends ? (
                             <TrendChart trends={rangeTrends} />
-                            {recentCheckInCount >= 2 && (
-                              <div className="mt-7 pt-5 border-t border-brand-espresso/[0.06]">
-                                <CheckInTrend entries={entries} />
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="py-6 text-center">
-                            <p className="text-[13px] text-brand-charcoal/45 font-light">
-                              近 {trendRange} 天内测肤不足 2 次，暂无趋势可看
-                            </p>
-                          </div>
-                        )
+                          ) : (
+                            <div className="py-6 text-center">
+                              <p className="text-[13px] text-brand-charcoal/45 font-light">
+                                近 {trendRange} 天内测肤不足 2 次，暂无趋势可看
+                              </p>
+                            </div>
+                          )}
+                          {/* 打卡色带与测肤时间窗无关：有打卡数据即始终展示 */}
+                          {recentCheckInCount >= 2 && (
+                            <div className="mt-7 pt-5 border-t border-brand-espresso/[0.06]">
+                              <CheckInTrend entries={entries} />
+                            </div>
+                          )}
+                        </div>
                       ) : recentCheckInCount >= 2 ? (
                         <div>
                           <CheckInTrend entries={entries} />
