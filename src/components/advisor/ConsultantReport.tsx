@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Eye, HelpCircle, Sparkles, Stethoscope, Sun, Moon, HeartHandshake } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { AnimatePresence, motion as m } from "framer-motion";
+import { ChevronDown, Eye, HelpCircle, Sparkles, Stethoscope, Sun, Moon, HeartHandshake } from "lucide-react";
 import type { ConsultantReport, ConsultantIssue } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS } from "@/lib/advisor-utils";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
@@ -83,75 +84,118 @@ function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensio
     );
 }
 
-function IssueCard({ issue, dimensions }: { issue: ConsultantIssue; dimensions?: ConsultantReportProps["dimensions"] }) {
+function IssueCard({ issue, dimensions, expanded, onToggle }: {
+    issue: ConsultantIssue;
+    dimensions?: ConsultantReportProps["dimensions"];
+    /** 是否展开（手风琴：同屏仅一张展开，由父组件控制） */
+    expanded: boolean;
+    onToggle: () => void;
+}) {
     const meta = SEVERITY_META[issue.severity] ?? SEVERITY_META.mild;
 
     return (
-        <div className="relative rounded-xl border border-brand-charcoal/[0.08] bg-white/80 overflow-hidden">
+        <div className={cn(
+            "relative rounded-xl border border-brand-charcoal/[0.08] bg-white/80 overflow-hidden transition-all duration-200",
+            expanded ? "shadow-[0_8px_24px_rgba(61,47,37,0.06)]" : "hover:shadow-[0_4px_16px_rgba(61,47,37,0.04)] hover:border-brand-charcoal/[0.14]"
+        )}>
+            {/* 严重度色条 */}
             <div className={cn("absolute left-0 top-0 bottom-0 w-1", meta.bar)} />
-            <div className="p-5 lg:p-6 pl-6 lg:pl-7 space-y-5">
-                {/* 卡头：问题名 + 严重度 */}
-                <div className="flex items-center justify-between gap-3">
-                    <h5 className="text-[15px] font-medium text-[var(--color-brand-espresso)]">{issue.title}</h5>
+
+            {/* 卡头：整行可点击（折叠/展开切换） */}
+            <button
+                type="button"
+                onClick={onToggle}
+                aria-expanded={expanded}
+                className="w-full flex items-center justify-between gap-3 py-4 lg:py-5 pr-4 lg:pr-5 pl-6 lg:pl-7 text-left cursor-pointer group"
+            >
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <h5 className="text-[15px] font-medium text-[var(--color-brand-espresso)] truncate">
+                        {issue.title}
+                    </h5>
                     <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium", meta.badge)}>
                         {meta.label}
                     </span>
                 </div>
+                <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-brand-charcoal/[0.04] group-hover:bg-brand-charcoal/[0.08] transition-colors">
+                    <ChevronDown
+                        className={cn(
+                            "w-4 h-4 text-brand-charcoal/40 group-hover:text-brand-charcoal/60 transition-transform duration-200",
+                            expanded && "rotate-180"
+                        )}
+                        strokeWidth={2}
+                    />
+                </span>
+            </button>
 
-                {/* 我看到的 */}
-                <div>
-                    <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 tracking-wide mb-1.5">
-                        <Eye className="w-3.5 h-3.5" strokeWidth={1.8} />
-                        我看到的
-                    </p>
-                    <p className="text-sm lg:text-[15px] leading-[1.9] text-[var(--color-brand-espresso)]">
-                        {issue.observation}
-                    </p>
-                    <EvidenceChips issue={issue} dimensions={dimensions} />
-                </div>
+            {/* 卡体：默认折叠，展开动画（高度 + 透明度） */}
+            <AnimatePresence initial={false}>
+                {expanded && (
+                    <m.div
+                        key="issue-body"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                    >
+                        <div className="px-5 lg:px-6 pl-6 lg:pl-7 pb-5 lg:pb-6 pt-4 lg:pt-5 space-y-5 border-t border-brand-charcoal/[0.05]">
+                            {/* 我看到的 */}
+                            <div>
+                                <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 tracking-wide mb-1.5">
+                                    <Eye className="w-3.5 h-3.5" strokeWidth={1.8} />
+                                    我看到的
+                                </p>
+                                <p className="text-sm lg:text-[15px] leading-[1.9] text-[var(--color-brand-espresso)]">
+                                    {issue.observation}
+                                </p>
+                                <EvidenceChips issue={issue} dimensions={dimensions} />
+                            </div>
 
-                {/* 为什么：直接诱因 / 间接诱因 */}
-                <div>
-                    <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 tracking-wide mb-1.5">
-                        <HelpCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
-                        为什么会出现这个问题
-                    </p>
-                    <div className="space-y-2.5">
-                        <div className="rounded-lg bg-brand-charcoal/[0.03] px-4 py-3">
-                            <p className="text-[11px] text-brand-charcoal/45 mb-1">直接诱因 · 皮肤层面</p>
-                            <p className="text-sm leading-[1.85] text-brand-charcoal/80">{issue.directCauses}</p>
-                        </div>
-                        <div className="rounded-lg bg-brand-charcoal/[0.03] px-4 py-3">
-                            <p className="text-[11px] text-brand-charcoal/45 mb-1">间接诱因 · 生活习惯</p>
-                            <p className="text-sm leading-[1.85] text-brand-charcoal/80">{issue.indirectCauses}</p>
-                        </div>
-                    </div>
-                </div>
+                            {/* 为什么：直接诱因 / 间接诱因 */}
+                            <div>
+                                <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 tracking-wide mb-1.5">
+                                    <HelpCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
+                                    为什么会出现这个问题
+                                </p>
+                                <div className="space-y-2.5">
+                                    <div className="rounded-lg bg-brand-charcoal/[0.03] px-4 py-3">
+                                        <p className="text-[11px] text-brand-charcoal/45 mb-1">直接诱因 · 皮肤层面</p>
+                                        <p className="text-sm leading-[1.85] text-brand-charcoal/80">{issue.directCauses}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-brand-charcoal/[0.03] px-4 py-3">
+                                        <p className="text-[11px] text-brand-charcoal/45 mb-1">间接诱因 · 生活习惯</p>
+                                        <p className="text-sm leading-[1.85] text-brand-charcoal/80">{issue.indirectCauses}</p>
+                                    </div>
+                                </div>
+                            </div>
 
-                {/* 怎么办：护理方案 / 生活方案 */}
-                <div>
-                    <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 tracking-wide mb-1.5">
-                        <Sparkles className="w-3.5 h-3.5" strokeWidth={1.8} />
-                        怎么办
-                    </p>
-                    <div className="space-y-2.5">
-                        <div className="rounded-lg border border-brand-charcoal/[0.08] px-4 py-3">
-                            <p className="text-[11px] text-brand-charcoal/45 mb-1">护理方案</p>
-                            <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{issue.skincarePlan}</p>
-                        </div>
-                        <div className="rounded-lg border border-brand-charcoal/[0.08] px-4 py-3">
-                            <p className="text-[11px] text-brand-charcoal/45 mb-1">生活调整</p>
-                            <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{issue.lifestylePlan}</p>
-                        </div>
-                    </div>
-                </div>
+                            {/* 怎么办：护理方案 / 生活方案 */}
+                            <div>
+                                <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 tracking-wide mb-1.5">
+                                    <Sparkles className="w-3.5 h-3.5" strokeWidth={1.8} />
+                                    怎么办
+                                </p>
+                                <div className="space-y-2.5">
+                                    <div className="rounded-lg border border-brand-charcoal/[0.08] px-4 py-3">
+                                        <p className="text-[11px] text-brand-charcoal/45 mb-1">护理方案</p>
+                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{issue.skincarePlan}</p>
+                                    </div>
+                                    <div className="rounded-lg border border-brand-charcoal/[0.08] px-4 py-3">
+                                        <p className="text-[11px] text-brand-charcoal/45 mb-1">生活调整</p>
+                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{issue.lifestylePlan}</p>
+                                    </div>
+                                </div>
+                            </div>
 
-                {/* 就医边界 */}
-                <p className="flex items-start gap-1.5 text-[12px] leading-relaxed text-brand-charcoal/45">
-                    <Stethoscope className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.8} />
-                    {issue.medicalBoundary}
-                </p>
-            </div>
+                            {/* 就医边界 */}
+                            <p className="flex items-start gap-1.5 text-[12px] leading-relaxed text-brand-charcoal/45">
+                                <Stethoscope className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.8} />
+                                {issue.medicalBoundary}
+                            </p>
+                        </div>
+                    </m.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -164,6 +208,8 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
     // 防御历史脏数据：normalizeAnalysisResult 已归一化，这里再兜底非数组场景
     const issues = Array.isArray(report.issues) ? report.issues : [];
     const strengths = Array.isArray(report.strengths) ? report.strengths : [];
+    // 手风琴：默认全部折叠（null），展开一张时另一张自动收起
+    const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
 
     return (
         <div className="space-y-10 lg:space-y-12">
@@ -179,9 +225,15 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
             <section>
                 <SectionTitle en="Issue Diagnosis">逐问题诊断</SectionTitle>
                 {issues.length > 0 ? (
-                    <div className="space-y-5">
+                    <div className="space-y-3">
                         {issues.map((issue, idx) => (
-                            <IssueCard key={`${issue.title}-${idx}`} issue={issue} dimensions={dimensions} />
+                            <IssueCard
+                                key={`${issue.title}-${idx}`}
+                                issue={issue}
+                                dimensions={dimensions}
+                                expanded={expandedIssue === idx}
+                                onToggle={() => setExpandedIssue(prev => (prev === idx ? null : idx))}
+                            />
                         ))}
                     </div>
                 ) : (
