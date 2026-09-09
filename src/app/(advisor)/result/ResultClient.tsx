@@ -82,18 +82,20 @@ function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStat
     const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
     return (
         <div className="w-full flex flex-col items-center pt-6 lg:pt-8">
-            <p className="mt-0 mb-4 lg:mb-6 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
-                <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
-                {nickname} 的专属肌智派在线测肤报告
-                {/* 拍摄时肌肤状态：印章式 tag（朱砂红双线描边 + 轻微旋转） */}
-                {skinStateLabel && (
-                    <span
-                        title="本次测肤状态"
-                        className="inline-flex items-center px-2 py-0.5 rounded-[3px] border-2 border-[#C45A4A] text-[#C45A4A] text-[11px] font-medium tracking-[0.22em] leading-none rotate-[-3deg] shadow-[inset_0_0_0_1px_rgba(196,90,74,0.5)] select-none whitespace-nowrap"
-                    >
-                        {skinStateLabel}
-                    </span>
-                )}
+            <p className="mt-0 mb-4 lg:mb-6 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center">
+                {/* 标题文字独立成块，绝对居中；印章 absolute 定位，不参与布局流、不影响标题位置 */}
+                <span className="relative inline-flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
+                    {nickname} 的专属肌智派在线测肤报告
+                    {skinStateLabel && (
+                        <span
+                            title="本次测肤状态"
+                            className="absolute left-full ml-2 -top-1 lg:-top-1.5 inline-flex items-center px-2 py-0.5 rounded-[3px] border-2 border-[#C45A4A] text-[#C45A4A] text-[11px] font-medium tracking-[0.22em] leading-none rotate-[-3deg] shadow-[inset_0_0_0_1px_rgba(196,90,74,0.5)] select-none whitespace-nowrap"
+                        >
+                            {skinStateLabel}
+                        </span>
+                    )}
+                </span>
             </p>
         </div>
     );

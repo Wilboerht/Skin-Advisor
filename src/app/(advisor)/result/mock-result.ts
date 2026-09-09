@@ -126,10 +126,10 @@ export const MOCK_FACE_ANALYSIS: FaceAnalysisResult = {
     ],
     zoneAnalysis: {
         forehead: { condition: "状态稳定，无明显问题", advice: "维持当前护理节奏即可", oil: 45, texture: 78 },
-        tZone: { condition: "鼻翼两侧毛孔轻微粗大", advice: "温和清洁，避免过度去脂", oil: 62, texture: 70 },
-        leftCheek: { condition: "轻度泛红，屏障偏薄", advice: "重点修护区域，加强保湿封层", redness: 48, texture: 65 },
-        rightCheek: { condition: "轻度泛红，与左颊对称", advice: "同左颊护理策略", redness: 45, texture: 67 },
-        eyeArea: { condition: "轻度暗沉", advice: "规律作息，可搭配含烟酰胺的眼部产品", darkCircles: 40 },
+        tZone: { condition: "鼻翼两侧毛孔轻微粗大", advice: "每日使用含壬二酸（疏通毛孔、改善粗糙）的温和洁面，避免过度去脂", oil: 62, texture: 70 },
+        leftCheek: { condition: "轻度泛红，屏障偏薄", advice: "重点修护区域：使用含神经酰胺NP（修补屏障、减少泛红）的乳霜加强保湿封层", redness: 48, texture: 65 },
+        rightCheek: { condition: "轻度泛红，与左颊对称", advice: "与左脸颊一致的修护策略：使用含神经酰胺NP（修补屏障、减少泛红）的乳霜加强保湿封层", redness: 45, texture: 67 },
+        eyeArea: { condition: "轻度暗沉", advice: "规律作息，可搭配含烟酰胺（提亮肤色、改善暗沉）的眼部产品", darkCircles: 40 },
         jawline: { condition: "状态良好", advice: "注意卸妆彻底，避免残留", texture: 80 },
     },
 };
