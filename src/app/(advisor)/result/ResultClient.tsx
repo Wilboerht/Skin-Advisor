@@ -80,8 +80,6 @@ async function waitForImages(container: HTMLElement): Promise<void> {
 // 两页版式共享页头：归属标题 + 拍摄时肌肤状态标签（logo 已上移到固定顶部栏）
 function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStateValue?: string | null }) {
     const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
-    // 状态圆点语义：素颜/洗后为中性色；防晒/带妆对判定口径有影响，用琥珀色温和提示
-    const isCaution = skinStateValue === "light_makeup" || skinStateValue === "heavy_makeup" || skinStateValue === "sunscreen";
 
     return (
         <div className="w-full flex flex-col items-center pt-6 lg:pt-8">
@@ -90,11 +88,7 @@ function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStat
                 <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                 {nickname} 的专属肌智派在线测肤报告
                 {skinStateLabel && (
-                    <span className="relative z-10 inline-flex h-[24px] px-2.5 items-center justify-center gap-1.5 rounded-full border border-[var(--color-brand-charcoal)]/15 bg-white/60 text-xs font-medium text-[var(--color-brand-charcoal)] lg:h-[26px] lg:px-3 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap">
-                        <span
-                            aria-hidden="true"
-                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${isCaution ? "bg-amber-500" : "bg-brand-charcoal/40"}`}
-                        />
+                    <span className="inline-flex items-center text-[11px] font-normal text-brand-charcoal/45 tracking-[0.06em] whitespace-nowrap">
                         {skinStateLabel}
                     </span>
                 )}
