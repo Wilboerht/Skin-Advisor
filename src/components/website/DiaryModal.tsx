@@ -433,7 +433,7 @@ export function DiaryModal() {
               {/* 内容区（可滚动）：两视图淡出/淡入切换，同一弹层内完成 */}
               <div
                 ref={scrollRef}
-                className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-4 sm:px-6 md:px-8 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
+                className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain custom-scrollbar px-4 sm:px-6 md:px-8 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
               >
                 <AnimatePresence mode="wait" initial={false}>
                   {historyView ? (
