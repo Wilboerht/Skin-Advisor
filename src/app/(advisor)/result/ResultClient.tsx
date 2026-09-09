@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { ArrowUp, House, Gift, ArrowRight, AlertCircle, Sparkles, Info, X, ScanFace, FileText } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
-import { AnimatePresence, motion as m } from "framer-motion";
+import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavPush } from "@/hooks/use-nav-push";
@@ -116,10 +116,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     useEffect(() => {
         if (id || initialData) return;
         try {
-            const hasResult = localStorage.getItem("advisor_result");
-            const hasAnswers = localStorage.getItem("advisor_answers");
-            const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
-            setAccessDenied(!hasResult && !hasAnswers && !hasConsent);
+            // 仅当本地存在报告数据或未完成的问卷答案时才放行；
+            // 只有隐私授权（hasConsent）不等于有数据——放行后也会被 loadClientData 踢回问卷页，
+            // 不如直接在守卫层给出明确的引导页
+            const hasResult = localStorage.getItem(STORAGE_KEYS.ADVISOR_RESULT);
+            const hasAnswers = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
+            setAccessDenied(!hasResult && !hasAnswers);
         } catch {
             setAccessDenied(true);
         }
@@ -354,6 +356,18 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const [pageIndex, setPageIndex] = useState<0 | 1>(0);
     const flippedToReportRef = useRef(false);
     const reportLayerRef = useRef<HTMLDivElement>(null);
+    // 尊重系统"减弱动效"偏好：翻页交叉淡入淡出降级为瞬时切换
+    const reduceMotion = useReducedMotion();
+
+    // 报告层滚动位置记忆：翻回封面时报告层在 AnimatePresence 退出动画结束后被卸载，
+    // scrollTop 随之丢失；ref 回调在报告层重新挂载时恢复阅读位置
+    const reportScrollTopRef = useRef(0);
+    const setReportLayerRef = useCallback((node: HTMLDivElement | null) => {
+        reportLayerRef.current = node;
+        if (node && reportScrollTopRef.current > 0) {
+            node.scrollTop = reportScrollTopRef.current;
+        }
+    }, []);
 
     // 封面 → 报告（翻页）：翻页动作恒有效；"封面→报告"转化埋点每会话只记一次
     // （flippedToReportRef 一旦置位不再复位，来回切换封面不重复计入转化）
@@ -563,10 +577,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         const loadClientData = async () => {
             // 已有结果且非分析中时直接短路，避免 user 变化导致重复加载/闪烁
             if (resultRef.current && searchParams.get('status') !== 'analyzing') {
-                if (!hasTrackedView.current) {
-                    trackView();
-                    hasTrackedView.current = true;
-                }
                 return;
             }
 
@@ -658,11 +668,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     if (recoveredSessionId) setSessionId(recoveredSessionId);
                                 }
                                 setLoading(false);
-                                // 在提前返回前也触发埋点
-                                if (!hasTrackedView.current) {
-                                    trackView();
-                                    hasTrackedView.current = true;
-                                }
+                                // 埋点由独立 effect 在 cohort 判定就绪后统一上报
                                 return; // Successfully recovered
                             }
                         } catch (e) {
@@ -685,16 +691,19 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             } else {
                 setLoading(false);
             }
-
-            // Track View (for non-early-return paths)
-            if (!hasTrackedView.current) {
-                trackView();
-                hasTrackedView.current = true;
-            }
         };
 
         loadClientData().finally(() => setClientDataLoaded(true));
-    }, [initialData, router, trackView, searchParams, user, toast]);
+    }, [initialData, router, searchParams, user, toast]);
+
+    // result_view 埋点：等首次数据恢复（clientDataLoaded）且游客端"上一次摘要"恢复完成后
+    // 再上报，保证 cohort 标记（首测/派系变化）不因时序竞争而缺失；mock 会话不上报
+    useEffect(() => {
+        if (hasTrackedView.current || !clientDataLoaded) return;
+        if (serverPreviousSummary === undefined && guestPrevSnapshot === undefined) return;
+        trackView();
+        hasTrackedView.current = true;
+    }, [clientDataLoaded, serverPreviousSummary, guestPrevSnapshot, trackView]);
 
     // --- Environment Data Integration ---
     // REMOVED: Weather component has been disabled per user request
@@ -791,13 +800,31 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 try {
                     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-                    for (let i = 3; i < data.length; i += 4) {
-                        if (data[i] > 0) {
+                    // 两种空白形态都要拦截：
+                    // 1. 全透明（alpha 全 0）——截图失败的典型产物；
+                    // 2. 纯色不透明图（如纯白）——alpha 全 255，仅查 alpha 会漏检。
+                    // 以首个不透明像素为基准色，出现明显色差即视为有内容。
+                    let hasOpaque = false;
+                    let baseR = -1, baseG = -1, baseB = -1;
+                    for (let i = 0; i < data.length; i += 4) {
+                        if (data[i + 3] === 0) continue;
+                        hasOpaque = true;
+                        if (baseR < 0) {
+                            baseR = data[i];
+                            baseG = data[i + 1];
+                            baseB = data[i + 2];
+                            continue;
+                        }
+                        const diff =
+                            Math.abs(data[i] - baseR) +
+                            Math.abs(data[i + 1] - baseG) +
+                            Math.abs(data[i + 2] - baseB);
+                        if (diff > 12) {
                             resolve(false);
                             return;
                         }
                     }
-                    resolve(true);
+                    resolve(!hasOpaque);
                 } catch {
                     resolve(true);
                 }
@@ -819,6 +846,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             // 优先使用后台预生成的 blob，没有则现场生成
             let blob = preloadedPosterBlob;
             if (!blob) {
+                // 现场生成（toBlob pixelRatio:2）在低端机上可能耗时数秒，提前给用户预期，避免误以为卡死
+                toast.info("正在生成高清海报，可能需要几秒钟…", 4000);
                 blob = await generatePosterBlob();
             }
 
@@ -1267,7 +1296,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                transition={{ duration: 0.25, ease: "easeInOut" }}
+                                transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeInOut" }}
                             >
                                 <ResultHeader nickname={userNickname} />
                                 <div className={`${styles.main} lg:gap-8`}>
@@ -1296,12 +1325,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         {pageIndex === 1 && (
                             <m.div
                                 key="report-layer"
-                                ref={reportLayerRef}
+                                ref={setReportLayerRef}
                                 className={styles.pageLayer}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                transition={{ duration: reduceMotion ? 0 : 0.3, ease: "easeInOut" }}
+                                onScroll={(e) => { reportScrollTopRef.current = e.currentTarget.scrollTop; }}
                             >
                                 {/* Save Report Banner for unauthenticated users */}
                                 <SaveReportBanner className="hidden md:block" />
@@ -1462,6 +1492,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     >
                         <button
                             aria-label="第一面：肌智派证书"
+                            aria-current={pageIndex === 0 ? "page" : undefined}
                             onClick={() => { if (pageIndex !== 0) handleOpenCover(); }}
                             className={`p-1 rounded-full transition-colors ${pageIndex === 0 ? "bg-[var(--color-brand-cocoa)]" : "bg-transparent hover:bg-brand-charcoal/15"}`}
                         >
@@ -1469,6 +1500,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         </button>
                         <button
                             aria-label="第二面：测肤报告"
+                            aria-current={pageIndex === 1 ? "page" : undefined}
                             onClick={() => { if (pageIndex !== 1) handleFlipToReport(); }}
                             className={`p-1 rounded-full transition-colors ${pageIndex === 1 ? "bg-[var(--color-brand-cocoa)]" : "bg-transparent hover:bg-brand-charcoal/15"}`}
                         >

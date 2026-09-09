@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Link from "next/link";
 import { cache } from "react";
 import ResultClient from "../../result/ResultClient";
 import { type ComprehensiveResult, type PreviousTestSummary, normalizeAnalysisResult } from "@/lib/analysis-result";
@@ -81,40 +82,42 @@ export default async function ReportDetailPage(props: {
     let currentCompletedAt: Date | null = null;
 
     if (id) {
+        // 查询失败（DB 抖动/超时等）重抛给 error.tsx 渲染错误页，而不是伪装成 404
+        let session: Awaited<ReturnType<typeof getReportCached>>;
         try {
-            const session = await getReportCached(id, user.id);
-
-            if (!session || !session.analysisResult) {
-                notFound();
-            }
-
-            // 冷层归档报告（每用户仅最近 10 条保留完整数据）对用户不可见
-            if (session.archivedAt) {
-                isArchived = true;
-            } else {
-                // 过期报告仍作为历史档案可查看（滚动续期策略），页面顶部提示复测
-                if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
-                    isExpired = true;
-                }
-                const rawResult = session.analysisResult as unknown as Record<string, unknown>;
-                const result = normalizeAnalysisResult(rawResult);
-                if (!result) {
-                    notFound();
-                }
-                result.expiresAt = session.expiresAt?.toISOString();
-                // 完成时间以 DB 记录为准（历史报告来自旧数据时结果内可能无 analyzedAt）
-                result.analyzedAt = session.completedAt?.toISOString() || result.analyzedAt;
-                currentCompletedAt = session.completedAt;
-                initialData = {
-                    result,
-                    faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null,
-                    // 该次测肤的问卷答案，供报告摘要（复制给护肤顾问）使用
-                    answers: (session.answers as Record<string, unknown> | null) || null,
-                };
-            }
+            session = await getReportCached(id, user.id);
         } catch (e) {
             logger.error(`Failed to fetch report: ${String(e)}`);
+            throw e;
+        }
+
+        if (!session || !session.analysisResult) {
             notFound();
+        }
+
+        // 冷层归档报告（每用户仅最近 10 条保留完整数据）对用户不可见
+        if (session.archivedAt) {
+            isArchived = true;
+        } else {
+            // 过期报告仍作为历史档案可查看（滚动续期策略），页面顶部提示复测
+            if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
+                isExpired = true;
+            }
+            const rawResult = session.analysisResult as unknown as Record<string, unknown>;
+            const result = normalizeAnalysisResult(rawResult);
+            if (!result) {
+                notFound();
+            }
+            result.expiresAt = session.expiresAt?.toISOString();
+            // 完成时间以 DB 记录为准（历史报告来自旧数据时结果内可能无 analyzedAt）
+            result.analyzedAt = session.completedAt?.toISOString() || result.analyzedAt;
+            currentCompletedAt = session.completedAt;
+            initialData = {
+                result,
+                faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null,
+                // 该次测肤的问卷答案，供报告摘要（复制给护肤顾问）使用
+                answers: (session.answers as Record<string, unknown> | null) || null,
+            };
         }
     }
 
@@ -151,12 +154,20 @@ function ReportArchived() {
                 <p className="text-sm text-[#8c7a6b] mb-6">
                     历史报告仅保留最近 10 份的完整内容，更早的报告已归档为统计数据。您的肤质趋势对比不受影响。
                 </p>
-                <a
-                    href="/questions"
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5c4937] px-6 py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95"
-                >
-                    重新测试
-                </a>
+                <div className="flex flex-col items-center gap-3">
+                    <Link
+                        href="/questions"
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5c4937] px-6 py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95"
+                    >
+                        重新测试
+                    </Link>
+                    <Link
+                        href="/"
+                        className="text-xs text-[#8c7a6b] underline-offset-4 hover:underline"
+                    >
+                        回到首页
+                    </Link>
+                </div>
             </div>
         </div>
     );
@@ -169,12 +180,12 @@ function ReportExpiredBanner() {
                 <p className="text-sm text-[#8c6d3f]">
                     该报告已超过 90 天有效期，皮肤状态可能已变化。为保持肌肤档案准确，建议重新测试更新档案。
                 </p>
-                <a
+                <Link
                     href="/questions"
                     className="inline-flex items-center justify-center rounded-full bg-[#5c4937] px-4 py-1.5 text-xs font-medium text-white transition-transform active:scale-95"
                 >
                     重新测试
-                </a>
+                </Link>
             </div>
         </div>
     );

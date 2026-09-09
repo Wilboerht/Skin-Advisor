@@ -10,6 +10,9 @@
     --result-text-heading: #3d2f25;
     --result-bg: #E8E2D9;
     --result-border: #3d2f25;
+    /* 顶部栏占用高度：与 questions 页头一致（移动端 pt 28 + logo 28 + pb 28 = 84；md+ logo 36 → 92）。
+       pageLayer 的 padding-top 统一引用此变量，调整高度只需改这里 */
+    --result-topbar-h: 84px;
 
     width: 100%;
     /* 两页版式：容器固定视口高、自身不滚动；两个页面层各自 absolute inset-0 内部滚动，
@@ -23,15 +26,24 @@
     line-height: 1.5;
 }
 
-/* 页面层：占满容器、内部独立滚动（报告页可能远超一屏） */
+/* 页面层：占满容器、内部独立滚动（报告页可能远超一屏）。
+   隐藏滚动条但保留滚动能力（桌面/移动统一沉浸观感） */
 .pageLayer {
     position: absolute;
     inset: 0;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    /* 顶部栏占用：与 questions 页头高度一致（pt 28 + logo 28 + pb 28 = 84；md+ logo 36 → 92），含 safe-area */
-    padding-top: calc(84px + env(safe-area-inset-top, 0px));
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    /* 顶部栏占用：含 safe-area，高度由 --result-topbar-h 统一控制（见 .container 注释） */
+    padding-top: calc(var(--result-topbar-h) + env(safe-area-inset-top, 0px));
+}
+
+.pageLayer::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 /* 顶部栏：全局固定（两层页面共享），logo 居中，毛玻璃底。
@@ -73,8 +85,8 @@
 }
 
 @media (min-width: 768px) {
-    .pageLayer {
-        padding-top: calc(92px + env(safe-area-inset-top, 0px));
+    .container {
+        --result-topbar-h: 92px;
     }
 
     .topBarInner {
