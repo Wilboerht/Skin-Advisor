@@ -310,7 +310,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 const parsed = JSON.parse(rawSnap) as PreviousTestSummary;
                 setGuestPrevSnapshot(
                     parsed && (parsed.persona != null || parsed.score != null || parsed.skinAge != null)
-                        ? { persona: parsed.persona ?? null, score: parsed.score ?? null, skinAge: parsed.skinAge ?? null, at: parsed.at ?? null }
+                        ? { persona: parsed.persona ?? null, score: parsed.score ?? null, skinAge: parsed.skinAge ?? null, at: parsed.at ?? null, sessionId: parsed.sessionId ?? null }
                         : null
                 );
             } else {
@@ -332,13 +332,20 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             score: faceAnalysis?.overallScore ?? null,
             skinAge: result?.skinProfile?.skinAge ?? null,
             at: certDate || null,
+            sessionId: sessionId ?? null,
         };
         try { localStorage.setItem(STORAGE_KEYS.ADVISOR_LAST_SUMMARY, JSON.stringify(snap)); } catch { /* ignore */ }
-    }, [isMock, serverPreviousSummary, guestPrevSnapshot, result, faceAnalysis, certDate]);
+    }, [isMock, serverPreviousSummary, guestPrevSnapshot, result, faceAnalysis, certDate, sessionId]);
 
     /** 生效的"上一次摘要"：服务端优先；游客无快照时为 null（首次）。
+     *  快照与当前会话相同 → 视为首次（快照就是当前报告自己，不做自对比）。
      *  仅用于趋势对比板块与 cohort 埋点；封面页每次测肤都先展示，不受本判定影响 */
-    const prevSum = serverPreviousSummary !== undefined ? serverPreviousSummary : guestPrevSnapshot;
+    const prevSum =
+        serverPreviousSummary !== undefined
+            ? serverPreviousSummary
+            : guestPrevSnapshot && guestPrevSnapshot.sessionId && guestPrevSnapshot.sessionId === sessionId
+                ? null
+                : guestPrevSnapshot;
 
     /** cohort 指标（统计用）：是否首测 / 派系是否变化 */
     const coverMeta = useMemo(() => {

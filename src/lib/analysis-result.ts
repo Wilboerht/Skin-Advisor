@@ -19,6 +19,8 @@ export interface PreviousTestSummary {
     skinAge?: number | null;
     /** 上一次完成时间（ISO） */
     at?: string | null;
+    /** 快照来源会话 ID：游客本地快照用于识别"快照是否就是当前报告自己"（同 session 视为首次） */
+    sessionId?: string | null;
 }
 
 export interface ComprehensiveResult {
