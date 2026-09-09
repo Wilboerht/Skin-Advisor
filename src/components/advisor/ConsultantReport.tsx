@@ -43,10 +43,11 @@ interface ConsultantReportProps {
     personaRoute?: string;
 }
 
-function SectionTitle({ children }: { children: ReactNode }) {
+function SectionTitle({ children, en }: { children: ReactNode; en?: string }) {
     return (
         <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
             {children}
+            {en && <span className="text-xs lg:text-base">({en})</span>}
         </h4>
     );
 }
@@ -168,7 +169,7 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
         <div className="space-y-10 lg:space-y-12">
             {/* 开场总判断 */}
             <section>
-                <SectionTitle>顾问总评</SectionTitle>
+                <SectionTitle en="Advisor Summary">顾问总评</SectionTitle>
                 <p className="text-sm lg:text-[15px] leading-[1.9] text-[var(--color-brand-espresso)]">
                     {report.overview}
                 </p>
@@ -176,7 +177,7 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
 
             {/* 逐问题诊断卡 */}
             <section>
-                <SectionTitle>逐问题诊断</SectionTitle>
+                <SectionTitle en="Issue Diagnosis">逐问题诊断</SectionTitle>
                 {issues.length > 0 ? (
                     <div className="space-y-5">
                         {issues.map((issue, idx) => (
@@ -193,7 +194,7 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
             {/* 每日方案：派系骨架 + AI 个性化微调 */}
             {(hasRoutine || hasFormula || report.routineNote) && (
                 <section>
-                    <SectionTitle>你的每日方案{personaData ? `（${personaData.typeName}）` : ""}</SectionTitle>
+                    <SectionTitle en="Daily Routine">你的每日方案{personaData ? `（${personaData.typeName}）` : ""}</SectionTitle>
                     {report.routineNote && (
                         <p className="text-sm lg:text-[15px] leading-[1.9] text-[var(--color-brand-espresso)] mb-4">
                             {report.routineNote}
@@ -244,7 +245,7 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
             {/* 优势：AI 如实肯定 + 派系优势解析 */}
             {(strengths.length > 0 || hasAdvantages) && (
                 <section>
-                    <SectionTitle>你的优势</SectionTitle>
+                    <SectionTitle en="Your Strengths">你的优势</SectionTitle>
                     {strengths.length > 0 && (
                         <ul className="space-y-2 mb-4">
                             {strengths.map((s, i) => (
