@@ -447,7 +447,7 @@ export default function HomeClient() {
             <button
               onClick={handleStart}
               disabled={isLoading || isNavigating}
-              className="group relative block w-full max-w-3xl mx-auto text-left bg-gradient-to-br from-white to-[#FBF7EE] border border-brand-charcoal/[0.08] rounded-3xl cursor-pointer shadow-[0_8px_24px_rgba(0,38,62,0.06)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              className="group relative block w-full max-w-3xl mx-auto text-left bg-gradient-to-br from-white to-[#FBF7EE] border border-brand-espresso/[0.08] rounded-3xl cursor-pointer shadow-[0_8px_24px_rgba(61,47,37,0.06)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(61,47,37,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:hover:translate-y-0"
             >
               <div className="flex flex-col md:flex-row md:items-center">
                 <div className="flex-1 p-6 md:p-10">
@@ -471,7 +471,7 @@ export default function HomeClient() {
                       专属报告
                     </span>
                   </div>
-                  <span className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-brand-charcoal text-white text-[13px] tracking-[0.12em] font-light transition-opacity duration-300 group-hover:opacity-90">
+                  <span className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] tracking-[0.12em] font-light transition-colors duration-300 group-hover:bg-[#4a3a2c]">
                     {isLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -492,7 +492,7 @@ export default function HomeClient() {
                     alt="测肤有礼礼盒"
                     width={960}
                     height={551}
-                    className="w-64 md:w-[420px] h-auto object-contain mx-auto drop-shadow-[0_8px_16px_rgba(0,38,62,0.10)]"
+                    className="w-64 md:w-[420px] h-auto object-contain mx-auto drop-shadow-[0_8px_16px_rgba(61,47,37,0.12)]"
                     priority
                   />
                 </div>
@@ -506,14 +506,14 @@ export default function HomeClient() {
           <section className="flex flex-wrap items-center justify-center gap-3 px-6 mt-6 md:mt-8">
             <button
               onClick={openGiftModal}
-              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-charcoal/25 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-all duration-300 hover:border-brand-charcoal/60 hover:text-brand-charcoal cursor-pointer touch-manipulation"
+              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-all duration-300 hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer touch-manipulation"
             >
               <Gift className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>测肤有礼 · 参与赢好礼</span>
             </button>
             <button
               onClick={() => setShowFaqModal(true)}
-              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-charcoal/25 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-all duration-300 hover:border-brand-charcoal/60 hover:text-brand-charcoal cursor-pointer touch-manipulation"
+              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-all duration-300 hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer touch-manipulation"
             >
               <CircleHelp className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>常见问题</span>
@@ -593,7 +593,7 @@ export default function HomeClient() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+              className="relative z-10 w-full max-w-[420px] bg-[#FDFBF7] rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               {/* Close Button */}

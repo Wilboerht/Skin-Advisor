@@ -119,7 +119,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                       alt=""
                       width={36}
                       height={36}
-                      className="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-[0_1px_0_rgba(0,38,62,0.28)] animate-[soft-blink_3s_ease-in-out_infinite]"
+                      className="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-[0_1px_0_rgba(61,47,37,0.25)] animate-[soft-blink_3s_ease-in-out_infinite]"
                     />
                   )}
                   {item.hop ? (
@@ -181,7 +181,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     : `text-brand-charcoal hover:text-brand-charcoal-light focus-visible:text-brand-charcoal-light ${scrolled ? "hover:bg-brand-charcoal/[0.03]" : ""}`
                 }`}
               >
-                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-brand-charcoal/10 flex items-center justify-center text-brand-charcoal text-xs font-serif shrink-0">
+                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[var(--color-brand-cocoa)]/10 flex items-center justify-center text-brand-charcoal text-xs font-serif shrink-0">
                   {user.avatar ? (
                     <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                   ) : (
@@ -253,7 +253,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   : "text-brand-charcoal active:bg-brand-charcoal/5"
               }`}
             >
-              <div className="relative w-7 h-7 rounded-full overflow-hidden bg-brand-charcoal/10 flex items-center justify-center text-brand-charcoal text-xs font-serif">
+              <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[var(--color-brand-cocoa)]/10 flex items-center justify-center text-brand-charcoal text-xs font-serif">
                 {user.avatar ? (
                   <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                 ) : (
@@ -328,7 +328,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   onClick={handleNavClick}
                   className="flex items-center gap-4 group"
                 >
-                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-brand-charcoal/10 flex items-center justify-center text-brand-charcoal shrink-0">
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-[var(--color-brand-cocoa)]/10 flex items-center justify-center text-brand-charcoal shrink-0">
                     {user.avatar ? (
                       <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                     ) : (
@@ -353,7 +353,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   onClick={handleLoginClick}
                   className="w-full flex items-center gap-4 group cursor-pointer"
                 >
-                  <div className="w-14 h-14 rounded-full bg-brand-charcoal/8 flex items-center justify-center text-brand-charcoal/50 shrink-0 group-hover:bg-brand-charcoal/12 transition-colors duration-300">
+                  <div className="w-14 h-14 rounded-full bg-[var(--color-brand-cocoa)]/8 flex items-center justify-center text-brand-charcoal/50 shrink-0 group-hover:bg-[var(--color-brand-cocoa)]/12 transition-colors duration-300">
                     <User className="w-7 h-7" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
@@ -400,7 +400,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                         alt=""
                         width={36}
                         height={36}
-                        className="w-6 h-6 object-contain drop-shadow-[0_1px_0_rgba(0,38,62,0.28)] animate-[soft-blink_3s_ease-in-out_infinite]"
+                        className="w-6 h-6 object-contain drop-shadow-[0_1px_0_rgba(61,47,37,0.25)] animate-[soft-blink_3s_ease-in-out_infinite]"
                       />
                     )}
                     {item.label}

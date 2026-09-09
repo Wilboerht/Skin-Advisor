@@ -77,12 +77,12 @@ function GuestTrendCurve() {
   return (
     <svg viewBox="0 0 200 70" className="w-full h-auto" aria-hidden="true">
       {[18, 36, 54].map((y) => (
-        <line key={y} x1="12" y1={y} x2="188" y2={y} stroke="#00263E" strokeOpacity="0.07" strokeDasharray="2 4" />
+        <line key={y} x1="12" y1={y} x2="188" y2={y} stroke="#5c4937" strokeOpacity="0.08" strokeDasharray="2 4" />
       ))}
       <path
         d="M12,56 C42,54 56,36 80,38 S132,54 150,30 S178,20 188,18"
         fill="none"
-        stroke="#00263E"
+        stroke="#5c4937"
         strokeOpacity="0.35"
         strokeWidth="2"
         strokeDasharray="5 6"
@@ -91,7 +91,7 @@ function GuestTrendCurve() {
       <path
         d="M12,62 C48,60 66,48 94,50 S146,58 172,40"
         fill="none"
-        stroke="#00263E"
+        stroke="#5c4937"
         strokeOpacity="0.12"
         strokeWidth="2"
         strokeDasharray="4 6"
