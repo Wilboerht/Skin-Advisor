@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CalendarDays, TrendingDown, TrendingUp } from "lucide-react";
+import { ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
 import type { PreviousTestSummary } from "@/lib/analysis-result";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
+import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { cn } from "@/lib/utils";
 
 interface ComparisonCardProps {
@@ -61,6 +62,7 @@ function DeltaFigure({ delta, unit, goodWhenNegative = false }: { delta?: number
 }
 
 export default function ComparisonCard({ prev, score, skinAge, persona, at }: ComparisonCardProps) {
+    const { openDiaryModal } = useDiaryModal();
     const scoreDelta = score !== undefined && typeof prev.score === "number"
         ? Math.round(score - prev.score)
         : undefined;
@@ -109,7 +111,15 @@ export default function ComparisonCard({ prev, score, skinAge, persona, at }: Co
                                 : "与上次测肤对比"}
                     </span>
                 </div>
-                <CalendarDays className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} aria-hidden="true" />
+                {/* 护肤档案入口：历史测肤趋势的完整档案（未登录由弹层展示登录引导） */}
+                <button
+                    onClick={openDiaryModal}
+                    className="inline-flex items-center gap-0.5 text-[12px] font-light tracking-[0.06em] text-[var(--color-brand-cocoa)]/70 hover:text-[var(--color-brand-cocoa)] transition-colors"
+                    aria-label="打开护肤档案"
+                >
+                    护肤档案
+                    <ChevronRight className="w-3.5 h-3.5" strokeWidth={2} />
+                </button>
             </div>
 
             {/* 3 列数据：主数字为"较上次变化量"，当前绝对值见下方专业版报告卡，不重复展示 */}
