@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // 获取最近 12 次分析结果，用于对比（先按时间倒序取最新 12 条，再翻转为时间正序）
+        // 获取最近 100 次分析结果（时间正序）。
+        // 按天聚合（同日多次取当日最后一次）由前端 DiaryModal 以本地时区完成——
+        // 这里多取是为了覆盖"一天多次测肤"场景，聚合后仍有足够的"天"数构成趋势。
         const recentSessions = (
             await prisma.advisorSession.findMany({
                 where: {
@@ -35,7 +37,7 @@ export async function GET(request: NextRequest) {
                     completedAt: { not: null }
                 },
                 orderBy: { completedAt: 'desc' },
-                take: 12,
+                take: 100,
                 select: {
                     completedAt: true,
                     analysisResult: true

@@ -157,6 +157,21 @@ export function DiaryModal() {
     ).length;
   }, [entries]);
 
+  // 趋势按天聚合（本地日历日，同日多次测肤取当日最后一次）：
+  // 图看趋势、时间线看明细——单日多次对长期趋势是噪声，且避免 X 轴出现重复日期/等距失真
+  const aggregatedTrends = useMemo<TrendsData | null>(() => {
+    if (!trends || !Array.isArray(trends.dates) || !Array.isArray(trends.scores)) return null;
+    const byDay = new Map<string, { date: string; score: number }>();
+    for (let i = 0; i < trends.dates.length; i++) {
+      const day = localDateStr(new Date(trends.dates[i]));
+      byDay.set(day, { date: trends.dates[i], score: trends.scores[i] });
+    }
+    const days = Array.from(byDay.values()).slice(-12);
+    // 聚合后不足两个"天"无法构成趋势（如当天连测两次）→ 视为无趋势，走解锁引导
+    if (days.length < 2) return null;
+    return { dates: days.map((d) => d.date), scores: days.map((d) => d.score) };
+  }, [trends]);
+
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen && !checkIn.open, closeDiaryModal);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
@@ -512,9 +527,9 @@ export function DiaryModal() {
                           肌肤变化
                         </h3>
                         <span className="flex items-center gap-3 ml-3">
-                          {trends && (
+                          {aggregatedTrends && (
                             <span className="text-[11px] text-brand-charcoal/45 font-light tracking-[0.1em]">
-                              近 {trends.scores.length} 次
+                              近 {aggregatedTrends.scores.length} 天
                             </span>
                           )}
                           <button
@@ -532,9 +547,9 @@ export function DiaryModal() {
                         <div className="rounded-[20px] border border-brand-espresso/[0.08] bg-white/50 h-32 flex items-center justify-center">
                           <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
                         </div>
-                      ) : trends ? (
+                      ) : aggregatedTrends ? (
                         <div className="rounded-[20px] border border-brand-espresso/[0.08] bg-[#F5F2ED] p-5 shadow-[0_4px_16px_rgba(61,47,37,0.04)]">
-                          <TrendChart trends={trends} />
+                          <TrendChart trends={aggregatedTrends} />
                           {recentCheckInCount >= 2 && (
                             <div className="mt-5 pt-4 border-t border-dashed border-brand-espresso/[0.12]">
                               <CheckInTrend entries={entries} />
@@ -545,14 +560,14 @@ export function DiaryModal() {
                         <div className="rounded-[20px] border border-brand-espresso/[0.08] bg-[#F5F2ED] p-5 shadow-[0_4px_16px_rgba(61,47,37,0.04)]">
                           <CheckInTrend entries={entries} />
                           <p className="mt-3 text-[11px] text-brand-charcoal/40 font-light text-center">
-                            完成 2 次测肤后，可叠加查看测肤评分趋势
+                            完成两次不同日期的测肤后，可叠加查看测肤评分趋势
                           </p>
                         </div>
                       ) : (
                         /* 解锁引导：与报告页登录解锁块同款金色虚线卡 */
                         <div className="rounded-2xl border border-dashed border-[#C9A86C]/40 bg-gradient-to-br from-[#FBF8F3] to-[var(--color-brand-cream)] p-6 text-center">
                           <p className="text-[13px] text-brand-charcoal/55 font-light mb-1.5">
-                            完成 2 次测肤后解锁肌肤变化
+                            完成两次不同日期的测肤后解锁肌肤变化
                           </p>
                           <p className="text-[13px] text-brand-charcoal/50 font-light mb-4">
                             定期测肤，看见肌肤的真实变化

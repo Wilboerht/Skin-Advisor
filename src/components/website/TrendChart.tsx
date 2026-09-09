@@ -1,6 +1,9 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useMemo } from "react";
+
+/** 标签最小横向间距（px）：真实时间轴下近邻点密集时按此抽稀，避免日期/分数重叠 */
+const MIN_LABEL_GAP = 34;
 
 export interface TrendsData {
   dates: string[];
@@ -31,8 +34,16 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
   const gridValues = [lo, Math.round((lo + hi) / 2 / 10) * 10, hi];
   const yOf = (v: number) => PAD_TOP + ((hi - v) / (hi - lo)) * (H - PAD_TOP - PAD_BOTTOM);
 
+  // X 轴按真实时间距离映射：点间距 ∝ 天数差（"隔了 30 天"与"昨天测的"视觉间距不同）
+  const times = trends.dates.map((d) => new Date(d).getTime());
+  const tMin = Math.min(...times);
+  const tMax = Math.max(...times);
+  const tSpan = tMax - tMin;
+  const xOf = (i: number) =>
+    tSpan > 0 ? PAD_L + ((times[i] - tMin) / tSpan) * (W - PAD_L - PAD_R) : W / 2;
+
   const points = scores.map((score, i) => ({
-    x: PAD_L + (i * (W - PAD_L - PAD_R)) / Math.max(1, n - 1),
+    x: xOf(i),
     y: yOf(score),
     score,
     date: trends.dates[i],
@@ -69,6 +80,24 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
 
   const fmtDay = (d: string) =>
     new Date(d).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" });
+
+  // 标签抽稀预计算：真实时间轴下近邻点按最小横向间距跳过标签，避免日期/分数重叠
+  const labelFlags = useMemo(() => {
+    const flags: boolean[] = [];
+    let lastX = -Infinity;
+    for (let i = 0; i < n; i++) {
+      const isLatest = i === n - 1;
+      const isFirst = i === 0;
+      const gapOk = lastX === -Infinity || points[i].x - lastX >= MIN_LABEL_GAP;
+      const show = (n <= 6 || isLatest || isFirst) && gapOk;
+      if (show) lastX = points[i].x;
+      flags.push(show);
+    }
+    return flags;
+  }, [n, points]);
+
+  // 少于 2 个点无法构成趋势（曲线/面积无意义），不渲染（置于所有 hooks 之后，保证 hooks 调用顺序一致）
+  if (n < 2) return null;
 
   return (
     <div>
@@ -134,11 +163,11 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
           strokeLinejoin="round"
         />
 
-        {/* 数据点 + 分数 + 日期（点多时仅标最新值、隔点标日期，避免拥挤） */}
+        {/* 数据点 + 分数 + 日期：真实时间轴下点距不等，标签按最小间距抽稀避免重叠 */}
         {points.map((p, i) => {
           const isLatest = i === n - 1;
-          const showScore = n <= 6 || isLatest;
-          const showDate = n <= 6 || i % 2 === 0 || isLatest;
+          const isFirst = i === 0;
+          const showLabel = labelFlags[i];
           return (
             <g key={i}>
               {/* 隐形热区：放大 hover/触摸目标，title 提供日期+分数提示 */}
@@ -158,11 +187,11 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
                 strokeWidth="2"
                 className="pointer-events-none"
               />
-              {showScore && (
+              {showLabel && (
                 <text
-                  x={i === 0 ? p.x + 7 : p.x}
+                  x={isFirst ? p.x + 7 : p.x}
                   y={p.y - 9}
-                  textAnchor={i === 0 ? "start" : "middle"}
+                  textAnchor={isFirst ? "start" : "middle"}
                   fontSize="11"
                   fontWeight={isLatest ? 600 : 400}
                   fill="#5c4937"
@@ -170,7 +199,7 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
                   {p.score}
                 </text>
               )}
-              {showDate && (
+              {showLabel && (
                 <text x={p.x} y={H - 6} textAnchor="middle" fontSize="10" fill="#8c7a6b">
                   {fmtDay(p.date)}
                 </text>
