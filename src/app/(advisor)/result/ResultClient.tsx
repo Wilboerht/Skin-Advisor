@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { ArrowUp, House, Gift, ArrowRight, AlertCircle, Sparkles, Info, X, ScanFace, FileText } from "lucide-react";
+import { ArrowUp, House, Gift, ArrowRight, AlertCircle, Sparkles, Info, X, ScanFace } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -386,16 +386,25 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         setPageIndex(1);
     }, [coverMeta, trackResultFlip, isMock]);
 
-    // 报告 → 封面（手动打开证书入口；封面即便初未展示也允许回看）
-    const handleOpenCover = useCallback(() => {
-        setPageIndex(0);
-        if (!isMock) trackResultFlip("cover", coverMeta);
-    }, [coverMeta, trackResultFlip, isMock]);
+    // 报告 → 封面入口已移除（右下角仅保留「回到顶部」）；result_flip "cover" 事件暂无触发点，
+    // API 端仍保留该枚举值以便未来重新接入
 
     // 翻页仅接受明确操作（按钮 / 指示器 / 证书入口），不监听滚轮与手势，
     // 避免用户查看封面时误滑动直接翻页丢失当前阅读位置
     // 注意：flippedToReportRef 一旦置位不再复位——"封面→报告"转化每会话只上报一次，
     // 来回切换封面不重复计入转化（cover 打开事件单独上报）
+
+    // 报告页长滚动时显示「回到顶部」悬浮按钮（滚动超过 300px 出现，回顶后消失）
+    const [showBackTop, setShowBackTop] = useState(false);
+    useEffect(() => {
+        if (pageIndex !== 1) return;
+        const layer = reportLayerRef.current;
+        if (!layer) return;
+        const onScroll = () => setShowBackTop(layer.scrollTop > 300);
+        onScroll();
+        layer.addEventListener("scroll", onScroll, { passive: true });
+        return () => layer.removeEventListener("scroll", onScroll);
+    }, [pageIndex]);
 
     // result_view 埋点附带 cohort 标记（判定未就绪时仅上报 base 事件）；mock 会话不上报埋点
     const trackView = useCallback(() => {
@@ -1500,26 +1509,23 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         )}
                     </AnimatePresence>
 
-                    {/* 报告页浮动操作区：回顶部 + 证书入口（分享裂变兜底），竖向堆叠不遮挡内容 */}
-                    {pageIndex === 1 && (
-                        <div className="fixed right-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-40 flex flex-col items-end gap-2">
-                            <button
-                                onClick={() => reportLayerRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-                                className="w-9 h-9 inline-flex items-center justify-center rounded-full border border-brand-charcoal/15 bg-white/80 backdrop-blur text-brand-charcoal/60 hover:text-brand-charcoal transition-colors"
+                    {/* 右下角浮动：仅「回到顶部」，滚动超过一屏出现、回顶后淡出 */}
+                    <AnimatePresence>
+                        {pageIndex === 1 && showBackTop && (
+                            <m.button
+                                key="back-to-top"
+                                initial={{ opacity: 0, scale: 0.8, y: 8 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.8, y: 8 }}
+                                transition={{ duration: 0.18, ease: "easeOut" }}
+                                onClick={() => reportLayerRef.current?.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" })}
+                                className="fixed right-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-40 w-11 h-11 inline-flex items-center justify-center rounded-full border border-brand-espresso/10 bg-white/85 backdrop-blur-md text-[var(--color-brand-cocoa)] shadow-[0_6px_20px_rgba(61,47,37,0.14)] hover:bg-[var(--color-brand-cocoa)] hover:text-white hover:border-transparent hover:shadow-[0_8px_24px_rgba(61,47,37,0.22)] active:scale-95 transition-all duration-200"
                                 aria-label="回到顶部"
                             >
-                                <ArrowUp className="w-4 h-4" strokeWidth={2} />
-                            </button>
-                            <button
-                                onClick={handleOpenCover}
-                                className="inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/15 bg-white/80 backdrop-blur px-3 py-1.5 text-[11px] text-brand-charcoal/70 font-medium hover:text-brand-charcoal hover:border-brand-charcoal/30 transition-colors"
-                                aria-label="查看我的肌智派证书"
-                            >
-                                <FileText className="w-3.5 h-3.5" strokeWidth={1.75} />
-                                我的证书
-                            </button>
-                        </div>
-                    )}
+                                <ArrowUp className="w-5 h-5" strokeWidth={2.25} />
+                            </m.button>
+                        )}
+                    </AnimatePresence>
 
                     {/* 定制化分析数据详情 Modal - Page Level */}
                     <LabDataModal

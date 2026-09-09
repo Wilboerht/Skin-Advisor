@@ -142,7 +142,7 @@ export default function ComparisonCard({ prev, score, skinAge, persona, at }: Co
 
                 <div className="rounded-xl p-3 lg:p-4 bg-[#E6E2DA] border border-brand-espresso/5">
                     <p className="text-[11px] text-[#7a6552] font-medium mb-1.5">派系</p>
-                    <p className="text-sm lg:text-base font-bold text-[var(--color-brand-charcoal)] leading-tight">
+                    <p className="text-xl lg:text-2xl font-bold text-[var(--color-brand-charcoal)] leading-none truncate">
                         {curLabel}
                     </p>
                     <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">上次 {prevLabel}</p>
