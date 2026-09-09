@@ -1,9 +1,6 @@
 "use client";
 
-import { useId, useMemo } from "react";
-
-/** 标签最小横向间距（px）：真实时间轴下近邻点密集时按此抽稀，避免日期/分数重叠 */
-const MIN_LABEL_GAP = 34;
+import { useId } from "react";
 
 export interface TrendsData {
   dates: string[];
@@ -88,21 +85,6 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
   // 起点分数：绘图区水平基准线，直观表达"相对第一次测肤是改善还是回落"
   const baselineY = yOf(scores[0]);
 
-  // 标签抽稀预计算：真实时间轴下近邻点按最小横向间距跳过标签，避免日期/分数重叠
-  const labelFlags = useMemo(() => {
-    const flags: boolean[] = [];
-    let lastX = -Infinity;
-    for (let i = 0; i < n; i++) {
-      const isLatest = i === n - 1;
-      const isFirst = i === 0;
-      const gapOk = lastX === -Infinity || points[i].x - lastX >= MIN_LABEL_GAP;
-      const show = (n <= 6 || isLatest || isFirst) && gapOk;
-      if (show) lastX = points[i].x;
-      flags.push(show);
-    }
-    return flags;
-  }, [n, points]);
-
   // 少于 2 个点无法构成趋势（曲线/面积无意义），不渲染（置于所有 hooks 之后，保证 hooks 调用顺序一致）
   if (n < 2) return null;
 
@@ -159,7 +141,7 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
           </g>
         ))}
 
-        {/* 起点基准线：相对首次测肤的参照，线上=改善、线下=回落 */}
+        {/* 起点基准线：相对首次测肤的参照，线上=改善、线下=回落（无文字标签，hover 提示） */}
         <line
           x1={PAD_L}
           y1={baselineY}
@@ -169,10 +151,9 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
           strokeOpacity="0.22"
           strokeDasharray="2 6"
           strokeWidth="1"
-        />
-        <text x={W - PAD_R} y={baselineY - 5} textAnchor="end" fontSize="9.5" fill="#8c7a6b">
-          起点 {scores[0]} 分
-        </text>
+        >
+          <title>起点 {scores[0]} 分</title>
+        </line>
 
         {/* 面积 + 曲线 */}
         <path d={areaPath} fill={`url(#${gradientId})`} />
@@ -185,11 +166,10 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
           strokeLinejoin="round"
         />
 
-        {/* 数据点 + 分数 + 日期：真实时间轴下点距不等，标签按最小间距抽稀避免重叠 */}
+        {/* 数据点 + 日期：只标注首末两端（时间范围），数值由 hover 提示与摘要区承载 */}
         {points.map((p, i) => {
           const isLatest = i === n - 1;
           const isFirst = i === 0;
-          const showLabel = labelFlags[i];
           return (
             <g key={i}>
               {/* 隐形热区：放大 hover/触摸目标，title 提供日期+分数提示 */}
@@ -209,19 +189,7 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
                 strokeWidth="2"
                 className="pointer-events-none"
               />
-              {showLabel && (isLatest || n <= 3) && (
-                <text
-                  x={isFirst ? p.x + 7 : p.x}
-                  y={p.y - 9}
-                  textAnchor={isFirst ? "start" : "middle"}
-                  fontSize="11"
-                  fontWeight={isLatest ? 600 : 400}
-                  fill="#5c4937"
-                >
-                  {p.score}
-                </text>
-              )}
-              {showLabel && (
+              {(isFirst || isLatest) && (
                 <text
                   x={p.x}
                   y={H - 6}

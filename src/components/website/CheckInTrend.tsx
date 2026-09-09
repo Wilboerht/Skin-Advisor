@@ -103,37 +103,36 @@ export function CheckInTrend({ entries }: { entries: DiaryEntry[] }) {
                   width={bw}
                   height={4}
                   rx={2}
-                  fill="#00263E"
-                  fillOpacity={0.08}
+                  fill="#5c4937"
+                  fillOpacity={0.07}
                 />
               )}
             </g>
           );
         })}
 
-        <text x={PAD_L} y={H - 4} fontSize="9.5" fill="#8A8A8A">
+        <text x={PAD_L} y={H - 4} fontSize="9.5" fill="#8c7a6b">
           {firstLabel}
         </text>
-        <text x={W - PAD_R} y={H - 4} textAnchor="end" fontSize="9.5" fill="#8A8A8A">
+        <text x={W - PAD_R} y={H - 4} textAnchor="end" fontSize="9.5" fill="#8c7a6b">
           {lastLabel}
         </text>
       </svg>
 
-      {/* 图例 */}
-      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 mt-2">
-        {(["great", "good", "normal", "bad", "terrible"] as const).map((key) => {
-          const meta = STATE_META[key];
-          return (
-            <span key={key} className="inline-flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: meta.color }} />
-              {meta.label}
-            </span>
-          );
-        })}
-        <span className="inline-flex items-center gap-1 text-[10px] text-brand-charcoal/40 font-light">
-          <span className="w-2 h-2 rounded-full bg-brand-charcoal/10" />
-          未打卡
-        </span>
+      {/* 图例：5 色点 + 两端语义词（中间档位由颜色深浅自然表达），未打卡以灰点示意 */}
+      <div className="flex items-center justify-center gap-1.5 mt-2">
+        <span className="text-[10px] text-brand-charcoal/40 font-light mr-0.5">很好</span>
+        {(["great", "good", "normal", "bad", "terrible"] as const).map((key) => (
+          <span
+            key={key}
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: STATE_META[key].color }}
+          />
+        ))}
+        <span className="text-[10px] text-brand-charcoal/40 font-light ml-0.5">爆痘敏感</span>
+        <span className="w-px h-3 bg-brand-espresso/[0.1] mx-1.5" />
+        <span className="w-2 h-2 rounded-full bg-brand-charcoal/10" />
+        <span className="text-[10px] text-brand-charcoal/40 font-light">未打卡</span>
       </div>
     </div>
   );
