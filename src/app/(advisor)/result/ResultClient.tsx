@@ -85,14 +85,11 @@ function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStat
 
     return (
         <div className="w-full flex flex-col items-center pt-6 lg:pt-8">
-            <p className="mt-0 mb-2 lg:mb-2.5 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center gap-2">
+            {/* 状态标签属于标题一体：紧跟标题文字同行参与布局（整体居中） */}
+            <p className="mt-0 mb-4 lg:mb-6 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
                 <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                 {nickname} 的专属肌智派在线测肤报告
-            </p>
-
-            {/* 拍摄时肌肤状态：与「趋势对比/专业版报告」同家族的标签（标题下方居中，不挤占标题流） */}
-            {skinStateLabel && (
-                <div className="mb-4 lg:mb-6">
+                {skinStateLabel && (
                     <span className="relative z-10 inline-flex h-[24px] px-2.5 items-center justify-center gap-1.5 rounded-full border border-[var(--color-brand-charcoal)]/15 bg-white/60 text-xs font-medium text-[var(--color-brand-charcoal)] lg:h-[26px] lg:px-3 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap">
                         <span
                             aria-hidden="true"
@@ -100,8 +97,8 @@ function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStat
                         />
                         {skinStateLabel}
                     </span>
-                </div>
-            )}
+                )}
+            </p>
         </div>
     );
 }
