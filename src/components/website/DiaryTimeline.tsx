@@ -160,8 +160,8 @@ export function DiaryTimeline({
   return (
     <div>
       {!hasAnyEvent && (
-        <div className="rounded-3xl border border-dashed border-brand-charcoal/[0.15] py-10 text-center mb-6">
-          <p className="text-[13px] text-brand-charcoal/50 font-light mb-4">
+        <div className="rounded-2xl border border-dashed border-[#C9A86C]/40 bg-gradient-to-br from-[#FBF8F3] to-[var(--color-brand-cream)] py-10 px-6 text-center mb-6">
+          <p className="text-[13px] text-brand-charcoal/55 font-light mb-4">
             完成一次测肤后，这里会自动生成你的护肤记录
           </p>
           <div className="flex items-center justify-center gap-3">
@@ -169,14 +169,14 @@ export function DiaryTimeline({
               <button
                 type="button"
                 onClick={() => onCheckIn(null, todayStr)}
-                className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-brand-charcoal text-white text-[12px] tracking-[0.08em] font-light transition-opacity hover:opacity-90 cursor-pointer"
+                className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] tracking-[0.08em] font-medium transition-colors hover:bg-[#4a3a2c] cursor-pointer"
               >
                 打卡
               </button>
             )}
             <Link
               href="/questions"
-              className="inline-flex items-center justify-center px-5 h-9 rounded-full border border-brand-charcoal/20 text-brand-charcoal/70 text-[12px] tracking-[0.08em] font-light transition-colors hover:border-brand-charcoal/50 hover:text-brand-charcoal"
+              className="inline-flex items-center justify-center px-5 h-9 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] tracking-[0.08em] font-light transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
             >
               去测肤 →
             </Link>
@@ -230,8 +230,8 @@ export function DiaryTimeline({
                 {isToday && !visibleEvents.some((e) => e.kind === "diary") && (
                   visibleEvents.length === 0 ? (
                     <div className="relative">
-                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-charcoal/30 bg-[#FDFBF7]" />
-                      <div className="rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-3.5 flex items-center gap-3">
+                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-espresso/30 bg-[#F7F4EE]" />
+                      <div className="rounded-2xl border border-dashed border-brand-espresso/15 px-4 py-3.5 flex items-center gap-3">
                         <span className="flex-1 text-[13px] text-brand-charcoal/55 font-light">
                           今天还没有记录
                         </span>
@@ -239,14 +239,14 @@ export function DiaryTimeline({
                           <button
                             type="button"
                             onClick={() => onCheckIn(null, todayStr)}
-                            className="shrink-0 min-h-[32px] px-3.5 rounded-full bg-brand-charcoal text-white text-[12px] font-light tracking-[0.05em] transition-opacity hover:opacity-85 cursor-pointer"
+                            className="shrink-0 min-h-[32px] px-3.5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium tracking-[0.05em] transition-colors hover:bg-[#4a3a2c] cursor-pointer"
                           >
                             打卡
                           </button>
                         )}
                         <Link
                           href="/questions"
-                          className="shrink-0 min-h-[32px] inline-flex items-center px-3.5 rounded-full border border-brand-charcoal/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-charcoal/50 hover:text-brand-charcoal"
+                          className="shrink-0 min-h-[32px] inline-flex items-center px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
                         >
                           去测肤 →
                         </Link>
@@ -255,11 +255,11 @@ export function DiaryTimeline({
                   ) : (
                     onCheckIn && (
                       <div className="relative">
-                        <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-charcoal/30 bg-[#FDFBF7]" />
+                        <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-espresso/30 bg-[#F7F4EE]" />
                         <button
                           type="button"
                           onClick={() => onCheckIn(null, todayStr)}
-                          className="block w-full rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-3 text-left text-[12px] text-brand-charcoal/55 font-light hover:border-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer"
+                          className="block w-full rounded-2xl border border-dashed border-brand-espresso/15 px-4 py-3 text-left text-[12px] text-brand-charcoal/55 font-light hover:border-brand-espresso/40 hover:text-brand-charcoal transition-colors cursor-pointer"
                         >
                           今天还没有打卡，记录一下今日肌肤状态 →
                         </button>
@@ -274,11 +274,11 @@ export function DiaryTimeline({
                   onCheckIn &&
                   canBackfill(group.dateStr) && (
                     <div className="relative">
-                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-charcoal/30 bg-[#FDFBF7]" />
+                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-espresso/30 bg-[#F7F4EE]" />
                       <button
                         type="button"
                         onClick={() => onCheckIn(null, group.dateStr)}
-                        className="block w-full rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-3 text-left text-[12px] text-brand-charcoal/45 font-light hover:border-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer"
+                        className="block w-full rounded-2xl border border-dashed border-brand-espresso/15 px-4 py-3 text-left text-[12px] text-brand-charcoal/45 font-light hover:border-brand-espresso/40 hover:text-brand-charcoal transition-colors cursor-pointer"
                       >
                         补打卡 →
                       </button>
@@ -295,10 +295,10 @@ export function DiaryTimeline({
                     return (
                       <div key={`d-${ev.entry.id}-${i}`} className="relative">
                         <span
-                          className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-[#FDFBF7]"
+                          className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-[#F7F4EE]"
                           style={{ backgroundColor: meta.color }}
                         />
-                        <div className="rounded-2xl bg-white border border-brand-charcoal/[0.06] px-4 py-3.5 transition-colors hover:border-brand-charcoal/[0.15]">
+                        <div className="rounded-2xl bg-white/70 border border-brand-espresso/[0.08] px-4 py-3.5 shadow-[0_2px_8px_rgba(61,47,37,0.03)] transition-colors hover:border-brand-espresso/[0.15]">
                           {(onDeleteEntry || (isToday && onCheckIn)) && (
                             <div className="flex justify-end gap-1 -mt-1 mb-1">
                               {isToday && onCheckIn && (
@@ -375,7 +375,7 @@ export function DiaryTimeline({
                                 {ev.entry.tags?.map((tag) => (
                                   <span
                                     key={tag}
-                                    className="text-[11px] text-brand-charcoal/50 border border-brand-charcoal/[0.1] rounded-full px-2 py-0.5"
+                                    className="text-[11px] text-brand-charcoal/50 border border-brand-espresso/[0.12] rounded-full px-2 py-0.5"
                                   >
                                     {tag}
                                   </span>
@@ -405,10 +405,10 @@ export function DiaryTimeline({
                   const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
                   return (
                     <div key={`t-${ev.test.sessionId}-${i}`} className="relative">
-                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-[#FDFBF7] bg-brand-charcoal" />
+                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-[#F7F4EE] bg-[var(--color-brand-cocoa)]" />
                       <Link
                         href={`/reports/${ev.test.sessionId}`}
-                        className="group flex items-center gap-3 rounded-2xl bg-brand-charcoal px-4 py-3.5 text-white transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,38,62,0.25)]"
+                        className="group flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[var(--color-brand-cocoa)] to-[#4a3a2c] px-4 py-3.5 text-white shadow-[0_4px_14px_rgba(61,47,37,0.12)] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(61,47,37,0.22)]"
                       >
                         <ScanFace className="w-4 h-4 shrink-0 text-white/70" strokeWidth={1.5} />
                         <span className="flex-1 min-w-0 text-[13px] font-light truncate">
@@ -437,7 +437,7 @@ export function DiaryTimeline({
             onLoadMoreEntries?.();
           }}
           disabled={testsLoadingMore || entriesLoadingMore}
-          className="w-full h-10 inline-flex items-center justify-center gap-2 rounded-full border border-brand-charcoal/15 text-[12px] text-brand-charcoal/60 font-light tracking-[0.08em] hover:border-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+          className="w-full h-10 inline-flex items-center justify-center gap-2 rounded-full border border-brand-espresso/[0.15] text-[12px] text-brand-charcoal/60 font-light tracking-[0.08em] hover:border-brand-espresso/40 hover:text-brand-charcoal transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait"
         >
           {(testsLoadingMore || entriesLoadingMore) && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {hiddenCount > 0 ? `加载更早的记录（还有 ${hiddenCount} 天）` : "加载更早的记录"}

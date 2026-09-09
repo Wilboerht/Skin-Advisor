@@ -19,6 +19,7 @@ import {
     validateAndExtractJson,
     VisionAnalysisOutputSchema,
 } from "./advisor-utils";
+import { enforceZoneAdviceIngredients } from "./ingredient-guard";
 
 export interface VisionImage {
     data: string; // base64 string (data:image/...)
@@ -188,6 +189,16 @@ async function tryVisionProviderWithKeys(
 
             // 解析与 Zod 结构验证
             const jsonData = validateAndExtractJson(result, VisionAnalysisOutputSchema);
+
+            // 硬保证：zoneAnalysis advice 禁用成分扫描（prompt 软约束的兜底）。
+            // 命中时该区域 advice 降级为安全通用文案并告警，禁用成分文本不出库
+            const ingredientViolations = enforceZoneAdviceIngredients(jsonData.zoneAnalysis);
+            if (ingredientViolations.length > 0) {
+                aiLogger.warn(
+                    `[IngredientGuard] 禁用成分命中 ${ingredientViolations.length} 处（session=${sessionId ?? "unknown"}）：` +
+                    ingredientViolations.map((v) => `${v.zone}/${v.keyword}`).join(", ")
+                );
+            }
 
             // 优先检查 validation 拦截状态（非真人/翻拍/遮挡等）
             const validation = jsonData.validation as { isValid?: boolean; message?: string } | undefined;
