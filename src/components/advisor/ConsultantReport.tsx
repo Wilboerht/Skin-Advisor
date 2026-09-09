@@ -94,7 +94,7 @@ function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensio
     );
 }
 
-function IssueCard({ issue, dimensions, expanded, onToggle, bodyId }: {
+function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
     issue: ConsultantIssue;
     dimensions?: ConsultantReportProps["dimensions"];
     /** 是否展开（支持同时展开多张，由父组件控制） */
@@ -102,10 +102,13 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId }: {
     onToggle: () => void;
     /** 卡体 id，供卡头按钮 aria-controls 关联 */
     bodyId: string;
+    /** 卡片序号（1 起），用于卡头编号 */
+    index: number;
 }) {
     const meta = SEVERITY_META[issue.severity] ?? SEVERITY_META.mild;
     const isSevere = issue.severity === "severe";
     const reduceMotion = useReducedMotion();
+    const stepNo = String(index + 1).padStart(2, "0");
 
     return (
         <article className={cn(
@@ -113,28 +116,38 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId }: {
             // 重点问题整卡淡红 tint：扫读时严重程度一眼可辨，无需依赖细色条
             isSevere
                 ? "border-red-200/50 bg-red-50/50"
-                : "border-brand-charcoal/[0.08] bg-white/80",
+                : "border-brand-charcoal/[0.08] bg-white/60",
             expanded ? "shadow-[0_8px_24px_rgba(61,47,37,0.06)]" : "hover:shadow-[0_4px_16px_rgba(61,47,37,0.04)] hover:border-brand-charcoal/[0.14]"
         )}>
             {/* 严重度色条 */}
-            <div className={cn("absolute left-0 top-0 bottom-0 w-1", meta.bar)} />
+            <div className={cn("absolute left-0 top-0 bottom-0 w-1.5", meta.bar)} />
 
-            {/* 卡头：整行可点击（折叠/展开切换） */}
+            {/* 卡头：整行可点击（折叠/展开切换）；折叠态附观察摘要预览提升可扫描性 */}
             <button
                 type="button"
                 onClick={onToggle}
                 aria-expanded={expanded}
                 aria-controls={bodyId}
-                className="w-full flex items-center justify-between gap-3 py-4 lg:py-5 pr-4 lg:pr-5 pl-6 lg:pl-7 text-left cursor-pointer group"
+                className="w-full flex items-center gap-3 py-4 lg:py-5 pr-4 lg:pr-5 pl-6 lg:pl-7 text-left cursor-pointer group"
             >
-                <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
-                    {/* 标题允许换行：AI 生成标题较长，truncate 会在展开后仍截断且无处可看全文 */}
-                    <h5 className="text-[15px] font-medium text-[var(--color-brand-espresso)]">
-                        {issue.title}
-                    </h5>
-                    <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium", meta.badge)}>
-                        {meta.label}
-                    </span>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="shrink-0 text-[11px] font-bold tracking-[0.08em] text-[var(--color-brand-taupe)]">
+                            {stepNo}
+                        </span>
+                        {/* 标题允许换行：AI 生成标题较长，truncate 会在展开后仍截断且无处可看全文 */}
+                        <h5 className="text-[15px] font-medium text-[var(--color-brand-espresso)]">
+                            {issue.title}
+                        </h5>
+                        <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium", meta.badge)}>
+                            {meta.label}
+                        </span>
+                    </div>
+                    {!expanded && issue.observation && (
+                        <p className="mt-1 text-[12px] text-brand-charcoal/45 font-light leading-relaxed line-clamp-1">
+                            {issue.observation}
+                        </p>
+                    )}
                 </div>
                 <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-brand-charcoal/[0.04] group-hover:bg-brand-charcoal/[0.08] transition-colors">
                     <ChevronDown
@@ -165,10 +178,10 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId }: {
                         )}>
                             {/* 我看到的 */}
                             <div>
-                                <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 tracking-wide mb-1.5">
+                                <StepLabel step={1}>
                                     <Eye className="w-3.5 h-3.5" strokeWidth={1.8} />
                                     我看到的
-                                </p>
+                                </StepLabel>
                                 <p className="text-sm lg:text-[15px] leading-[1.9] text-[var(--color-brand-espresso)]">
                                     {issue.observation}
                                 </p>
@@ -177,10 +190,10 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId }: {
 
                             {/* 为什么：直接诱因 / 间接诱因 */}
                             <div>
-                                <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 tracking-wide mb-1.5">
+                                <StepLabel step={2}>
                                     <HelpCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
                                     为什么会出现这个问题
-                                </p>
+                                </StepLabel>
                                 <div className="space-y-2.5">
                                     <div className="rounded-lg bg-brand-charcoal/[0.03] px-4 py-3">
                                         <p className="text-[11px] text-brand-charcoal/45 mb-1">直接诱因 · 皮肤层面</p>
@@ -196,10 +209,10 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId }: {
                             {/* 怎么办：护理方案 / 生活调整。
                                 用户读报告的落脚点是行动，用品牌暖色与"为什么"的中性灰拉开层级，成为全卡视觉重心 */}
                             <div>
-                                <p className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-brand-cocoa)] tracking-wide mb-1.5">
+                                <StepLabel step={3} emphasize>
                                     <Sparkles className="w-3.5 h-3.5" strokeWidth={1.8} />
                                     怎么办
-                                </p>
+                                </StepLabel>
                                 <div className="space-y-2.5">
                                     <div className="rounded-lg border border-[#C9A86C]/25 bg-[#FBF8F3] px-4 py-3">
                                         <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1">护理方案</p>
@@ -229,6 +242,21 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId }: {
                 )}
             </AnimatePresence>
         </article>
+    );
+}
+
+/** 推理链步骤标题：数字圆点 + 图标 + 标题（01 我看到的 → 02 为什么 → 03 怎么办） */
+function StepLabel({ step, children, emphasize = false }: { step: number; children: ReactNode; emphasize?: boolean }) {
+    return (
+        <p className={cn(
+            "flex items-center gap-2 text-[12px] font-medium tracking-wide mb-2",
+            emphasize ? "text-[var(--color-brand-cocoa)]" : "text-brand-charcoal/50"
+        )}>
+            <span className="shrink-0 w-[18px] h-[18px] rounded-full bg-[var(--color-brand-cocoa)]/10 text-[var(--color-brand-cocoa)] text-[10px] font-bold flex items-center justify-center">
+                {step}
+            </span>
+            {children}
+        </p>
     );
 }
 
@@ -274,6 +302,7 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
                                 expanded={expandedIssues.includes(idx)}
                                 onToggle={() => toggleIssue(idx)}
                                 bodyId={`issue-body-${idx}`}
+                                index={idx}
                             />
                         ))}
                     </div>

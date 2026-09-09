@@ -166,6 +166,23 @@ const sunMap: Record<string, string> = { low: "较少户外活动", medium: "日
 const freqMap: Record<string, string> = { basic: "简单护理（洁面+保湿）", moderate: "中等护理（精华+防晒）", advanced: "精细护理（多步骤）" };
 const budgetMap: Record<string, string> = { budget: "经济实惠（追求性价比，单品500元以内）", mid: "中等预算（兼顾成分与价格，单品500-1000元）", premium: "品质优先（追求卓越功效，单品1000-2000元）", luxury: "不设上限（顶级奢华体验，单品2000元以上）" };
 
+// 过敏史选项 key → 中文展示文本（questions.ts 的选项值是英文 key，
+// 原样注入 prompt 会被 AI 复述进报告文案，出现 "对acids和fragrance过敏" 这类中英混杂）
+const allergyMap: Record<string, string> = {
+    none: "无过敏史",
+    fragrance: "香精",
+    alcohol: "酒精",
+    acids: "酸类（如水杨酸、果酸）",
+    multiple: "多种成分",
+    unknown: "不确定具体成分",
+};
+
+/** 过敏史 key 列表 → 中文顿号串；未知 key 原样保留（向前兼容新增选项） */
+function formatAllergies(allergies: string | string[]): string {
+    const list = Array.isArray(allergies) ? allergies : [allergies];
+    return list.filter(Boolean).map((a) => allergyMap[a] || a).join("、");
+}
+
 /** 品牌成分白名单（v1/v2 prompt 共用，保证全站成分口径一致） */
 const BRAND_INGREDIENT_WHITELIST = `• 保湿修护：透明质酸钠（玻尿酸）、泛醇（维生素B5）、神经酰胺NP、依克多因、角鲨烷、二裂酵母发酵溶胞产物、半乳糖发酵滤液、α-葡聚糖寡糖、银耳多糖、氢化卵磷脂
 • 提亮抗氧：烟酰胺、α-熊果苷、光甘草定、抗坏血酸葡糖苷（AA2G）、抗坏血酸磷酸酯钠（SAP）、富勒烯、生育酚（维生素E）、曲克芦丁、人参根提取物、东京樱花叶提取物
@@ -256,7 +273,7 @@ export function buildTextAnalysisPrompt(params: {
 - 年龄段：${params.ageRange || "未知"}
 - 所在地：${params.location ? wrapUserData("location", sanitizePromptInput(params.location)) : "未知"}
 - 关注问题：${params.concerns?.join(", ") || "无"}
-${params.allergies ? `- 过敏史：${wrapUserData("allergies", sanitizePromptInput(Array.isArray(params.allergies) ? params.allergies.join("、") : params.allergies))}` : ""}
+${params.allergies ? `- 过敏史：${wrapUserData("allergies", sanitizePromptInput(formatAllergies(params.allergies)))}` : ""}
 ${params.pregnancyStatus === "yes" ? `- ⚠️ 孕期：是（品牌成分白名单本身不含维A酸类/高浓度水杨酸/氢醌等孕期禁忌成分，无需额外规避；孕期真正需要注意的是避免精油/香精类成分，见下方核心规则第3条）` : params.pregnancyStatus === "unknown" ? "- 孕期状态：不确定（按孕期标准谨慎推荐）" : ""}
 
 生活状态：
@@ -537,7 +554,7 @@ ${params.personaContent.formulaSuggestions?.length ? `- 公式要点：${params.
 - 年龄段：${params.ageRange || "未知"}
 - 所在地：${params.location ? wrapUserData("location", sanitizePromptInput(params.location)) : "未知"}
 - 关注问题：${params.concerns?.join(", ") || "无"}
-${params.allergies ? `- 过敏史：${wrapUserData("allergies", sanitizePromptInput(Array.isArray(params.allergies) ? params.allergies.join("、") : params.allergies))}` : ""}
+${params.allergies ? `- 过敏史：${wrapUserData("allergies", sanitizePromptInput(formatAllergies(params.allergies)))}` : ""}
 ${params.pregnancyStatus === "yes" ? `- ⚠️ 孕期：是（在此基础上额外排除孕期禁忌成分，见下方规则）` : params.pregnancyStatus === "unknown" ? "- 孕期状态：不确定（按孕期标准谨慎推荐）" : ""}
 
 生活状态（间接诱因分析的素材）：
