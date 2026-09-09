@@ -112,7 +112,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full sm:max-w-sm bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden"
+            className="relative z-10 w-full sm:max-w-sm bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮 */}
@@ -144,8 +144,9 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                       type="button"
                       onClick={() => setSkinState(key)}
                       aria-pressed={selected}
+                      style={selected ? { backgroundColor: `${meta.color}1A` } : undefined}
                       className={`flex flex-col items-center gap-1.5 flex-1 py-2 rounded-xl transition-colors cursor-pointer ${
-                        selected ? "bg-brand-charcoal/[0.06]" : "hover:bg-brand-charcoal/[0.03]"
+                        selected ? "" : "hover:bg-brand-charcoal/[0.03]"
                       }`}
                     >
                       <span style={{ color: selected ? meta.color : "#8A8A8A" }}>
@@ -183,8 +184,8 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                             aria-pressed={selected}
                             className={`px-3 py-1.5 rounded-full text-[12px] font-light border transition-colors cursor-pointer ${
                               selected
-                                ? "border-brand-charcoal/60 text-brand-charcoal bg-brand-charcoal/[0.06]"
-                                : "border-brand-charcoal/[0.12] text-brand-charcoal/55 hover:border-brand-charcoal/30"
+                                ? "border-[var(--color-brand-cocoa)]/50 text-[var(--color-brand-cocoa)] bg-[var(--color-brand-cocoa)]/[0.06]"
+                                : "border-brand-espresso/[0.12] text-brand-charcoal/55 hover:border-brand-espresso/30"
                             }`}
                           >
                             {tag}
@@ -202,14 +203,14 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                 onChange={(e) => setNote(e.target.value.slice(0, 200))}
                 rows={3}
                 placeholder="今天用了什么、肌肤有什么变化…（选填）"
-                className="w-full mb-6 px-4 py-3 text-[13px] font-light text-[#1A1A1A] bg-white border border-brand-charcoal/[0.12] rounded-2xl resize-none focus:outline-none focus:border-brand-charcoal/50 placeholder:text-brand-charcoal/35"
+                className="w-full mb-6 px-4 py-3 text-[13px] font-light text-[#1A1A1A] bg-white/60 border border-brand-espresso/[0.12] rounded-2xl resize-none focus:outline-none focus:border-[var(--color-brand-cocoa)]/50 placeholder:text-brand-charcoal/35"
               />
 
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full bg-[#5c4937] text-[#FDFBF7] text-[13px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c] disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[13px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c] disabled:opacity-50"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {existing ? "保存修改" : "完成打卡"}

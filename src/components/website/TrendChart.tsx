@@ -100,8 +100,8 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="近几次测肤综合评分趋势">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#00263E" stopOpacity="0.10" />
-            <stop offset="100%" stopColor="#00263E" stopOpacity="0" />
+            <stop offset="0%" stopColor="#5c4937" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#5c4937" stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -113,11 +113,11 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
               y1={yOf(v)}
               x2={W - PAD_R}
               y2={yOf(v)}
-              stroke="#00263E"
-              strokeOpacity="0.07"
+              stroke="#5c4937"
+              strokeOpacity="0.08"
               strokeDasharray="3 5"
             />
-            <text x={PAD_L - 8} y={yOf(v) + 3.5} textAnchor="end" fontSize="10.5" fill="#8A8A8A">
+            <text x={PAD_L - 8} y={yOf(v) + 3.5} textAnchor="end" fontSize="10.5" fill="#8c7a6b">
               {v}
             </text>
           </g>
@@ -128,13 +128,13 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
         <path
           d={linePath}
           fill="none"
-          stroke="#00263E"
+          stroke="#5c4937"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
-        {/* 数据点 + 数值 + 日期（点多时仅标最新值、隔点标日期，避免拥挤） */}
+        {/* 数据点 + 分数 + 日期（点多时仅标最新值、隔点标日期，避免拥挤） */}
         {points.map((p, i) => {
           const isLatest = i === n - 1;
           const showScore = n <= 6 || isLatest;
@@ -147,14 +147,14 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
               </circle>
               {/* 最新点光环：视觉锚点 */}
               {isLatest && (
-                <circle cx={p.x} cy={p.y} r={9} fill="none" stroke="#00263E" strokeOpacity="0.2" strokeWidth="1.5" />
+                <circle cx={p.x} cy={p.y} r={9} fill="none" stroke="#5c4937" strokeOpacity="0.25" strokeWidth="1.5" />
               )}
               <circle
                 cx={p.x}
                 cy={p.y}
                 r={isLatest ? 4.5 : 3}
-                fill={isLatest ? "#00263E" : "#FDFBF7"}
-                stroke="#00263E"
+                fill={isLatest ? "#5c4937" : "#F7F4EE"}
+                stroke="#5c4937"
                 strokeWidth="2"
                 className="pointer-events-none"
               />
@@ -165,13 +165,13 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
                   textAnchor={i === 0 ? "start" : "middle"}
                   fontSize="11"
                   fontWeight={isLatest ? 600 : 400}
-                  fill="#00263E"
+                  fill="#5c4937"
                 >
                   {p.score}
                 </text>
               )}
               {showDate && (
-                <text x={p.x} y={H - 6} textAnchor="middle" fontSize="10" fill="#8A8A8A">
+                <text x={p.x} y={H - 6} textAnchor="middle" fontSize="10" fill="#8c7a6b">
                   {fmtDay(p.date)}
                 </text>
               )}
