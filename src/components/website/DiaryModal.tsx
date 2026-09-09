@@ -424,9 +424,9 @@ export function DiaryModal() {
                 <button
                   onClick={closeDiaryModal}
                   aria-label="关闭"
-                  className="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
+                  className="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/35 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
                 >
-                  <X size={16} strokeWidth={2.5} />
+                  <X size={17} strokeWidth={1.5} />
                 </button>
               </div>
 
@@ -449,11 +449,11 @@ export function DiaryModal() {
                           type="button"
                           onClick={() => setHistoryView(false)}
                           aria-label="返回护肤档案"
-                          className="w-8 h-8 -ml-1 flex items-center justify-center rounded-full text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
+                          className="w-8 h-8 -ml-1 flex items-center justify-center rounded-full text-brand-charcoal/35 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
                         >
-                          <ChevronLeft className="w-4 h-4" strokeWidth={2} />
+                          <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
                         </button>
-                        <span className="text-[12px] text-brand-charcoal/50 font-light tracking-[0.05em]">
+                        <span className="text-[12px] text-brand-charcoal/45 font-light tracking-[0.05em]">
                           全部记录
                         </span>
                       </div>
