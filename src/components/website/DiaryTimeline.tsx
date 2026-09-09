@@ -10,7 +10,6 @@ import {
   Loader2,
   Meh,
   Pencil,
-  ScanFace,
   Smile,
   Trash2,
 } from "lucide-react";
@@ -147,8 +146,6 @@ export function DiaryTimeline({
     );
   }
 
-  const weekdayOf = (dateStr: string) =>
-    new Date(`${dateStr}T00:00:00.000Z`).toLocaleDateString("zh-CN", { timeZone: "UTC", weekday: "short" });
   const dayOf = (dateStr: string) => String(parseInt(dateStr.slice(8, 10), 10));
   const monthLabelOf = (dateStr: string) =>
     `${dateStr.slice(0, 4)} 年 ${parseInt(dateStr.slice(5, 7), 10)} 月`;
@@ -206,47 +203,43 @@ export function DiaryTimeline({
         return (
           <div key={group.dateStr}>
             {monthDivider && (
-              <div className="flex items-center gap-3 mb-3 mt-2 first:mt-0">
-                <span className="shrink-0 text-[11px] tracking-[0.2em] text-brand-charcoal/40">
+              <div className="mb-4 mt-3 first:mt-0">
+                <span className="text-[10px] tracking-[0.2em] text-brand-charcoal/35">
                   {monthDivider}
                 </span>
-                <span className="flex-1 h-px bg-brand-charcoal/[0.08]" />
               </div>
             )}
-            <div className="flex gap-4 md:gap-5">
-              {/* 左轴：星期 + 日号（藏青文字 + 细线，不做深色块） */}
-              <div className="w-10 shrink-0 pt-3 text-center">
-                <div className="text-[10px] tracking-[0.15em] text-brand-charcoal/45">
-                  {isToday ? "今天" : weekdayOf(group.dateStr)}
-                </div>
-                <div className={`text-xl font-serif leading-tight ${isToday ? "text-brand-charcoal font-medium" : "text-brand-charcoal/80"}`}>
-                  {dayOf(group.dateStr)}
+            <div className="flex gap-3 md:gap-4">
+              {/* 左轴：日号（极简，无星期）；今天以字面标注 */}
+              <div className="w-7 shrink-0 pt-0.5 text-center">
+                <div className={`text-base font-serif leading-tight ${isToday ? "text-brand-charcoal font-medium" : "text-brand-charcoal/75"}`}>
+                  {isToday ? "今" : dayOf(group.dateStr)}
                 </div>
               </div>
 
-              {/* 右侧事件列：细竖线串联 */}
-              <div className="relative flex-1 border-l border-brand-charcoal/10 pl-4 pb-6 space-y-2.5">
+              {/* 右侧事件列：细竖线串联，事件直接平铺（无卡片） */}
+              <div className="relative flex-1 border-l border-brand-espresso/[0.06] pl-5 pb-6 space-y-4">
                 {/* 今日打卡引导：今天没有任何事件时展示完整引导盒；有测肤等事件但无日记时补一条打卡入口 */}
                 {isToday && !visibleEvents.some((e) => e.kind === "diary") && (
                   visibleEvents.length === 0 ? (
                     <div className="relative">
-                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-espresso/30 bg-[#F7F4EE]" />
-                      <div className="rounded-2xl border border-dashed border-brand-espresso/15 px-4 py-3.5 flex items-center gap-3">
-                        <span className="flex-1 text-[13px] text-brand-charcoal/55 font-light">
+                      <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
+                      <div className="flex items-center gap-3">
+                        <span className="flex-1 text-[13px] text-brand-charcoal/45 font-light">
                           今天还没有记录
                         </span>
                         {onCheckIn && (
                           <button
                             type="button"
                             onClick={() => onCheckIn(null, todayStr)}
-                            className="shrink-0 min-h-[32px] px-3.5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium tracking-[0.05em] transition-colors hover:bg-[#4a3a2c] cursor-pointer"
+                            className="shrink-0 min-h-[30px] px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                           >
                             打卡
                           </button>
                         )}
                         <Link
                           href="/questions"
-                          className="shrink-0 min-h-[32px] inline-flex items-center px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
+                          className="shrink-0 min-h-[30px] inline-flex items-center px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
                         >
                           去测肤 →
                         </Link>
@@ -255,11 +248,11 @@ export function DiaryTimeline({
                   ) : (
                     onCheckIn && (
                       <div className="relative">
-                        <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-espresso/30 bg-[#F7F4EE]" />
+                        <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
                         <button
                           type="button"
                           onClick={() => onCheckIn(null, todayStr)}
-                          className="block w-full rounded-2xl border border-dashed border-brand-espresso/15 px-4 py-3 text-left text-[12px] text-brand-charcoal/55 font-light hover:border-brand-espresso/40 hover:text-brand-charcoal transition-colors cursor-pointer"
+                          className="text-left text-[12px] text-brand-charcoal/45 font-light hover:text-brand-charcoal transition-colors cursor-pointer"
                         >
                           今天还没有打卡，记录一下今日肌肤状态 →
                         </button>
@@ -274,11 +267,11 @@ export function DiaryTimeline({
                   onCheckIn &&
                   canBackfill(group.dateStr) && (
                     <div className="relative">
-                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-espresso/30 bg-[#F7F4EE]" />
+                      <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
                       <button
                         type="button"
                         onClick={() => onCheckIn(null, group.dateStr)}
-                        className="block w-full rounded-2xl border border-dashed border-brand-espresso/15 px-4 py-3 text-left text-[12px] text-brand-charcoal/45 font-light hover:border-brand-espresso/40 hover:text-brand-charcoal transition-colors cursor-pointer"
+                        className="text-left text-[12px] text-brand-charcoal/40 font-light hover:text-brand-charcoal transition-colors cursor-pointer"
                       >
                         补打卡 →
                       </button>
@@ -293,131 +286,124 @@ export function DiaryTimeline({
                     // 测肤自动条目带会话 id 时可跳转对应报告（同日已显示测肤里程碑时本卡会被隐藏，互不冲突）
                     const autoReportUrl = auto && ev.entry.sessionId ? `/reports/${ev.entry.sessionId}` : null;
                     return (
-                      <div key={`d-${ev.entry.id}-${i}`} className="relative">
+                      <div key={`d-${ev.entry.id}-${i}`} className="relative group">
                         <span
-                          className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-[#F7F4EE]"
+                          className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE]"
                           style={{ backgroundColor: meta.color }}
                         />
-                        <div className="rounded-2xl bg-white/70 border border-brand-espresso/[0.08] px-4 py-3.5 shadow-[0_2px_8px_rgba(61,47,37,0.03)] transition-colors hover:border-brand-espresso/[0.15]">
-                          {(onDeleteEntry || (isToday && onCheckIn)) && (
-                            <div className="flex justify-end gap-1 -mt-1 mb-1">
-                              {isToday && onCheckIn && (
-                                <button
-                                  type="button"
-                                  onClick={() => onCheckIn(ev.entry, todayStr)}
-                                  aria-label="编辑今日记录"
-                                  className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.06] transition-colors cursor-pointer"
+                        {/* 操作按钮：悬浮行尾，行内不占位（极简） */}
+                        <div className="absolute right-0 -top-0.5 hidden group-hover:flex items-center gap-0.5">
+                          {isToday && onCheckIn && (
+                            <button
+                              type="button"
+                              onClick={() => onCheckIn(ev.entry, todayStr)}
+                              aria-label="编辑今日记录"
+                              className="w-7 h-7 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
+                            >
+                              <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
+                            </button>
+                          )}
+                          {onDeleteEntry && (confirmDeleteId === ev.entry.id ? (
+                            <span className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                disabled={deletingId === ev.entry.id}
+                                onClick={() => onDeleteEntry(ev.entry)}
+                                className="h-7 px-2.5 flex items-center rounded-full bg-[#D44C47]/10 text-[#D44C47] text-[11px] font-light tracking-[0.05em] disabled:opacity-50 cursor-pointer"
+                              >
+                                确认删除
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="h-7 px-2.5 flex items-center rounded-full text-brand-charcoal/50 text-[11px] font-light hover:bg-brand-charcoal/[0.05] cursor-pointer"
+                              >
+                                取消
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(ev.entry.id)}
+                              aria-label="删除记录"
+                              className="w-7 h-7 flex items-center justify-center rounded-full text-brand-charcoal/30 hover:text-[#D44C47] hover:bg-[#D44C47]/[0.06] transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* 事件内容：平铺直叙，无卡片边框与底色 */}
+                        {autoReportUrl ? (
+                          <Link href={autoReportUrl} className="block pr-16">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="flex items-center gap-1 text-[12px] font-medium" style={{ color: meta.color }}>
+                                <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+                                {meta.label}
+                              </span>
+                              <span className="inline-flex items-center gap-0.5 text-[11px] text-brand-charcoal/40 group-hover:text-brand-charcoal transition-colors">
+                                查看报告
+                                <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                              </span>
+                            </div>
+                            {ev.entry.note && (
+                              <p className="mt-1 text-[13px] text-[#3d2f25]/75 font-light leading-relaxed">
+                                {ev.entry.note}
+                              </p>
+                            )}
+                          </Link>
+                        ) : (
+                          <div className="pr-16">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="flex items-center gap-1 text-[12px] font-medium" style={{ color: meta.color }}>
+                                <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+                                {meta.label}
+                              </span>
+                              {ev.entry.tags?.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="text-[11px] text-brand-charcoal/45"
                                 >
-                                  <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
-                                </button>
-                              )}
-                              {onDeleteEntry && (confirmDeleteId === ev.entry.id ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    disabled={deletingId === ev.entry.id}
-                                    onClick={() => onDeleteEntry(ev.entry)}
-                                    className="h-8 px-2.5 flex items-center rounded-full bg-[#D44C47]/10 text-[#D44C47] text-[11px] font-light tracking-[0.05em] disabled:opacity-50 cursor-pointer"
-                                  >
-                                    确认删除
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setConfirmDeleteId(null)}
-                                    className="h-8 px-2.5 flex items-center rounded-full text-brand-charcoal/50 text-[11px] font-light hover:bg-brand-charcoal/[0.05] cursor-pointer"
-                                  >
-                                    取消
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setConfirmDeleteId(ev.entry.id)}
-                                  aria-label="删除记录"
-                                  className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/30 hover:text-[#D44C47] hover:bg-[#D44C47]/[0.06] transition-colors cursor-pointer"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
-                                </button>
+                                  {tag}
+                                </span>
                               ))}
                             </div>
-                          )}
-                          {autoReportUrl ? (
-                            <Link href={autoReportUrl} className="group block">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span
-                                  className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1 rounded-full"
-                                  style={{ backgroundColor: `${meta.color}18`, color: meta.color }}
-                                >
-                                  <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
-                                  {meta.label}
-                                </span>
-                                <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-brand-charcoal/40 group-hover:text-brand-charcoal transition-colors">
-                                  查看报告
-                                  <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-                                </span>
-                              </div>
-                              {ev.entry.note && (
-                                <p className="mt-2 text-[13px] text-[#5E5E5E] font-light leading-relaxed">
-                                  {ev.entry.note}
-                                </p>
-                              )}
-                            </Link>
-                          ) : (
-                            <>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span
-                                  className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1 rounded-full"
-                                  style={{ backgroundColor: `${meta.color}18`, color: meta.color }}
-                                >
-                                  <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
-                                  {meta.label}
-                                </span>
-                                {ev.entry.tags?.map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className="text-[11px] text-brand-charcoal/50 border border-brand-espresso/[0.12] rounded-full px-2 py-0.5"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                              {ev.entry.note && (
-                                <p className="mt-2 text-[13px] text-[#5E5E5E] font-light leading-relaxed">
-                                  {ev.entry.note}
-                                </p>
-                              )}
-                              {/* 同日冲突提示：手动打卡与测肤评分同屏时，补一句客观评分帮助对照 */}
-                              {!auto && maxDayScore != null && (
-                                <p className="mt-2 text-[11px] text-brand-charcoal/40 font-light">
-                                  同日测肤 {maxDayScore} 分
-                                </p>
-                              )}
-                            </>
-                          )}
-                        </div>
+                            {ev.entry.note && (
+                              <p className="mt-1 text-[13px] text-[#3d2f25]/75 font-light leading-relaxed">
+                                {ev.entry.note}
+                              </p>
+                            )}
+                            {/* 同日冲突提示：手动打卡与测肤评分同屏时，补一句客观评分帮助对照 */}
+                            {!auto && maxDayScore != null && (
+                              <p className="mt-1 text-[11px] text-brand-charcoal/35 font-light">
+                                同日测肤 {maxDayScore} 分
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   }
 
-                  // 测肤里程碑
+                  // 测肤里程碑：同样去卡片化，实心圆点 + 单行文本链接
                   const result = ev.test.analysisResult;
                   const score = result?.faceAnalysis?.overallScore;
                   const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
                   return (
                     <div key={`t-${ev.test.sessionId}-${i}`} className="relative">
-                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-[#F7F4EE] bg-[var(--color-brand-cocoa)]" />
+                      <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE] bg-[var(--color-brand-cocoa)]" />
                       <Link
                         href={`/reports/${ev.test.sessionId}`}
-                        className="group flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[var(--color-brand-cocoa)] to-[#4a3a2c] px-4 py-3.5 text-white shadow-[0_4px_14px_rgba(61,47,37,0.12)] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(61,47,37,0.22)]"
+                        className="group flex items-center gap-2 pr-4"
                       >
-                        <ScanFace className="w-4 h-4 shrink-0 text-white/70" strokeWidth={1.5} />
-                        <span className="flex-1 min-w-0 text-[13px] font-light truncate">
-                          完成测肤{skinType ? ` · ${skinType}` : ""}
-                        </span>
-                        {score != null && score > 0 && (
-                          <span className="text-[13px] font-medium shrink-0">{score} 分</span>
+                        <span className="text-[12px] font-medium text-brand-charcoal">完成测肤</span>
+                        {skinType && (
+                          <span className="text-[12px] text-brand-charcoal/50 font-light truncate">{skinType}</span>
                         )}
-                        <ChevronRight className="w-3.5 h-3.5 shrink-0 text-white/50 group-hover:translate-x-0.5 transition-transform" />
+                        {score != null && score > 0 && (
+                          <span className="text-[12px] text-brand-charcoal/60 font-light shrink-0">{score} 分</span>
+                        )}
+                        <ChevronRight className="w-3 h-3 shrink-0 text-brand-charcoal/25 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
                       </Link>
                     </div>
                   );
