@@ -101,7 +101,7 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
             <span className="text-sm text-brand-charcoal/40 ml-1.5">分</span>
           </p>
           <p className="mt-1.5 text-[11px] text-brand-charcoal/40 font-light tracking-[0.08em]">
-            {latestDate} 测 · 近 {n} 天
+            {latestDate} 测
           </p>
         </div>
         {delta !== 0 && (

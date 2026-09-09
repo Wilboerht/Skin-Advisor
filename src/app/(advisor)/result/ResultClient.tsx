@@ -88,7 +88,7 @@ function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStat
                 <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                 {nickname} 的专属肌智派在线测肤报告
                 {skinStateLabel && (
-                    <span className="inline-flex items-center text-[11px] font-normal text-brand-charcoal/45 tracking-[0.06em] whitespace-nowrap">
+                    <span className="inline-flex h-[22px] px-2 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-[11px] font-bold text-[var(--color-brand-cocoa)] whitespace-nowrap">
                         {skinStateLabel}
                     </span>
                 )}

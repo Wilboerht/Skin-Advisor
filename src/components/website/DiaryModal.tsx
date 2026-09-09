@@ -67,6 +67,11 @@ function bustShortCache(): void {
   }
 }
 
+/** 时间窗截止时刻（N 天前）。模块级工具：react-hooks/purity 禁止组件作用域内调用 Date.now 等非纯函数 */
+function daysAgoCutoff(days: number): number {
+  return Date.now() - days * 24 * 60 * 60 * 1000;
+}
+
 /** 游客视图的装饰性示意曲线（无数值，不代表真实数据） */
 function GuestTrendCurve() {
   return (
@@ -166,11 +171,34 @@ export function DiaryModal() {
       const day = localDateStr(new Date(trends.dates[i]));
       byDay.set(day, { date: trends.dates[i], score: trends.scores[i] });
     }
-    const days = Array.from(byDay.values()).slice(-12);
+    const days = Array.from(byDay.values()).slice(-30); // 保留最近 30 天，供时间窗切换
     // 聚合后不足两个"天"无法构成趋势（如当天连测两次）→ 视为无趋势，走解锁引导
     if (days.length < 2) return null;
     return { dates: days.map((d) => d.date), scores: days.map((d) => d.score) };
   }, [trends]);
+
+  // 图表时间窗：近 7 天 / 近 30 天（默认 30 天，可切近 7 天聚焦近期）
+  const [trendRange, setTrendRange] = useState<7 | 30>(30);
+  // 时间窗截止时刻：渲染期禁止调用 Date.now 等非纯函数（react-hooks/purity），
+  // 由切换事件与挂载 effect 维护；null = 尚未初始化（渲染占位）
+  const [rangeCutoff, setRangeCutoff] = useState<number | null>(null);
+  useEffect(() => {
+    if (rangeCutoff === null) setRangeCutoff(daysAgoCutoff(trendRange));
+  }, [rangeCutoff, trendRange]);
+  const switchTrendRange = (r: 7 | 30) => {
+    setTrendRange(r);
+    setRangeCutoff(daysAgoCutoff(r));
+  };
+
+  // 按时间窗过滤后的趋势数据；窗口内测肤日不足 2 天 → null（该窗口无趋势可看）
+  const rangeTrends = useMemo<TrendsData | null>(() => {
+    if (!aggregatedTrends || rangeCutoff === null) return null;
+    const idx = aggregatedTrends.dates.findIndex((d) => new Date(d).getTime() >= rangeCutoff);
+    if (idx === -1) return null;
+    const dates = aggregatedTrends.dates.slice(idx);
+    const scores = aggregatedTrends.scores.slice(idx);
+    return dates.length >= 2 ? { dates, scores } : null;
+  }, [aggregatedTrends, rangeCutoff]);
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen && !checkIn.open, closeDiaryModal);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
@@ -453,7 +481,7 @@ export function DiaryModal() {
                         >
                           <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
                         </button>
-                        <span className="text-[12px] text-brand-charcoal/45 font-light tracking-[0.05em]">
+                        <span className="text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em]">
                           全部记录
                         </span>
                       </div>
@@ -519,22 +547,46 @@ export function DiaryModal() {
                 ) : (
                   /* ===== 登录：趋势 + 时间线 ===== */
                   <div>
-                    {/* 肌肤变化：标题行承载唯一辅助入口（全部记录），卡片内不再有头部行 */}
+                    {/* 肌肤变化：标题行承载时间窗切换与全部记录入口 */}
                     <section className="mb-8">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />
                           肌肤变化
                         </h3>
-                        {aggregatedTrends && (
-                          <button
-                            type="button"
-                            onClick={() => setHistoryView(true)}
-                            className="text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em] hover:text-brand-charcoal transition-colors cursor-pointer"
-                          >
-                            全部记录 →
-                          </button>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {aggregatedTrends && (
+                            <div className="flex items-center">
+                              {([7, 30] as const).map((r) => (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  onClick={() => switchTrendRange(r)}
+                                  aria-pressed={trendRange === r}
+                                  className={`relative px-2 h-8 text-[12px] transition-colors cursor-pointer ${
+                                    trendRange === r
+                                      ? "text-brand-charcoal font-medium"
+                                      : "text-brand-charcoal/45 hover:text-brand-charcoal"
+                                  }`}
+                                >
+                                  近 {r} 天
+                                  {trendRange === r && (
+                                    <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 h-[2px] w-4 rounded-full bg-[var(--color-brand-cocoa)]" />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {aggregatedTrends && (
+                            <button
+                              type="button"
+                              onClick={() => setHistoryView(true)}
+                              className="text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em] hover:text-brand-charcoal transition-colors cursor-pointer rounded-full px-2.5 py-1 hover:bg-brand-charcoal/[0.04]"
+                            >
+                              全部记录 →
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* 趋势区：与时间轴同风格的极简平铺（无卡片外壳，靠留白组织） */}
@@ -543,14 +595,24 @@ export function DiaryModal() {
                           <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
                         </div>
                       ) : aggregatedTrends ? (
-                        <div>
-                          <TrendChart trends={aggregatedTrends} />
-                          {recentCheckInCount >= 2 && (
-                            <div className="mt-7 pt-5 border-t border-brand-espresso/[0.06]">
-                              <CheckInTrend entries={entries} />
-                            </div>
-                          )}
-                        </div>
+                        rangeCutoff === null ? (
+                          <div className="h-32" />
+                        ) : rangeTrends ? (
+                          <div>
+                            <TrendChart trends={rangeTrends} />
+                            {recentCheckInCount >= 2 && (
+                              <div className="mt-7 pt-5 border-t border-brand-espresso/[0.06]">
+                                <CheckInTrend entries={entries} />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="py-6 text-center">
+                            <p className="text-[13px] text-brand-charcoal/45 font-light">
+                              近 {trendRange} 天内测肤不足 2 次，暂无趋势可看
+                            </p>
+                          </div>
+                        )
                       ) : recentCheckInCount >= 2 ? (
                         <div>
                           <CheckInTrend entries={entries} />
