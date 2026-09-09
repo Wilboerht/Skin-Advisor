@@ -1265,11 +1265,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             <button
                                 onClick={() => navPush('/')}
                                 disabled={isNavigating}
-                                className="justify-self-start inline-flex items-center gap-1 py-2 pr-2 text-[11px] sm:text-[12px] font-light tracking-[0.08em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors"
+                                className="justify-self-start inline-flex items-center gap-1.5 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95 disabled:opacity-40"
                                 aria-label="回到首页"
                             >
-                                <House className="w-3.5 h-3.5" strokeWidth={1.75} />
-                                <span className="hidden sm:inline">回到首页</span>
+                                <House className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
+                                <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">回到首页</span>
                             </button>
 
                             <Image
@@ -1484,29 +1484,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             </m.div>
                         )}
                     </AnimatePresence>
-
-                    {/* 翻页指示器（封面/报告双面常显，可点切换；封面临时不可用时仍可回看证书） */}
-                    <nav
-                        aria-label="报告翻页"
-                        className="fixed right-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2.5 p-1.5 rounded-full border border-brand-charcoal/10 bg-white/50 backdrop-blur-sm"
-                    >
-                        <button
-                            aria-label="第一面：肌智派证书"
-                            aria-current={pageIndex === 0 ? "page" : undefined}
-                            onClick={() => { if (pageIndex !== 0) handleOpenCover(); }}
-                            className={`p-1 rounded-full transition-colors ${pageIndex === 0 ? "bg-[var(--color-brand-cocoa)]" : "bg-transparent hover:bg-brand-charcoal/15"}`}
-                        >
-                            <span className={`block w-2.5 h-2.5 rounded-full border border-brand-charcoal/25 ${pageIndex === 0 ? "bg-white/40" : "bg-white/70"}`} />
-                        </button>
-                        <button
-                            aria-label="第二面：测肤报告"
-                            aria-current={pageIndex === 1 ? "page" : undefined}
-                            onClick={() => { if (pageIndex !== 1) handleFlipToReport(); }}
-                            className={`p-1 rounded-full transition-colors ${pageIndex === 1 ? "bg-[var(--color-brand-cocoa)]" : "bg-transparent hover:bg-brand-charcoal/15"}`}
-                        >
-                            <span className={`block w-2.5 h-2.5 rounded-full border border-brand-charcoal/25 ${pageIndex === 1 ? "bg-white/40" : "bg-white/70"}`} />
-                        </button>
-                    </nav>
 
                     {/* 报告页浮动操作区：回顶部 + 证书入口（分享裂变兜底），竖向堆叠不遮挡内容 */}
                     {pageIndex === 1 && (
