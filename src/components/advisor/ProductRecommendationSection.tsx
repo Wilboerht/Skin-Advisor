@@ -121,12 +121,12 @@ export function ProductRecommendationSection({
 
     return (
         <section className={cn("relative w-full pb-0 lg:pb-10", className)}>
-            {/* 标题 */}
+            {/* 标题：上方留白对齐"趋势对比→专业版报告"的视觉间距（卡片内边距 + 模块 gap 的同等量级） */}
             <m.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="text-center mb-6"
+                className="text-center pt-6 lg:pt-10 mb-6"
             >
                 <h2 className="text-lg lg:text-2xl font-bold text-brand-espresso tracking-wide">
                     {personaLabel ? `你的「${personaLabel}」方案落点` : "方案里的产品落点"}
