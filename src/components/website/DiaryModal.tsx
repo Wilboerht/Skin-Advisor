@@ -519,12 +519,23 @@ export function DiaryModal() {
                 ) : (
                   /* ===== 登录：趋势 + 时间线 ===== */
                   <div>
-                    {/* 肌肤变化：标题保持轻量（图标+文字），辅助信息全部收进卡片内部 */}
+                    {/* 肌肤变化：标题行承载唯一辅助入口（全部记录），卡片内不再有头部行 */}
                     <section className="mb-8">
-                      <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2 mb-4">
-                        <TrendingUp className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />
-                        肌肤变化
-                      </h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />
+                          肌肤变化
+                        </h3>
+                        {aggregatedTrends && (
+                          <button
+                            type="button"
+                            onClick={() => setHistoryView(true)}
+                            className="text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em] hover:text-brand-charcoal transition-colors cursor-pointer"
+                          >
+                            全部记录 →
+                          </button>
+                        )}
+                      </div>
 
                       {/* 趋势区卡片化：与报告页卡片家族一致的米色卡（图表内容平铺于卡内） */}
                       {!trendsLoaded || !entriesLoaded ? (
@@ -533,19 +544,6 @@ export function DiaryModal() {
                         </div>
                       ) : aggregatedTrends ? (
                         <div className="rounded-[20px] border border-brand-espresso/[0.08] bg-[#F5F2ED] p-5 shadow-[0_4px_16px_rgba(61,47,37,0.04)]">
-                          {/* 卡内头部行：统计口径 + 全部记录入口 */}
-                          <div className="flex items-center justify-between mb-4">
-                            <span className="text-[11px] text-brand-charcoal/45 font-light tracking-[0.1em]">
-                              近 {aggregatedTrends.scores.length} 天
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setHistoryView(true)}
-                              className="text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em] hover:text-brand-charcoal transition-colors cursor-pointer rounded-full px-2.5 py-1 hover:bg-brand-charcoal/[0.05]"
-                            >
-                              全部记录 →
-                            </button>
-                          </div>
                           <TrendChart trends={aggregatedTrends} />
                           {recentCheckInCount >= 2 && (
                             <div className="mt-5 pt-4 border-t border-dashed border-brand-espresso/[0.12]">
@@ -609,53 +607,45 @@ export function DiaryModal() {
                         </div>
                       </div>
 
-                      {/* 里程碑统计：2x2 统一网格（数值 + 标签同构，取代散落胶囊） */}
+                      {/* 里程碑统计：一行四格纯数字（无边框底色），视觉最轻 */}
                       {summary && (summary.totalCheckins > 0 || summary.testCount > 0) && (
-                        <div className="grid grid-cols-2 gap-2 mb-4">
-                          <div className="rounded-xl bg-white/60 border border-brand-espresso/[0.08] px-3.5 py-3 flex items-center gap-2.5">
-                            <span className="w-8 h-8 rounded-full bg-[#D9730D]/10 flex items-center justify-center shrink-0">
-                              <Flame className="w-4 h-4 text-[#D9730D]" strokeWidth={1.8} />
-                            </span>
-                            <div className="min-w-0">
-                              <p className="text-[15px] font-semibold text-brand-charcoal leading-none">
-                                {summary.currentStreak}<span className="text-[11px] font-normal text-brand-charcoal/50 ml-0.5">天</span>
-                              </p>
-                              <p className="text-[11px] text-brand-charcoal/50 font-light mt-1">连续打卡</p>
-                            </div>
+                        <div className="grid grid-cols-4 mb-5">
+                          <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                            <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
+                              {summary.currentStreak}
+                            </p>
+                            <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                              <Flame className="w-3 h-3 text-[#D9730D]" strokeWidth={1.8} />
+                              连续打卡
+                            </p>
                           </div>
-                          <div className="rounded-xl bg-white/60 border border-brand-espresso/[0.08] px-3.5 py-3 flex items-center gap-2.5">
-                            <span className="w-8 h-8 rounded-full bg-brand-charcoal/[0.06] flex items-center justify-center shrink-0">
-                              <CalendarCheck className="w-4 h-4 text-brand-charcoal/50" strokeWidth={1.8} />
-                            </span>
-                            <div className="min-w-0">
-                              <p className="text-[15px] font-semibold text-brand-charcoal leading-none">
-                                {summary.totalCheckins}<span className="text-[11px] font-normal text-brand-charcoal/50 ml-0.5">天</span>
-                              </p>
-                              <p className="text-[11px] text-brand-charcoal/50 font-light mt-1">累计打卡</p>
-                            </div>
+                          <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                            <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
+                              {summary.totalCheckins}
+                            </p>
+                            <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                              <CalendarCheck className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
+                              累计打卡
+                            </p>
                           </div>
-                          <div className="rounded-xl bg-white/60 border border-brand-espresso/[0.08] px-3.5 py-3 flex items-center gap-2.5">
-                            <span className="w-8 h-8 rounded-full bg-brand-charcoal/[0.06] flex items-center justify-center shrink-0">
-                              <ScanFace className="w-4 h-4 text-brand-charcoal/50" strokeWidth={1.8} />
-                            </span>
-                            <div className="min-w-0">
-                              <p className="text-[15px] font-semibold text-brand-charcoal leading-none">
-                                {summary.testCount}<span className="text-[11px] font-normal text-brand-charcoal/50 ml-0.5">次</span>
-                              </p>
-                              <p className="text-[11px] text-brand-charcoal/50 font-light mt-1">已测肤</p>
-                            </div>
+                          <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                            <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
+                              {summary.testCount}
+                            </p>
+                            <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                              <ScanFace className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
+                              已测肤
+                            </p>
                           </div>
                           {summary.longestStreak > 0 && (
-                            <div className="rounded-xl bg-white/60 border border-brand-espresso/[0.08] px-3.5 py-3 flex items-center gap-2.5">
-                              <span className="w-8 h-8 rounded-full bg-[#C9A86C]/15 flex items-center justify-center shrink-0">
-                                <Trophy className="w-4 h-4 text-[#C9A86C]" strokeWidth={1.8} />
-                              </span>
-                              <div className="min-w-0">
-                                <p className="text-[15px] font-semibold text-brand-charcoal leading-none">
-                                  {summary.longestStreak}<span className="text-[11px] font-normal text-brand-charcoal/50 ml-0.5">天</span>
-                                </p>
-                                <p className="text-[11px] text-brand-charcoal/50 font-light mt-1">最长连续</p>
-                              </div>
+                            <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                              <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
+                                {summary.longestStreak}
+                              </p>
+                              <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                                <Trophy className="w-3 h-3 text-[#C9A86C]" strokeWidth={1.8} />
+                                最长连续
+                              </p>
                             </div>
                           )}
                         </div>

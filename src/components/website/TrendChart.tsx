@@ -81,6 +81,13 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
   const fmtDay = (d: string) =>
     new Date(d).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" });
 
+  // 首末跨年时，首点日期补充年份（避免"一年前的 9.08"与"今年的 9.08"混淆）
+  const firstYear = new Date(trends.dates[0]).getFullYear();
+  const crossYear = firstYear !== new Date(trends.dates[n - 1]).getFullYear();
+
+  // 起点分数：绘图区水平基准线，直观表达"相对第一次测肤是改善还是回落"
+  const baselineY = yOf(scores[0]);
+
   // 标签抽稀预计算：真实时间轴下近邻点按最小横向间距跳过标签，避免日期/分数重叠
   const labelFlags = useMemo(() => {
     const flags: boolean[] = [];
@@ -112,7 +119,7 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
             <span className="text-sm text-brand-charcoal/40 ml-1.5">分</span>
           </p>
           <p className="mt-1.5 text-[11px] text-brand-charcoal/40 font-light tracking-[0.08em]">
-            {latestDate} 测
+            {latestDate} 测 · 近 {n} 天
           </p>
         </div>
         {delta !== 0 && (
@@ -134,8 +141,8 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
           </linearGradient>
         </defs>
 
-        {/* 横向网格线 + 左侧刻度 */}
-        {gridValues.map((v) => (
+        {/* 横向网格线 + 左侧刻度（最高刻度标注单位"分"，刻度自解释） */}
+        {gridValues.map((v, idx) => (
           <g key={v}>
             <line
               x1={PAD_L}
@@ -147,10 +154,25 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
               strokeDasharray="3 5"
             />
             <text x={PAD_L - 8} y={yOf(v) + 3.5} textAnchor="end" fontSize="10.5" fill="#8c7a6b">
-              {v}
+              {v}{idx === gridValues.length - 1 ? " 分" : ""}
             </text>
           </g>
         ))}
+
+        {/* 起点基准线：相对首次测肤的参照，线上=改善、线下=回落 */}
+        <line
+          x1={PAD_L}
+          y1={baselineY}
+          x2={W - PAD_R}
+          y2={baselineY}
+          stroke="#5c4937"
+          strokeOpacity="0.22"
+          strokeDasharray="2 6"
+          strokeWidth="1"
+        />
+        <text x={W - PAD_R} y={baselineY - 5} textAnchor="end" fontSize="9.5" fill="#8c7a6b">
+          起点 {scores[0]} 分
+        </text>
 
         {/* 面积 + 曲线 */}
         <path d={areaPath} fill={`url(#${gradientId})`} />
@@ -187,7 +209,7 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
                 strokeWidth="2"
                 className="pointer-events-none"
               />
-              {showLabel && (
+              {showLabel && (isLatest || n <= 3) && (
                 <text
                   x={isFirst ? p.x + 7 : p.x}
                   y={p.y - 9}
@@ -200,8 +222,15 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
                 </text>
               )}
               {showLabel && (
-                <text x={p.x} y={H - 6} textAnchor="middle" fontSize="10" fill="#8c7a6b">
-                  {fmtDay(p.date)}
+                <text
+                  x={p.x}
+                  y={H - 6}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight={isLatest ? 600 : 400}
+                  fill={isLatest ? "#5c4937" : "#8c7a6b"}
+                >
+                  {crossYear && isFirst ? `${firstYear}.${fmtDay(p.date)}` : fmtDay(p.date)}
                 </text>
               )}
             </g>
