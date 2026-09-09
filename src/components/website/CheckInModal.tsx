@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { Loader2, X } from "lucide-react";
 import { fetchWithCsrf } from "@/lib/fetch-client";
@@ -37,6 +37,8 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
   const [tags, setTags] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  // ref 双保险：state 更新有异步窗口，同步锁保证写入请求绝对只发一次
+  const savingRef = useRef(false);
 
   const targetDate = dateStr ?? localDateStr(new Date());
   const isToday = targetDate === localDateStr(new Date());
@@ -61,7 +63,8 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
   };
 
   const handleSave = async () => {
-    if (saving) return;
+    if (saving || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const res = await fetchWithCsrf("/api/user/diary", {
@@ -82,6 +85,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
       console.error("Diary check-in error:", err);
       toast.error("保存未成功，请稍后再试");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };

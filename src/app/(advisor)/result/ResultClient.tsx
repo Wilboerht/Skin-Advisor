@@ -353,13 +353,19 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     /** 生效的"上一次摘要"：服务端优先；游客无快照时为 null（首次）。
      *  快照与当前会话相同 → 视为首次（快照就是当前报告自己，不做自对比）。
+     *  快照携带 sessionId 但当前 session 尚未恢复 → pending（undefined，不渲染对比卡，
+     *  避免先渲染"与上次对比"再因 sessionId 恢复而消失的闪烁）。
      *  仅用于趋势对比板块与 cohort 埋点；封面页每次测肤都先展示，不受本判定影响 */
     const prevSum =
         serverPreviousSummary !== undefined
             ? serverPreviousSummary
-            : guestPrevSnapshot && guestPrevSnapshot.sessionId && guestPrevSnapshot.sessionId === sessionId
-                ? null
-                : guestPrevSnapshot;
+            : guestPrevSnapshot == null
+                ? guestPrevSnapshot // null = 确认为首次
+                : guestPrevSnapshot.sessionId
+                    ? sessionId
+                        ? guestPrevSnapshot.sessionId === sessionId ? null : guestPrevSnapshot
+                        : undefined // sessionId 未就绪：pending
+                    : guestPrevSnapshot; // 旧快照无 sessionId：无法区分，直接使用
 
     /** cohort 指标（统计用）：是否首测 / 派系是否变化 */
     const coverMeta = useMemo(() => {
@@ -563,8 +569,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // 封面页"重新测试"：正常消耗次数的全新测试（区别于性别不一致弹窗的免费重试）。
     // 清理本次会话链路（问答/照片/结果/分析中状态），保留昵称与性别等用户偏好；
-    // 免费重试标记一并清除，避免新流程误复用旧 sessionId 命中缓存结果
+    // 免费重试标记一并清除，避免新流程误复用旧 sessionId 命中缓存结果。
+    // ref 防重：清理+导航是破坏性操作，双击/连点只执行一次（state 更新有异步窗口）
+    const reTestLockRef = useRef(false);
     const handleReTest = () => {
+        if (reTestLockRef.current) return;
+        reTestLockRef.current = true;
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANSWERS);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
