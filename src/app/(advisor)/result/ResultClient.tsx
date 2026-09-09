@@ -1436,7 +1436,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     />
 
                                     {/* Global Footer */}
-                                    <footer className="w-full bg-transparent mt-0 pb-12">
+                                    <footer className="w-full bg-transparent mt-0">
                                         {/* Secondary actions */}
                                         <div className="flex flex-col items-center justify-center gap-2.5 mt-10 mb-10">
                                             <div className="flex flex-row flex-wrap justify-center gap-3">

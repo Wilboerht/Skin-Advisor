@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { AnimatePresence, motion as m } from "framer-motion";
+import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import { ChevronDown, Eye, HelpCircle, Sparkles, Stethoscope, Sun, Moon, HeartHandshake } from "lucide-react";
 import type { ConsultantReport, ConsultantIssue } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS } from "@/lib/advisor-utils";
@@ -17,9 +17,9 @@ import { cn } from "@/lib/utils";
  */
 
 const SEVERITY_META: Record<ConsultantIssue["severity"], { label: string; badge: string; bar: string }> = {
-    severe: { label: "需要重点关注", badge: "bg-red-100 text-red-700", bar: "bg-red-400" },
-    moderate: { label: "需要改善", badge: "bg-amber-100 text-amber-700", bar: "bg-amber-400" },
-    mild: { label: "轻微关注", badge: "bg-gray-100 text-gray-600", bar: "bg-[var(--color-brand-cocoa)]" },
+    severe: { label: "重点", badge: "bg-red-100 text-red-700", bar: "bg-red-400" },
+    moderate: { label: "改善", badge: "bg-amber-100 text-amber-700", bar: "bg-amber-400" },
+    mild: { label: "轻微", badge: "bg-gray-100 text-gray-600", bar: "bg-gray-300" },
 };
 
 const GRADE_LABELS: Record<string, string> = {
@@ -53,6 +53,13 @@ function SectionTitle({ children, en }: { children: ReactNode; en?: string }) {
     );
 }
 
+// 分数语义色：与十维口径一致（<40 红 / <55 琥珀 / 其余中性），让用户一眼判断分数好坏
+function scoreTone(score: number): string {
+    if (score < 40) return "text-red-600";
+    if (score < 55) return "text-amber-600";
+    return "text-brand-charcoal/70";
+}
+
 function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensions?: ConsultantReportProps["dimensions"] }) {
     if (!dimensions || issue.relatedDimensions.length === 0) return null;
     const chips = issue.relatedDimensions
@@ -77,25 +84,36 @@ function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensio
                     key={chip.key}
                     className="inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/12 bg-white/70 px-2.5 py-1 text-[11px] text-brand-charcoal/70 font-light"
                 >
-                    {chip.label} {chip.score} 分{chip.grade ? ` · ${chip.grade}` : ""}
+                    {chip.label}
+                    <span className={cn("font-medium", scoreTone(chip.score))}>
+                        {chip.score} 分{chip.grade ? ` · ${chip.grade}` : ""}
+                    </span>
                 </span>
             ))}
         </div>
     );
 }
 
-function IssueCard({ issue, dimensions, expanded, onToggle }: {
+function IssueCard({ issue, dimensions, expanded, onToggle, bodyId }: {
     issue: ConsultantIssue;
     dimensions?: ConsultantReportProps["dimensions"];
-    /** 是否展开（手风琴：同屏仅一张展开，由父组件控制） */
+    /** 是否展开（支持同时展开多张，由父组件控制） */
     expanded: boolean;
     onToggle: () => void;
+    /** 卡体 id，供卡头按钮 aria-controls 关联 */
+    bodyId: string;
 }) {
     const meta = SEVERITY_META[issue.severity] ?? SEVERITY_META.mild;
+    const isSevere = issue.severity === "severe";
+    const reduceMotion = useReducedMotion();
 
     return (
-        <div className={cn(
-            "relative rounded-xl border border-brand-charcoal/[0.08] bg-white/80 overflow-hidden transition-all duration-200",
+        <article className={cn(
+            "relative rounded-xl border overflow-hidden motion-safe:transition-all motion-safe:duration-200",
+            // 重点问题整卡淡红 tint：扫读时严重程度一眼可辨，无需依赖细色条
+            isSevere
+                ? "border-red-200/50 bg-red-50/50"
+                : "border-brand-charcoal/[0.08] bg-white/80",
             expanded ? "shadow-[0_8px_24px_rgba(61,47,37,0.06)]" : "hover:shadow-[0_4px_16px_rgba(61,47,37,0.04)] hover:border-brand-charcoal/[0.14]"
         )}>
             {/* 严重度色条 */}
@@ -106,10 +124,12 @@ function IssueCard({ issue, dimensions, expanded, onToggle }: {
                 type="button"
                 onClick={onToggle}
                 aria-expanded={expanded}
+                aria-controls={bodyId}
                 className="w-full flex items-center justify-between gap-3 py-4 lg:py-5 pr-4 lg:pr-5 pl-6 lg:pl-7 text-left cursor-pointer group"
             >
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <h5 className="text-[15px] font-medium text-[var(--color-brand-espresso)] truncate">
+                <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+                    {/* 标题允许换行：AI 生成标题较长，truncate 会在展开后仍截断且无处可看全文 */}
+                    <h5 className="text-[15px] font-medium text-[var(--color-brand-espresso)]">
                         {issue.title}
                     </h5>
                     <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium", meta.badge)}>
@@ -119,7 +139,7 @@ function IssueCard({ issue, dimensions, expanded, onToggle }: {
                 <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-brand-charcoal/[0.04] group-hover:bg-brand-charcoal/[0.08] transition-colors">
                     <ChevronDown
                         className={cn(
-                            "w-4 h-4 text-brand-charcoal/40 group-hover:text-brand-charcoal/60 transition-transform duration-200",
+                            "w-4 h-4 text-brand-charcoal/40 group-hover:text-brand-charcoal/60 motion-safe:transition-transform motion-safe:duration-200",
                             expanded && "rotate-180"
                         )}
                         strokeWidth={2}
@@ -127,18 +147,22 @@ function IssueCard({ issue, dimensions, expanded, onToggle }: {
                 </span>
             </button>
 
-            {/* 卡体：默认折叠，展开动画（高度 + 透明度） */}
+            {/* 卡体：默认折叠，展开动画（高度 + 透明度；减弱动效偏好时瞬时切换） */}
             <AnimatePresence initial={false}>
                 {expanded && (
                     <m.div
                         key="issue-body"
+                        id={bodyId}
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeInOut" }}
                         className="overflow-hidden"
                     >
-                        <div className="px-5 lg:px-6 pl-6 lg:pl-7 pb-5 lg:pb-6 pt-4 lg:pt-5 space-y-5 border-t border-brand-charcoal/[0.05]">
+                        <div className={cn(
+                            "pl-6 pr-5 lg:pl-7 lg:pr-6 pb-5 lg:pb-6 pt-4 lg:pt-5 space-y-5 border-t",
+                            isSevere ? "border-red-200/40" : "border-brand-charcoal/[0.05]"
+                        )}>
                             {/* 我看到的 */}
                             <div>
                                 <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 tracking-wide mb-1.5">
@@ -169,34 +193,42 @@ function IssueCard({ issue, dimensions, expanded, onToggle }: {
                                 </div>
                             </div>
 
-                            {/* 怎么办：护理方案 / 生活方案 */}
+                            {/* 怎么办：护理方案 / 生活调整。
+                                用户读报告的落脚点是行动，用品牌暖色与"为什么"的中性灰拉开层级，成为全卡视觉重心 */}
                             <div>
-                                <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 tracking-wide mb-1.5">
+                                <p className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-brand-cocoa)] tracking-wide mb-1.5">
                                     <Sparkles className="w-3.5 h-3.5" strokeWidth={1.8} />
                                     怎么办
                                 </p>
                                 <div className="space-y-2.5">
-                                    <div className="rounded-lg border border-brand-charcoal/[0.08] px-4 py-3">
-                                        <p className="text-[11px] text-brand-charcoal/45 mb-1">护理方案</p>
+                                    <div className="rounded-lg border border-[#C9A86C]/25 bg-[#FBF8F3] px-4 py-3">
+                                        <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1">护理方案</p>
                                         <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{issue.skincarePlan}</p>
                                     </div>
-                                    <div className="rounded-lg border border-brand-charcoal/[0.08] px-4 py-3">
-                                        <p className="text-[11px] text-brand-charcoal/45 mb-1">生活调整</p>
+                                    <div className="rounded-lg border border-[#C9A86C]/25 bg-[#FBF8F3] px-4 py-3">
+                                        <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1">生活调整</p>
                                         <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{issue.lifestylePlan}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* 就医边界 */}
-                            <p className="flex items-start gap-1.5 text-[12px] leading-relaxed text-brand-charcoal/45">
-                                <Stethoscope className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.8} />
-                                {issue.medicalBoundary}
-                            </p>
+                            {/* 就医边界：重度问题升级为醒目提示框（安全信息不能被滑过去），其余保持低调 */}
+                            {isSevere ? (
+                                <p className="flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200/60 px-3 py-2.5 text-[12px] leading-relaxed text-amber-900">
+                                    <Stethoscope className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.8} />
+                                    {issue.medicalBoundary}
+                                </p>
+                            ) : (
+                                <p className="flex items-start gap-1.5 text-[12px] leading-relaxed text-brand-charcoal/45">
+                                    <Stethoscope className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.8} />
+                                    {issue.medicalBoundary}
+                                </p>
+                            )}
                         </div>
                     </m.div>
                 )}
             </AnimatePresence>
-        </div>
+        </article>
     );
 }
 
@@ -208,8 +240,16 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
     // 防御历史脏数据：normalizeAnalysisResult 已归一化，这里再兜底非数组场景
     const issues = Array.isArray(report.issues) ? report.issues : [];
     const strengths = Array.isArray(report.strengths) ? report.strengths : [];
-    // 手风琴：默认全部折叠（null），展开一张时另一张自动收起
-    const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
+    // 默认展开第一张重点卡（无重点则第一张）：「我看到的」证据是建立信任的第一屏内容，不全藏起。
+    // 允许同时展开多张：问题之间往往相关（暗沉×色斑等），互斥手风琴会打断对比阅读
+    const [expandedIssues, setExpandedIssues] = useState<number[]>(() => {
+        const firstSevere = issues.findIndex((i) => i.severity === "severe");
+        return [firstSevere >= 0 ? firstSevere : 0];
+    });
+    const toggleIssue = (idx: number) =>
+        setExpandedIssues((prev) =>
+            prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
+        );
 
     return (
         <div className="space-y-10 lg:space-y-12">
@@ -231,8 +271,9 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
                                 key={`${issue.title}-${idx}`}
                                 issue={issue}
                                 dimensions={dimensions}
-                                expanded={expandedIssue === idx}
-                                onToggle={() => setExpandedIssue(prev => (prev === idx ? null : idx))}
+                                expanded={expandedIssues.includes(idx)}
+                                onToggle={() => toggleIssue(idx)}
+                                bodyId={`issue-body-${idx}`}
                             />
                         ))}
                     </div>

@@ -101,10 +101,11 @@
 }
 
 .main {
-    /* 内容区域保持原有宽度（max-w 900 + 16/24px 边距），仅顶部栏与 questions 页对齐 */
+    /* 内容区域保持原有宽度（max-w 900 + 16/24px 边距），仅顶部栏与 questions 页对齐。
+       底部留白含 safe-area：footer 不再自带 pb，统一由 main 收口 */
     max-width: 900px;
     margin: 0 auto;
-    padding: 0 24px 32px;
+    padding: 0 24px calc(28px + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -113,6 +114,6 @@
 
 @media (max-width: 768px) {
     .main {
-        padding: 0 16px 24px;
+        padding: 0 16px calc(20px + env(safe-area-inset-bottom, 0px));
     }
 }
