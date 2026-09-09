@@ -77,26 +77,31 @@ async function waitForImages(container: HTMLElement): Promise<void> {
     );
 }
 
-// 两页版式共享页头：归属标题 + 拍摄时肌肤状态印章（logo 已上移到固定顶部栏）
+// 两页版式共享页头：归属标题 + 拍摄时肌肤状态标签（logo 已上移到固定顶部栏）
 function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStateValue?: string | null }) {
     const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
+    // 状态圆点语义：素颜/洗后为中性色；防晒/带妆对判定口径有影响，用琥珀色温和提示
+    const isCaution = skinStateValue === "light_makeup" || skinStateValue === "heavy_makeup" || skinStateValue === "sunscreen";
+
     return (
         <div className="w-full flex flex-col items-center pt-6 lg:pt-8">
-            <p className="mt-0 mb-4 lg:mb-6 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center">
-                {/* 标题文字独立成块，绝对居中；印章 absolute 定位，不参与布局流、不影响标题位置 */}
-                <span className="relative inline-flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
-                    {nickname} 的专属肌智派在线测肤报告
-                    {skinStateLabel && (
-                        <span
-                            title="本次测肤状态"
-                            className="absolute left-full ml-2 -top-1 lg:-top-1.5 inline-flex items-center px-2 py-0.5 rounded-[3px] border-2 border-[#C45A4A] text-[#C45A4A] text-[11px] font-medium tracking-[0.22em] leading-none rotate-[-3deg] shadow-[inset_0_0_0_1px_rgba(196,90,74,0.5)] select-none whitespace-nowrap"
-                        >
-                            {skinStateLabel}
-                        </span>
-                    )}
-                </span>
+            <p className="mt-0 mb-2 lg:mb-2.5 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
+                {nickname} 的专属肌智派在线测肤报告
             </p>
+
+            {/* 拍摄时肌肤状态：与「趋势对比/专业版报告」同家族的标签（标题下方居中，不挤占标题流） */}
+            {skinStateLabel && (
+                <div className="mb-4 lg:mb-6">
+                    <span className="relative z-10 inline-flex h-[24px] px-2.5 items-center justify-center gap-1.5 rounded-full border border-[var(--color-brand-charcoal)]/15 bg-white/60 text-xs font-medium text-[var(--color-brand-charcoal)] lg:h-[26px] lg:px-3 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap">
+                        <span
+                            aria-hidden="true"
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${isCaution ? "bg-amber-500" : "bg-brand-charcoal/40"}`}
+                        />
+                        {skinStateLabel}
+                    </span>
+                </div>
+            )}
         </div>
     );
 }
