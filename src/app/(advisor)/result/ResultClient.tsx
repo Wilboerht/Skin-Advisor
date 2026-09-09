@@ -1368,13 +1368,21 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 <div className={`${styles.main} lg:gap-8`}>
                                     {/* 拍摄时肌肤状态：影响分析口径的说明，置于报告正文最顶部（趋势对比/报告卡之前） */}
                                     {skinStateValue && SKIN_STATE_LABELS[skinStateValue] && (
-                                        <div className="flex flex-col items-center gap-1">
-                                            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/15 bg-white/60 px-3 py-1 text-[11px] text-brand-charcoal/60 font-light tracking-[0.05em]">
-                                                <Info className="w-3 h-3 text-brand-charcoal/40" strokeWidth={1.5} />
-                                                本次测肤状态：{SKIN_STATE_LABELS[skinStateValue]}
+                                        <div className="flex flex-col items-center gap-2">
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-brand-charcoal/10 bg-white/70 backdrop-blur-sm px-3.5 py-1.5 shadow-[0_1px_3px_rgba(61,47,37,0.06)]">
+                                                <span className="w-5 h-5 rounded-full bg-[var(--color-brand-cocoa)]/10 flex items-center justify-center shrink-0">
+                                                    <Info className="w-3 h-3 text-[var(--color-brand-cocoa)]" strokeWidth={2} />
+                                                </span>
+                                                <span className="text-[12px] text-brand-charcoal/50 font-light tracking-[0.06em]">
+                                                    本次测肤状态
+                                                </span>
+                                                <span className="text-[12px] font-medium text-[var(--color-brand-espresso)] tracking-[0.04em]">
+                                                    {SKIN_STATE_LABELS[skinStateValue]}
+                                                </span>
                                             </span>
                                             {isMakeupState(skinStateValue) && (
-                                                <p className="text-[11px] text-brand-charcoal/40 font-light tracking-[0.04em]">
+                                                <p className="flex items-center gap-1 text-[11px] text-amber-700/80 font-light tracking-[0.04em]">
+                                                    <AlertCircle className="w-3 h-3 shrink-0" strokeWidth={1.75} />
                                                     带妆拍摄，色斑、泛红与肤色相关结果仅供参考
                                                 </p>
                                             )}
