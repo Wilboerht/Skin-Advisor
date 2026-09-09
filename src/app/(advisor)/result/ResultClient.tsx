@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { ArrowUp, House, Gift, ArrowRight, AlertCircle, Sparkles, Info, X, ScanFace } from "lucide-react";
+import { ArrowUp, House, Gift, ArrowRight, AlertCircle, Sparkles, X, ScanFace } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -31,7 +31,7 @@ import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
 import { buildFocusProblems, type LifestyleAnswers } from "@/lib/problem-solutions";
-import { SKIN_STATE_LABELS, isMakeupState } from "@/lib/skin-state";
+import { SKIN_STATE_LABELS } from "@/lib/skin-state";
 
 // Re-export for backward compatibility with existing imports
 export { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -77,13 +77,23 @@ async function waitForImages(container: HTMLElement): Promise<void> {
     );
 }
 
-// 两页版式共享页头：归属标题（logo 已上移到固定顶部栏，见 styles.topBar）
-function ResultHeader({ nickname }: { nickname: string }) {
+// 两页版式共享页头：归属标题 + 拍摄时肌肤状态印章（logo 已上移到固定顶部栏）
+function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStateValue?: string | null }) {
+    const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
     return (
         <div className="w-full flex flex-col items-center pt-6 lg:pt-8">
-            <p className="mt-0 mb-4 lg:mb-6 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center gap-2">
+            <p className="mt-0 mb-4 lg:mb-6 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
                 <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                 {nickname} 的专属肌智派在线测肤报告
+                {/* 拍摄时肌肤状态：印章式 tag（朱砂红双线描边 + 轻微旋转） */}
+                {skinStateLabel && (
+                    <span
+                        title="本次测肤状态"
+                        className="inline-flex items-center px-2 py-0.5 rounded-[3px] border-2 border-[#C45A4A] text-[#C45A4A] text-[11px] font-medium tracking-[0.22em] leading-none rotate-[-3deg] shadow-[inset_0_0_0_1px_rgba(196,90,74,0.5)] select-none whitespace-nowrap"
+                    >
+                        {skinStateLabel}
+                    </span>
+                )}
             </p>
         </div>
     );
@@ -1314,7 +1324,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeInOut" }}
                             >
-                                <ResultHeader nickname={userNickname} />
+                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
                                 <div className={`${styles.main} lg:gap-8`}>
                                     <section aria-label="肌智派证书（第一面）">
                                         <ShareCardPage
@@ -1352,7 +1362,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 {/* Save Report Banner for unauthenticated users */}
                                 <SaveReportBanner className="hidden md:block" />
 
-                                <ResultHeader nickname={userNickname} />
+                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
 
                                 {/* Validation Warning Banner */}
                                 {faceAnalysis?.validation && !faceAnalysis.validation.isValid && !dismissValidationWarning && (
@@ -1382,29 +1392,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 {/* Main Content（layout 已提供唯一 <main> 地标，这里用 div 避免嵌套）。
                                     所有板块统一在 styles.main 容器内，由 gap（24/32px）规范间距、滚动同宽对齐 */}
                                 <div className={`${styles.main} lg:gap-8`}>
-                                    {/* 拍摄时肌肤状态：影响分析口径的说明，置于报告正文最顶部（趋势对比/报告卡之前） */}
-                                    {skinStateValue && SKIN_STATE_LABELS[skinStateValue] && (
-                                        <div className="flex flex-col items-center gap-2">
-                                            <span className="inline-flex items-center gap-2 rounded-full border border-brand-charcoal/10 bg-white/70 backdrop-blur-sm px-3.5 py-1.5 shadow-[0_1px_3px_rgba(61,47,37,0.06)]">
-                                                <span className="w-5 h-5 rounded-full bg-[var(--color-brand-cocoa)]/10 flex items-center justify-center shrink-0">
-                                                    <Info className="w-3 h-3 text-[var(--color-brand-cocoa)]" strokeWidth={2} />
-                                                </span>
-                                                <span className="text-[12px] text-brand-charcoal/50 font-light tracking-[0.06em]">
-                                                    本次测肤状态
-                                                </span>
-                                                <span className="text-[12px] font-medium text-[var(--color-brand-espresso)] tracking-[0.04em]">
-                                                    {SKIN_STATE_LABELS[skinStateValue]}
-                                                </span>
-                                            </span>
-                                            {isMakeupState(skinStateValue) && (
-                                                <p className="flex items-center gap-1 text-[11px] text-amber-700/80 font-light tracking-[0.04em]">
-                                                    <AlertCircle className="w-3 h-3 shrink-0" strokeWidth={1.75} />
-                                                    带妆拍摄，色斑、泛红与肤色相关结果仅供参考
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-
                                     <section aria-label="测肤报告（第二面）">
                                         <ReportPage
                                             result={result}
