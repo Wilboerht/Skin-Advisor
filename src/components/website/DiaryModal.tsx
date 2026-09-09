@@ -537,39 +537,39 @@ export function DiaryModal() {
                         )}
                       </div>
 
-                      {/* 趋势区卡片化：与报告页卡片家族一致的米色卡（图表内容平铺于卡内） */}
+                      {/* 趋势区：与时间轴同风格的极简平铺（无卡片外壳，靠留白组织） */}
                       {!trendsLoaded || !entriesLoaded ? (
-                        <div className="rounded-[20px] border border-brand-espresso/[0.08] bg-white/50 h-32 flex items-center justify-center">
+                        <div className="h-32 flex items-center justify-center">
                           <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
                         </div>
                       ) : aggregatedTrends ? (
-                        <div className="rounded-[20px] border border-brand-espresso/[0.08] bg-[#F5F2ED] p-5 shadow-[0_4px_16px_rgba(61,47,37,0.04)]">
+                        <div>
                           <TrendChart trends={aggregatedTrends} />
                           {recentCheckInCount >= 2 && (
-                            <div className="mt-5 pt-4 border-t border-dashed border-brand-espresso/[0.12]">
+                            <div className="mt-7 pt-5 border-t border-brand-espresso/[0.06]">
                               <CheckInTrend entries={entries} />
                             </div>
                           )}
                         </div>
                       ) : recentCheckInCount >= 2 ? (
-                        <div className="rounded-[20px] border border-brand-espresso/[0.08] bg-[#F5F2ED] p-5 shadow-[0_4px_16px_rgba(61,47,37,0.04)]">
+                        <div>
                           <CheckInTrend entries={entries} />
-                          <p className="mt-3 text-[11px] text-brand-charcoal/40 font-light text-center">
+                          <p className="mt-3 text-[11px] text-brand-charcoal/35 font-light text-center">
                             完成两次不同日期的测肤后，可叠加查看测肤评分趋势
                           </p>
                         </div>
                       ) : (
-                        /* 解锁引导：与报告页登录解锁块同款金色虚线卡 */
-                        <div className="rounded-2xl border border-dashed border-[#C9A86C]/40 bg-gradient-to-br from-[#FBF8F3] to-[var(--color-brand-cream)] p-6 text-center">
+                        /* 解锁引导：极简居中（无框），CTA 按钮承载行动感 */
+                        <div className="py-6 text-center">
                           <p className="text-[13px] text-brand-charcoal/55 font-light mb-1.5">
                             完成两次不同日期的测肤后解锁肌肤变化
                           </p>
-                          <p className="text-[13px] text-brand-charcoal/50 font-light mb-4">
+                          <p className="text-[13px] text-brand-charcoal/45 font-light mb-4">
                             定期测肤，看见肌肤的真实变化
                           </p>
                           <Link
                             href="/questions"
-                            className="inline-flex items-center justify-center px-4 h-8 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium tracking-[0.05em] transition-colors hover:bg-[#4a3a2c]"
+                            className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium tracking-[0.05em] transition-colors hover:bg-[#4a3a2c]"
                           >
                             去测肤 →
                           </Link>
@@ -584,8 +584,8 @@ export function DiaryModal() {
                           <NotebookPen className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />
                           护肤历程
                         </h3>
-                        {/* 视图切换：时间线 / 日历热力图 */}
-                        <div className="flex items-center rounded-full border border-brand-espresso/[0.12] bg-white/50 p-0.5">
+                        {/* 视图切换：极简文字 tab，选中深色 + 底部短横线 */}
+                        <div className="flex items-center">
                           {([
                             { key: false, label: "时间线" },
                             { key: true, label: "日历" },
@@ -595,13 +595,16 @@ export function DiaryModal() {
                               type="button"
                               onClick={() => setCalendarView(v.key)}
                               aria-pressed={calendarView === v.key}
-                              className={`px-3 h-7 rounded-full text-[12px] font-medium tracking-[0.05em] transition-colors cursor-pointer ${
+                              className={`relative px-2.5 h-8 text-[12px] transition-colors cursor-pointer ${
                                 calendarView === v.key
-                                  ? "bg-[var(--color-brand-cocoa)] text-white shadow-[0_1px_3px_rgba(61,47,37,0.2)]"
-                                  : "text-brand-charcoal/50 hover:text-brand-charcoal"
+                                  ? "text-brand-charcoal font-medium"
+                                  : "text-brand-charcoal/45 hover:text-brand-charcoal"
                               }`}
                             >
                               {v.label}
+                              {calendarView === v.key && (
+                                <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 h-[2px] w-4 rounded-full bg-[var(--color-brand-cocoa)]" />
+                              )}
                             </button>
                           ))}
                         </div>

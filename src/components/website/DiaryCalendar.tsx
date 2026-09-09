@@ -45,14 +45,14 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
     dateStr < todayStr && isDiaryDateInRange(parseClientDate(dateStr)!, new Date());
 
   return (
-    <div className="rounded-2xl bg-white border border-brand-charcoal/[0.06] px-4 py-4">
+    <div>
       {/* 月份导航 */}
       <div className="flex items-center justify-between mb-4">
         <button
           type="button"
           onClick={() => shiftMonth(-1)}
           aria-label="上个月"
-          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/45 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4" strokeWidth={2} />
         </button>
@@ -63,7 +63,7 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
           type="button"
           onClick={() => shiftMonth(1)}
           aria-label="下个月"
-          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/45 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
         >
           <ChevronRight className="w-4 h-4" strokeWidth={2} />
         </button>
@@ -72,14 +72,14 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
       {/* 星期表头 */}
       <div className="grid grid-cols-7 mb-1.5">
         {WEEKDAYS.map((w) => (
-          <span key={w} className="text-center text-[11px] text-brand-charcoal/40 font-light">
+          <span key={w} className="text-center text-[11px] text-brand-charcoal/35 font-light">
             {w}
           </span>
         ))}
       </div>
 
-      {/* 日期格 */}
-      <div className="grid grid-cols-7 gap-1">
+      {/* 日期格：极简平铺——有记录才着色，无记录透明底只显淡灰日号 */}
+      <div className="grid grid-cols-7 gap-1.5">
         {Array.from({ length: leadBlanks }).map((_, i) => (
           <span key={`blank-${i}`} />
         ))}
@@ -92,9 +92,9 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
 
           const cell = (
             <div
-              className={`relative aspect-square rounded-lg flex items-center justify-center text-[12px] font-light transition-colors ${
-                isToday ? "ring-1 ring-brand-charcoal/60" : ""
-              } ${entry ? "" : clickable ? "bg-brand-charcoal/[0.03] text-brand-charcoal/35 hover:bg-brand-charcoal/[0.08] hover:text-brand-charcoal/70" : "bg-brand-charcoal/[0.02] text-brand-charcoal/25"}`}
+              className={`relative aspect-square rounded-[5px] flex items-center justify-center text-[11px] font-light transition-colors ${
+                isToday ? "ring-1 ring-inset ring-brand-charcoal/30" : ""
+              } ${entry ? "" : clickable ? "text-brand-charcoal/35 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/60" : "text-brand-charcoal/20"}`}
               style={entry && meta ? { backgroundColor: `${meta.color}1F`, color: meta.color } : undefined}
               title={
                 entry
@@ -119,11 +119,11 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
       </div>
 
       {/* 图例 */}
-      <div className="flex items-center justify-end gap-3 mt-3">
+      <div className="flex items-center justify-end gap-3 mt-4">
         {(["great", "good", "normal", "bad", "terrible"] as const).map((key) => (
           <span key={key} className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: STATE_META[key].color }} />
-            <span className="text-[10px] text-brand-charcoal/40 font-light">{STATE_META[key].label}</span>
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: STATE_META[key].color }} />
+            <span className="text-[10px] text-brand-charcoal/35 font-light">{STATE_META[key].label}</span>
           </span>
         ))}
         {loading && <span className="text-[10px] text-brand-charcoal/35">加载中…</span>}

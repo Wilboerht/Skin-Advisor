@@ -96,44 +96,42 @@ export function TestHistoryList({
     <div>
       {title && (
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base md:text-lg font-semibold text-[#1A1A1A]">{title}</h2>
-          {total > 0 && <span className="text-[12px] text-[#8A8A8A]">共 {total} 条</span>}
+          <h2 className="text-base md:text-lg font-medium text-brand-charcoal">{title}</h2>
+          {total > 0 && <span className="text-[12px] text-brand-charcoal/45">共 {total} 条</span>}
         </div>
       )}
 
       {loading ? (
         <div className="h-48 flex flex-col items-center justify-center gap-4">
-          <Loader2 className="w-5 h-5 text-[#C9A86C] animate-spin" />
-          <span className="text-[13px] text-[#8A8A8A]">加载记录中...</span>
+          <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
+          <span className="text-[13px] text-brand-charcoal/45">加载记录中...</span>
         </div>
       ) : error ? (
         <div className="h-48 flex flex-col items-center justify-center gap-4">
-          <p className="text-[13px] text-[#8A8A8A]">测肤记录加载失败，请检查网络后重试</p>
+          <p className="text-[13px] text-brand-charcoal/45">测肤记录加载失败，请检查网络后重试</p>
           <button
             type="button"
             onClick={fetchHistory}
-            className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[#1B3A5C] border border-[#1B3A5C]/20 hover:border-[#1B3A5C]/40 hover:bg-[#1B3A5C]/[0.04] transition-all duration-300"
+            className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[var(--color-brand-cocoa)] border border-brand-espresso/20 hover:border-brand-espresso/50 hover:bg-brand-espresso/[0.04] transition-all duration-300"
           >
             重新加载
           </button>
         </div>
       ) : history.length === 0 ? (
         <div className="text-center py-14 md:py-20">
-          <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-[rgba(61,68,48,0.06)] flex items-center justify-center text-[#C9A86C]">
-            <Clock className="w-6 h-6" strokeWidth={1.5} />
-          </div>
-          <h3 className="text-[15px] font-medium text-[#1A1A1A] mb-1.5">暂无测肤记录</h3>
-          <p className="text-[13px] text-[#8A8A8A] mb-5">开始第一次 AI 皮肤分析</p>
+          <Clock className="w-7 h-7 mx-auto mb-3 text-brand-charcoal/25" strokeWidth={1.5} />
+          <h3 className="text-[15px] font-medium text-brand-charcoal mb-1.5">暂无测肤记录</h3>
+          <p className="text-[13px] text-brand-charcoal/45 mb-5">开始第一次 AI 皮肤分析</p>
           <Link
             href="/questions"
-            className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[#1B3A5C] border border-[#1B3A5C]/20 hover:border-[#1B3A5C]/40 hover:bg-[#1B3A5C]/[0.04] transition-all duration-300"
+            className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[var(--color-brand-cocoa)] border border-brand-espresso/20 hover:border-brand-espresso/50 hover:bg-brand-espresso/[0.04] transition-all duration-300"
           >
             <ScanFace className="w-3.5 h-3.5" />
             立即测肤
           </Link>
         </div>
       ) : (
-        <div className="divide-y divide-brand-charcoal/[0.06]">
+        <div className="divide-y divide-brand-espresso/[0.06]">
           {history.map((session) => {
             const result = session.analysisResult;
             const score = result?.faceAnalysis?.overallScore;
@@ -143,18 +141,18 @@ export function TestHistoryList({
               <Link
                 key={session.sessionId}
                 href={`/reports/${session.sessionId}`}
-                className="group flex items-center gap-3 px-2 py-3 rounded-lg hover:bg-brand-charcoal/[0.04] transition-colors"
+                className="group flex items-center gap-3 px-1 py-3 rounded-md hover:bg-brand-charcoal/[0.03] transition-colors"
               >
-                <span className="shrink-0 w-12 text-[13px] text-brand-charcoal/50 font-light tabular-nums">
+                <span className="shrink-0 w-12 text-[13px] text-brand-charcoal/45 font-light tabular-nums">
                   {formatDay(session.completedAt)}
                 </span>
-                <span className="flex-1 min-w-0 truncate text-[13px] text-[#1A1A1A]">
+                <span className="flex-1 min-w-0 truncate text-[13px] text-brand-charcoal/85">
                   {skinType || "肌肤分析"}
                 </span>
                 <span className="shrink-0 text-[13px] font-medium text-brand-charcoal tabular-nums">
                   {score != null && score > 0 ? `${score} 分` : "—"}
                 </span>
-                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/30 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/25 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
               </Link>
             );
           })}
@@ -166,20 +164,20 @@ export function TestHistoryList({
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1 || loading}
-            className="flex items-center gap-1.5 text-[12px] text-[#8A8A8A] hover:text-[#1A1A1A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 text-[12px] text-brand-charcoal/45 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             上一页
           </button>
 
-          <span className="text-[12px] text-[#8A8A8A]">
+          <span className="text-[12px] text-brand-charcoal/45">
             {page} / {totalPages}
           </span>
 
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages || loading}
-            className="flex items-center gap-1.5 text-[12px] text-[#8A8A8A] hover:text-[#1A1A1A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 text-[12px] text-brand-charcoal/45 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             下一页
             <ChevronRight className="w-4 h-4" />
