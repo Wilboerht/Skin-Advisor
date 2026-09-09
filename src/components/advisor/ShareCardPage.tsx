@@ -136,11 +136,11 @@ export default function ShareCardPage({
                             {isReturning ? "欢迎回来，这是您最新的肌智派「AI测肤」报告" : "恭喜你完成首次肌智派「AI测肤」"}
                         </h2>
 
-                        <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
+                        <h3 className="text-base lg:text-lg font-semibold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
                             根据您的检测结果，您的肌智派系为「{skinTypeName}」！
                         </h3>
 
-                        <p className="text-[14px] leading-relaxed text-[var(--color-brand-cocoa)] mb-5 lg:mb-6 max-w-full lg:max-w-[420px]">
+                        <p className="text-[14px] leading-relaxed text-[var(--color-brand-cocoa)] mb-5 lg:mb-6 max-w-full lg:max-w-[420px] line-clamp-3">
                             {summary || "详细分析见下方报告。"}
                         </p>
 
@@ -173,13 +173,7 @@ export default function ShareCardPage({
                                     {isPosterLoading ? "生成中..." : "保存测肤证书"}
                                 </motion.button>
                             </div>
-                            {onOpenReport && (
-                                <p className="text-[11px] font-light tracking-[0.06em] text-[var(--color-brand-cocoa)]/50">
-                                    点击「查看完整报告」，查看你的专属肌肤档案
-                                </p>
-                            )}
-                            {(dateText || idText) && (
-                                <p className="text-[11px] font-light tracking-[0.08em] text-[var(--color-brand-cocoa)]/60">
+                            {(dateText || idText) && (                                <p className="text-[11px] font-light tracking-[0.08em] text-[var(--color-brand-cocoa)]/60">
                                     {dateText || ""}
                                     {dateText && idText ? " · " : ""}
                                     {idText ? `No.${idText}` : ""}
