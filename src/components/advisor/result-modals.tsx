@@ -321,7 +321,7 @@ export function LabDataModal({ open, onClose, faceAnalysis }: LabDataModalProps)
                                 <div className="flex gap-2.5 items-start text-xs leading-relaxed text-[var(--color-brand-cocoa)]">
                                     <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#C9A86C]" />
                                     <div className="space-y-1.5">
-                                        <p className="font-medium text-[var(--color-brand-espresso)]">数据说明 (Data Disclaimer)</p>
+                                        <p className="font-medium text-[var(--color-brand-espresso)]">数据说明（Data Disclaimer）</p>
                                         <p>
                                             <span className="font-semibold text-[var(--color-brand-espresso)]">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-[var(--color-brand-espresso)]/20 text-[var(--color-brand-espresso)]">并非物理探头实测数据</span>。
                                         </p>

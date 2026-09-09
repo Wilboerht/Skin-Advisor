@@ -122,30 +122,37 @@ export default function ComparisonCard({ prev, score, skinAge, persona, at }: Co
                 </button>
             </div>
 
-            {/* 3 列数据：主数字为"较上次变化量"，当前绝对值见下方专业版报告卡，不重复展示 */}
+            {/* 3 列数据：主数字为"较上次变化量"，当前绝对值见下方专业版报告卡，不重复展示。
+                三卡行结构统一：标题行 → 主值行（固定高度）→ 上次行（统一两行高，防内容换行导致行间距不齐） */}
             <div className="grid grid-cols-3 gap-2 lg:gap-4 mb-4">
                 <div className="rounded-xl p-3 lg:p-4 bg-[#F0EDE8] border border-brand-espresso/5">
-                    <p className="text-[11px] text-[#7a6552] font-medium mb-1.5">综合评分</p>
-                    <DeltaFigure delta={scoreDelta} unit="分" />
-                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">
+                    <p className="text-[11px] text-[#7a6552] font-medium mb-1.5 leading-4">综合评分</p>
+                    <div className="flex items-center h-6 lg:h-7">
+                        <DeltaFigure delta={scoreDelta} unit="分" />
+                    </div>
+                    <p className="mt-1.5 min-h-8 text-[10px] leading-4 text-[#7a6552]/70 font-light">
                         上次 {typeof prev.score === "number" ? Math.round(prev.score) : "—"} → 本次 {score !== undefined ? Math.round(score) : "—"}
                     </p>
                 </div>
 
                 <div className="rounded-xl p-3 lg:p-4 bg-[#EBE8E2] border border-brand-espresso/5">
-                    <p className="text-[11px] text-[#7a6552] font-medium mb-1.5">肌肤年龄</p>
-                    <DeltaFigure delta={skinAgeDelta} unit="岁" goodWhenNegative />
-                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">
+                    <p className="text-[11px] text-[#7a6552] font-medium mb-1.5 leading-4">肌肤年龄</p>
+                    <div className="flex items-center h-6 lg:h-7">
+                        <DeltaFigure delta={skinAgeDelta} unit="岁" goodWhenNegative />
+                    </div>
+                    <p className="mt-1.5 min-h-8 text-[10px] leading-4 text-[#7a6552]/70 font-light">
                         上次 {typeof prev.skinAge === "number" ? Math.round(prev.skinAge) : "—"} 岁 → 本次 {skinAge !== undefined ? Math.round(skinAge) : "—"} 岁
                     </p>
                 </div>
 
                 <div className="rounded-xl p-3 lg:p-4 bg-[#E6E2DA] border border-brand-espresso/5">
-                    <p className="text-[11px] text-[#7a6552] font-medium mb-1.5">派系</p>
-                    <p className="text-xl lg:text-2xl font-bold text-[var(--color-brand-charcoal)] leading-none truncate">
-                        {curLabel}
-                    </p>
-                    <p className="mt-1.5 text-[10px] text-[#7a6552]/70 font-light">上次 {prevLabel}</p>
+                    <p className="text-[11px] text-[#7a6552] font-medium mb-1.5 leading-4">派系</p>
+                    <div className="flex items-center h-6 lg:h-7">
+                        <p className="text-xl lg:text-2xl font-bold text-[var(--color-brand-charcoal)] leading-none truncate">
+                            {curLabel}
+                        </p>
+                    </div>
+                    <p className="mt-1.5 min-h-8 text-[10px] leading-4 text-[#7a6552]/70 font-light">上次 {prevLabel}</p>
                 </div>
             </div>
 

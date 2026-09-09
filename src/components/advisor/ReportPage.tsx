@@ -67,7 +67,7 @@ export default function ReportPage({
                     {faceAnalysis?.dimensions && (
                         <div className="mt-6 mb-6 lg:mt-8 lg:mb-8">
                             <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-                                十维数据总览 <span className="text-xs lg:text-base">(Dimension Overview)</span>
+                                十维数据总览 <span className="text-xs lg:text-base">（Dimension Overview）</span>
                             </h4>
                             <DimensionRadarChart dimensions={faceAnalysis.dimensions} />
                         </div>
@@ -88,7 +88,7 @@ export default function ReportPage({
                     {!isV2Report && (
                         <div className="mt-6 mb-6 lg:mt-8 lg:mb-8">
                             <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-                                1、详细诊断报告 <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
+                                1、详细诊断报告 <span className="text-xs lg:text-base">（Detailed Diagnosis）</span>
                             </h4>
 
                             {result.analysis?.details && result.analysis.details.length > 0 ? (
@@ -118,7 +118,7 @@ export default function ReportPage({
                     {!isV2Report && (
                         <div className="mb-6 lg:mb-8">
                             <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-                                2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
+                                2、专家护肤建议 <span className="text-xs lg:text-base">（Expert Recommendations）</span>
                             </h4>
 
                             <p className="text-sm text-[var(--color-brand-taupe)] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
@@ -179,7 +179,7 @@ export default function ReportPage({
                             ) : isLoggedIn ? (
                                 <div className="mb-6 lg:mb-8">
                                     <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-4 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-                                        {isV2Report ? "区域皮肤地图" : "3、区域重点关注"} <span className="text-xs lg:text-base">(Area Focus)</span>
+                                        {isV2Report ? "区域皮肤地图" : "3、区域重点关注"} <span className="text-xs lg:text-base">（Area Focus）</span>
                                     </h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {Object.entries({
@@ -214,7 +214,7 @@ export default function ReportPage({
                             ) : (
                                 <div className="mb-6 lg:mb-8">
                                     <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-4 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-                                        {isV2Report ? "区域皮肤地图" : "3、区域重点关注"} <span className="text-xs lg:text-base">(Area Focus)</span>
+                                        {isV2Report ? "区域皮肤地图" : "3、区域重点关注"} <span className="text-xs lg:text-base">（Area Focus）</span>
                                     </h4>
                                     <div className="rounded-xl border border-dashed border-[#C9A86C]/40 bg-gradient-to-br from-[#FBF8F3] to-[var(--color-brand-cream)] p-6 text-center">
                                         <Lock className="w-8 h-8 text-[#C9A86C] mx-auto mb-3" />
@@ -237,7 +237,7 @@ export default function ReportPage({
                     {!isV2Report && faceAnalysis && (
                         <div className="mb-6 lg:mb-8">
                             <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-                                4、重点问题关注 <span className="text-xs lg:text-base">(Key Concerns)</span>
+                                4、重点问题关注 <span className="text-xs lg:text-base">（Key Concerns）</span>
                             </h4>
                             <FocusProblemsSection
                                 problems={focusProblems}

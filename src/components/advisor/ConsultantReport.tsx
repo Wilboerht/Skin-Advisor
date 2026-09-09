@@ -48,7 +48,7 @@ function SectionTitle({ children, en }: { children: ReactNode; en?: string }) {
     return (
         <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
             {children}
-            {en && <span className="text-xs lg:text-base">({en})</span>}
+            {en && <span className="text-xs lg:text-base">（{en}）</span>}
         </h4>
     );
 }
@@ -246,7 +246,7 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
             {/* 每日方案：派系骨架 + AI 个性化微调 */}
             {(hasRoutine || hasFormula || report.routineNote) && (
                 <section>
-                    <SectionTitle en="Daily Routine">你的每日方案{personaData ? `（${personaData.typeName}）` : ""}</SectionTitle>
+                    <SectionTitle en="Daily Routine">你的每日方案{personaData ? `：${personaData.typeName}` : ""}</SectionTitle>
                     {report.routineNote && (
                         <p className="text-sm lg:text-[15px] leading-[1.9] text-[var(--color-brand-espresso)] mb-4">
                             {report.routineNote}
