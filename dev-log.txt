@@ -1,0 +1,13 @@
+
+> skin-advisor-standalone@0.1.0 dev
+> cross-env NODE_OPTIONS=--max-old-space-size=6144 next dev --webpack
+
+▲ Next.js 16.3.0 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://100.83.152.56:3000
+- Environments: .env.local
+✓ Ready in 1433ms
+✓ Running next.config.ts took 125ms
+
+[SSO SDK] insecureLocalDev=true：Cookie 的 Secure 属性已关闭且去除 __Host-/__Secure- 前缀。仅限 http://localhost 本地开发使用，生产环境必须移除该配置（生产必须用 HTTPS）。
+○ Compiling /face-scan ...

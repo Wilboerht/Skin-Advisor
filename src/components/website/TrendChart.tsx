@@ -13,7 +13,8 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
   const gradientId = `trendArea-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const W = 640;
   const H = 200;
-  const PAD_L = 40;
+  // 左内边距需容纳 Y 轴刻度"100 分"（最高刻度带单位，比两位数宽）
+  const PAD_L = 64;
   const PAD_R = 20;
   const PAD_TOP = 24;
   const PAD_BOTTOM = 32;
