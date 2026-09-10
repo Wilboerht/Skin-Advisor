@@ -24,6 +24,9 @@ interface DiaryCalendarProps {
  */
 export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loading }: DiaryCalendarProps) {
   const todayStr = localDateStr(new Date());
+  // 当前月份（"回到本月"目标）：渲染期计算
+  const currentMonth = localDateStr(new Date()).slice(0, 7);
+  const isCurrentMonth = month === currentMonth;
 
   const entryByDay = useMemo(() => {
     const map = new Map<string, DiaryEntry>();
@@ -46,7 +49,7 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
 
   return (
     <div>
-      {/* 月份导航 */}
+      {/* 月份导航 + 回到本月（翻看历史月份时浮现） */}
       <div className="flex items-center justify-between mb-4">
         <button
           type="button"
@@ -57,9 +60,20 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
         >
           <ChevronLeft className="w-4 h-4" strokeWidth={2} />
         </button>
-        <span className="text-[14px] font-medium text-brand-charcoal tracking-[0.08em]">
-          {y} 年 {m} 月
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[14px] font-medium text-brand-charcoal tracking-[0.08em]">
+            {y} 年 {m} 月
+          </span>
+          {!isCurrentMonth && (
+            <button
+              type="button"
+              onClick={() => onMonthChange(currentMonth)}
+              className="text-[11px] text-brand-charcoal/45 font-light tracking-[0.04em] hover:text-brand-charcoal transition-colors cursor-pointer rounded-full px-2 py-0.5 hover:bg-brand-charcoal/[0.04]"
+            >
+              回到本月
+            </button>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => shiftMonth(1)}
@@ -91,22 +105,60 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
           const meta = entry ? STATE_META[entry.skinState] ?? STATE_META.normal : null;
           const isToday = dateStr === todayStr;
           const clickable = !entry && canBackfill(dateStr);
+          // 列位置（0=周一）：周末日号淡化；hover 浮层的边缘对齐
+          const colIndex = (leadBlanks + i) % 7;
+          const isWeekend = colIndex >= 5;
+          const isFirstCol = colIndex === 0;
+          const isLastCol = colIndex === 6;
+          const fmtShort = (s: string) =>
+            new Date(`${s}T00:00:00.000Z`).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric", timeZone: "UTC" });
 
           const cell = (
             <div
-              className={`relative aspect-square rounded-[5px] flex items-center justify-center text-[11px] font-light transition-colors ${
+              className={`group/cell relative aspect-square rounded-[5px] flex items-center justify-center text-[11px] font-light transition-colors ${
                 isToday ? "ring-1 ring-inset ring-brand-charcoal/30" : ""
-              } ${entry ? "" : clickable ? "text-brand-charcoal/35 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/60" : "text-brand-charcoal/20"}`}
+              } ${
+                entry
+                  ? ""
+                  : clickable
+                    ? "text-brand-charcoal/35 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/60"
+                    : isWeekend
+                      ? "text-brand-charcoal/12"
+                      : "text-brand-charcoal/20"
+              }`}
               style={entry && meta ? { backgroundColor: `${meta.color}1F`, color: meta.color } : undefined}
               title={
                 entry
-                  ? `${entry.note || meta?.label || ""}`
+                  ? `${fmtShort(dateStr)} · ${meta?.label ?? ""}`
                   : clickable
                     ? `${dateStr} 补打卡`
                     : undefined
               }
             >
               {i + 1}
+
+              {/* PC hover 详情浮层：状态 + 标签 + 备注（移动端无 hover 自动不出现） */}
+              {entry && meta && (
+                <div
+                  className={`pointer-events-none absolute bottom-full mb-1.5 z-20 hidden lg:group-hover/cell:block w-max max-w-[200px] rounded-lg bg-white/95 border border-brand-espresso/[0.1] shadow-[0_8px_24px_rgba(61,47,37,0.14)] px-3 py-2 text-left ${
+                    isFirstCol ? "left-0" : isLastCol ? "right-0" : "left-1/2 -translate-x-1/2"
+                  }`}
+                >
+                  <p className="text-[11px] font-medium" style={{ color: meta.color }}>
+                    {fmtShort(dateStr)} · {meta.label}
+                  </p>
+                  {entry.tags && entry.tags.length > 0 && (
+                    <p className="mt-0.5 text-[10px] text-brand-charcoal/50 font-light">
+                      {entry.tags.join(" · ")}
+                    </p>
+                  )}
+                  {entry.note && (
+                    <p className="mt-0.5 text-[10px] text-brand-charcoal/55 font-light leading-relaxed line-clamp-2">
+                      {entry.note}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           );
 
