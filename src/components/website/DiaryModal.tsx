@@ -600,50 +600,6 @@ export function DiaryModal() {
                             </div>
                           )}
 
-                          {/* 里程碑统计：数据概览，与趋势图同属左列（数字型信息）；右列为历程明细 */}
-                          {summary && (summary.totalCheckins > 0 || summary.testCount > 0) && (
-                            <div className="grid grid-cols-4 mt-5 pt-4 border-t border-brand-espresso/[0.06]">
-                              <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
-                                <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
-                                  {summary.currentStreak}
-                                </p>
-                                <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
-                                  <Flame className="w-3 h-3 text-[#D9730D]" strokeWidth={1.8} />
-                                  连续打卡
-                                </p>
-                              </div>
-                              <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
-                                <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
-                                  {summary.totalCheckins}
-                                </p>
-                                <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
-                                  <CalendarCheck className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
-                                  累计打卡
-                                </p>
-                              </div>
-                              <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
-                                <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
-                                  {summary.testCount}
-                                </p>
-                                <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
-                                  <ScanFace className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
-                                  已测肤
-                                </p>
-                              </div>
-                              {summary.longestStreak > 0 && (
-                                <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
-                                  <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
-                                    {summary.longestStreak}
-                                  </p>
-                                  <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
-                                    <Trophy className="w-3 h-3 text-[#C9A86C]" strokeWidth={1.8} />
-                                    最长连续
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
                           {/* 打卡色带与测肤时间窗无关：有打卡数据即始终展示 */}
                           {recentCheckInCount >= 2 && (
                             <div className="mt-4">
@@ -683,6 +639,50 @@ export function DiaryModal() {
                           >
                             去测肤 →
                           </Link>
+                        </div>
+                      )}
+
+                      {/* 里程碑统计：数据概览，与趋势图同属左列；独立于趋势分支（仅有打卡无趋势时仍展示） */}
+                      {summary && (summary.totalCheckins > 0 || summary.testCount > 0) && (
+                        <div className="grid grid-cols-4 mt-5 pt-4 border-t border-brand-espresso/[0.06]">
+                          <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                            <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
+                              {summary.currentStreak}
+                            </p>
+                            <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                              <Flame className="w-3 h-3 text-[#D9730D]" strokeWidth={1.8} />
+                              连续打卡
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                            <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
+                              {summary.totalCheckins}
+                            </p>
+                            <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                              <CalendarCheck className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
+                              累计打卡
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                            <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
+                              {summary.testCount}
+                            </p>
+                            <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                              <ScanFace className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
+                              已测肤
+                            </p>
+                          </div>
+                          {summary.longestStreak > 0 && (
+                            <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                              <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
+                                {summary.longestStreak}
+                              </p>
+                              <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                                <Trophy className="w-3 h-3 text-[#C9A86C]" strokeWidth={1.8} />
+                                最长连续
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </section>
