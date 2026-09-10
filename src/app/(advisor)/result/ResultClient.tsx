@@ -1457,18 +1457,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
                                     {/* Global Footer */}
                                     <footer className="w-full bg-transparent mt-0">
-                                        {/* Secondary actions */}
-                                        <div className="flex flex-col items-center justify-center gap-2.5 mt-10 mb-10">
-                                            <button
-                                                onClick={() => navPush('/')}
-                                                disabled={isNavigating}
-                                                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] sm:text-[13px] tracking-[0.1em] text-[var(--color-brand-cocoa)]/70 font-medium hover:text-[var(--color-brand-cocoa)] transition-colors"
-                                            >
-                                                <House className="w-3.5 h-3.5" />
-                                                回到首页
-                                            </button>
-                                        </div>
-
                                         {/* Minimal Footer Text — 与首页 Footer 对齐 */}
                                         <div className="text-center flex flex-col items-center gap-3">
                                             <p className="text-[11px] font-light tracking-[0.15em] text-brand-charcoal/48" suppressHydrationWarning>
