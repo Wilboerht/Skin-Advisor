@@ -93,14 +93,14 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
       {/* 摘要：最新评分 + 测评日期 + 与上次差值 */}
       <div className="flex items-end justify-between mb-4">
         <div>
-          <p className="text-[11px] tracking-[0.15em] text-brand-charcoal/45 font-light mb-1">
+          <p className="text-[12px] tracking-[0.15em] text-brand-charcoal/45 font-light mb-1">
             最新综合评分
           </p>
           <p className="text-3xl md:text-4xl font-serif font-light text-brand-charcoal leading-none">
             {latest}
             <span className="text-sm text-brand-charcoal/40 ml-1.5">分</span>
           </p>
-          <p className="mt-1.5 text-[11px] text-brand-charcoal/40 font-light tracking-[0.08em]">
+          <p className="mt-1.5 text-[12px] text-brand-charcoal/40 font-light tracking-[0.08em]">
             {latestDate} 测
           </p>
         </div>
@@ -135,7 +135,7 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
               strokeOpacity="0.08"
               strokeDasharray="3 5"
             />
-            <text x={PAD_L - 8} y={yOf(v) + 3.5} textAnchor="end" fontSize="10.5" fill="#8c7a6b">
+            <text x={PAD_L - 8} y={yOf(v) + 3.5} textAnchor="end" fill="#8c7a6b" className="trend-chart-scale">
               {v}{idx === gridValues.length - 1 ? " 分" : ""}
             </text>
           </g>
@@ -194,9 +194,9 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
                   x={p.x}
                   y={H - 6}
                   textAnchor="middle"
-                  fontSize="10"
                   fontWeight={isLatest ? 600 : 400}
                   fill={isLatest ? "#5c4937" : "#8c7a6b"}
+                  className="trend-chart-date"
                 >
                   {crossYear && isFirst ? `${firstYear}.${fmtDay(p.date)}` : fmtDay(p.date)}
                 </text>

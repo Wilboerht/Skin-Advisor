@@ -530,6 +530,31 @@
 
 /* 网格卡片样式（.kinetic-container/.kinetic-cell 等）已删除：全站无 DOM 引用 */
 
+/* ========== SVG 图表文字：CSS 响应式字号 ==========
+   SVG 的 presentation fontSize 会随 viewBox 缩放等比缩小（手机窄容器下 10px 实际渲染仅 ~5px），
+   改用 CSS font-size 并在移动端放大补偿，保证图表文字实际渲染尺寸稳定可读 */
+.trend-chart-scale {
+  font-size: 12px;
+}
+.trend-chart-date {
+  font-size: 11px;
+}
+.checkin-chart-date {
+  font-size: 10px;
+}
+
+@media (max-width: 640px) {
+  .trend-chart-scale {
+    font-size: 18px;
+  }
+  .trend-chart-date {
+    font-size: 15px;
+  }
+  .checkin-chart-date {
+    font-size: 14px;
+  }
+}
+
 /* 隐藏滚动条但保留滚动功能 */
 .scrollbar-hide {
   -ms-overflow-style: none;
