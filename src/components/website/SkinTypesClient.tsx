@@ -8,6 +8,8 @@ import { SkinTypeModal } from "@/components/website/SkinTypeModal";
 
 interface SkinTypesClientProps {
   types: SkinTypeData[];
+  /** ?type=<route> 深链接（服务端解析）的初始选中派系 */
+  initialType?: SkinTypeData | null;
 }
 
 /**
@@ -15,9 +17,20 @@ interface SkinTypesClientProps {
  * 8 张派系卡横排滚动（snap 吸附 + 两端渐隐 + 桌面左右箭头），点击卡片打开详情弹窗。
  * 移动端/PC 同一套交互：手指/滚轮横滑。
  */
-export function SkinTypesClient({ types }: SkinTypesClientProps) {
-  const [selected, setSelected] = useState<SkinTypeData | null>(null);
+export function SkinTypesClient({ types, initialType = null }: SkinTypesClientProps) {
+  const [selected, setSelected] = useState<SkinTypeData | null>(initialType);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 弹窗内切换派系（循环）
+  const navigateType = (delta: number) => {
+    setSelected((prev) => {
+      if (!prev) return prev;
+      const idx = types.findIndex((t) => t.route === prev.route);
+      if (idx === -1) return prev;
+      const next = (idx + delta + types.length) % types.length;
+      return types[next] ?? prev;
+    });
+  };
 
   // 按卡片宽度 + 间距滚动一屏
   const scrollByCard = (dir: 1 | -1) => {
@@ -94,7 +107,7 @@ export function SkinTypesClient({ types }: SkinTypesClientProps) {
         </button>
       </div>
 
-      <SkinTypeModal data={selected} onClose={() => setSelected(null)} />
+      <SkinTypeModal data={selected} onClose={() => setSelected(null)} onNavigate={navigateType} />
     </>
   );
 }

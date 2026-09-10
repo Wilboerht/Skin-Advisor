@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { SkinTypeData } from "@/lib/result-content";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
@@ -12,6 +12,8 @@ interface SkinTypeModalProps {
   /** null 表示关闭 */
   data: SkinTypeData | null;
   onClose: () => void;
+  /** 弹窗内切换上一派/下一派（delta ±1，由父级循环） */
+  onNavigate?: (delta: number) => void;
 }
 
 /**
@@ -19,7 +21,7 @@ interface SkinTypeModalProps {
  * 容器/动效/关闭按钮与 GiftModal、FaqModal 对齐；
  * 内容保留：形象与简介、优势高光、护肤日常、护肤公式（不含成分产品表）
  */
-export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
+export function SkinTypeModal({ data, onClose, onNavigate }: SkinTypeModalProps) {
   const isOpen = data !== null;
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
@@ -62,6 +64,26 @@ export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
             >
               <X size={16} strokeWidth={2.5} />
             </button>
+
+            {/* 派系切换：上一派 / 下一派（弹窗内连续浏览，无需反复开关） */}
+            {onNavigate && (
+              <>
+                <button
+                  onClick={() => onNavigate(-1)}
+                  aria-label="上一个派系"
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/80 backdrop-blur border border-brand-charcoal/[0.1] text-brand-charcoal/50 hover:text-brand-charcoal hover:border-brand-charcoal/30 shadow-[0_2px_10px_rgba(61,47,37,0.08)] transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" strokeWidth={1.75} />
+                </button>
+                <button
+                  onClick={() => onNavigate(1)}
+                  aria-label="下一个派系"
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/80 backdrop-blur border border-brand-charcoal/[0.1] text-brand-charcoal/50 hover:text-brand-charcoal hover:border-brand-charcoal/30 shadow-[0_2px_10px_rgba(61,47,37,0.08)] transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" strokeWidth={1.75} />
+                </button>
+              </>
+            )}
 
             {/* 可滚动内容区 */}
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">

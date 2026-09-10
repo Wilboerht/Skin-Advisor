@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Gift } from "lucide-react";
-import { skinTypes, routeOrder } from "@/lib/result-content";
+import { skinTypes, routeOrder, type SkinTypeData } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
 import { KineticBackground } from "@/components/website/KineticBackground";
 import { HidePageScrollbar } from "@/components/website/HidePageScrollbar";
@@ -27,10 +28,17 @@ export const metadata: Metadata = withDefaultOgImage({
 
 export const revalidate = 86400;
 
-export default function ResultIndexPage() {
+export default async function ResultIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const { type } = await searchParams;
   const orderedTypes = routeOrder
     .map((route) => skinTypes.find((t) => t.route === route))
     .filter(Boolean);
+  // ?type=<route> 深链接：服务端解析为初始选中派系（详情弹窗自动打开）
+  const initialType = (orderedTypes.find((t) => t && t.route === type) ?? null) as SkinTypeData | null;
 
   return (
     <div className="relative min-h-dvh text-brand-charcoal pb-dock">
@@ -54,8 +62,31 @@ export default function ResultIndexPage() {
             className="text-xl md:text-2xl font-serif font-light text-brand-charcoal leading-[1.2] tracking-[0.02em] mb-5 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
-            了解不同肌肤类型与护理方�?
+            8 种肌智派，你是哪一派？
           </h1>
+          {/* 8 派小圆头像群像：Hero 视觉焦点，点按跳转对应卡片弹窗 */}
+          <div
+            className="flex items-center justify-center gap-2.5 md:gap-3 mb-5 opacity-0 animate-fade-in-up"
+            style={{ animationDelay: "0.05s", animationFillMode: "forwards" }}
+          >
+            {orderedTypes.slice(0, 8).map((t) =>
+              t ? (
+                <a
+                  key={t.route}
+                  href={`/skin-types?type=${t.route}`}
+                  aria-label={t.typeName}
+                  className="relative w-7 h-7 md:w-8 md:h-8 rounded-full overflow-hidden border border-brand-charcoal/[0.1] bg-white/60 transition-transform duration-300 hover:scale-110 hover:border-brand-charcoal/30"
+                >
+                  <Image
+                    src={`/images/character/${t.ipKey}/${t.ipKey}_female.webp`}
+                    alt=""
+                    fill
+                    className="object-cover object-top scale-110"
+                  />
+                </a>
+              ) : null
+            )}
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/"
@@ -78,7 +109,10 @@ export default function ResultIndexPage() {
 
       {/* 类型卡片（点击打开详情弹窗） */}
       <section className="relative z-10 px-6 md:px-12 lg:px-20 pb-12">
-        <SkinTypesClient types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))} />
+        <SkinTypesClient
+          types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
+          initialType={initialType}
+        />
       </section>
     </div>
   );
