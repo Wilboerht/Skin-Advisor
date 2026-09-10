@@ -12,7 +12,7 @@ import { STATE_META, type DiaryEntry } from "./DiaryTimeline";
 
 /** 预置标签（多选，与服务端 tags 上限一致）：肌肤表现 + 情境因素 两类 */
 const SKIN_TAGS = ["出油", "干燥", "暗沉", "泛红", "痘痘", "闭口"];
-const SITUATION_TAGS = ["熬夜", "换季", "日晒", "姨妈期", "压力", "医美"];
+const SITUATION_TAGS = ["熬夜", "换季", "日晒", "姨妈期", "压力", "医美", "醉酒", "暴晒"];
 const STATE_KEYS = ["great", "good", "normal", "bad", "terrible"] as const;
 
 interface CheckInModalProps {
