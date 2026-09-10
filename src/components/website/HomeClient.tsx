@@ -488,7 +488,7 @@ export default function HomeClient() {
                 {/* 礼盒图：底部与卡片底边对齐，探出卡片顶部与右侧，呼应"测肤有礼"活动 */}
                 <div className="shrink-0 self-end -mt-6 md:-mt-14 -mr-4 md:-mr-14 [@media(max-height:700px)]:hidden">
                   <Image
-                    src="/images/gift-box.webp"
+                    src="/images/gift-box-new.png"
                     alt="测肤有礼礼盒"
                     width={960}
                     height={551}

@@ -487,7 +487,7 @@ export function DiaryModal() {
                           <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
                         </button>
                         <span className="text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em]">
-                          全部记录
+                          全部测肤记录
                         </span>
                       </div>
                       <TestHistoryList
@@ -618,7 +618,7 @@ export function DiaryModal() {
                               onClick={() => setHistoryView(true)}
                               className="shrink-0 min-h-[30px] inline-flex items-center px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                             >
-                              全部记录 →
+                              全部测肤记录 →
                             </button>
                           </div>
                         </div>
