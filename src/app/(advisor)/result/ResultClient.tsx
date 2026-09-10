@@ -404,6 +404,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         setPageIndex(1);
     }, [coverMeta, trackResultFlip, isMock]);
 
+    // 报告 → 封面（底部 tab 切换；封面即便 skipCover 直达报告也可随时回看）
+    const handleOpenCover = useCallback(() => {
+        setPageIndex(0);
+        if (!isMock) trackResultFlip("cover", coverMeta);
+    }, [coverMeta, trackResultFlip, isMock]);
+
     // 报告 → 封面入口已移除（右下角仅保留「回到顶部」）；result_flip "cover" 事件暂无触发点，
     // API 端仍保留该枚举值以便未来重新接入
 
