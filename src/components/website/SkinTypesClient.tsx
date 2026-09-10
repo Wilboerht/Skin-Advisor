@@ -36,17 +36,6 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
   });
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // 弹窗内切换派系（循环）
-  const navigateType = (delta: number) => {
-    setSelected((prev) => {
-      if (!prev) return prev;
-      const idx = types.findIndex((t) => t.route === prev.route);
-      if (idx === -1) return prev;
-      const next = (idx + delta + types.length) % types.length;
-      return types[next] ?? prev;
-    });
-  };
-
   const step = (dir: 1 | -1) =>
     setActiveIdx((prev) => (prev + dir + types.length) % types.length);
 
