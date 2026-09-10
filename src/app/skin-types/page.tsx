@@ -101,7 +101,7 @@ export default async function ResultIndexPage({
               className="flex items-center justify-center gap-1.5 text-[13px] sm:text-[14px] text-brand-charcoal/75 tracking-[0.12em] font-light opacity-0 animate-fade-in-up hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal transition-colors duration-300 cursor-pointer"
               style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
             >
-              参与「肌智派」活动，抽奖赢好�?
+              参与「肌智派」活动，抽奖赢好礼
               <Gift className="w-3.5 h-3.5" />
             </GiftLink>
           </div>

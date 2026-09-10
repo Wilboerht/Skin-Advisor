@@ -20,7 +20,7 @@ import { isAutoDiaryEntry, isDiaryDateInRange, parseClientDate } from "@/lib/dia
 /**
  * DiaryTimeline — 护肤历程时间线（PRD v1.5）
  * 合并两类事件按日分组倒序：日记打卡 + 测肤里程碑；
- * 空日期不渲染，今天置顶，首屏近 30 天 + "加载更早"。
+ * 空日期不渲染，今天置顶，默认只展开最近有记录的三天 + "加载更早"。
  * 同日既有测肤又有其自动生成的日记条目时，隐藏自动日记卡避免重复展示。
  */
 
@@ -42,7 +42,7 @@ export const STATE_META: Record<string, { label: string; color: string; icon: Re
   terrible: { label: "很差", color: "#D44C47", icon: Angry },
 };
 
-const RECENT_DAYS = 30;
+const RECENT_GROUPS = 3;
 
 type TimelineEvent =
   | { kind: "diary"; entry: DiaryEntry }
@@ -129,12 +129,12 @@ export function DiaryTimeline({
       .sort((a, b) => b.dateStr.localeCompare(a.dateStr));
   }, [entries, tests, todayStr]);
 
-  // 每次渲染按当前本地日计算（跨午夜后"近 30 天"口径自动更新）
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - (RECENT_DAYS - 1));
-  const cutoffStr = localDateStr(cutoff);
-
-  const visibleGroups = showAll ? groups : groups.filter((g) => g.dateStr >= cutoffStr);
+  // 默认只展开「最近有记录的三天」（今天组恒显示——无论是否有事件），其余收起由"加载更早"展开
+  const visibleGroups = showAll
+    ? groups
+    : groups
+        .filter((g) => g.dateStr === todayStr || g.events.length > 0)
+        .slice(0, RECENT_GROUPS);
   const hiddenCount = groups.length - visibleGroups.length;
   const hasAnyEvent = entries.length > 0 || tests.length > 0;
 
