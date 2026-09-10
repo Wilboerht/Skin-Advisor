@@ -180,10 +180,10 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
 
                 {/* 最新测肤派系：档案身份核心（有测肤记录时显示） */}
                 {latestPersonaLabel && (
-                  <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#C9A86C]/30 bg-[#C9A86C]/[0.06] px-3 py-1 text-[12px] font-light tracking-[0.05em] text-[#8B7355]">
-                    <Sparkles className="w-3.5 h-3.5 text-[#C9A86C]" strokeWidth={1.8} />
+                  <span className="mb-2 inline-flex h-[24px] px-2.5 items-center gap-1.5 rounded-full border border-[#C9A86C]/30 bg-transparent text-xs font-bold text-[#8B7355] whitespace-nowrap">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C9A86C]" strokeWidth={2} />
                     我的派系 · {latestPersonaLabel}
-                  </div>
+                  </span>
                 )}
 
                 {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量；接口失败不渲染 */}
