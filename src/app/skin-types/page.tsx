@@ -62,32 +62,8 @@ export default async function ResultIndexPage({
             className="text-xl md:text-2xl font-serif font-light text-brand-charcoal leading-[1.2] tracking-[0.02em] mb-5 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
-            8 种肌智派，你是哪一派？
+            8 种肌肤类型与护理方案
           </h1>
-          {/* 8 派小圆头像群像：Hero 视觉焦点，点按跳转对应卡片弹窗 */}
-          <div
-            className="flex items-center justify-center gap-2.5 md:gap-3 mb-5 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.05s", animationFillMode: "forwards" }}
-          >
-            {orderedTypes.slice(0, 8).map((t) =>
-              t ? (
-                <a
-                  key={t.route}
-                  href={`/skin-types?type=${t.route}`}
-                  aria-label={t.typeName}
-                  title={t.typeName}
-                  className="relative w-7 h-7 md:w-8 md:h-8 rounded-full overflow-hidden border border-brand-charcoal/[0.1] bg-white/60 transition-transform duration-300 hover:scale-110 hover:border-brand-charcoal/30"
-                >
-                  <Image
-                    src={`/images/character/${t.ipKey}/${t.ipKey}_female.webp`}
-                    alt=""
-                    fill
-                    className="object-cover object-top scale-110"
-                  />
-                </a>
-              ) : null
-            )}
-          </div>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/"

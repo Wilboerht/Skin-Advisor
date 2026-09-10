@@ -12,16 +12,29 @@ interface SkinTypesClientProps {
   initialType?: SkinTypeData | null;
 }
 
+/** 环形偏移归一化：8 张卡对称排布，d ∈ [-4, 3] */
+function offsetOf(i: number, activeIdx: number, total: number): number {
+  let d = i - activeIdx;
+  if (d > Math.floor(total / 2)) d -= total;
+  if (d < -Math.floor(total / 2)) d += total;
+  return d;
+}
+
 /**
- * SkinTypesClient — 肌智派横向滚动画廊（传送带式）
- * 8 张派系卡横排滚动（snap 吸附 + 两端渐隐 + 桌面左右箭头），点击卡片打开详情弹窗。
- * 移动端/PC 同一套交互：手指/滚轮横滑。
+ * SkinTypesClient — 肌智派 3D 旋转木马（Cover Flow 式轮播）
+ * 中央卡正面大图，两侧透视缩小，点击侧卡聚焦、中央卡打开详情弹窗；
+ * 桌面左右箭头 + 键盘 ←/→，底部进度点指示当前位置。移动端/PC 同构。
  */
 export function SkinTypesClient({ types, initialType = null }: SkinTypesClientProps) {
   const [selected, setSelected] = useState<SkinTypeData | null>(initialType);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  // 画廊当前位置（滚动进度指示用）
-  const [activeIdx, setActiveIdx] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(() => {
+    if (initialType) {
+      const idx = types.findIndex((t) => t.route === initialType.route);
+      if (idx >= 0) return idx;
+    }
+    return 0;
+  });
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // 弹窗内切换派系（循环）
   const navigateType = (delta: number) => {
@@ -34,119 +47,123 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
     });
   };
 
-  // 按卡片宽度 + 间距滚动一屏
-  const scrollByCard = (dir: 1 | -1) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>("[data-type-card]");
-    const step = card ? card.offsetWidth + 20 : 320;
-    el.scrollBy({ left: dir * step, behavior: "smooth" });
-  };
+  const step = (dir: 1 | -1) =>
+    setActiveIdx((prev) => (prev + dir + types.length) % types.length);
 
-  // 滚动监听：更新当前卡序号（进度指示）
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const onScroll = () => {
-      const card = el.querySelector<HTMLElement>("[data-type-card]");
-      const step = card ? card.offsetWidth + 20 : 320;
-      const idx = Math.round(el.scrollLeft / step);
-      setActiveIdx(Math.min(Math.max(idx, 0), types.length - 1));
-    };
-    onScroll();
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, [types.length]);
-
-  // 键盘 ←/→ 滚动画廊（详情弹窗打开时不响应，避免与弹窗操作冲突）
+  // 键盘 ←/→ 切换（详情弹窗打开时不响应）
   useEffect(() => {
     if (selected) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") scrollByCard(-1);
-      if (e.key === "ArrowRight") scrollByCard(1);
+      if (e.key === "ArrowLeft") step(-1);
+      if (e.key === "ArrowRight") step(1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected]);
+  }, [selected, types.length]);
+
+  const onCarouselTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+  const onCarouselTouchEnd = (e: React.TouchEvent) => {
+    const st = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!st) return;
+    const dx = e.changedTouches[0].clientX - st.x;
+    const dy = e.changedTouches[0].clientY - st.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      step(dx < 0 ? 1 : -1);
+    }
+  };
 
   return (
     <>
-      <div className="relative">
-        {/* 横向滚动画廊 */}
-        <div
-          ref={scrollRef}
-          className="flex gap-5 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 pt-2"
-        >
-          {types.map((type) => (
-            <button
-              key={type.route}
-              data-type-card
-              type="button"
-              onClick={() => setSelected(type)}
-              className="group relative shrink-0 snap-start w-[260px] md:w-[300px] rounded-2xl border border-brand-espresso/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(61,47,37,0.06)] p-5 text-left cursor-pointer transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(61,47,37,0.12)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-            >
-              <Image
-                src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
-                alt=""
-                width={240}
-                height={240}
-                className="w-full h-[200px] md:h-[240px] object-contain mx-auto mb-4 group-hover:scale-105 transition-transform duration-500"
-              />
-              <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal">
-                {type.typeName}
-              </h2>
-              <p className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/60 font-light leading-relaxed line-clamp-2 min-h-[2.6em]">
-                {type.m1.persona}
-              </p>
-              <div className="mt-4 inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60 group-hover:text-brand-charcoal-light transition-colors duration-300">
-                查看完整解读
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-500 group-hover:translate-x-1.5" />
-              </div>
-            </button>
-          ))}
-        </div>
+      {/* 3D 旋转木马 */}
+      <div
+        className="relative mx-auto max-w-5xl select-none"
+        style={{ perspective: "1200px" }}
+        onTouchStart={onCarouselTouchStart}
+        onTouchEnd={onCarouselTouchEnd}
+      >
+        <div className="relative h-[440px] md:h-[500px] flex items-center justify-center">
+          {types.map((type, i) => {
+            const d = offsetOf(i, activeIdx, types.length);
+            const abs = Math.abs(d);
+            const isCenter = abs === 0;
+            // 变换：环形透视（rotateY + translateZ 缩进），中央正面
+            const transform = isCenter
+              ? "translateX(-50%) rotateY(0deg) translateZ(0px)"
+              : `translateX(-50%) rotateY(${d * -28}deg) translateZ(${-abs * 110}px) scale(${1 - abs * 0.1})`;
+            const opacity = abs === 0 ? 1 : abs === 1 ? 0.7 : abs === 2 ? 0.4 : 0;
+            const zIndex = 10 - abs;
 
-        {/* 两端渐隐遮罩：提示可横向滑动 */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-0 w-8 md:w-16 bg-gradient-to-r from-[#FBF7EE] to-transparent"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 w-8 md:w-16 bg-gradient-to-l from-[#FBF7EE] to-transparent"
-        />
+            return (
+              <button
+                key={type.route}
+                type="button"
+                onClick={() => (isCenter ? setSelected(type) : setActiveIdx(i))}
+                aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
+                tabIndex={isCenter ? 0 : -1}
+                className={`absolute left-1/2 top-0 w-[240px] md:w-[300px] rounded-2xl border border-brand-espresso/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_16px_40px_rgba(61,47,37,0.12)] p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isCenter ? "" : "pointer-events-auto"}`}
+                style={{
+                  transform,
+                  opacity,
+                  zIndex,
+                  transformStyle: "preserve-3d",
+                }}
+              >
+                <Image
+                  src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
+                  alt=""
+                  width={240}
+                  height={240}
+                  className="w-full h-[240px] md:h-[300px] object-contain mx-auto mb-4 pointer-events-none"
+                />
+                <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal">
+                  {type.typeName}
+                </h2>
+                {isCenter && (
+                  <>
+                    <p className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/60 font-light leading-relaxed line-clamp-2">
+                      {type.m1.persona}
+                    </p>
+                    <div className="mt-4 inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60">
+                      查看完整解读
+                      <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                    </div>
+                  </>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
         {/* 桌面左右箭头 */}
         <button
           type="button"
-          onClick={() => scrollByCard(-1)}
-          aria-label="向左浏览"
-          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-10 h-10 items-center justify-center rounded-full bg-white/90 border border-brand-espresso/[0.1] text-brand-charcoal/60 shadow-[0_4px_16px_rgba(61,47,37,0.1)] hover:text-brand-charcoal hover:shadow-[0_8px_24px_rgba(61,47,37,0.16)] transition-all cursor-pointer"
+          onClick={() => step(-1)}
+          aria-label="上一个"
+          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/90 border border-brand-espresso/[0.1] text-brand-charcoal/60 shadow-[0_4px_16px_rgba(61,47,37,0.1)] hover:text-brand-charcoal hover:shadow-[0_8px_24px_rgba(61,47,37,0.16)] transition-all cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5" strokeWidth={1.75} />
         </button>
         <button
           type="button"
-          onClick={() => scrollByCard(1)}
-          aria-label="向右浏览"
-          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-10 h-10 items-center justify-center rounded-full bg-white/90 border border-brand-espresso/[0.1] text-brand-charcoal/60 shadow-[0_4px_16px_rgba(61,47,37,0.1)] hover:text-brand-charcoal hover:shadow-[0_8px_24px_rgba(61,47,37,0.16)] transition-all cursor-pointer"
+          onClick={() => step(1)}
+          aria-label="下一个"
+          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/90 border border-brand-espresso/[0.1] text-brand-charcoal/60 shadow-[0_4px_16px_rgba(61,47,37,0.1)] hover:text-brand-charcoal hover:shadow-[0_8px_24px_rgba(61,47,37,0.16)] transition-all cursor-pointer"
         >
           <ChevronRight className="w-5 h-5" strokeWidth={1.75} />
         </button>
       </div>
 
-      {/* 滚动进度指示：8 个小点（当前卡高亮，可点击跳转） */}
-      <div className="flex items-center justify-center gap-1.5 mt-5" aria-hidden="true">
+      {/* 进度点：当前位置指示（可点击跳转） */}
+      <div className="flex items-center justify-center gap-1.5 mt-6" aria-hidden="true">
         {types.map((t, i) => (
           <button
             key={t.route}
             type="button"
             tabIndex={-1}
-            onClick={() => {
-              const el = scrollRef.current;
-              const card = el?.querySelector<HTMLElement>("[data-type-card]");
-              if (el && card) el.scrollTo({ left: i * (card.offsetWidth + 20), behavior: "smooth" });
-            }}
+            onClick={() => setActiveIdx(i)}
             className={`h-1.5 rounded-full transition-all duration-300 ${
               i === activeIdx ? "w-5 bg-[var(--color-brand-cocoa)]" : "w-1.5 bg-brand-charcoal/15"
             }`}
