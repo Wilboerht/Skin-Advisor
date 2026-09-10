@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { ArrowUp, House, Gift, ArrowRight, AlertCircle, Sparkles, X, ScanFace } from "lucide-react";
+import { ArrowUp, House, AlertCircle, Sparkles, X, ScanFace } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -1359,6 +1359,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             certId={sessionId}
                                             onOpenReport={handleFlipToReport}
                                             onReTest={handleReTest}
+                                            onGift={() => navPush('/?gift=1')}
                                             isReturning={!!prevSum}
                                         />
                                     </section>
@@ -1458,25 +1459,14 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     <footer className="w-full bg-transparent mt-0">
                                         {/* Secondary actions */}
                                         <div className="flex flex-col items-center justify-center gap-2.5 mt-10 mb-10">
-                                            <div className="flex flex-row flex-wrap justify-center gap-3">
-                                                <button
-                                                    onClick={() => navPush('/')}
-                                                    disabled={isNavigating}
-                                                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] sm:text-[13px] tracking-[0.1em] text-[var(--color-brand-cocoa)]/70 font-medium hover:text-[var(--color-brand-cocoa)] transition-colors"
-                                                >
-                                                    <House className="w-3.5 h-3.5" />
-                                                    回到首页
-                                                </button>
-                                                <button
-                                                    onClick={() => navPush('/?gift=1')}
-                                                    disabled={isNavigating}
-                                                    className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[var(--color-brand-cocoa)] hover:border-[var(--color-brand-cocoa)]/40 hover:bg-[var(--color-brand-cocoa)]/5 transition-all duration-300"
-                                                >
-                                                    <Gift className="w-4 h-4" />
-                                                    肌智派送好礼 · 参与抽奖
-                                                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-                                                </button>
-                                            </div>
+                                            <button
+                                                onClick={() => navPush('/')}
+                                                disabled={isNavigating}
+                                                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] sm:text-[13px] tracking-[0.1em] text-[var(--color-brand-cocoa)]/70 font-medium hover:text-[var(--color-brand-cocoa)] transition-colors"
+                                            >
+                                                <House className="w-3.5 h-3.5" />
+                                                回到首页
+                                            </button>
                                         </div>
 
                                         {/* Minimal Footer Text — 与首页 Footer 对齐 */}

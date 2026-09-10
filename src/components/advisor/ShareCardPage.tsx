@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion as m, useReducedMotion } from "framer-motion";
-import { ChevronDown, Loader2, Share2 } from "lucide-react";
+import { ChevronDown, Gift, Loader2, Share2 } from "lucide-react";
 import Image from "next/image";
 import { getCharacterImage, getSkinTypeName, type IPMatchParams } from "@/lib/result-utils";
 
@@ -25,6 +25,8 @@ interface ShareCardPageProps {
     onOpenReport?: () => void;
     /** 重新测试入口（正常消耗测试次数）；缺省时不展示 */
     onReTest?: () => void;
+    /** 参与抽奖入口（肌智派送好礼）；缺省时不展示 */
+    onGift?: () => void;
     /** 复测用户（存在历史报告）：标题不再称"首次" */
     isReturning?: boolean;
 }
@@ -57,6 +59,7 @@ export default function ShareCardPage({
     certId,
     onOpenReport,
     onReTest,
+    onGift,
     isReturning = false,
 }: ShareCardPageProps) {
     const reduceMotion = useReducedMotion();
@@ -196,6 +199,15 @@ export default function ShareCardPage({
                                 )}
                                 {isPosterLoading ? "生成中..." : "保存测肤证书"}
                             </button>
+                            {onGift && (
+                                <button
+                                    onClick={onGift}
+                                    className="self-center sm:self-auto inline-flex items-center gap-1.5 px-2 py-1 text-[12px] text-[var(--color-brand-cocoa)]/60 font-light tracking-[0.04em] transition-colors hover:text-[var(--color-brand-cocoa)]"
+                                >
+                                    <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                    肌智派送好礼 · 参与抽奖
+                                </button>
+                            )}
                         </div>
 
                         {/* 证书落款：日期 · 编号（等宽数字，上细分隔线） */}
