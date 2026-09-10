@@ -85,7 +85,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         onTouchStart={onCarouselTouchStart}
         onTouchEnd={onCarouselTouchEnd}
       >
-        <div className="relative h-[440px] md:h-[500px] flex items-center justify-center">
+        <div className="relative h-[280px] md:h-[320px] flex items-center justify-center">
           {types.map((type, i) => {
             const d = offsetOf(i, activeIdx, types.length);
             const abs = Math.abs(d);
@@ -104,7 +104,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                 onClick={() => (isCenter ? setSelected(type) : setActiveIdx(i))}
                 aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                 tabIndex={isCenter ? 0 : -1}
-                className={`absolute left-1/2 top-0 w-[240px] md:w-[300px] rounded-2xl border border-brand-espresso/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_16px_40px_rgba(61,47,37,0.12)] p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isCenter ? "" : "pointer-events-auto"}`}
+                className="absolute left-1/2 top-0 w-[360px] md:w-[440px] rounded-2xl border border-brand-espresso/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_16px_40px_rgba(61,47,37,0.12)] p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
                 style={{
                   transform,
                   opacity,
@@ -112,27 +112,32 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                   transformStyle: "preserve-3d",
                 }}
               >
-                <Image
-                  src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
-                  alt=""
-                  width={240}
-                  height={240}
-                  className="w-full h-[240px] md:h-[300px] object-contain mx-auto mb-4 pointer-events-none"
-                />
-                <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal">
-                  {type.typeName}
-                </h2>
-                {isCenter && (
-                  <>
-                    <p className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/60 font-light leading-relaxed line-clamp-2">
-                      {type.m1.persona}
-                    </p>
-                    <div className="mt-4 inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60">
-                      查看完整解读
-                      <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                    </div>
-                  </>
-                )}
+                {/* 横向结构：左形象 + 右文字 */}
+                <div className="flex items-center gap-4 md:gap-5">
+                  <Image
+                    src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
+                    alt=""
+                    width={180}
+                    height={180}
+                    className="shrink-0 w-[120px] h-[120px] md:w-[160px] md:h-[160px] object-contain pointer-events-none"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal">
+                      {type.typeName}
+                    </h2>
+                    {isCenter && (
+                      <>
+                        <p className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/60 font-light leading-relaxed line-clamp-2">
+                          {type.m1.persona}
+                        </p>
+                        <div className="mt-3 inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60">
+                          查看完整解读
+                          <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </button>
             );
           })}
