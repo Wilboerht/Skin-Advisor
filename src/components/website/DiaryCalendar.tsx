@@ -52,7 +52,8 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
           type="button"
           onClick={() => shiftMonth(-1)}
           aria-label="上个月"
-          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/45 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
+          disabled={loading}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/45 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-wait"
         >
           <ChevronLeft className="w-4 h-4" strokeWidth={2} />
         </button>
@@ -63,7 +64,8 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
           type="button"
           onClick={() => shiftMonth(1)}
           aria-label="下个月"
-          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/45 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
+          disabled={loading}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/45 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-wait"
         >
           <ChevronRight className="w-4 h-4" strokeWidth={2} />
         </button>

@@ -224,12 +224,13 @@ export function DiaryModal() {
     entriesOffsetRef.current = offset + list.length;
   }, []);
 
-  // 里程碑统计（连续/累计打卡、测肤次数）
-  const loadSummary = useCallback(async () => {
+  // 里程碑统计（连续/累计打卡、测肤次数）；isCancelled 供弹层关闭后中止 setState
+  const loadSummary = useCallback(async (isCancelled?: () => boolean) => {
     try {
       const res = await fetch("/api/user/diary?summary=1");
       if (!res.ok) return;
       const data = await res.json();
+      if (isCancelled?.()) return;
       setSummary(data.summary ?? null);
     } catch (e) {
       console.error("Diary summary fetch error:", e);
@@ -291,8 +292,11 @@ export function DiaryModal() {
     }
   }, [entriesLoadingMore, loadEntries]);
 
+  // 依赖 user?.id 而非 user 引用：定时续期（/api/auth/me）返回内容相同的新对象时，
+  // 不应触发本 effect 重置面板数据造成"刷新抖动"
   useEffect(() => {
-    if (!isOpen || !user) return;
+    const userId = user?.id;
+    if (!isOpen || !userId) return;
     let cancelled = false;
 
     setEntries([]);
@@ -325,7 +329,7 @@ export function DiaryModal() {
         setEntriesLoaded(true);
       });
 
-    loadSummary();
+    loadSummary(() => cancelled);
 
     // 趋势与测肤首屏带 60s 短缓存，重复开关弹层不重复请求
     fetchWithShortCache("/api/user/skin-trends")
@@ -346,11 +350,12 @@ export function DiaryModal() {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, user, loadEntries, loadSummary, loadTests]);
+  }, [isOpen, user?.id, loadEntries, loadSummary, loadTests]);
 
   // 日历热力图：切换视图/月份时按需拉取该月条目；打卡保存/删除后随 refreshKey 重拉
   useEffect(() => {
-    if (!isOpen || !user || !calendarView) return;
+    const userId = user?.id;
+    if (!isOpen || !userId || !calendarView) return;
     let cancelled = false;
     setCalendarLoading(true);
     fetch(`/api/user/diary?month=${calendarMonth}`)
@@ -369,7 +374,7 @@ export function DiaryModal() {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, user, calendarView, calendarMonth, calendarRefreshKey]);
+  }, [isOpen, user?.id, calendarView, calendarMonth, calendarRefreshKey]);
 
   // 时间线「加载更早」：分页追加测肤记录（sessionId 去重；无新增时置 exhausted 防止重复拉取）
   const loadMoreTests = useCallback(async () => {

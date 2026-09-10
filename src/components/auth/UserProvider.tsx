@@ -67,7 +67,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 return;
             }
             const data = (await res.json()) as { user: User | null };
-            setUser(data.user ?? null);
+            const nextUser = data.user ?? null;
+            // 内容无变化时不更新引用：/api/auth/me 每次返回新对象，
+            // 若直接 setUser 会引发全站消费组件（含已打开的弹层）无谓重渲染/数据重置
+            setUser((prev) => {
+                if (
+                    prev?.id === nextUser?.id &&
+                    prev?.name === nextUser?.name &&
+                    prev?.avatar === nextUser?.avatar &&
+                    prev?.membershipLevel === nextUser?.membershipLevel &&
+                    prev?.totalSpent === nextUser?.totalSpent &&
+                    prev?.role === nextUser?.role
+                ) {
+                    return prev;
+                }
+                return nextUser;
+            });
         } catch (err) {
             if (err instanceof DOMException && err.name === "AbortError") {
                 // 请求超时：保持现有登录状态不变

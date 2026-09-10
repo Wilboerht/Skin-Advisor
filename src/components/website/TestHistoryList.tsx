@@ -131,29 +131,47 @@ export function TestHistoryList({
           </Link>
         </div>
       ) : (
-        <div className="divide-y divide-brand-espresso/[0.06]">
-          {history.map((session) => {
+        <div>
+          {history.map((session, i) => {
             const result = session.analysisResult;
             const score = result?.faceAnalysis?.overallScore;
             const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
+            // 按天分组：新日期渲染分组头（日期 + 细线），行内日期改测肤时间，消除同天多条重复日期噪音
+            const day = formatDay(session.completedAt);
+            const prevDay = i > 0 ? formatDay(history[i - 1].completedAt) : null;
+            const isNewDay = day !== prevDay;
+            const time = new Date(session.completedAt).toLocaleTimeString("zh-CN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            });
 
             return (
-              <Link
-                key={session.sessionId}
-                href={`/reports/${session.sessionId}`}
-                className="group flex items-center gap-3 px-1 py-3 rounded-md hover:bg-brand-charcoal/[0.03] transition-colors"
-              >
-                <span className="shrink-0 w-12 text-[13px] text-brand-charcoal/45 font-light tabular-nums">
-                  {formatDay(session.completedAt)}
-                </span>
-                <span className="flex-1 min-w-0 truncate text-[13px] text-brand-charcoal/85">
-                  {skinType || "肌肤分析"}
-                </span>
-                <span className="shrink-0 text-[13px] font-medium text-brand-charcoal tabular-nums">
-                  {score != null && score > 0 ? `${score} 分` : "—"}
-                </span>
-                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/25 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
-              </Link>
+              <div key={session.sessionId}>
+                {isNewDay && (
+                  <div className="pt-4 pb-1.5 first:pt-0 flex items-center gap-2.5">
+                    <span className="shrink-0 text-[11px] font-medium text-brand-charcoal/60 tabular-nums">
+                      {day}
+                    </span>
+                    <span className="flex-1 h-px bg-brand-espresso/[0.05]" />
+                  </div>
+                )}
+                <Link
+                  href={`/reports/${session.sessionId}`}
+                  className="group flex items-center gap-3 pl-1 py-2.5 rounded-md hover:bg-brand-charcoal/[0.03] transition-colors"
+                >
+                  <span className="shrink-0 w-12 text-[12px] text-brand-charcoal/40 font-light tabular-nums">
+                    {time}
+                  </span>
+                  <span className="flex-1 min-w-0 truncate text-[13px] text-brand-charcoal/85">
+                    {skinType || "肌肤分析"}
+                  </span>
+                  <span className="shrink-0 text-[13px] font-medium text-brand-charcoal tabular-nums">
+                    {score != null && score > 0 ? `${score} 分` : "—"}
+                  </span>
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/25 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
+                </Link>
+              </div>
             );
           })}
         </div>
