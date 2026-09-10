@@ -144,12 +144,14 @@ export async function GET(req: NextRequest) {
                     typeof skinProfile?.typeLabel === "string" ? skinProfile.typeLabel
                     : typeof skinAnalysis?.typeLabel === "string" ? skinAnalysis.typeLabel
                     : undefined;
+                const persona = typeof result?.persona === "string" ? result.persona : undefined;
                 return {
                     sessionId: s.sessionId,
                     completedAt: s.completedAt,
                     analysisResult: {
                         ...(score != null ? { faceAnalysis: { overallScore: score } } : {}),
-                        ...(typeLabel ? { skinProfile: { typeLabel } } : {})
+                        ...(typeLabel ? { skinProfile: { typeLabel } } : {}),
+                        ...(persona ? { persona } : {})
                     }
                 };
             })
