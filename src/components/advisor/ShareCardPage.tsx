@@ -105,12 +105,19 @@ export default function ShareCardPage({
         [reduceMotion]
     );
 
+    // 揭晓仪式 stagger：文字逐行淡入（尊重减弱动效）
+    const stagger = (delay: number) => ({
+        initial: { opacity: 0, y: reduceMotion ? 0 : 10 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : delay, ease: "easeOut" as const },
+    });
+
     return (
         <div className="w-full flex flex-col gap-0 lg:contents" aria-label={`${nickname || "用户"}的肌智派证书`}>
-            {/* Mobile: Character IP Image (above Share Card) */}
+            {/* Mobile: Character IP Image（压住证书卡顶部，从深色区"生长"出来） */}
             <m.div
                 {...ipAnimation}
-                className="relative flex lg:hidden justify-center pointer-events-none mx-auto h-[300px] w-[300px]"
+                className="relative flex lg:hidden justify-center pointer-events-none mx-auto h-[300px] w-[300px] -mb-24 z-10"
             >
                 {/* Mobile-only decorative background behind character */}
                 <div className="absolute inset-0 z-0 translate-y-12">
@@ -138,44 +145,80 @@ export default function ShareCardPage({
                 )}
             </m.div>
 
-            {/* Share Card (肌智派证书) */}
+            {/* Share Card（肌智派证书）：双色分区（浅色文字区 + 深色形象区）+ 金色证书内框 */}
             <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="relative rounded-[20px] lg:rounded-[24px] p-6 lg:p-10 border border-brand-espresso/8 overflow-visible -mt-5 lg:mt-0"
+                transition={{ duration: reduceMotion ? 0 : 0.5, delay: 0.05 }}
+                className="relative rounded-[20px] lg:rounded-[24px] border border-brand-espresso/8 overflow-hidden"
                 style={{ background: "#F5F2ED" }}
             >
-                {/* 卡片顶部径向暖光：IP 像从光里浮出来 */}
+                {/* 深色形象区：移动端卡顶横条 / 桌面右侧 1/3 */}
                 <div
                     aria-hidden="true"
-                    className="absolute inset-0 rounded-[20px] lg:rounded-[24px] pointer-events-none"
-                    style={{
-                        background:
-                            "radial-gradient(600px 280px at 50% -60px, rgba(255,248,235,0.9), rgba(255,248,235,0) 70%)",
-                    }}
+                    className="absolute inset-x-0 top-0 h-36 lg:h-auto lg:inset-y-0 lg:left-auto lg:right-0 lg:w-[34%] bg-gradient-to-b lg:bg-gradient-to-l from-[var(--color-brand-cocoa)] to-[#4a3a2c]"
+                >
+                    {/* 深色区内部光晕：形象像从暗处浮现 */}
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            background:
+                                "radial-gradient(220px 160px at 50% 30%, rgba(255,248,235,0.18), rgba(255,248,235,0) 75%)",
+                        }}
+                    />
+                </div>
+
+                {/* 金色双线证书框（烫金质感，全周） */}
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-2 rounded-[14px] lg:rounded-[18px] border border-[#C9A86C]/25 pointer-events-none"
                 />
-                <div className="relative z-10 w-full pr-0 lg:pr-[330px]">
-                    {/* Text Content */}
-                    <div className="flex flex-col justify-center z-10">
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-[10px] rounded-[10px] lg:rounded-[14px] border border-[#C9A86C]/12 pointer-events-none"
+                />
+
+                {/* 文字区：移动端从深色条下方开始 */}
+                <div className="relative z-10 w-full pt-28 lg:pt-10 lg:pr-[36%] p-6 lg:p-10">
+                    <div className="flex flex-col justify-center">
                         {/* 分享版标签 */}
-                        <div className="relative z-10 mb-4 lg:mb-6 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-xs font-bold text-[var(--color-brand-charcoal)] lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap self-start">
+                        <m.div
+                            {...stagger(0.1)}
+                            className="relative z-10 mb-4 lg:mb-6 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-xs font-bold text-[var(--color-brand-charcoal)] lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap self-start"
+                        >
                             肌智派证书
-                        </div>
+                        </m.div>
 
-                        <h2 className="text-balance text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-1.5 lg:mb-2.5">
+                        <m.h2
+                            {...stagger(0.18)}
+                            className="text-balance text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-2 lg:mb-3"
+                        >
                             {isReturning ? "欢迎回来，您的最新「肌智派测肤报告」已生成" : "恭喜完成首次「肌智派测肤」！您的报告已生成"}
-                        </h2>
+                        </m.h2>
 
-                        <h3 className="text-balance text-base lg:text-lg font-semibold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
-                            根据检测结果，您的肌智派系为「{skinTypeName}」
-                        </h3>
-                        <p className="text-[12px] leading-relaxed text-[var(--color-brand-cocoa)]/60 mb-5 lg:mb-6 max-w-full lg:max-w-[420px] line-clamp-2">
+                        {/* 派系名巨大化：结果即主角 */}
+                        <m.p
+                            {...stagger(0.26)}
+                            className="text-[13px] text-[var(--color-brand-cocoa)]/70 font-light tracking-[0.06em] mb-1"
+                        >
+                            根据检测结果，您的肌智派系为
+                        </m.p>
+                        <m.h3
+                            {...stagger(0.3)}
+                            className="text-balance text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.04em] mb-4 lg:mb-5"
+                        >
+                            「{skinTypeName}」
+                        </m.h3>
+
+                        <m.p
+                            {...stagger(0.36)}
+                            className="text-[12px] leading-relaxed text-[var(--color-brand-cocoa)]/60 mb-5 lg:mb-6 max-w-full lg:max-w-[400px] line-clamp-2"
+                        >
                             {summary || "详细分析见下方报告。"}
-                        </p>
+                        </m.p>
 
                         {/* 证书操作：单 CTA 焦点（翻到报告）+ 次级文字入口（保存证书） */}
-                        <div className="flex flex-col items-stretch sm:items-start gap-3 w-full">
+                        <m.div {...stagger(0.42)} className="flex flex-col items-stretch sm:items-start gap-3 w-full">
                             {onOpenReport && (
                                 <m.button
                                     whileHover={{ scale: 1.01 }}
@@ -208,42 +251,44 @@ export default function ShareCardPage({
                                     肌智派送好礼 · 参与抽奖
                                 </button>
                             )}
-                        </div>
+                        </m.div>
 
                         {/* 证书落款：日期 · 编号（等宽数字，上细分隔线） */}
-                        {(dateText || idText) && (
-                            <div className="mt-5 pt-3 border-t border-brand-espresso/[0.08]">
-                                <p className="text-[11px] font-light tracking-[0.08em] text-[var(--color-brand-cocoa)]/50 tabular-nums">
-                                    {dateText || ""}
-                                    {dateText && idText ? " · " : ""}
-                                    {idText ? `No.${idText}` : ""}
-                                </p>
-                            </div>
-                        )}
+                        <m.div {...stagger(0.5)}>
+                            {(dateText || idText) && (
+                                <div className="mt-5 pt-3 border-t border-brand-espresso/[0.08]">
+                                    <p className="text-[11px] font-light tracking-[0.08em] text-[var(--color-brand-cocoa)]/50 tabular-nums">
+                                        {dateText || ""}
+                                        {dateText && idText ? " · " : ""}
+                                        {idText ? `No.${idText}` : ""}
+                                    </p>
+                                </div>
+                            )}
 
-                        {onReTest && (
-                            <button
-                                type="button"
-                                onClick={onReTest}
-                                className="mt-3 text-[12px] font-medium text-[var(--color-brand-cocoa)]/70 underline underline-offset-4 hover:text-[var(--color-brand-cocoa)] transition-colors tracking-[0.04em]"
-                            >
-                                认为派系判断不准确？重新测试（消耗 1 次测试额度）
-                            </button>
-                        )}
+                            {onReTest && (
+                                <button
+                                    type="button"
+                                    onClick={onReTest}
+                                    className="mt-3 text-[12px] font-medium text-[var(--color-brand-cocoa)]/70 underline underline-offset-4 hover:text-[var(--color-brand-cocoa)] transition-colors tracking-[0.04em]"
+                                >
+                                    认为派系判断不准确？重新测试（消耗 1 次测试额度）
+                                </button>
+                            )}
+                        </m.div>
                     </div>
 
-                    {/* Desktop: Character IP Image (absolute right) */}
+                    {/* Desktop: Character IP Image（深色区内、右缘出血） */}
                     {characterReady && !characterImgFailed && (
                         <m.div
                             {...ipAnimation}
-                            className="hidden lg:block absolute right-0 top-[40%] -translate-y-1/2 z-0 pointer-events-none"
+                            className="hidden lg:block absolute right-[-16px] top-[42%] -translate-y-1/2 z-10 pointer-events-none"
                         >
                             <Image
                                 src={characterImgSrc}
                                 alt={skinTypeName}
-                                width={380}
-                                height={380}
-                                className="w-[380px] h-[380px] object-contain object-right"
+                                width={400}
+                                height={400}
+                                className="w-[400px] h-[400px] object-contain object-right drop-shadow-[0_16px_32px_rgba(0,0,0,0.25)]"
                                 priority
                                 onError={handleCharacterImageError}
                             />
