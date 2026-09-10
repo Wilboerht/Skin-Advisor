@@ -486,8 +486,8 @@ export function DiaryModal() {
                         >
                           <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
                         </button>
-                        <span className="text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em]">
-                          全部测肤记录
+                        <span className="text-[12px] text-brand-charcoal/45 font-light tracking-[0.05em]">
+                          返回护肤档案
                         </span>
                       </div>
                       <TestHistoryList
