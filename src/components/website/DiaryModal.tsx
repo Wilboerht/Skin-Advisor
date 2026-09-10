@@ -8,17 +8,14 @@ import {
   CalendarCheck,
   ChevronLeft,
   Flame,
-  Loader2,
   NotebookPen,
   RefreshCw,
   ScanFace,
-  Smile,
   TrendingUp,
   Trophy,
   X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import type { HistorySession } from "@/components/website/TestHistoryList";
@@ -29,6 +26,7 @@ import { TrendChart, type TrendsData } from "@/components/website/TrendChart";
 import { CheckInTrend } from "@/components/website/CheckInTrend";
 import { CheckInModal } from "@/components/website/CheckInModal";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
+import { LoginGuide } from "@/components/website/LoginGuide";
 import { useToast } from "@/components/ui/Toast";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { localDateStr } from "@/lib/local-date";
@@ -111,7 +109,6 @@ function GuestTrendCurve() {
 export function DiaryModal() {
   const { isOpen, closeDiaryModal } = useDiaryModal();
   const { user } = useAuth();
-  const { openAuthModal } = useAuthModal();
   const toast = useToast();
   const pathname = usePathname();
 
@@ -513,53 +510,19 @@ export function DiaryModal() {
                   ) : (
                     <m.div
                       key="main"
+                      className="min-h-full flex flex-col"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.18 }}
                     >
                 {!user ? (
-                  /* ===== 游客：登录引导视图 ===== */
-                  <div className="flex flex-col items-center text-center py-4">
-                    <div className="max-w-[220px] sm:max-w-[300px] w-full mb-4">
+                  /* ===== 游客：档案特色曲线 + 统一登录引导（LoginGuide），内容垂直居中 ===== */
+                  <div className="flex flex-col items-center justify-center text-center flex-1 py-4">
+                    <div className="max-w-[220px] sm:max-w-[300px] w-full mb-2">
                       <GuestTrendCurve />
                     </div>
-                    <h3 className="text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3">
-                      你的护肤档案
-                    </h3>
-                    <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] text-center mb-5">
-                      每次测肤自动记录，趋势与历程都在这里
-                    </p>
-                    <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
-                      {[
-                        { icon: TrendingUp, label: "肌肤变化" },
-                        { icon: ScanFace, label: "里程碑记录" },
-                        { icon: Smile, label: "每日打卡" },
-                      ].map((f) => {
-                        const Icon = f.icon;
-                        return (
-                          <span
-                            key={f.label}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/60 border border-brand-espresso/[0.1] text-[12px] text-brand-charcoal/60 font-light tracking-[0.04em] shadow-[0_1px_2px_rgba(61,47,37,0.04)]"
-                          >
-                            <Icon className="w-3.5 h-3.5 text-brand-charcoal/45" strokeWidth={1.5} />
-                            {f.label}
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <button
-                      onClick={() => openAuthModal("login")}
-                      className="inline-flex items-center justify-center px-10 py-3 rounded-full bg-[#5c4937] text-[#FDFBF7] text-[13px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c] mb-4"
-                    >
-                      登录 / 注册
-                    </button>
-                    <Link
-                      href="/questions"
-                      className="text-[13px] text-brand-charcoal/60 font-light tracking-[0.06em] hover:text-brand-charcoal transition-colors"
-                    >
-                      先去测肤，稍后再登录 →
-                    </Link>
+                    <LoginGuide onNavigateLogin={closeDiaryModal} />
                   </div>
                 ) : (
                   /* ===== 登录：趋势 + 时间线 ===== */
@@ -600,8 +563,15 @@ export function DiaryModal() {
 
                       {/* 趋势区：与时间轴同风格的极简平铺（无卡片外壳，靠留白组织） */}
                       {!trendsLoaded || !entriesLoaded ? (
-                        <div className="h-32 flex items-center justify-center">
-                          <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
+                        <div className="animate-pulse">
+                          {/* 摘要骨架：大字 + 两行小字 */}
+                          <div className="mb-4">
+                            <div className="h-3 w-24 rounded-full bg-brand-charcoal/[0.06] mb-3" />
+                            <div className="h-9 w-32 rounded-lg bg-brand-charcoal/[0.08] mb-3" />
+                            <div className="h-3 w-28 rounded-full bg-brand-charcoal/[0.06]" />
+                          </div>
+                          {/* 图表骨架 */}
+                          <div className="h-40 rounded-xl bg-brand-charcoal/[0.04]" />
                         </div>
                       ) : aggregatedTrends ? (
                         <div>

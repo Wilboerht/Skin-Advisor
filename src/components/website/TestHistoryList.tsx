@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Clock, Loader2, ScanFace } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, ScanFace } from "lucide-react";
 
 /**
  * TestHistoryList — 测肤记录列表（含数据拉取与分页）
@@ -102,9 +102,14 @@ export function TestHistoryList({
       )}
 
       {loading ? (
-        <div className="h-48 flex flex-col items-center justify-center gap-4">
-          <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
-          <span className="text-[13px] text-brand-charcoal/45">加载记录中...</span>
+        <div className="animate-pulse space-y-3 pt-1">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-3 pl-1 py-2.5">
+              <div className="h-3 w-12 rounded-full bg-brand-charcoal/[0.06]" />
+              <div className="h-3 flex-1 rounded-full bg-brand-charcoal/[0.06]" />
+              <div className="h-3 w-14 rounded-full bg-brand-charcoal/[0.06]" />
+            </div>
+          ))}
         </div>
       ) : error ? (
         <div className="h-48 flex flex-col items-center justify-center gap-4">

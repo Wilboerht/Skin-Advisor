@@ -140,8 +140,18 @@ export function DiaryTimeline({
 
   if (loading) {
     return (
-      <div className="h-32 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
+      <div className="animate-pulse space-y-4 pt-1">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex gap-4">
+            <div className="w-7 shrink-0">
+              <div className="h-5 w-5 mx-auto rounded-md bg-brand-charcoal/[0.08]" />
+            </div>
+            <div className="flex-1 space-y-2 py-1">
+              <div className="h-3 w-2/5 rounded-full bg-brand-charcoal/[0.06]" />
+              <div className="h-3 w-4/5 rounded-full bg-brand-charcoal/[0.04]" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
