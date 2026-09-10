@@ -78,9 +78,9 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   return (
     <>
-      {/* 3D 旋转木马 */}
+      {/* 3D 旋转木马（宽度由父级 80% 容器控制） */}
       <div
-        className="relative mx-auto max-w-5xl select-none"
+        className="relative w-full select-none"
         style={{ perspective: "1200px" }}
         onTouchStart={onCarouselTouchStart}
         onTouchEnd={onCarouselTouchEnd}

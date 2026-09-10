@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight, Gift } from "lucide-react";
 import { skinTypes, routeOrder, type SkinTypeData } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
@@ -41,7 +40,7 @@ export default async function ResultIndexPage({
   const initialType = (orderedTypes.find((t) => t && t.route === type) ?? null) as SkinTypeData | null;
 
   return (
-    <div className="relative min-h-dvh text-brand-charcoal pb-dock">
+    <div className="relative min-h-dvh text-brand-charcoal pb-dock flex flex-col">
       {/* Kinetic 背景：与首页一致的米白底 + 水印 */}
       <KineticBackground />
       {/* 隐藏页面滚动条（保留滚动） */}
@@ -54,8 +53,8 @@ export default async function ResultIndexPage({
       />
       {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 
-      {/* Hero（紧凑版：为 PC 一屏"选英雄"舞台让出高度） */}
-      <section className="relative pt-10 md:pt-12 pb-8 md:pb-10 px-6 md:px-12 lg:px-20 overflow-hidden">
+      {/* Hero（紧凑版：标题 + CTA，为旋转木马让出舞台空间） */}
+      <section className="relative pt-10 md:pt-12 pb-4 md:pb-6 px-6 md:px-12 lg:px-20 overflow-hidden shrink-0">
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1
@@ -84,16 +83,18 @@ export default async function ResultIndexPage({
         </div>
       </section>
 
-      {/* 类型卡片（点击打开详情弹窗） */}
-      <section className="relative z-10 px-6 md:px-12 lg:px-20 pb-12">
-        <SkinTypesClient
-          types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
-          initialType={initialType}
-        />
-        {/* 视觉收尾：画廊下方小字提示 */}
-        <p className="mt-6 text-center text-[12px] text-brand-charcoal/40 font-light tracking-[0.08em]">
-          点击任意派系，查看完整解读
-        </p>
+      {/* 旋转木马：标题与 Dock 之间的剩余空间垂直居中，区域宽度占页面 80% */}
+      <section className="relative z-10 flex-1 flex items-center justify-center px-6 md:px-12 lg:px-20 pb-8">
+        <div className="w-[80%]">
+          <SkinTypesClient
+            types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
+            initialType={initialType}
+          />
+          {/* 视觉收尾：木马下方小字提示 */}
+          <p className="mt-6 text-center text-[12px] text-brand-charcoal/40 font-light tracking-[0.08em]">
+            点击任意派系，查看完整解读
+          </p>
+        </div>
       </section>
     </div>
   );
