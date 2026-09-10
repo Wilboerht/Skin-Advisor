@@ -70,7 +70,7 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
               onClick={() => onMonthChange(currentMonth)}
               className="text-[11px] text-brand-charcoal/45 font-light tracking-[0.04em] hover:text-brand-charcoal transition-colors cursor-pointer rounded-full px-2 py-0.5 hover:bg-brand-charcoal/[0.04]"
             >
-              回到本月
+              回到今日
             </button>
           )}
         </div>

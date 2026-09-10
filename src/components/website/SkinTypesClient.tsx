@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -20,6 +20,8 @@ interface SkinTypesClientProps {
 export function SkinTypesClient({ types, initialType = null }: SkinTypesClientProps) {
   const [selected, setSelected] = useState<SkinTypeData | null>(initialType);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // 画廊当前位置（滚动进度指示用）
+  const [activeIdx, setActiveIdx] = useState(0);
 
   // 弹窗内切换派系（循环）
   const navigateType = (delta: number) => {
@@ -40,6 +42,32 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
     const step = card ? card.offsetWidth + 20 : 320;
     el.scrollBy({ left: dir * step, behavior: "smooth" });
   };
+
+  // 滚动监听：更新当前卡序号（进度指示）
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const card = el.querySelector<HTMLElement>("[data-type-card]");
+      const step = card ? card.offsetWidth + 20 : 320;
+      const idx = Math.round(el.scrollLeft / step);
+      setActiveIdx(Math.min(Math.max(idx, 0), types.length - 1));
+    };
+    onScroll();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [types.length]);
+
+  // 键盘 ←/→ 滚动画廊（详情弹窗打开时不响应，避免与弹窗操作冲突）
+  useEffect(() => {
+    if (selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") scrollByCard(-1);
+      if (e.key === "ArrowRight") scrollByCard(1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected]);
 
   return (
     <>
@@ -105,6 +133,25 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         >
           <ChevronRight className="w-5 h-5" strokeWidth={1.75} />
         </button>
+      </div>
+
+      {/* 滚动进度指示：8 个小点（当前卡高亮，可点击跳转） */}
+      <div className="flex items-center justify-center gap-1.5 mt-5" aria-hidden="true">
+        {types.map((t, i) => (
+          <button
+            key={t.route}
+            type="button"
+            tabIndex={-1}
+            onClick={() => {
+              const el = scrollRef.current;
+              const card = el?.querySelector<HTMLElement>("[data-type-card]");
+              if (el && card) el.scrollTo({ left: i * (card.offsetWidth + 20), behavior: "smooth" });
+            }}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              i === activeIdx ? "w-5 bg-[var(--color-brand-cocoa)]" : "w-1.5 bg-brand-charcoal/15"
+            }`}
+          />
+        ))}
       </div>
 
       <SkinTypeModal data={selected} onClose={() => setSelected(null)} onNavigate={navigateType} />

@@ -75,6 +75,7 @@ export default async function ResultIndexPage({
                   key={t.route}
                   href={`/skin-types?type=${t.route}`}
                   aria-label={t.typeName}
+                  title={t.typeName}
                   className="relative w-7 h-7 md:w-8 md:h-8 rounded-full overflow-hidden border border-brand-charcoal/[0.1] bg-white/60 transition-transform duration-300 hover:scale-110 hover:border-brand-charcoal/30"
                 >
                   <Image
@@ -113,6 +114,10 @@ export default async function ResultIndexPage({
           types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
           initialType={initialType}
         />
+        {/* 视觉收尾：画廊下方小字提示 */}
+        <p className="mt-6 text-center text-[12px] text-brand-charcoal/40 font-light tracking-[0.08em]">
+          点击任意派系，查看完整解读
+        </p>
       </section>
     </div>
   );

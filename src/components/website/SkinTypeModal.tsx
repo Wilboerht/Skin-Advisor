@@ -53,16 +53,16 @@ export function SkinTypeModal({ data, onClose, onNavigate }: SkinTypeModalProps)
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full h-full sm:h-auto sm:max-w-xl sm:max-h-[85dvh] bg-[#FDFBF7] rounded-none sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+            className="relative z-10 w-full h-full sm:h-auto sm:max-w-xl sm:max-h-[85dvh] bg-[#F7F4EE] rounded-none sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
             <button
               onClick={onClose}
               aria-label="关闭"
-              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
+              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/35 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
             >
-              <X size={16} strokeWidth={2.5} />
+              <X size={17} strokeWidth={1.5} />
             </button>
 
             {/* 派系切换：上一派 / 下一派（弹窗内连续浏览，无需反复开关） */}
@@ -208,7 +208,7 @@ export function SkinTypeModal({ data, onClose, onNavigate }: SkinTypeModalProps)
                 <Link
                   href="/"
                   onClick={onClose}
-                  className="group inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-full bg-brand-charcoal text-white text-[13px] tracking-[0.12em] font-light transition-all duration-300 hover:opacity-90"
+                  className="group inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] tracking-[0.12em] font-light transition-colors duration-300 hover:bg-[#4a3a2c]"
                 >
                   <span>开始测肤，解锁你的专属形象</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
