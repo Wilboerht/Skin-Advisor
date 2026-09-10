@@ -39,7 +39,7 @@ export const STATE_META: Record<string, { label: string; color: string; icon: Re
   good: { label: "不错", color: "#7A9A5B", icon: Smile },
   normal: { label: "一般", color: "#C9A86C", icon: Meh },
   bad: { label: "较差", color: "#D9730D", icon: Frown },
-  terrible: { label: "爆痘敏感", color: "#D44C47", icon: Angry },
+  terrible: { label: "很差", color: "#D44C47", icon: Angry },
 };
 
 const RECENT_DAYS = 30;

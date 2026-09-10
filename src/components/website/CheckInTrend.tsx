@@ -129,7 +129,7 @@ export function CheckInTrend({ entries }: { entries: DiaryEntry[] }) {
             style={{ backgroundColor: STATE_META[key].color }}
           />
         ))}
-        <span className="text-[10px] text-brand-charcoal/40 font-light ml-0.5">爆痘敏感</span>
+        <span className="text-[10px] text-brand-charcoal/40 font-light ml-0.5">很差</span>
         <span className="w-px h-3 bg-brand-espresso/[0.1] mx-1.5" />
         <span className="w-2 h-2 rounded-full bg-brand-charcoal/10" />
         <span className="text-[10px] text-brand-charcoal/40 font-light">未打卡</span>
