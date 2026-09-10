@@ -40,7 +40,7 @@ export default async function ResultIndexPage({
   const initialType = (orderedTypes.find((t) => t && t.route === type) ?? null) as SkinTypeData | null;
 
   return (
-    <div className="relative min-h-dvh text-brand-charcoal pb-dock flex flex-col">
+    <div className="relative min-h-dvh text-brand-charcoal pb-dock flex flex-col overflow-x-hidden">
       {/* Kinetic 背景：与首页一致的米白底 + 水印 */}
       <KineticBackground />
       {/* 隐藏页面滚动条（保留滚动） */}

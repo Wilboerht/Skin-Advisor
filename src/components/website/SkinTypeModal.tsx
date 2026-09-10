@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import type { SkinTypeData } from "@/lib/result-content";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
@@ -12,8 +12,6 @@ interface SkinTypeModalProps {
   /** null 表示关闭 */
   data: SkinTypeData | null;
   onClose: () => void;
-  /** 弹窗内切换上一派/下一派（delta ±1，由父级循环） */
-  onNavigate?: (delta: number) => void;
 }
 
 /**
@@ -21,7 +19,7 @@ interface SkinTypeModalProps {
  * 容器/动效/关闭按钮与 GiftModal、FaqModal 对齐；
  * 内容保留：形象与简介、优势高光、护肤日常、护肤公式（不含成分产品表）
  */
-export function SkinTypeModal({ data, onClose, onNavigate }: SkinTypeModalProps) {
+export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
   const isOpen = data !== null;
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
@@ -65,29 +63,8 @@ export function SkinTypeModal({ data, onClose, onNavigate }: SkinTypeModalProps)
               <X size={17} strokeWidth={1.5} />
             </button>
 
-            {/* 派系切换：上一派 / 下一派（弹窗内连续浏览，无需反复开关） */}
-            {onNavigate && (
-              <>
-                <button
-                  onClick={() => onNavigate(-1)}
-                  aria-label="上一个派系"
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/80 backdrop-blur border border-brand-charcoal/[0.1] text-brand-charcoal/50 hover:text-brand-charcoal hover:border-brand-charcoal/30 shadow-[0_2px_10px_rgba(61,47,37,0.08)] transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5" strokeWidth={1.75} />
-                </button>
-                <button
-                  onClick={() => onNavigate(1)}
-                  aria-label="下一个派系"
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/80 backdrop-blur border border-brand-charcoal/[0.1] text-brand-charcoal/50 hover:text-brand-charcoal hover:border-brand-charcoal/30 shadow-[0_2px_10px_rgba(61,47,37,0.08)] transition-colors"
-                >
-                  <ChevronRight className="w-5 h-5" strokeWidth={1.75} />
-                </button>
-              </>
-            )}
-
-            {/* 可滚动内容区：内容 max-w-2xl 居中（弹层 1100 宽下保持可读行宽） */}
+            {/* 可滚动内容区：内容铺满弹层宽度（与护肤档案双列同宽的容器） */}
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
-              <div className="max-w-2xl mx-auto">
               {/* 头部：形象 + 类型名 + 简介 */}
               <div className="flex flex-col items-center text-center mb-8">
                 <Image
@@ -103,7 +80,7 @@ export function SkinTypeModal({ data, onClose, onNavigate }: SkinTypeModalProps)
                 >
                   {data.typeName}
                 </h2>
-                <p className="text-[13px] md:text-sm text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em] max-w-md">
+                <p className="text-[13px] md:text-sm text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em] max-w-3xl mx-auto">
                   {data.m1.persona}
                 </p>
               </div>
@@ -214,7 +191,6 @@ export function SkinTypeModal({ data, onClose, onNavigate }: SkinTypeModalProps)
                   <span>开始测肤，解锁你的专属形象</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
                 </Link>
-              </div>
               </div>
             </div>
           </m.div>

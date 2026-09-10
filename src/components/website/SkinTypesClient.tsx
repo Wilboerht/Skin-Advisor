@@ -78,9 +78,9 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   return (
     <>
-      {/* 3D 旋转木马（宽度由父级 80% 容器控制） */}
+      {/* 3D 旋转木马（宽度由父级 80% 容器控制）；overflow-hidden 裁剪远端卡防横向页面溢出 */}
       <div
-        className="relative w-full select-none"
+        className="relative w-full overflow-hidden select-none"
         style={{ perspective: "1200px" }}
         onTouchStart={onCarouselTouchStart}
         onTouchEnd={onCarouselTouchEnd}
@@ -93,9 +93,11 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
             // 变换：环形透视 = X 横向展开 + rotateY 转出 + Z 轴纵深缩进，中央正面
             const transform = isCenter
               ? "translateX(-50%) rotateY(0deg) translateZ(0px)"
-              : `translateX(calc(-50% + ${d * 250}px)) rotateY(${d * -30}deg) translateZ(${-abs * 90}px) scale(${1 - abs * 0.08})`;
+              : `translateX(calc(-50% + ${d * 230}px)) rotateY(${d * -30}deg) translateZ(${-abs * 90}px) scale(${1 - abs * 0.08})`;
             const opacity = abs === 0 ? 1 : abs === 1 ? 0.75 : abs === 2 ? 0.45 : abs === 3 ? 0.2 : 0;
             const zIndex = 10 - abs;
+            // 完全隐藏的远端卡不接收点击（避免"点空气"聚焦到不可见卡片）
+            const hidden = abs >= 3;
 
             return (
               <button
@@ -103,23 +105,25 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                 type="button"
                 onClick={() => (isCenter ? setSelected(type) : setActiveIdx(i))}
                 aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
+                aria-hidden={hidden}
                 tabIndex={isCenter ? 0 : -1}
-                className="absolute left-1/2 top-0 w-[360px] md:w-[440px] rounded-2xl border border-brand-espresso/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_16px_40px_rgba(61,47,37,0.12)] p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                className="absolute left-1/2 top-0 w-[280px] md:w-[440px] rounded-2xl border border-brand-espresso/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_16px_40px_rgba(61,47,37,0.12)] p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
                 style={{
                   transform,
                   opacity,
                   zIndex,
                   transformStyle: "preserve-3d",
+                  pointerEvents: hidden ? "none" : "auto",
                 }}
               >
                 {/* 横向结构：左形象 + 右文字 */}
-                <div className="flex items-center gap-4 md:gap-5">
+                <div className="flex items-center gap-3 md:gap-5">
                   <Image
                     src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
                     alt=""
                     width={180}
                     height={180}
-                    className="shrink-0 w-[120px] h-[120px] md:w-[160px] md:h-[160px] object-contain pointer-events-none"
+                    className="shrink-0 w-[96px] h-[96px] md:w-[160px] md:h-[160px] object-contain pointer-events-none"
                   />
                   <div className="flex-1 min-w-0">
                     <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal">
@@ -177,7 +181,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         ))}
       </div>
 
-      <SkinTypeModal data={selected} onClose={() => setSelected(null)} onNavigate={navigateType} />
+      <SkinTypeModal data={selected} onClose={() => setSelected(null)} />
     </>
   );
 }
