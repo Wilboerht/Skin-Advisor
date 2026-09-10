@@ -68,8 +68,9 @@ export function FaceScanOverlay({
                         />
                     )}
 
-                    {/* 椭圆框进度描边：随倒计时稳定度从 0 逐渐闭合到 100%（金色的"进度圈"） */}
-                    {faceStatus === "found" && stabilityProgress > 0 && stabilityProgress < 100 && (
+                    {/* 椭圆框进度描边：随倒计时稳定度从 0 逐渐闭合到 100%（金色的"进度圈"）。
+                        ready 态保持完全闭合一圈，直到 success 绿环确认动画接手——用户能看到"完整闭合"瞬间 */}
+                    {(faceStatus === "found" || faceStatus === "ready") && stabilityProgress > 0 && stabilityProgress <= 100 && (
                         <svg
                             className="absolute inset-0 h-full w-full overflow-visible pointer-events-none"
                             viewBox="0 0 100 100"
@@ -88,7 +89,7 @@ export function FaceScanOverlay({
                                 vectorEffect="non-scaling-stroke"
                                 strokeLinecap="round"
                                 initial={{ pathLength: 0 }}
-                                animate={{ pathLength: stabilityProgress / 100 }}
+                                animate={{ pathLength: Math.min(stabilityProgress, 100) / 100 }}
                                 transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "linear" }}
                             />
                         </svg>
