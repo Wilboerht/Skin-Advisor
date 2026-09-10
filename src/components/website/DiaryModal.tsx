@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import {
   CalendarCheck,
@@ -112,6 +113,17 @@ export function DiaryModal() {
   const { user } = useAuth();
   const { openAuthModal } = useAuthModal();
   const toast = useToast();
+  const pathname = usePathname();
+
+  // 路由变化（如点击时间线/测肤记录跳转 /reports/:id、去测肤等）时自动关闭面板：
+  // 弹层是 context 状态，客户端导航不会卸载组件，不处理会盖在新页面上
+  const prevPathnameRef = useRef(pathname);
+  useEffect(() => {
+    if (pathname !== prevPathnameRef.current) {
+      prevPathnameRef.current = pathname;
+      if (isOpen) closeDiaryModal();
+    }
+  }, [pathname, isOpen, closeDiaryModal]);
 
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [entriesLoaded, setEntriesLoaded] = useState(false);
