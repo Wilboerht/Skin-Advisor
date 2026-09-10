@@ -90,11 +90,11 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
             const d = offsetOf(i, activeIdx, types.length);
             const abs = Math.abs(d);
             const isCenter = abs === 0;
-            // 变换：环形透视（rotateY + translateZ 缩进），中央正面
+            // 变换：环形透视 = X 横向展开 + rotateY 转出 + Z 轴纵深缩进，中央正面
             const transform = isCenter
               ? "translateX(-50%) rotateY(0deg) translateZ(0px)"
-              : `translateX(-50%) rotateY(${d * -28}deg) translateZ(${-abs * 110}px) scale(${1 - abs * 0.1})`;
-            const opacity = abs === 0 ? 1 : abs === 1 ? 0.7 : abs === 2 ? 0.4 : 0;
+              : `translateX(calc(-50% + ${d * 250}px)) rotateY(${d * -30}deg) translateZ(${-abs * 90}px) scale(${1 - abs * 0.08})`;
+            const opacity = abs === 0 ? 1 : abs === 1 ? 0.75 : abs === 2 ? 0.45 : abs === 3 ? 0.2 : 0;
             const zIndex = 10 - abs;
 
             return (
