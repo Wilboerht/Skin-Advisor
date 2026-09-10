@@ -42,7 +42,7 @@ export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }
           return (
             <span
               key={f.label}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/60 border border-brand-espresso/[0.1] text-[12px] text-brand-charcoal/60 font-light tracking-[0.04em] shadow-[0_1px_2px_rgba(61,47,37,0.04)]"
+              className="inline-flex h-[24px] px-2 items-center justify-center gap-1.5 rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-xs font-bold text-[var(--color-brand-charcoal)] lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap"
             >
               <Icon className="w-3.5 h-3.5 text-brand-charcoal/45" strokeWidth={1.5} />
               {f.label}

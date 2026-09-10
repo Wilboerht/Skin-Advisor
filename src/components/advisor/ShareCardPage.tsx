@@ -178,8 +178,8 @@ export default function ShareCardPage({
                     className="absolute inset-[10px] rounded-[10px] lg:rounded-[14px] border border-[#C9A86C]/12 pointer-events-none"
                 />
 
-                {/* 文字区：移动端从深色条下方开始 */}
-                <div className="relative z-10 w-full pt-28 lg:pt-10 lg:pr-[36%] p-6 lg:p-10">
+                {/* 文字区：移动端从深色条下方开始（pt-44 > 深色条 144px，留 32px 呼吸） */}
+                <div className="relative z-10 w-full pt-44 lg:pt-10 lg:pr-[36%] p-6 lg:p-10">
                     <div className="flex flex-col justify-center">
                         {/* 分享版标签 */}
                         <m.div
@@ -277,11 +277,11 @@ export default function ShareCardPage({
                         </m.div>
                     </div>
 
-                    {/* Desktop: Character IP Image（深色区内、右缘出血） */}
+                    {/* Desktop: Character IP Image（深色区内，贴右缘——卡片 overflow-hidden 不允许出血） */}
                     {characterReady && !characterImgFailed && (
                         <m.div
                             {...ipAnimation}
-                            className="hidden lg:block absolute right-[-16px] top-[42%] -translate-y-1/2 z-10 pointer-events-none"
+                            className="hidden lg:block absolute right-0 top-[42%] -translate-y-1/2 z-10 pointer-events-none"
                         >
                             <Image
                                 src={characterImgSrc}
