@@ -322,6 +322,11 @@ export default function HomeClient() {
       }
 
       if (!canTest) {
+        // 需登录：不再弹"测肤需登录后使用"限制框，统一打开「登录肌智派」引导（AuthModal/LoginGuide）
+        if (testLimitInfo?.requireLogin) {
+          openAuthModal("login");
+          return;
+        }
         setShowLimitModal(true);
         return;
       }
@@ -344,7 +349,7 @@ export default function HomeClient() {
     } finally {
       startingRef.current = false;
     }
-  }, [checkTestLimit, user, showOnboardingModal]);
+  }, [checkTestLimit, user, showOnboardingModal, testLimitInfo?.requireLogin, openAuthModal]);
 
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
@@ -622,17 +627,11 @@ export default function HomeClient() {
               <div className="px-10 pb-10 pt-2 flex flex-col items-center gap-6">
                 <div className="text-center space-y-2">
                   <h2 id="limit-modal-title" className="text-base font-bold" style={{ color: '#5c4937' }}>
-                    {testLimitInfo?.requireLogin
-                      ? '测肤需登录后使用'
-                      : testLimitInfo?.quotaPeriod === 'lifetime' ? '免费测肤次数已用完' : '今日测试次数已用完'}
+                    {testLimitInfo?.quotaPeriod === 'lifetime' ? '免费测肤次数已用完' : '今日测试次数已用完'}
                   </h2>
                   <p className="text-sm leading-relaxed" style={{ color: '#5c4937', opacity: 0.8 }}>
                     {(() => {
                       const info = testLimitInfo;
-                      // 游客：测肤功能需登录，展示登录引导而非次数信息
-                      if (info?.requireLogin) {
-                        return <>{info.message || info.error || "测肤功能需登录后使用，注册即享 10 次免费 AI 测肤。"}</>;
-                      }
                       const dailyLimit = info?.dailyLimit ?? 10;
                       const remaining = info?.remaining ?? 0;
                       // 被封禁/限制但仍有剩余次数：展示限制原因而非次数信息
@@ -660,7 +659,7 @@ export default function HomeClient() {
                 </div>
 
                 <div className="flex flex-col gap-3 w-full">
-                  {(!user || testLimitInfo?.requireLogin) && (
+                  {!user && (
                     <button
                       onClick={() => {
                         setShowLimitModal(false);
