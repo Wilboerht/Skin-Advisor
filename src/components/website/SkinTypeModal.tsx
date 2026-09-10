@@ -47,13 +47,13 @@ export function SkinTypeModal({ data, onClose, onNavigate }: SkinTypeModalProps)
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
           />
 
-          {/* 弹窗主体：移动端全屏，桌面端居中卡片 */}
+          {/* 弹窗主体：移动端全屏，桌面端与护肤档案弹层同规格（1100 宽 / min(680, dvh-3rem) 高 / 40px 圆角） */}
           <m.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full h-full sm:h-auto sm:max-w-xl sm:max-h-[85dvh] bg-[#F7F4EE] rounded-none sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
+            className="relative z-10 w-full h-full sm:h-[min(680px,calc(100dvh-3rem))] sm:max-h-none sm:max-w-[1100px] bg-[#F7F4EE] rounded-none sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
@@ -85,8 +85,9 @@ export function SkinTypeModal({ data, onClose, onNavigate }: SkinTypeModalProps)
               </>
             )}
 
-            {/* 可滚动内容区 */}
+            {/* 可滚动内容区：内容 max-w-2xl 居中（弹层 1100 宽下保持可读行宽） */}
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
+              <div className="max-w-2xl mx-auto">
               {/* 头部：形象 + 类型名 + 简介 */}
               <div className="flex flex-col items-center text-center mb-8">
                 <Image
@@ -213,6 +214,7 @@ export function SkinTypeModal({ data, onClose, onNavigate }: SkinTypeModalProps)
                   <span>开始测肤，解锁你的专属形象</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
                 </Link>
+              </div>
               </div>
             </div>
           </m.div>

@@ -4,12 +4,14 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ChevronRight, LogOut, NotebookPen, Settings2, Smartphone, X } from "lucide-react";
+import { ChevronRight, LogOut, NotebookPen, Settings2, Smartphone, Sparkles, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { LoginGuide } from "@/components/website/LoginGuide";
+import { getSkinTypeByIpKey } from "@/lib/result-content";
+import type { HistorySession } from "@/components/website/TestHistoryList";
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -64,6 +66,8 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
 
   // 测肤用量（登录用户打开弹层时拉取；接口失败静默不展示该行）
   const [testUsage, setTestUsage] = useState<TestUsage | null>(null);
+  // 最新测肤派系（身份核心信息；取最近一次测肤记录的 persona → 派系中文名）
+  const [latestPersonaLabel, setLatestPersonaLabel] = useState<string | null>(null);
   useEffect(() => {
     if (!isOpen || !user) return;
     let cancelled = false;
@@ -71,6 +75,18 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!cancelled && data?.usage) setTestUsage(data.usage as TestUsage);
+      })
+      .catch(() => { /* 静默失败 */ });
+    // 最新派系：复用 history 接口（lite），仅取第一条的 persona
+    fetch("/api/advisor/history?page=1&limit=1&lite=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const latest = (data?.history as HistorySession[] | undefined)?.[0];
+        const persona = (latest?.analysisResult as { persona?: string } | undefined)?.persona;
+        setLatestPersonaLabel(
+          persona ? getSkinTypeByIpKey(persona)?.typeName ?? null : null
+        );
       })
       .catch(() => { /* 静默失败 */ });
     return () => { cancelled = true; };
@@ -162,9 +178,17 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                   <span>{maskPhone(user.phone)}</span>
                 </div>
 
+                {/* 最新测肤派系：档案身份核心（有测肤记录时显示） */}
+                {latestPersonaLabel && (
+                  <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#C9A86C]/30 bg-[#C9A86C]/[0.06] px-3 py-1 text-[12px] font-light tracking-[0.05em] text-[#8B7355]">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C9A86C]" strokeWidth={1.8} />
+                    我的派系 · {latestPersonaLabel}
+                  </div>
+                )}
+
                 {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量；接口失败不渲染 */}
                 {testUsage && (
-                  <p className="text-[12px] text-[#8A8A8A] font-light tracking-[0.05em] mb-6">
+                  <p className={`text-[12px] text-[#8A8A8A] font-light tracking-[0.05em] ${latestPersonaLabel ? "mb-4" : "mb-6"}`}>
                     {testUsage.unlimited
                       ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
                       : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
