@@ -374,7 +374,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // 页面切换：0 = 封面（IP 证书页，每次测肤都先展示），1 = 报告。
     // 初始为封面页；翻页后如返回报告页路径？不会——用户可随时点指示器/「我的证书」回看封面
-    const [pageIndex, setPageIndex] = useState<0 | 1>(0);
+    // 初始页：默认封面（第一面）；URL 带 skipCover=1（历史详情入口）时直达报告页。
+    // 注意 searchParams 在 useState 之前已解构，初始化器可直接读取（SSR 安全）
+    const [pageIndex, setPageIndex] = useState<0 | 1>(() =>
+        searchParams.get("skipCover") === "1" ? 1 : 0
+    );
     const flippedToReportRef = useRef(false);
     const reportLayerRef = useRef<HTMLDivElement>(null);
     // 尊重系统"减弱动效"偏好：翻页交叉淡入淡出降级为瞬时切换

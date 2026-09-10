@@ -284,7 +284,7 @@ export function DiaryTimeline({
                     const Icon = meta.icon;
                     const auto = isAutoDiaryEntry(ev.entry);
                     // 测肤自动条目带会话 id 时可跳转对应报告（同日已显示测肤里程碑时本卡会被隐藏，互不冲突）
-                    const autoReportUrl = auto && ev.entry.sessionId ? `/reports/${ev.entry.sessionId}` : null;
+                    const autoReportUrl = auto && ev.entry.sessionId ? `/reports/${ev.entry.sessionId}?skipCover=1` : null;
                     return (
                       <div key={`d-${ev.entry.id}-${i}`} className="relative group">
                         <span
@@ -393,7 +393,7 @@ export function DiaryTimeline({
                     <div key={`t-${ev.test.sessionId}-${i}`} className="relative">
                       <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE] bg-[var(--color-brand-cocoa)]" />
                       <Link
-                        href={`/reports/${ev.test.sessionId}`}
+                        href={`/reports/${ev.test.sessionId}?skipCover=1`}
                         className="group flex items-center gap-2 pr-4"
                       >
                         <span className="text-[12px] font-medium text-brand-charcoal">完成测肤</span>

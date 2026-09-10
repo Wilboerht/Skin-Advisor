@@ -157,7 +157,7 @@ export function TestHistoryList({
                   </div>
                 )}
                 <Link
-                  href={`/reports/${session.sessionId}`}
+                  href={`/reports/${session.sessionId}?skipCover=1`}
                   className="group flex items-center gap-3 pl-1 py-2.5 rounded-md hover:bg-brand-charcoal/[0.03] transition-colors"
                 >
                   <span className="shrink-0 w-12 text-[12px] text-brand-charcoal/40 font-light tabular-nums">
