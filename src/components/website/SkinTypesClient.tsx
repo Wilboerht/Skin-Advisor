@@ -59,6 +59,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- step 仅依赖 types.length（稳定），此处按需忽略
   }, [selected, types.length]);
 
   const onCarouselTouchStart = (e: React.TouchEvent) => {
