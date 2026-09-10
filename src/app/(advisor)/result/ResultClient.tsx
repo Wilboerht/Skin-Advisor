@@ -1323,7 +1323,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             />
 
                             <div className="justify-self-end">
-                                <UserBadge personaLabel={personaLabel} />
+                                <UserBadge />
                             </div>
                         </div>
                     </header>
