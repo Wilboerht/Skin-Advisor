@@ -410,10 +410,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         if (!isMock) trackResultFlip("cover", coverMeta);
     }, [coverMeta, trackResultFlip, isMock]);
 
-    // 报告 → 封面入口已移除（右下角仅保留「回到顶部」）；result_flip "cover" 事件暂无触发点，
-    // API 端仍保留该枚举值以便未来重新接入
-
-    // 翻页仅接受明确操作（按钮 / 指示器 / 证书入口），不监听滚轮与手势，
+    // 翻页仅接受明确操作（底部 tab / 封面 CTA），不监听滚轮与手势，
     // 避免用户查看封面时误滑动直接翻页丢失当前阅读位置
     // 注意：flippedToReportRef 一旦置位不再复位——"封面→报告"转化每会话只上报一次，
     // 来回切换封面不重复计入转化（cover 打开事件单独上报）
@@ -1517,6 +1514,38 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             </m.div>
                         )}
                     </AnimatePresence>
+
+                    {/* 底部两段式 tab：证书（第一面）/ 报告（第二面）切换，跨两页常驻 */}
+                    <div
+                        role="tablist"
+                        aria-label="报告页面切换"
+                        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 flex items-center rounded-full border border-brand-espresso/[0.12] bg-white/85 backdrop-blur-md p-0.5 shadow-[0_8px_24px_rgba(61,47,37,0.12)]"
+                    >
+                        <button
+                            role="tab"
+                            aria-selected={pageIndex === 0}
+                            onClick={() => { if (pageIndex !== 0) handleOpenCover(); }}
+                            className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
+                                pageIndex === 0
+                                    ? "bg-[var(--color-brand-cocoa)] text-white font-medium shadow-[0_2px_6px_rgba(61,47,37,0.18)]"
+                                    : "text-brand-charcoal/55 font-light hover:text-brand-charcoal"
+                            }`}
+                        >
+                            证书
+                        </button>
+                        <button
+                            role="tab"
+                            aria-selected={pageIndex === 1}
+                            onClick={() => { if (pageIndex !== 1) handleFlipToReport(); }}
+                            className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
+                                pageIndex === 1
+                                    ? "bg-[var(--color-brand-cocoa)] text-white font-medium shadow-[0_2px_6px_rgba(61,47,37,0.18)]"
+                                    : "text-brand-charcoal/55 font-light hover:text-brand-charcoal"
+                            }`}
+                        >
+                            报告
+                        </button>
+                    </div>
 
                     {/* 右下角浮动：仅「回到顶部」，滚动超过一屏出现、回顶后淡出 */}
                     <AnimatePresence>
