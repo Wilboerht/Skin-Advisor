@@ -1332,9 +1332,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeInOut" }}
                             >
-                                {/* 封面内容在顶部栏下方区域垂直居中；内容超高一屏时 my-auto 自动退化为正常滚动 */}
+                                {/* 标题固定顶部；证书卡在标题下方的剩余空间垂直居中。
+                                    内容超高一屏时 my-auto 自动退化为正常滚动（margin:auto 溢出归零） */}
+                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
                                 <div className="my-auto w-full">
-                                    <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
                                     <div className={`${styles.main} lg:gap-8`}>
                                         <section aria-label="肌智派证书（第一面）">
                                         <ShareCardPage

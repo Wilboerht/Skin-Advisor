@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion as m, useReducedMotion } from "framer-motion";
 import { ChevronDown, Loader2, Share2 } from "lucide-react";
 import Image from "next/image";
@@ -87,16 +87,20 @@ export default function ShareCardPage({
     const dateText = formatCertDate(certDate);
     const idText = formatCertId(certId);
 
-    // IP 形象入场 + idle 漂浮（尊重减弱动效偏好）
-    const ipAnimation = {
-        initial: { opacity: 0, scale: 0.92 },
-        animate: { opacity: 1, scale: 1, y: reduceMotion ? 0 : [0, -5, 0] },
-        transition: {
-            opacity: { duration: 0.5, delay: 0.05 },
-            scale: { type: "spring" as const, stiffness: 260, damping: 20, delay: 0.05 },
-            y: reduceMotion ? { duration: 0 } : { duration: 4.5, repeat: Infinity, ease: "easeInOut" as const },
-        },
-    };
+    // IP 形象入场 + idle 漂浮（尊重减弱动效偏好）。
+    // useMemo 固定引用：父组件状态变化（如海报按钮 loading）不应触发动画对象重建导致漂浮循环重启
+    const ipAnimation = useMemo(
+        () => ({
+            initial: { opacity: 0, scale: 0.92 },
+            animate: { opacity: 1, scale: 1, y: reduceMotion ? 0 : [0, -5, 0] },
+            transition: {
+                opacity: { duration: 0.5, delay: 0.05 },
+                scale: { type: "spring" as const, stiffness: 260, damping: 20, delay: 0.05 },
+                y: reduceMotion ? { duration: 0 } : { duration: 4.5, repeat: Infinity, ease: "easeInOut" as const },
+            },
+        }),
+        [reduceMotion]
+    );
 
     return (
         <div className="w-full flex flex-col gap-0 lg:contents" aria-label={`${nickname || "用户"}的肌智派证书`}>
