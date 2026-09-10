@@ -140,18 +140,31 @@ export function TestHistoryList({
             const day = formatDay(session.completedAt);
             const prevDay = i > 0 ? formatDay(history[i - 1].completedAt) : null;
             const isNewDay = day !== prevDay;
+            // 跨年分组头补年份：与列表最新条目年份不同时显示"2025.9.8"
+            const year = new Date(session.completedAt).getFullYear();
+            const latestYear = new Date(history[0].completedAt).getFullYear();
+            const showYear = year !== latestYear;
             const time = new Date(session.completedAt).toLocaleTimeString("zh-CN", {
               hour: "2-digit",
               minute: "2-digit",
               hour12: false,
             });
+            // 分数颜色分级：≥80 绿 / 60-79 品牌棕 / <60 红——扫读"哪次状态好"一眼可辨
+            const scoreTone =
+              typeof score === "number" && score > 0
+                ? score >= 80
+                  ? "text-[#4C8055]"
+                  : score < 60
+                    ? "text-[#D44C47]"
+                    : "text-brand-charcoal"
+                : "text-brand-charcoal";
 
             return (
               <div key={session.sessionId}>
                 {isNewDay && (
                   <div className="pt-4 pb-1.5 first:pt-0 flex items-center gap-2.5">
                     <span className="shrink-0 text-[11px] font-medium text-brand-charcoal/60 tabular-nums">
-                      {day}
+                      {showYear ? `${year}.${day}` : day}
                     </span>
                     <span className="flex-1 h-px bg-brand-espresso/[0.05]" />
                   </div>
@@ -166,7 +179,7 @@ export function TestHistoryList({
                   <span className="flex-1 min-w-0 truncate text-[13px] text-brand-charcoal/85">
                     {skinType || "肌肤分析"}
                   </span>
-                  <span className="shrink-0 text-[13px] font-medium text-brand-charcoal tabular-nums">
+                  <span className={`shrink-0 text-[13px] font-medium tabular-nums ${scoreTone}`}>
                     {score != null && score > 0 ? `${score} 分` : "—"}
                   </span>
                   <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/25 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />

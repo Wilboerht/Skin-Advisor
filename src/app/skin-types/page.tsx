@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight, Gift } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
@@ -78,47 +77,8 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 类型卡片（点击打开详情弹窗） */}
-      <section className="relative z-10 px-6 md:px-12 lg:px-20">
+      <section className="relative z-10 px-6 md:px-12 lg:px-20 pb-12">
         <SkinTypesClient types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))} />
-      </section>
-
-      {/* 底部 CTA - 送好礼 */}
-      <section className="py-10 md:py-14 px-6 md:px-12 lg:px-20">
-        <div className="max-w-5xl mx-auto">
-          <GiftLink className="group relative block w-full p-5 md:p-12 overflow-hidden [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_85%)] cursor-pointer text-left">
-            {/* 右侧背景水印 */}
-            <Image
-              src="/images/watermark.png"
-              alt=""
-              width={200}
-              height={200}
-              className="absolute right-0 top-1/2 -translate-y-1/2 w-130 h-auto object-contain opacity-15 pointer-events-none select-none"
-              unoptimized
-            />
-            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-10">
-              <Image
-                src="/images/gift-badge.png"
-                alt=""
-                width={160}
-                height={120}
-                className="w-36 md:w-52 h-auto object-contain shrink-0"
-                unoptimized
-              />
-              <div className="text-center md:text-left">
-                <h3 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal mb-1 md:mb-2 tracking-[0.02em]">
-                  肌智派送好礼
-                </h3>
-                <p className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-3 md:mb-4">
-                  完成您的专属肌肤诊断后，即可参与 NIHPLOD 限定抽奖——甄选护肤好礼，静候与您相遇。
-                </p>
-                <span className="inline-flex items-center gap-2 text-[13px] sm:text-[14px] font-light tracking-[0.12em] text-brand-charcoal group-hover:text-brand-charcoal-light transition-colors duration-300">
-                  立即参与
-                  <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
-                </span>
-              </div>
-            </div>
-          </GiftLink>
-        </div>
       </section>
     </div>
   );
