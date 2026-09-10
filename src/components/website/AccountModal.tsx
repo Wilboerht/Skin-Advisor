@@ -4,12 +4,12 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ChevronRight, CircleUserRound, LogOut, NotebookPen, Settings2, Smartphone, X } from "lucide-react";
+import { ChevronRight, LogOut, NotebookPen, Settings2, Smartphone, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
+import { LoginGuide } from "@/components/website/LoginGuide";
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -51,9 +51,8 @@ interface TestUsage {
  * 容器/动效/关闭按钮与 GiftModal 等全站模态框对齐；测肤记录在护肤档案弹层查看。
  */
 export function AccountModal({ isOpen, onClose }: AccountModalProps) {
-  const { user, logout, login } = useAuth();
+  const { user, logout } = useAuth();
   const { openDiaryModal } = useDiaryModal();
-  const toast = useToast();
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
@@ -81,12 +80,6 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
     onClose();
     // logout 内部已完成整页跳转，无需再处理路由
     await logout();
-  };
-
-  const handleLogin = () => {
-    // 整页跳转到账号中心，弱网下需数秒——先给出即时反馈，避免用户误以为没点上而连点
-    toast.info("正在前往 NIHPLOD 账号中心…");
-    login();
   };
 
   if (!mounted) return null;
@@ -136,24 +129,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 </h2>
 
                 {!user ? (
-                  <>
-                    {/* 未登录引导视图 */}
-                    <CircleUserRound className="w-20 h-20 text-brand-charcoal mb-6" strokeWidth={1} />
-                    <h3 className="text-2xl font-serif font-light text-brand-charcoal tracking-[0.08em] mb-3">
-                      登录肌智派
-                    </h3>
-                    <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] text-center mb-8">
-                      登录后同步你的测肤记录与护肤档案
-                      <br />
-                      随时随地延续你的护肤旅程
-                    </p>
-                    <button
-                      onClick={handleLogin}
-                      className="inline-flex items-center justify-center px-10 py-3 rounded-full bg-[#5c4937] text-[#FDFBF7] text-[13px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c]"
-                    >
-                      登录 / 注册
-                    </button>
-                  </>
+                  <LoginGuide onNavigateLogin={onClose} />
                 ) : (
                   <>
                 {/* 头像（纯展示，更换请前往主站账号中心） */}

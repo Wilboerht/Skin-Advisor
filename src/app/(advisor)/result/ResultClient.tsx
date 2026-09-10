@@ -1326,15 +1326,17 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         {pageIndex === 0 && (
                             <m.div
                                 key="cover-layer"
-                                className={styles.pageLayer}
+                                className={`${styles.pageLayer} flex flex-col`}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeInOut" }}
                             >
-                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
-                                <div className={`${styles.main} lg:gap-8`}>
-                                    <section aria-label="肌智派证书（第一面）">
+                                {/* 封面内容在顶部栏下方区域垂直居中；内容超高一屏时 my-auto 自动退化为正常滚动 */}
+                                <div className="my-auto w-full">
+                                    <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
+                                    <div className={`${styles.main} lg:gap-8`}>
+                                        <section aria-label="肌智派证书（第一面）">
                                         <ShareCardPage
                                             nickname={userNickname}
                                             score={faceAnalysis?.overallScore ?? undefined}
@@ -1352,6 +1354,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             isReturning={!!prevSum}
                                         />
                                     </section>
+                                </div>
                                 </div>
                             </m.div>
                         )}

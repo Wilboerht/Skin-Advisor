@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion as m, useReducedMotion } from "framer-motion";
 import { ChevronDown, Loader2, Share2 } from "lucide-react";
 import Image from "next/image";
 import { getCharacterImage, getSkinTypeName, type IPMatchParams } from "@/lib/result-utils";
@@ -59,6 +59,7 @@ export default function ShareCardPage({
     onReTest,
     isReturning = false,
 }: ShareCardPageProps) {
+    const reduceMotion = useReducedMotion();
     // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派
     const ipParams: IPMatchParams = { score: score ?? 80, skinType, budget, skincareFrequency };
     const characterReady = gender === "male" || gender === "female";
@@ -86,10 +87,24 @@ export default function ShareCardPage({
     const dateText = formatCertDate(certDate);
     const idText = formatCertId(certId);
 
+    // IP 形象入场 + idle 漂浮（尊重减弱动效偏好）
+    const ipAnimation = {
+        initial: { opacity: 0, scale: 0.92 },
+        animate: { opacity: 1, scale: 1, y: reduceMotion ? 0 : [0, -5, 0] },
+        transition: {
+            opacity: { duration: 0.5, delay: 0.05 },
+            scale: { type: "spring" as const, stiffness: 260, damping: 20, delay: 0.05 },
+            y: reduceMotion ? { duration: 0 } : { duration: 4.5, repeat: Infinity, ease: "easeInOut" as const },
+        },
+    };
+
     return (
         <div className="w-full flex flex-col gap-0 lg:contents" aria-label={`${nickname || "用户"}的肌智派证书`}>
             {/* Mobile: Character IP Image (above Share Card) */}
-            <div className="relative flex lg:hidden justify-center pointer-events-none mx-auto h-[270px] w-[270px]">
+            <m.div
+                {...ipAnimation}
+                className="relative flex lg:hidden justify-center pointer-events-none mx-auto h-[300px] w-[300px]"
+            >
                 {/* Mobile-only decorative background behind character */}
                 <div className="absolute inset-0 z-0 translate-y-12">
                     <Image
@@ -107,23 +122,32 @@ export default function ShareCardPage({
                         alt={skinTypeName}
                         width={280}
                         height={280}
-                        className="relative z-10 h-[270px] w-[270px] object-contain drop-shadow-[0_3px_8px_rgba(92,73,55,0.12)]"
+                        className="relative z-10 h-[300px] w-[300px] object-contain drop-shadow-[0_3px_8px_rgba(92,73,55,0.12)]"
                         priority
                         onError={handleCharacterImageError}
                     />
                 ) : (
-                    <div className="relative z-10 h-[270px] w-[270px]" aria-hidden="true" />
+                    <div className="relative z-10 h-[300px] w-[300px]" aria-hidden="true" />
                 )}
-            </div>
+            </m.div>
 
             {/* Share Card (肌智派证书) */}
-            <motion.div
+            <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="relative rounded-[20px] lg:rounded-[24px] p-6 lg:p-10 border border-brand-espresso/8 overflow-visible"
+                className="relative rounded-[20px] lg:rounded-[24px] p-6 lg:p-10 border border-brand-espresso/8 overflow-visible -mt-5 lg:mt-0"
                 style={{ background: "#F5F2ED" }}
             >
+                {/* 卡片顶部径向暖光：IP 像从光里浮出来 */}
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-0 rounded-[20px] lg:rounded-[24px] pointer-events-none"
+                    style={{
+                        background:
+                            "radial-gradient(600px 280px at 50% -60px, rgba(255,248,235,0.9), rgba(255,248,235,0) 70%)",
+                    }}
+                />
                 <div className="relative z-10 w-full pr-0 lg:pr-[330px]">
                     {/* Text Content */}
                     <div className="flex flex-col justify-center z-10">
@@ -132,86 +156,85 @@ export default function ShareCardPage({
                             肌智派证书
                         </div>
 
-                        <h2 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-1 lg:mb-2">
-                            {isReturning ? "欢迎回来，这是您最新的肌智派「AI测肤」报告" : "恭喜你完成首次肌智派「AI测肤」"}
+                        <h2 className="text-balance text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-1.5 lg:mb-2.5">
+                            {isReturning ? "欢迎回来，您的最新「肌智派测肤报告」已生成" : "恭喜完成首次「肌智派测肤」！您的报告已生成"}
                         </h2>
 
-                        <h3 className="text-base lg:text-lg font-semibold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
-                            根据您的检测结果，您的肌智派系为「{skinTypeName}」！
+                        <h3 className="text-balance text-base lg:text-lg font-semibold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
+                            根据检测结果，您的肌智派系为「{skinTypeName}」
                         </h3>
-
-                        <p className="text-[14px] leading-relaxed text-[var(--color-brand-cocoa)] mb-5 lg:mb-6 max-w-full lg:max-w-[420px] line-clamp-3">
+                        <p className="text-[12px] leading-relaxed text-[var(--color-brand-cocoa)]/60 mb-5 lg:mb-6 max-w-full lg:max-w-[420px] line-clamp-2">
                             {summary || "详细分析见下方报告。"}
                         </p>
 
-                        {/* 证书操作：翻到报告（主）/ 保存证书（次） */}
-                        <div className="flex flex-col items-start gap-2.5">
-                            <div className="flex flex-row flex-wrap items-center gap-3">
-                                {onOpenReport && (
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={onOpenReport}
-                                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] h-[44px] px-6 rounded-full bg-[var(--color-brand-cocoa)] text-white text-xs sm:text-[13px] font-medium transition-colors hover:bg-[#4a3a2c]"
-                                    >
-                                        查看完整报告
-                                        <ChevronDown className="w-3.5 h-3.5" strokeWidth={2} />
-                                    </motion.button>
-                                )}
-                                <motion.button
-                                    whileHover={isPosterLoading ? {} : { scale: 1.02 }}
-                                    whileTap={isPosterLoading ? {} : { scale: 0.98 }}
-                                    onClick={onDownloadPoster}
-                                    disabled={isPosterLoading}
-                                    className="inline-flex items-center justify-center gap-2 min-h-[44px] h-[44px] px-4 sm:px-6 rounded-full border border-[var(--color-brand-taupe)]/40 bg-transparent text-[var(--color-brand-cocoa)] text-xs sm:text-[13px] font-medium transition-colors hover:bg-brand-espresso/5 disabled:opacity-60 disabled:cursor-not-allowed"
+                        {/* 证书操作：单 CTA 焦点（翻到报告）+ 次级文字入口（保存证书） */}
+                        <div className="flex flex-col items-stretch sm:items-start gap-3 w-full">
+                            {onOpenReport && (
+                                <m.button
+                                    whileHover={{ scale: 1.01 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={onOpenReport}
+                                    className="inline-flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[48px] px-8 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] sm:text-[14px] font-medium tracking-[0.06em] shadow-[0_8px_20px_rgba(61,47,37,0.18)] transition-colors hover:bg-[#4a3a2c]"
                                 >
-                                    {isPosterLoading ? (
-                                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--color-brand-taupe)] stroke-[2] animate-spin" />
-                                    ) : (
-                                        <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--color-brand-taupe)] stroke-[2]" />
-                                    )}
-                                    {isPosterLoading ? "生成中..." : "保存测肤证书"}
-                                </motion.button>
-                            </div>
-                            {(dateText || idText) && (                                <p className="text-[11px] font-light tracking-[0.08em] text-[var(--color-brand-cocoa)]/60">
+                                    查看完整报告
+                                    <ChevronDown className="w-4 h-4" strokeWidth={2} />
+                                </m.button>
+                            )}
+                            <button
+                                onClick={onDownloadPoster}
+                                disabled={isPosterLoading}
+                                className="self-center sm:self-auto inline-flex items-center gap-1.5 px-2 py-1 text-[12px] text-[var(--color-brand-cocoa)]/60 font-light tracking-[0.04em] transition-colors hover:text-[var(--color-brand-cocoa)] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isPosterLoading ? (
+                                    <Loader2 className="w-3.5 h-3.5 stroke-[2] animate-spin" />
+                                ) : (
+                                    <Share2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                )}
+                                {isPosterLoading ? "生成中..." : "保存测肤证书"}
+                            </button>
+                        </div>
+
+                        {/* 证书落款：日期 · 编号（等宽数字，上细分隔线） */}
+                        {(dateText || idText) && (
+                            <div className="mt-5 pt-3 border-t border-brand-espresso/[0.08]">
+                                <p className="text-[11px] font-light tracking-[0.08em] text-[var(--color-brand-cocoa)]/50 tabular-nums">
                                     {dateText || ""}
                                     {dateText && idText ? " · " : ""}
                                     {idText ? `No.${idText}` : ""}
                                 </p>
-                            )}
-                            {onReTest && (
-                                <div className="mt-1 flex flex-col items-start gap-0.5">
-                                    <button
-                                        type="button"
-                                        onClick={onReTest}
-                                        className="text-[12px] font-medium text-[var(--color-brand-cocoa)]/70 underline underline-offset-4 hover:text-[var(--color-brand-cocoa)] transition-colors tracking-[0.04em]"
-                                    >
-                                        认为派系判断不准确？重新测试
-                                    </button>
-                                    <p className="text-[11px] font-light tracking-[0.04em] text-[var(--color-brand-cocoa)]/40">
-                                        本次重新测试将消耗 1 次测试额度
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
+
+                        {onReTest && (
+                            <button
+                                type="button"
+                                onClick={onReTest}
+                                className="mt-3 text-[12px] font-medium text-[var(--color-brand-cocoa)]/70 underline underline-offset-4 hover:text-[var(--color-brand-cocoa)] transition-colors tracking-[0.04em]"
+                            >
+                                认为派系判断不准确？重新测试（消耗 1 次测试额度）
+                            </button>
+                        )}
                     </div>
 
                     {/* Desktop: Character IP Image (absolute right) */}
                     {characterReady && !characterImgFailed && (
-                        <div className="hidden lg:block absolute right-0 top-[40%] -translate-y-1/2 z-0 pointer-events-none">
+                        <m.div
+                            {...ipAnimation}
+                            className="hidden lg:block absolute right-0 top-[40%] -translate-y-1/2 z-0 pointer-events-none"
+                        >
                             <Image
                                 src={characterImgSrc}
                                 alt={skinTypeName}
-                                width={320}
-                                height={320}
-                                className="w-[320px] h-[320px] object-contain object-right"
+                                width={380}
+                                height={380}
+                                className="w-[380px] h-[380px] object-contain object-right"
                                 priority
                                 onError={handleCharacterImageError}
                             />
-                        </div>
+                        </m.div>
                     )}
                 </div>
-            </motion.div>
+            </m.div>
         </div>
     );
 }

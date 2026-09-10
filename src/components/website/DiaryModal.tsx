@@ -438,7 +438,7 @@ export function DiaryModal() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full sm:max-w-2xl max-h-[86dvh] bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
+              className="relative z-10 w-full sm:max-w-4xl max-h-[86dvh] bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* 标题栏（视图切换时标题随视图变化） */}
@@ -546,9 +546,10 @@ export function DiaryModal() {
                   </div>
                 ) : (
                   /* ===== 登录：趋势 + 时间线 ===== */
-                  <div>
+                  /* PC 端（lg+）双列：左「肌肤变化」sticky，右「护肤历程」；移动端单列堆叠 */
+                  <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr] lg:gap-10">
                     {/* 肌肤变化：标题行承载时间窗切换与全部记录入口 */}
-                    <section className="mb-8">
+                    <section className="mb-8 lg:mb-0 lg:self-start lg:sticky lg:top-0">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />

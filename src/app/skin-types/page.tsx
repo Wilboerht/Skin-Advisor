@@ -47,32 +47,33 @@ export default function ResultIndexPage() {
       />
       {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 
-      {/* Hero */}
-      <section className="relative pt-12 md:pt-20 pb-14 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
+      {/* Hero（紧凑版：为 PC 一屏"选英雄"舞台让出高度） */}
+      <section className="relative pt-10 md:pt-12 pb-8 md:pb-10 px-6 md:px-12 lg:px-20 overflow-hidden">
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1
-            className="text-xl md:text-3xl font-serif font-light text-brand-charcoal leading-[1.1] tracking-[0.02em] mb-5 opacity-0 animate-fade-in-up"
+            className="text-xl md:text-2xl font-serif font-light text-brand-charcoal leading-[1.2] tracking-[0.02em] mb-5 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
-            了解不同肌肤类型与护理方案
+            了解不同肌肤类型与护理方�?
           </h1>
-          <Link
-            href="/"
-            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:border-brand-charcoal focus-visible:bg-brand-charcoal/[0.05] active:translate-y-0 active:shadow-none opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
-          >
-            <span>了解我的肤质类型</span>
-            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
-          </Link>
-          <GiftLink
-            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-brand-charcoal/75 tracking-[0.12em] font-light opacity-0 animate-fade-in-up hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal transition-colors duration-300 mx-auto cursor-pointer"
-            style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
-          >
-            参与「肌智派」活动，抽奖赢好礼
-            <Gift className="w-3.5 h-3.5" />
-          </GiftLink>
-
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/"
+              className="group inline-flex items-center justify-center gap-3 px-8 py-3.5 border border-brand-espresso/30 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(61,47,37,0.12)] focus-visible:outline-none focus-visible:border-brand-charcoal focus-visible:bg-brand-charcoal/[0.05] active:translate-y-0 active:shadow-none opacity-0 animate-fade-in-up"
+              style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
+            >
+              <span>了解我的肤质类型</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+            </Link>
+            <GiftLink
+              className="flex items-center justify-center gap-1.5 text-[13px] sm:text-[14px] text-brand-charcoal/75 tracking-[0.12em] font-light opacity-0 animate-fade-in-up hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal transition-colors duration-300 cursor-pointer"
+              style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
+            >
+              参与「肌智派」活动，抽奖赢好�?
+              <Gift className="w-3.5 h-3.5" />
+            </GiftLink>
+          </div>
         </div>
       </section>
 
@@ -82,7 +83,7 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 底部 CTA - 送好礼 */}
-      <section className="py-14 md:py-20 px-6 md:px-12 lg:px-20">
+      <section className="py-10 md:py-14 px-6 md:px-12 lg:px-20">
         <div className="max-w-5xl mx-auto">
           <GiftLink className="group relative block w-full p-5 md:p-12 overflow-hidden [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_85%)] cursor-pointer text-left">
             {/* 右侧背景水印 */}

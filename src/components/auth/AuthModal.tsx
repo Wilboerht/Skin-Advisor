@@ -13,18 +13,13 @@ import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { isSafeInternalPath } from "@/lib/url-utils";
+import { LoginGuide } from "@/components/website/LoginGuide";
 
 // SSO 迁移后，login / register / forgot_password 统一引导至主站账号中心，
 // 仅 wechat_bind 仍在弹窗内完成。
-const SSO_VIEW_TITLES: Record<string, string> = {
-    login: "登录",
-    register: "注册会员",
-    forgot_password: "找回密码",
-};
 
 export function AuthModal() {
     const { isOpen, view, openAuthModal, closeAuthModal } = useAuthModal();
-    const { login } = useAuth();
     const toast = useToast();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -217,23 +212,10 @@ export function AuthModal() {
 
     const isSsoView = view === "login" || view === "register" || view === "forgot_password";
 
-    // login / register / forgot_password：SSO 迁移后统一引导至主站账号中心
+    // login / register / forgot_password：SSO 迁移后统一引导至主站账号中心。
+    // 引导视图与 AccountModal 未登录态共用 LoginGuide（全站统一视觉）
     const ssoPanel = (
-        <>
-            <h1 id="auth-modal-title-desktop" className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-8">
-                {SSO_VIEW_TITLES[view] ?? "登录"}
-            </h1>
-            <p className="text-center text-sm leading-relaxed text-brand-charcoal/60 tracking-wide mb-12">
-                账号登录、注册与密码管理已统一由 NIHPLOD 账号中心处理。
-            </p>
-            <button
-                type="button"
-                onClick={() => login()}
-                className={pcBtnClass}
-            >
-                前往 NIHPLOD 账号中心
-            </button>
-        </>
+        <LoginGuide onNavigateLogin={closeAuthModal} />
     );
 
     return (
@@ -435,35 +417,9 @@ export function AuthModal() {
                                         before:content-[''] before:flex-[1_0_0]
                                         after:content-[''] after:flex-[1_0_0]">
 
-                        {/* ====== SSO（login / register / forgot_password） ====== */}
+                        {/* ====== SSO（login / register / forgot_password）：统一 LoginGuide 引导 ====== */}
                         {isSsoView && (
-                            <div className="flex flex-col gap-10">
-                                {view === "login" && (
-                                    <div className="flex justify-center">
-                                        <img
-                                            src="/NIHPLOD-logo.svg"
-                                            alt="NIHPLOD Logo"
-                                            className="object-contain h-auto w-[140px]"
-                                        />
-                                    </div>
-                                )}
-                                <div className="text-center pt-[6px] pb-4">
-                                    <h2 id="auth-modal-title-mobile" className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">
-                                        {SSO_VIEW_TITLES[view] ?? "登录"}
-                                    </h2>
-                                    <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
-                                </div>
-                                <p className="text-center text-sm leading-relaxed text-brand-charcoal/60 tracking-wide">
-                                    账号登录、注册与密码管理已统一由 NIHPLOD 账号中心处理。
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={() => login()}
-                                    className="w-full py-3.5 min-h-12 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
-                                >
-                                    前往 NIHPLOD 账号中心
-                                </button>
-                            </div>
+                            <LoginGuide onNavigateLogin={closeAuthModal} />
                         )}
 
                         {/* ====== WECHAT BIND ====== */}
