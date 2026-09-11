@@ -42,7 +42,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
 
   const steps = [
     { title: "登录完成测肤", desc: "获取您的肌智派测肤结果及所属派系形象海报" },
-    { title: "分享小红书", desc: "发布海报并 @NIHPLOD" },
+    { title: "在社交平台分享您的肌智派形象海报", desc: "发布海报并 @NIHPLOD" },
     { title: "赢取好礼", desc: "参与活动即可获得 NIHPLOD 活动抽奖机会" },
   ];
 
