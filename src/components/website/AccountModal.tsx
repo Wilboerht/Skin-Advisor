@@ -1,15 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ChevronRight, LogOut, NotebookPen, Settings2, Smartphone, Sparkles, X } from "lucide-react";
+import { ChevronRight, LogOut, NotebookPen, Settings2, Smartphone, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { LoginGuide } from "@/components/website/LoginGuide";
+import { getFactionIcon } from "@/components/website/faction-icons";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import type { HistorySession } from "@/components/website/TestHistoryList";
 
@@ -66,8 +67,8 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
 
   // 测肤用量（登录用户打开弹层时拉取；接口失败静默不展示该行）
   const [testUsage, setTestUsage] = useState<TestUsage | null>(null);
-  // 最新测肤派系（身份核心信息；取最近一次测肤记录的 persona → 派系中文名）
-  const [latestPersonaLabel, setLatestPersonaLabel] = useState<string | null>(null);
+  // 最新测肤派系（身份核心信息；取最近一次测肤记录的 persona ipKey，派系名与图标据此派生）
+  const [latestPersona, setLatestPersona] = useState<string | null>(null);
   useEffect(() => {
     if (!isOpen || !user) return;
     let cancelled = false;
@@ -84,9 +85,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
         if (cancelled) return;
         const latest = (data?.history as HistorySession[] | undefined)?.[0];
         const persona = (latest?.analysisResult as { persona?: string } | undefined)?.persona;
-        setLatestPersonaLabel(
-          persona ? getSkinTypeByIpKey(persona)?.typeName ?? null : null
-        );
+        setLatestPersona(persona ?? null);
       })
       .catch(() => { /* 静默失败 */ });
     return () => { cancelled = true; };
@@ -97,6 +96,9 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
     // logout 内部已完成整页跳转，无需再处理路由
     await logout();
   };
+
+  // 派系信息派生：ipKey → 类型数据（未知 key 时整体不渲染该行）
+  const latestPersonaType = latestPersona ? getSkinTypeByIpKey(latestPersona) : null;
 
   if (!mounted) return null;
 
@@ -178,17 +180,20 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                   <span>{maskPhone(user.phone)}</span>
                 </div>
 
-                {/* 最新测肤派系：档案身份核心（有测肤记录时显示） */}
-                {latestPersonaLabel && (
-                  <span className="mb-2 inline-flex h-[24px] px-2.5 items-center gap-1.5 rounded-full border border-[#C9A86C]/30 bg-transparent text-xs font-bold text-[#8B7355] whitespace-nowrap">
-                    <Sparkles className="w-3.5 h-3.5 text-[#C9A86C]" strokeWidth={2} />
-                    我的派系 · {latestPersonaLabel}
+                {/* 最新测肤派系：档案身份核心（有测肤记录时显示；图标与派系一一对应） */}
+                {latestPersonaType && (
+                  <span className="mb-2 inline-flex h-[22px] px-2 items-center gap-1 rounded-full border border-brand-charcoal/[0.1] bg-white/60 text-[11px] font-light tracking-[0.04em] text-brand-charcoal/55 whitespace-nowrap">
+                    {createElement(getFactionIcon(latestPersonaType.ipKey), {
+                      className: "w-3 h-3 text-brand-charcoal/45 shrink-0",
+                      strokeWidth: 1.5,
+                    })}
+                    我的派系 · {latestPersonaType.typeName}
                   </span>
                 )}
 
                 {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量；接口失败不渲染 */}
                 {testUsage && (
-                  <p className={`text-[12px] text-[#8A8A8A] font-light tracking-[0.05em] ${latestPersonaLabel ? "mb-4" : "mb-6"}`}>
+                  <p className={`text-[12px] text-[#8A8A8A] font-light tracking-[0.05em] ${latestPersonaType ? "mb-4" : "mb-6"}`}>
                     {testUsage.unlimited
                       ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
                       : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
