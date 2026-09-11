@@ -76,14 +76,24 @@ async function waitForImages(container: HTMLElement): Promise<void> {
     );
 }
 
-// 两页版式共享页头：归属标题 + 拍摄时肌肤状态标签（logo 已上移到固定顶部栏）
-function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStateValue?: string | null }) {
+// 两页版式共享页头：归属标题 + 拍摄时肌肤状态标签 + 两页切换 tab（logo 已上移到固定顶部栏）
+function ResultHeader({
+    nickname,
+    skinStateValue,
+    pageIndex,
+    onSwitchPage,
+}: {
+    nickname: string;
+    skinStateValue?: string | null;
+    pageIndex: 0 | 1;
+    onSwitchPage: (idx: 0 | 1) => void;
+}) {
     const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
 
     return (
         <div className="w-full flex flex-col items-center pt-6 lg:pt-8">
             {/* 状态标签属于标题一体：紧跟标题文字同行参与布局（整体居中） */}
-            <p className="mt-0 mb-4 lg:mb-6 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
+            <p className="mt-0 mb-3 lg:mb-4 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
                 <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                 {nickname} 的专属肌智派在线测肤报告
                 {skinStateLabel && (
@@ -92,6 +102,37 @@ function ResultHeader({ nickname, skinStateValue }: { nickname: string; skinStat
                     </span>
                 )}
             </p>
+            {/* 两页切换 tab：置于标题下方（原底部悬浮 tab 已移除） */}
+            <div
+                role="tablist"
+                aria-label="报告页面切换"
+                className="mb-4 lg:mb-6 flex items-center rounded-full border border-brand-espresso/[0.12] bg-white/85 backdrop-blur-md p-0.5 shadow-[0_2px_8px_rgba(61,47,37,0.08)]"
+            >
+                <button
+                    role="tab"
+                    aria-selected={pageIndex === 0}
+                    onClick={() => { if (pageIndex !== 0) onSwitchPage(0); }}
+                    className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
+                        pageIndex === 0
+                            ? "bg-[var(--color-brand-cocoa)] text-white font-medium"
+                            : "text-brand-charcoal/55 font-light hover:text-brand-charcoal"
+                    }`}
+                >
+                    证书
+                </button>
+                <button
+                    role="tab"
+                    aria-selected={pageIndex === 1}
+                    onClick={() => { if (pageIndex !== 1) onSwitchPage(1); }}
+                    className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
+                        pageIndex === 1
+                            ? "bg-[var(--color-brand-cocoa)] text-white font-medium"
+                            : "text-brand-charcoal/55 font-light hover:text-brand-charcoal"
+                    }`}
+                >
+                    报告
+                </button>
+            </div>
         </div>
     );
 }
@@ -1374,7 +1415,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             >
                                 {/* 标题固定顶部；证书卡在标题下方的剩余空间垂直居中。
                                     内容超高一屏时 my-auto 自动退化为正常滚动（margin:auto 溢出归零） */}
-                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
+                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
                                 <div className="my-auto w-full">
                                     <div className={`${styles.main} lg:gap-8`}>
                                         <section aria-label="肌智派证书（第一面）">
@@ -1413,7 +1454,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 onScroll={(e) => { reportScrollTopRef.current = e.currentTarget.scrollTop; }}
                             >
                                 {/* 游客测肤已下线：原「注册保存报告」横幅已移除（游客无法产生新报告，登录态未就绪时的闪现也是误伤） */}
-                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
+                                <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
 
                                 {/* Validation Warning Banner */}
                                 {faceAnalysis?.validation && !faceAnalysis.validation.isValid && !dismissValidationWarning && (
@@ -1524,37 +1565,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         )}
                     </AnimatePresence>
 
-                    {/* 底部两段式 tab：证书（第一面）/ 报告（第二面）切换，跨两页常驻 */}
-                    <div
-                        role="tablist"
-                        aria-label="报告页面切换"
-                        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 flex items-center rounded-full border border-brand-espresso/[0.12] bg-white/85 backdrop-blur-md p-0.5 shadow-[0_8px_24px_rgba(61,47,37,0.12)]"
-                    >
-                        <button
-                            role="tab"
-                            aria-selected={pageIndex === 0}
-                            onClick={() => { if (pageIndex !== 0) handleOpenCover(); }}
-                            className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
-                                pageIndex === 0
-                                    ? "bg-[var(--color-brand-cocoa)] text-white font-medium shadow-[0_2px_6px_rgba(61,47,37,0.18)]"
-                                    : "text-brand-charcoal/55 font-light hover:text-brand-charcoal"
-                            }`}
-                        >
-                            证书
-                        </button>
-                        <button
-                            role="tab"
-                            aria-selected={pageIndex === 1}
-                            onClick={() => { if (pageIndex !== 1) handleFlipToReport(); }}
-                            className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
-                                pageIndex === 1
-                                    ? "bg-[var(--color-brand-cocoa)] text-white font-medium shadow-[0_2px_6px_rgba(61,47,37,0.18)]"
-                                    : "text-brand-charcoal/55 font-light hover:text-brand-charcoal"
-                            }`}
-                        >
-                            报告
-                        </button>
-                    </div>
+                    {/* 两页切换 tab 已上移至标题下方（ResultHeader 内），底部悬浮 tab 移除 */}
 
                     {/* 右下角浮动：仅「回到顶部」，滚动超过一屏出现、回顶后淡出 */}
                     <AnimatePresence>
