@@ -57,7 +57,7 @@ export default async function ResultIndexPage({
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1
-            className="text-2xl md:text-3xl font-serif font-light text-brand-charcoal leading-[1.25] tracking-[0.02em] mb-3 opacity-0 animate-fade-in-up"
+            className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
             8 种肌肤类型与护理方案
