@@ -68,10 +68,9 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   return (
     <>
-      {/* 3D 旋转木马（宽度由父级容器控制）；overflow-hidden 裁剪远端卡防横向页面溢出 */}
+      {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出 */}
       <div
         className="relative w-full overflow-hidden select-none"
-        style={{ perspective: "1600px" }}
         onTouchStart={onCarouselTouchStart}
         onTouchEnd={onCarouselTouchEnd}
       >
@@ -82,9 +81,8 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
             const abs = Math.abs(d);
             const isCenter = abs === 0;
             const Icon = getFactionIcon(type.ipKey);
-            // 变换：横向展开 + 内倾弧面（rotateY 朝圆心方向）+ Z 轴纵深 + 轻微缩放；
-            // 垂直方向 -50% 平移使卡片在舞台内垂直居中
-            const transform = `translate(calc(-50% + ${d} * var(--fan-offset)), -50%) rotateY(${d * 26}deg) translateZ(${-abs * 100}px) scale(${1 - abs * 0.06})`;
+            // 平面层叠：仅横向展开 + 轻微缩放 + 透明度衰减，无旋转角度
+            const transform = `translate(calc(-50% + ${d} * var(--fan-offset)), -50%) scale(${1 - abs * 0.05})`;
             const opacity = abs === 0 ? 1 : abs === 1 ? 0.85 : abs === 2 ? 0.5 : abs === 3 ? 0.22 : 0;
             const zIndex = 10 - abs;
             // 完全隐藏的远端卡不接收点击（避免"点空气"聚焦到不可见卡片）
@@ -103,7 +101,6 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                   transform,
                   opacity,
                   zIndex,
-                  transformStyle: "preserve-3d",
                   pointerEvents: hidden ? "none" : "auto",
                   // 中央卡保留柔和投影，侧卡去阴影，减少堆叠视觉噪点
                   boxShadow: isCenter
