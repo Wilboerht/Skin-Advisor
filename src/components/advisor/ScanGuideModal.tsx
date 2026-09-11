@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Sun, ScanEye, LogOut, ChevronLeft } from "lucide-react";
+import { ArrowRight, Sparkles, Sun, ScanEye, ScanFace, LogOut, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -90,14 +90,10 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 <h3 className="text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-6 md:mb-8">
                                     开始面部扫描
                                 </h3>
-                                <Image
-                                    src="/images/scan-guide-character.webp"
-                                    alt="扫脸引导示意"
-                                    width={448}
-                                    height={600}
-                                    className="w-36 h-54 sm:w-44 sm:h-66 mx-auto mb-8 md:mb-10 object-contain"
-                                    priority
-                                />
+                                {/* 扫脸示意：以图标替代原配图，风格与下方 checklist 一致 */}
+                                <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-brand-charcoal/[0.04] flex items-center justify-center mx-auto mb-8 md:mb-10">
+                                    <ScanFace className="w-11 h-11 md:w-13 md:h-13 text-brand-charcoal/40" strokeWidth={1} />
+                                </div>
                             </motion.div>
 
                             {/* Checklist Content */}
@@ -148,8 +144,8 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                                 onClick={() => setSkinState(option.value)}
                                                 className={`px-4 py-2 rounded-full text-[12px] font-light tracking-[0.04em] border transition-colors cursor-pointer ${
                                                     selected
-                                                        ? "border-brand-charcoal bg-brand-charcoal text-white"
-                                                        : "border-brand-charcoal/20 text-brand-charcoal/60 hover:border-brand-charcoal/50 hover:text-brand-charcoal"
+                                                        ? "border-brand-charcoal/[0.18] bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
+                                                        : "border-transparent text-brand-charcoal/45 hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
                                                 }`}
                                             >
                                                 {option.label}
