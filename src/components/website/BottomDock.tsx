@@ -76,10 +76,10 @@ export function BottomDock() {
     tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
 
   const tabClass = (active: boolean) =>
-    `group relative flex flex-col items-center justify-center gap-1 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.05em] transition-colors duration-300 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
+    `group relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.02em] transition-colors duration-300 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
       active
-        ? "text-brand-charcoal"
-        : "text-brand-charcoal/50 hover:text-brand-charcoal/85 active:text-brand-charcoal"
+        ? "text-[var(--color-brand-cocoa)]"
+        : "text-brand-charcoal/55 hover:text-brand-charcoal/85 active:text-brand-charcoal"
     }`;
 
   // 点击当前已激活 tab：不重复导航；仅移动端保留"平滑回顶部"习惯（PC 端点击不产生滚动副作用）
@@ -92,7 +92,7 @@ export function BottomDock() {
     }
   };
 
-  const renderContent = (tab: DockTab, active: boolean) => (
+  const renderContent = (tab: DockTab) => (
     <>
       {tab.panel === "account" && user?.avatar ? (
         <span className="relative block w-[22px] h-[22px] rounded-full overflow-hidden">
@@ -101,10 +101,10 @@ export function BottomDock() {
       ) : (
         <tab.icon
           className="w-[22px] h-[22px] transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
-          strokeWidth={active ? 2 : 1.5}
+          strokeWidth={1.75}
         />
       )}
-      <span className={active ? "font-medium" : "font-light"}>{tab.label}</span>
+      <span className="font-light">{tab.label}</span>
     </>
   );
 
@@ -130,7 +130,7 @@ export function BottomDock() {
                 aria-expanded={tab.panel === "diary" ? diaryOpen : showAccountModal}
                 className={`${tabClass(active)} cursor-pointer`}
               >
-                {renderContent(tab, active)}
+                {renderContent(tab)}
               </button>
             );
           }
@@ -142,7 +142,7 @@ export function BottomDock() {
               onClick={handleActiveClick(active)}
               className={tabClass(active)}
             >
-              {renderContent(tab, active)}
+              {renderContent(tab)}
             </Link>
           );
         })}
