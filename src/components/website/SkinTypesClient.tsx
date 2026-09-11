@@ -98,13 +98,17 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                 aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                 aria-hidden={hidden}
                 tabIndex={isCenter ? 0 : -1}
-                className="absolute left-1/2 top-0 w-[280px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_16px_40px_rgba(61,47,37,0.12)] p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                className="absolute left-1/2 top-0 w-[280px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
                 style={{
                   transform,
                   opacity,
                   zIndex,
                   transformStyle: "preserve-3d",
                   pointerEvents: hidden ? "none" : "auto",
+                  // 中央卡保留柔和投影，侧卡去阴影，减少堆叠视觉噪点
+                  boxShadow: isCenter
+                    ? "0 12px 32px rgba(61,47,37,0.10)"
+                    : "0 2px 10px rgba(61,47,37,0.05)",
                 }}
               >
                 {/* 横向结构：左形象 + 右文字 */}
@@ -139,12 +143,12 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
           })}
         </div>
 
-        {/* 桌面左右箭头 */}
+        {/* 桌面左右箭头：简洁幽灵圆钮，去阴影仅 hover 轻微浮起 */}
         <button
           type="button"
           onClick={() => step(-1)}
           aria-label="上一个"
-          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/90 border border-brand-espresso/[0.1] text-brand-charcoal/60 shadow-[0_4px_16px_rgba(61,47,37,0.1)] hover:text-brand-charcoal hover:shadow-[0_8px_24px_rgba(61,47,37,0.16)] transition-all cursor-pointer"
+          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 hover:-translate-x-2.5 transition-all cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5" strokeWidth={1.75} />
         </button>
@@ -152,7 +156,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
           type="button"
           onClick={() => step(1)}
           aria-label="下一个"
-          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/90 border border-brand-espresso/[0.1] text-brand-charcoal/60 shadow-[0_4px_16px_rgba(61,47,37,0.1)] hover:text-brand-charcoal hover:shadow-[0_8px_24px_rgba(61,47,37,0.16)] transition-all cursor-pointer"
+          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 hover:translate-x-2.5 transition-all cursor-pointer"
         >
           <ChevronRight className="w-5 h-5" strokeWidth={1.75} />
         </button>
