@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { SkinTypeData } from "@/lib/result-content";
 import { SkinTypeModal } from "@/components/website/SkinTypeModal";
 import { getFactionIcon } from "@/components/website/faction-icons";
@@ -36,9 +37,20 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
     return 0;
   });
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  // 派系菜单 chip 引用：切换焦点后把当前 chip 滚入可视区（移动端横向滚动场景）
+  const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const step = (dir: 1 | -1) =>
     setActiveIdx((prev) => (prev + dir + types.length) % types.length);
+
+  // 焦点变化：菜单里对应 chip 滚动到可视中心
+  useEffect(() => {
+    chipRefs.current[activeIdx]?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [activeIdx]);
 
   // 键盘 ←/→ 切换（详情弹窗打开时不响应）
   useEffect(() => {
@@ -68,6 +80,32 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   return (
     <>
+      {/* 派系快捷菜单：全部派系（名称 + 图标），点击聚焦对应卡片；移动端横向滚动，桌面端自动换行居中 */}
+      <div className="mb-5 flex gap-2 overflow-x-auto no-scrollbar md:flex-wrap md:justify-center md:overflow-visible">
+        {types.map((t, i) => {
+          const active = i === activeIdx;
+          const Icon = getFactionIcon(t.ipKey);
+          return (
+            <button
+              key={t.route}
+              type="button"
+              ref={(el) => { chipRefs.current[i] = el; }}
+              onClick={() => setActiveIdx(i)}
+              aria-pressed={active}
+              className={cn(
+                "shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[12px] font-light tracking-[0.04em] transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30",
+                active
+                  ? "border-[#00263E]/60 bg-[#00263E]/[0.06] text-[#00263E]"
+                  : "border-brand-espresso/[0.12] text-brand-charcoal/55 hover:border-brand-espresso/30 hover:text-brand-charcoal"
+              )}
+            >
+              <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
+              {t.typeName}
+            </button>
+          );
+        })}
+      </div>
+
       {/* 外层相对容器：轮播裁剪区 + 两侧翻页按钮（按钮在裁剪容器外，垂直线与卡片舞台中线对齐） */}
       <div className="relative">
         {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出 */}
