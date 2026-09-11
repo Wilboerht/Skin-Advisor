@@ -103,23 +103,28 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                   aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                   aria-hidden={hidden}
                   tabIndex={isCenter ? 0 : -1}
-                  className="absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                style={{
-                  transform,
-                  opacity,
-                  zIndex,
-                  filter: isCenter ? "none" : `blur(${blurPx}px)`,
-                  pointerEvents: hidden ? "none" : "auto",
-                }}
-              >
-                {/* 侧卡失焦遮罩：一层半透明白膜，配合 blur 强化"未聚焦"层次 */}
-                {!isCenter && (
+                  className="absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer motion-reduce:transition-none"
+                  style={{
+                    transform,
+                    opacity,
+                    zIndex,
+                    filter: isCenter ? "none" : `blur(${blurPx}px)`,
+                    pointerEvents: hidden ? "none" : "auto",
+                    // 已隐藏的远端卡不参与绘制，节省合成开销
+                    visibility: hidden ? "hidden" : "visible",
+                    // 只过渡合成器友好的属性；z-index/pointer-events 等离散属性即时切换，
+                    // 避免 transition-all 造成的"中途跳层级"卡顿观感
+                    transition: "transform 500ms cubic-bezier(0.16,1,0.3,1), opacity 500ms cubic-bezier(0.16,1,0.3,1), filter 500ms cubic-bezier(0.16,1,0.3,1)",
+                    // 提前提升为独立合成层，避免首帧动画才触发层提升导致的掉帧
+                    willChange: "transform, opacity, filter",
+                  }}
+                >
+                  {/* 侧卡失焦遮罩：常驻挂载（中央卡 opacity 0），随层级平滑淡入淡出，避免中途卸载造成的"闪变" */}
                   <span
                     aria-hidden="true"
-                    className="absolute inset-0 rounded-2xl bg-white pointer-events-none"
-                    style={{ opacity: veilOpacity }}
+                    className="absolute inset-0 rounded-2xl bg-white pointer-events-none transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                    style={{ opacity: isCenter ? 0 : veilOpacity }}
                   />
-                )}
                 {/* 横向结构：左形象 + 右文字，各占一半（1:1） */}
                 <div className="flex h-full items-center gap-3 md:gap-5">
                   <div className="flex-1 min-w-0 h-full flex items-center justify-center">
@@ -131,22 +136,25 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                       className="w-full max-w-[144px] md:max-w-[240px] h-auto object-contain pointer-events-none"
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0">
                       <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal inline-flex items-center gap-1.5">
                         <Icon className="w-4 h-4 md:w-5 md:h-5 text-brand-charcoal/60 shrink-0" strokeWidth={1.5} />
                         {type.typeName}
                       </h2>
-                      {isCenter && (
-                        <>
-                          <p className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/60 font-light leading-relaxed line-clamp-2">
-                            {type.m1.persona}
-                          </p>
-                          <div className="mt-3 inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60">
-                            查看完整解读
-                            <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                          </div>
-                        </>
-                      )}
+                      {/* 简介与入口常驻挂载，随聚焦状态淡入淡出：避免切换瞬间插入 DOM 导致图层重栅格化掉帧 */}
+                      <p
+                        className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/60 font-light leading-relaxed line-clamp-2 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                        style={{ opacity: isCenter ? 1 : 0 }}
+                      >
+                        {type.m1.persona}
+                      </p>
+                      <div
+                        className="mt-3 inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                        style={{ opacity: isCenter ? 1 : 0 }}
+                      >
+                        查看完整解读
+                        <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                      </div>
                     </div>
                   </div>
                 </button>
