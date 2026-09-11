@@ -60,7 +60,7 @@ export default async function ResultIndexPage({
             className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
-            肌智派形象与护理方案
+            肌智派<sup className="text-[0.55em] align-super font-sans">™</sup>形象与护理方案
           </h1>
           <p
             className="text-[13px] md:text-sm text-brand-charcoal/50 font-light tracking-[0.06em] mb-6 opacity-0 animate-fade-in-up"
