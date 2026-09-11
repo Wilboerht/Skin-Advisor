@@ -272,14 +272,18 @@ export default function HomeClient() {
   const [onboardingOpenCount, setOnboardingOpenCount] = useState(0);
 
   // Check test limit（后端按登录态判额，无需前端指纹参数）
-  const checkTestLimit = useCallback(async (allowRefresh = true): Promise<boolean> => {
-    const runCheck = async (canRefresh: boolean): Promise<boolean> => {
+  // 返回完整判定而非仅 boolean：requireLogin 必须取接口返回值，
+  // 不能读 testLimitInfo state（setState 异步，handleStart 拿到的仍是旧值）
+  const checkTestLimit = useCallback(async (
+    allowRefresh = true
+  ): Promise<{ canTest: boolean; requireLogin?: boolean }> => {
+    const runCheck = async (canRefresh: boolean): Promise<{ canTest: boolean; requireLogin?: boolean }> => {
       try {
         const res = await fetch(`/api/advisor/test-limit`);
         if (!res.ok) {
           const errorText = await res.text().catch(() => "未知错误");
           console.error("Test limit check failed:", res.status, errorText);
-          return true; // Allow on error so the user is not blocked by a transient server issue
+          return { canTest: true }; // Allow on error so the user is not blocked by a transient server issue
         }
 
         const data = await res.json();
@@ -293,10 +297,10 @@ export default function HomeClient() {
           return runCheck(false);
         }
 
-        return data.canTest;
+        return { canTest: !!data.canTest, requireLogin: !!data.requireLogin };
       } catch (err) {
         console.error("Failed to check test limit:", err);
-        return true; // Allow on error so the user is not blocked by a transient network issue
+        return { canTest: true }; // Allow on error so the user is not blocked by a transient network issue
       }
     };
 
@@ -314,16 +318,16 @@ export default function HomeClient() {
 
     try {
       // Check test limit first
-      const canTest = await checkTestLimit();
+      const limit = await checkTestLimit();
 
       // 用户在等待限额检查时已主动关闭弹窗/返回首页：中止后续流程并清理 loading 状态
       if (startCancelledRef.current) {
         return;
       }
 
-      if (!canTest) {
+      if (!limit.canTest) {
         // 需登录：不再弹"测肤需登录后使用"限制框，统一打开「登录肌智派」引导（AuthModal/LoginGuide）
-        if (testLimitInfo?.requireLogin) {
+        if (limit.requireLogin) {
           openAuthModal("login");
           return;
         }
@@ -349,7 +353,7 @@ export default function HomeClient() {
     } finally {
       startingRef.current = false;
     }
-  }, [checkTestLimit, user, showOnboardingModal, testLimitInfo?.requireLogin, openAuthModal]);
+  }, [checkTestLimit, user, showOnboardingModal, openAuthModal]);
 
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
