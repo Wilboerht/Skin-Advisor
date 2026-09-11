@@ -76,6 +76,42 @@ async function waitForImages(container: HTMLElement): Promise<void> {
     );
 }
 
+// 两页切换 tab：极简单色风；PC 端挂载在顶部栏，移动端位于标题下方
+function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; onSwitchPage: (idx: 0 | 1) => void }) {
+    return (
+        <div
+            role="tablist"
+            aria-label="报告页面切换"
+            className="flex items-center gap-1"
+        >
+            <button
+                role="tab"
+                aria-selected={pageIndex === 0}
+                onClick={() => { if (pageIndex !== 0) onSwitchPage(0); }}
+                className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
+                    pageIndex === 0
+                        ? "border border-brand-charcoal/[0.18] bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
+                        : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
+                }`}
+            >
+                证书
+            </button>
+            <button
+                role="tab"
+                aria-selected={pageIndex === 1}
+                onClick={() => { if (pageIndex !== 1) onSwitchPage(1); }}
+                className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
+                    pageIndex === 1
+                        ? "border border-brand-charcoal/[0.18] bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
+                        : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
+                }`}
+            >
+                报告
+            </button>
+        </div>
+    );
+}
+
 // 两页版式共享页头：归属标题 + 拍摄时肌肤状态标签 + 两页切换 tab（logo 已上移到固定顶部栏）
 function ResultHeader({
     nickname,
@@ -102,36 +138,9 @@ function ResultHeader({
                     </span>
                 )}
             </p>
-            {/* 两页切换 tab：置于标题下方（原底部悬浮 tab 已移除）；极简单色风，与全站 chip 一致 */}
-            <div
-                role="tablist"
-                aria-label="报告页面切换"
-                className="mb-4 lg:mb-6 flex items-center gap-1"
-            >
-                <button
-                    role="tab"
-                    aria-selected={pageIndex === 0}
-                    onClick={() => { if (pageIndex !== 0) onSwitchPage(0); }}
-                    className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
-                        pageIndex === 0
-                            ? "border border-brand-charcoal/[0.18] bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
-                            : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
-                    }`}
-                >
-                    证书
-                </button>
-                <button
-                    role="tab"
-                    aria-selected={pageIndex === 1}
-                    onClick={() => { if (pageIndex !== 1) onSwitchPage(1); }}
-                    className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
-                        pageIndex === 1
-                            ? "border border-brand-charcoal/[0.18] bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
-                            : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
-                    }`}
-                >
-                    报告
-                </button>
+            {/* 两页切换 tab：仅移动端位于标题下方（PC 端已移至顶部栏） */}
+            <div className="mb-4 md:hidden">
+                <ResultPageTabs pageIndex={pageIndex} onSwitchPage={onSwitchPage} />
             </div>
         </div>
     );
@@ -1387,14 +1396,20 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">回到首页</span>
                             </button>
 
-                            <Image
-                                src="/NIHPLOD-logo.svg"
-                                alt="NIHPLOD"
-                                width={120}
-                                height={30}
-                                className="h-7 md:h-9 w-auto object-contain justify-self-center"
-                                priority
-                            />
+                            <div className="justify-self-center flex items-center gap-5">
+                                <Image
+                                    src="/NIHPLOD-logo.svg"
+                                    alt="NIHPLOD"
+                                    width={120}
+                                    height={30}
+                                    className="h-7 md:h-9 w-auto object-contain"
+                                    priority
+                                />
+                                {/* 两页切换 tab：PC 端挂载在顶部栏（logo 右侧），移动端在标题下方 */}
+                                <div className="hidden md:block">
+                                    <ResultPageTabs pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
+                                </div>
+                            </div>
 
                             <div className="justify-self-end">
                                 <UserBadge />
