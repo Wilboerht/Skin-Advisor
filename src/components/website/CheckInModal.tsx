@@ -133,7 +133,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                 id="checkin-modal-title"
                 className="text-xl font-serif font-light text-brand-charcoal tracking-[0.08em] text-center mb-6"
               >
-                {existing ? "编辑今日记录" : isToday ? "记录今日肌肤" : `补打卡 · ${targetLabel}`}
+                {existing ? "编辑今日记录" : isToday ? "记录今日肌肤状态" : `补打卡 · ${targetLabel}`}
               </h2>
 
               {/* 肌肤状态（单选） */}
