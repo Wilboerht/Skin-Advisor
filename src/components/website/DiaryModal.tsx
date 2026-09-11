@@ -598,7 +598,7 @@ export function DiaryModal() {
                             <button
                               type="button"
                               onClick={() => setHistoryView(true)}
-                              className="shrink-0 min-h-[30px] inline-flex items-center px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
+                              className="shrink-0 h-8 inline-flex items-center px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                             >
                               全部测肤记录 →
                             </button>
@@ -607,17 +607,17 @@ export function DiaryModal() {
                       ) : recentCheckInCount >= 2 ? (
                         <div>
                           <CheckInTrend entries={entries} />
-                          <p className="mt-3 text-[11px] text-brand-charcoal/35 font-light text-center">
+                          <p className="mt-3 text-[11px] text-brand-charcoal/45 font-light text-center">
                             完成两次不同日期的测肤后，可叠加查看测肤评分趋势
                           </p>
                         </div>
                       ) : (
                         /* 解锁引导：极简居中（无框），CTA 按钮承载行动感 */
                         <div className="py-6 text-center">
-                          <p className="text-[13px] text-brand-charcoal/55 font-light mb-1.5">
+                          <p className="text-[13px] text-brand-charcoal/55 font-light leading-relaxed mb-2">
                             完成两次不同日期的测肤后解锁肌肤变化
                           </p>
-                          <p className="text-[13px] text-brand-charcoal/45 font-light mb-4">
+                          <p className="text-[13px] text-brand-charcoal/45 font-light leading-relaxed mb-4">
                             定期测肤，看见肌肤的真实变化
                           </p>
                           <Link
@@ -632,43 +632,43 @@ export function DiaryModal() {
                       {/* 里程碑统计：数据概览，与趋势图同属左列；独立于趋势分支（仅有打卡无趋势时仍展示） */}
                       {summary && (summary.totalCheckins > 0 || summary.testCount > 0) && (
                         <div className="grid grid-cols-4 mt-5 pt-4 border-t border-brand-espresso/[0.06]">
-                          <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                          <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                             <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
                               {summary.currentStreak}
                               <span className="ml-0.5 text-[11px] font-light text-brand-charcoal/50">天</span>
                             </p>
-                            <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/50 font-light">
                               <Flame className="w-3 h-3 text-[#D9730D]" strokeWidth={1.8} />
                               连续打卡
                             </p>
                           </div>
-                          <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                          <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                             <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
                               {summary.totalCheckins}
                               <span className="ml-0.5 text-[11px] font-light text-brand-charcoal/50">次</span>
                             </p>
-                            <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/50 font-light">
                               <CalendarCheck className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
                               累计打卡
                             </p>
                           </div>
-                          <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                          <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                             <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
                               {summary.testCount}
                               <span className="ml-0.5 text-[11px] font-light text-brand-charcoal/50">次</span>
                             </p>
-                            <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/50 font-light">
                               <ScanFace className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
                               已测肤
                             </p>
                           </div>
                           {summary.longestStreak > 0 && (
-                            <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                            <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                               <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
                                 {summary.longestStreak}
                                 <span className="ml-0.5 text-[11px] font-light text-brand-charcoal/50">天</span>
                               </p>
-                              <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
+                              <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/50 font-light">
                                 <Trophy className="w-3 h-3 text-[#C9A86C]" strokeWidth={1.8} />
                                 最长连续
                               </p>
