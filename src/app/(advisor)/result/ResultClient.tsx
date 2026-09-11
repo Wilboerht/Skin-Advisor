@@ -1396,22 +1396,20 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">回到首页</span>
                             </button>
 
-                            <div className="justify-self-center flex items-center gap-5">
-                                <Image
-                                    src="/NIHPLOD-logo.svg"
-                                    alt="NIHPLOD"
-                                    width={120}
-                                    height={30}
-                                    className="h-7 md:h-9 w-auto object-contain"
-                                    priority
-                                />
-                                {/* 两页切换 tab：PC 端挂载在顶部栏（logo 右侧），移动端在标题下方 */}
+                            <Image
+                                src="/NIHPLOD-logo.svg"
+                                alt="NIHPLOD"
+                                width={120}
+                                height={30}
+                                className="h-7 md:h-9 w-auto object-contain justify-self-center"
+                                priority
+                            />
+
+                            <div className="justify-self-end flex items-center gap-3 md:gap-4">
+                                {/* 两页切换 tab：PC 端置于顶部栏右侧（用户身份区左侧），移动端在标题下方 */}
                                 <div className="hidden md:block">
                                     <ResultPageTabs pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
                                 </div>
-                            </div>
-
-                            <div className="justify-self-end">
                                 <UserBadge />
                             </div>
                         </div>
