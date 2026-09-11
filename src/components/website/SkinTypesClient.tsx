@@ -81,7 +81,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
   return (
     <>
       {/* 派系导航说明：置于轮播上方，与 hero 副标题同字号，主色 #00263E */}
-      <p className="mb-4 flex items-center justify-center gap-1.5 text-center text-[13px] md:text-sm text-[#00263E] font-light tracking-[0.06em]">
+      <p className="mb-3 md:mb-4 flex items-center justify-center gap-1.5 text-center text-[13px] md:text-sm text-[#00263E] font-light tracking-[0.06em]">
         点击对应派系，查看派系详情
         <ArrowDown className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
       </p>
@@ -213,7 +213,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
       {/* 派系导航（替代原进度圆点指示器）：全部派系（名称 + 图标），点击聚焦对应卡片；
           激活 chip 实心高亮即当前位置指示；移动端横向滚动 + 边缘渐隐提示可滑，桌面端换行居中 */}
-      <div className="mt-5 flex gap-2 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,black_24px,black_calc(100%-24px),transparent)] md:flex-wrap md:justify-center md:overflow-visible md:[mask-image:none]">
+      <div className="mt-4 md:mt-5 flex gap-2 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,black_24px,black_calc(100%-24px),transparent)] md:flex-wrap md:justify-center md:overflow-visible md:[mask-image:none]">
         {types.map((t, i) => {
           const active = i === activeIdx;
           const Icon = getFactionIcon(t.ipKey);

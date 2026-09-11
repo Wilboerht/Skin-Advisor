@@ -52,8 +52,8 @@ export default async function ResultIndexPage({
       />
       {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 
-      {/* Hero（紧凑版：标题 + 副标题 + 双 CTA，为轮播让出舞台空间） */}
-      <section className="relative pt-10 md:pt-12 pb-4 md:pb-6 px-6 md:px-12 lg:px-20 overflow-hidden shrink-0">
+      {/* Hero（紧凑版：标题 + 副标题 + CTA，为轮播让出舞台空间） */}
+      <section className="relative pt-8 md:pt-12 pb-3 md:pb-6 px-6 md:px-12 lg:px-20 overflow-hidden shrink-0">
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1
@@ -63,16 +63,16 @@ export default async function ResultIndexPage({
             肌智派<sup className="text-[0.55em] align-super font-sans">™</sup>形象与护理方案
           </h1>
           <p
-            className="text-[13px] md:text-sm text-brand-charcoal/50 font-light tracking-[0.06em] mb-6 opacity-0 animate-fade-in-up"
+            className="text-[13px] md:text-sm text-brand-charcoal/50 font-light tracking-[0.06em] mb-5 opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.08s", animationFillMode: "forwards" }}
           >
             找到与你匹配的肌肤形象，获取专属护理方案
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
-            {/* 主 CTA：空心描边胶囊（#00263E），hover 轻微填充底色，Next 风格克制 */}
+            {/* 主 CTA：空心描边胶囊（#00263E）；移动端全宽更易点按 */}
             <Link
               href="/?start=1"
-              className="group inline-flex items-center justify-center gap-2 px-6 h-11 rounded-full border border-[#00263E]/40 bg-transparent text-[#00263E] text-sm font-medium transition-colors duration-200 hover:border-[#00263E] hover:bg-[#00263E]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2 opacity-0 animate-fade-in-up"
+              className="group inline-flex items-center justify-center gap-2 px-6 h-11 w-full sm:w-auto rounded-full border border-[#00263E]/40 bg-transparent text-[#00263E] text-sm font-medium transition-colors duration-200 hover:border-[#00263E] hover:bg-[#00263E]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2 opacity-0 animate-fade-in-up"
               style={{ animationDelay: "0.15s", animationFillMode: "forwards" }}
             >
               <span>测一测，了解我的肤质类型</span>
@@ -82,8 +82,8 @@ export default async function ResultIndexPage({
         </div>
       </section>
 
-      {/* 旋转木马：标题与 Dock 之间的剩余空间垂直居中，区域宽度占页面 80% */}
-      <section className="relative z-10 flex-1 flex items-center justify-center px-6 md:px-12 lg:px-20 pb-8">
+      {/* 旋转木马：标题与 Dock 之间的剩余空间垂直居中，区域宽度移动端全宽/桌面 90% */}
+      <section className="relative z-10 flex-1 flex items-center justify-center px-6 md:px-12 lg:px-20 pb-6 md:pb-8">
         <div className="w-full md:w-[90%]">
           <SkinTypesClient
             types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
