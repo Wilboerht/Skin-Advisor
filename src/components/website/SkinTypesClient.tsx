@@ -96,11 +96,6 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         >
           {/* 卡片舞台：高度与中央卡一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
           <div className="relative h-[210px] md:h-[360px] [--fan-offset:130px] md:[--fan-offset:150px]">
-            {/* 环境光晕：舞台后方的柔光椭圆，给平面布局一点空气感 */}
-            <div
-              aria-hidden="true"
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[75%] h-[85%] bg-brand-charcoal/[0.03] rounded-full blur-[70px] pointer-events-none"
-            />
             {types.map((type, i) => {
               const d = offsetOf(i, activeIdx, types.length);
               const abs = Math.abs(d);
