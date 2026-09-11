@@ -74,18 +74,20 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         onTouchStart={onCarouselTouchStart}
         onTouchEnd={onCarouselTouchEnd}
       >
-        {/* 卡片舞台：高度与卡片一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
-        <div className="relative h-[240px] md:h-[360px] [--fan-offset:150px] md:[--fan-offset:180px]">
+        {/* 卡片舞台：高度与中央卡一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
+        <div className="relative h-[240px] md:h-[360px] [--fan-offset:130px] md:[--fan-offset:180px]">
           {types.map((type, i) => {
             const d = offsetOf(i, activeIdx, types.length);
             const abs = Math.abs(d);
             const isCenter = abs === 0;
             const Icon = getFactionIcon(type.ipKey);
-            // 平面层叠：仅横向展开 + 轻微缩放 + 透明度衰减，无旋转角度
-            const transform = `translate(calc(-50% + ${d} * var(--fan-offset)), -50%) scale(${1 - abs * 0.05})`;
-            const opacity = abs === 0 ? 1 : abs === 1 ? 0.85 : abs === 2 ? 0.5 : abs === 3 ? 0.22 : 0;
+            // 大小与透明度的层级：中央最大，左右各两张依次缩小、越远越透明
+            const scale = [1, 0.85, 0.7, 0.55][abs] ?? 0.5;
+            const opacity = [1, 0.7, 0.45, 0.25][abs] ?? 0.15;
+            // 平面层叠：仅横向展开 + 层级缩放，无旋转角度；垂直 -50% 居中
+            const transform = `translate(calc(-50% + ${d} * var(--fan-offset)), -50%) scale(${scale})`;
             const zIndex = 10 - abs;
-            // 完全隐藏的远端卡不接收点击（避免"点空气"聚焦到不可见卡片）
+            // 第三张起完全隐藏，不接收点击（避免"点空气"聚焦到不可见卡片）
             const hidden = abs >= 3;
 
             return (
@@ -96,7 +98,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                 aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                 aria-hidden={hidden}
                 tabIndex={isCenter ? 0 : -1}
-                className="absolute left-1/2 top-1/2 w-[280px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                className="absolute left-1/2 top-1/2 w-[240px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
                 style={{
                   transform,
                   opacity,
