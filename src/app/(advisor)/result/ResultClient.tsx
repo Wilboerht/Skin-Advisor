@@ -25,7 +25,6 @@ import UserBadge from "@/components/advisor/UserBadge";
 import { GenderMismatchModal, LabDataModal, PosterSaveModal } from "@/components/advisor/result-modals";
 import { ProductRecommendationSection } from "@/components/advisor/ProductRecommendationSection";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
-import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
@@ -1379,9 +1378,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 transition={{ duration: reduceMotion ? 0 : 0.3, ease: "easeInOut" }}
                                 onScroll={(e) => { reportScrollTopRef.current = e.currentTarget.scrollTop; }}
                             >
-                                {/* Save Report Banner for unauthenticated users */}
-                                <SaveReportBanner className="hidden md:block" />
-
+                                {/* 游客测肤已下线：原「注册保存报告」横幅已移除（游客无法产生新报告，登录态未就绪时的闪现也是误伤） */}
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} />
 
                                 {/* Validation Warning Banner */}
