@@ -188,69 +188,10 @@ export default function ShareCardPage({
 
                         <m.p
                             {...stagger(0.36)}
-                            className="text-[12px] leading-relaxed text-[var(--color-brand-cocoa)]/60 mb-5 lg:mb-6 max-w-full lg:max-w-[400px] line-clamp-2"
+                            className="text-[12px] leading-relaxed text-[var(--color-brand-cocoa)]/60 max-w-full lg:max-w-[400px] line-clamp-2"
                         >
                             {summary || "详细分析见下方报告。"}
                         </m.p>
-
-                        {/* 证书操作：主 CTA（翻到报告）+ 次级按钮（保存证书）+ 三级文字入口（抽奖），层级分明 */}
-                        <m.div {...stagger(0.42)} className="flex flex-col gap-2.5 w-full">
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                                {onOpenReport && (
-                                    <button
-                                        onClick={onOpenReport}
-                                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-7 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-medium tracking-[0.06em] transition-colors hover:bg-[#4a3a2c] cursor-pointer"
-                                    >
-                                        查看完整报告
-                                        <ChevronDown className="w-4 h-4" strokeWidth={2} />
-                                    </button>
-                                )}
-                                <button
-                                    onClick={onDownloadPoster}
-                                    disabled={isPosterLoading}
-                                    className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-7 rounded-full border border-[var(--color-brand-cocoa)]/30 bg-transparent text-[var(--color-brand-cocoa)] text-[13px] font-light tracking-[0.06em] transition-colors hover:border-[var(--color-brand-cocoa)] hover:bg-[var(--color-brand-cocoa)]/[0.05] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                >
-                                    {isPosterLoading ? (
-                                        <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2} />
-                                    ) : (
-                                        <Share2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-                                    )}
-                                    {isPosterLoading ? "生成中..." : "保存测肤证书"}
-                                </button>
-                            </div>
-                            {onGift && (
-                                <button
-                                    onClick={onGift}
-                                    className="self-start inline-flex items-center gap-1.5 px-1 py-0.5 text-[12px] text-[var(--color-brand-cocoa)]/60 font-light tracking-[0.04em] transition-colors hover:text-[var(--color-brand-cocoa)] cursor-pointer"
-                                >
-                                    <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
-                                    肌智派送好礼 · 参与抽奖
-                                </button>
-                            )}
-                        </m.div>
-
-                        {/* 证书落款：日期 · 编号（等宽数字，上细分隔线） */}
-                        <m.div {...stagger(0.5)}>
-                            {(dateText || idText) && (
-                                <div className="mt-5 pt-3 border-t border-brand-espresso/[0.08]">
-                                    <p className="text-[11px] font-light tracking-[0.08em] text-[var(--color-brand-cocoa)]/50 tabular-nums">
-                                        {dateText || ""}
-                                        {dateText && idText ? " · " : ""}
-                                        {idText ? `No.${idText}` : ""}
-                                    </p>
-                                </div>
-                            )}
-
-                            {onReTest && (
-                                <button
-                                    type="button"
-                                    onClick={onReTest}
-                                    className="mt-3 text-[12px] font-medium text-[var(--color-brand-cocoa)]/70 underline underline-offset-4 hover:text-[var(--color-brand-cocoa)] transition-colors tracking-[0.04em]"
-                                >
-                                    认为派系判断不准确？重新测试（消耗 1 次测试额度）
-                                </button>
-                            )}
-                        </m.div>
                     </div>
 
                     {/* Desktop: Character IP Image（右侧，无背景色块，与文字区以虚线分隔） */}
@@ -271,6 +212,62 @@ export default function ShareCardPage({
                         </m.div>
                     )}
                 </div>
+            </m.div>
+
+            {/* 证书卡外操作区：主 CTA / 保存证书 / 抽奖入口 / 落款 / 重新测试，整体居中 */}
+            <m.div {...stagger(0.42)} className="flex flex-col items-center gap-3 mt-5">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                    {onOpenReport && (
+                        <button
+                            onClick={onOpenReport}
+                            className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-7 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-medium tracking-[0.06em] transition-colors hover:bg-[#4a3a2c] cursor-pointer"
+                        >
+                            查看完整报告
+                            <ChevronDown className="w-4 h-4" strokeWidth={2} />
+                        </button>
+                    )}
+                    <button
+                        onClick={onDownloadPoster}
+                        disabled={isPosterLoading}
+                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-7 rounded-full border border-[var(--color-brand-cocoa)]/30 bg-transparent text-[var(--color-brand-cocoa)] text-[13px] font-light tracking-[0.06em] transition-colors hover:border-[var(--color-brand-cocoa)] hover:bg-[var(--color-brand-cocoa)]/[0.05] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        {isPosterLoading ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2} />
+                        ) : (
+                            <Share2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                        )}
+                        {isPosterLoading ? "生成中..." : "保存测肤证书"}
+                    </button>
+                </div>
+                {onGift && (
+                    <button
+                        onClick={onGift}
+                        className="inline-flex items-center gap-1.5 px-1 py-0.5 text-[12px] text-[var(--color-brand-cocoa)]/60 font-light tracking-[0.04em] transition-colors hover:text-[var(--color-brand-cocoa)] cursor-pointer"
+                    >
+                        <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
+                        肌智派送好礼 · 参与抽奖
+                    </button>
+                )}
+
+                {/* 证书落款：日期 · 编号 */}
+                {(dateText || idText) && (
+                    <m.p {...stagger(0.5)} className="text-[11px] font-light tracking-[0.08em] text-[var(--color-brand-cocoa)]/50 tabular-nums">
+                        {dateText || ""}
+                        {dateText && idText ? " · " : ""}
+                        {idText ? `No.${idText}` : ""}
+                    </m.p>
+                )}
+
+                {onReTest && (
+                    <m.button
+                        {...stagger(0.55)}
+                        type="button"
+                        onClick={onReTest}
+                        className="text-[12px] font-medium text-[var(--color-brand-cocoa)]/70 underline underline-offset-4 hover:text-[var(--color-brand-cocoa)] transition-colors tracking-[0.04em] cursor-pointer"
+                    >
+                        认为派系判断不准确？重新测试（消耗 1 次测试额度）
+                    </m.button>
+                )}
             </m.div>
         </div>
     );
