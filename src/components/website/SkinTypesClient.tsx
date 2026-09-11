@@ -77,7 +77,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
           onTouchEnd={onCarouselTouchEnd}
         >
           {/* 卡片舞台：高度与中央卡一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
-          <div className="relative h-[260px] md:h-[430px] [--fan-offset:130px] md:[--fan-offset:150px]">
+          <div className="relative h-[210px] md:h-[360px] [--fan-offset:130px] md:[--fan-offset:150px]">
             {types.map((type, i) => {
               const d = offsetOf(i, activeIdx, types.length);
               const abs = Math.abs(d);
@@ -103,7 +103,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                   aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                   aria-hidden={hidden}
                   tabIndex={isCenter ? 0 : -1}
-                  className="absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer motion-reduce:transition-none"
+                  className="absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer motion-reduce:transition-none"
                   style={{
                     transform,
                     opacity,
@@ -168,7 +168,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
           type="button"
           onClick={() => step(-1)}
           aria-label="上一个"
-          className="group hidden md:flex absolute -left-4 lg:-left-8 top-[130px] md:top-[215px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/45 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
+          className="group hidden md:flex absolute -left-4 lg:-left-8 top-[105px] md:top-[180px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/45 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-0.5" strokeWidth={1.5} />
         </button>
@@ -176,7 +176,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
           type="button"
           onClick={() => step(1)}
           aria-label="下一个"
-          className="group hidden md:flex absolute -right-4 lg:-right-8 top-[130px] md:top-[215px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/45 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
+          className="group hidden md:flex absolute -right-4 lg:-right-8 top-[105px] md:top-[180px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/45 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
         >
           <ChevronRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={1.5} />
         </button>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, ScanFace } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { skinTypes, routeOrder, type SkinTypeData } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
 import { KineticBackground } from "@/components/website/KineticBackground";
@@ -69,15 +69,14 @@ export default async function ResultIndexPage({
             找到与你匹配的肌肤形象，获取专属护理方案
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
-            {/* 主 CTA：与首页一致的品牌色实心胶囊，直达测肤流程（?start=1 由首页自动拉起完整流程） */}
+            {/* 主 CTA：Next 风格极简黑胶囊——无阴影/无位移/无多余图标，hover 仅微调底色与箭头 */}
             <Link
               href="/?start=1"
-              className="group inline-flex items-center justify-center gap-2.5 px-9 md:px-10 h-12 rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[14px] md:text-[15px] tracking-[0.12em] font-light transition-all duration-300 hover:bg-[#4a3a2c] hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(61,47,37,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 focus-visible:ring-offset-2 active:translate-y-0 active:shadow-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 opacity-0 animate-fade-in-up"
+              className="group inline-flex items-center justify-center gap-2 px-6 h-11 rounded-full bg-[#1A1A1A] text-white text-sm font-medium transition-colors duration-200 hover:bg-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A]/30 focus-visible:ring-offset-2 opacity-0 animate-fade-in-up"
               style={{ animationDelay: "0.15s", animationFillMode: "forwards" }}
             >
-              <ScanFace className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />
               <span>了解我的肤质类型</span>
-              <ArrowRight className="w-[18px] h-[18px] transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none" />
+              <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
             </Link>
           </div>
         </div>
