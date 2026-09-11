@@ -135,10 +135,6 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                     pointerEvents: hidden ? "none" : "auto",
                     // 已隐藏的远端卡不参与绘制，节省合成开销
                     visibility: hidden ? "hidden" : "visible",
-                    // 中央卡保留极轻的多层空气感投影，侧卡保持无影平面，形成"浮起"层次
-                    boxShadow: isCenter
-                      ? "0 1px 3px rgba(61,47,37,0.03), 0 8px 20px rgba(61,47,37,0.04), 0 24px 48px -24px rgba(61,47,37,0.06)"
-                      : "none",
                     // 只过渡合成器友好的属性；z-index/pointer-events 等离散属性即时切换，
                     // 避免 transition-all 造成的"中途跳层级"卡顿观感
                     transition: "transform 500ms cubic-bezier(0.16,1,0.3,1), opacity 500ms cubic-bezier(0.16,1,0.3,1), filter 500ms cubic-bezier(0.16,1,0.3,1)",

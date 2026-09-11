@@ -102,11 +102,11 @@ function ResultHeader({
                     </span>
                 )}
             </p>
-            {/* 两页切换 tab：置于标题下方（原底部悬浮 tab 已移除） */}
+            {/* 两页切换 tab：置于标题下方（原底部悬浮 tab 已移除）；极简单色风，与全站 chip 一致 */}
             <div
                 role="tablist"
                 aria-label="报告页面切换"
-                className="mb-4 lg:mb-6 flex items-center rounded-full border border-brand-espresso/[0.12] bg-white/85 backdrop-blur-md p-0.5 shadow-[0_2px_8px_rgba(61,47,37,0.08)]"
+                className="mb-4 lg:mb-6 flex items-center gap-1"
             >
                 <button
                     role="tab"
@@ -114,8 +114,8 @@ function ResultHeader({
                     onClick={() => { if (pageIndex !== 0) onSwitchPage(0); }}
                     className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
                         pageIndex === 0
-                            ? "bg-[var(--color-brand-cocoa)] text-white font-medium"
-                            : "text-brand-charcoal/55 font-light hover:text-brand-charcoal"
+                            ? "border border-brand-charcoal/[0.18] bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
+                            : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
                     }`}
                 >
                     证书
@@ -126,8 +126,8 @@ function ResultHeader({
                     onClick={() => { if (pageIndex !== 1) onSwitchPage(1); }}
                     className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
                         pageIndex === 1
-                            ? "bg-[var(--color-brand-cocoa)] text-white font-medium"
-                            : "text-brand-charcoal/55 font-light hover:text-brand-charcoal"
+                            ? "border border-brand-charcoal/[0.18] bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
+                            : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
                     }`}
                 >
                     报告
