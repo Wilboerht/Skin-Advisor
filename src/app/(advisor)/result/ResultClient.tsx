@@ -94,7 +94,7 @@ function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; onSwitc
                         : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
                 }`}
             >
-                证书
+                测肤证书
             </button>
             <button
                 role="tab"
@@ -106,7 +106,7 @@ function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; onSwitc
                         : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
                 }`}
             >
-                报告
+                完整报告
             </button>
         </div>
     );
