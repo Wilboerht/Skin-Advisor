@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowDown, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SkinTypeData } from "@/lib/result-content";
 import { SkinTypeModal } from "@/components/website/SkinTypeModal";
@@ -80,6 +80,12 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   return (
     <>
+      {/* 派系导航说明：置于轮播上方 */}
+      <p className="mb-4 flex items-center justify-center gap-1.5 text-center text-[11px] text-brand-charcoal/35 font-light tracking-[0.08em]">
+        点击对应派系，查看派系详情
+        <ArrowDown className="w-3 h-3 shrink-0" strokeWidth={1.5} />
+      </p>
+
       {/* 外层相对容器：轮播裁剪区 + 两侧翻页按钮（按钮在裁剪容器外，垂直线与卡片舞台中线对齐） */}
       <div className="relative">
         {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出 */}
@@ -216,8 +222,8 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
               className={cn(
                 "shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12px] tracking-[0.04em] transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2",
                 active
-                  ? "bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
-                  : "text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
+                  ? "border border-brand-charcoal/[0.18] bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
+                  : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
               )}
             >
               <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={active ? 1.75 : 1.5} />
