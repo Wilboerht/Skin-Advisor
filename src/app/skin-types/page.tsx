@@ -6,7 +6,6 @@ import { withDefaultOgImage } from "@/lib/metadata";
 import { KineticBackground } from "@/components/website/KineticBackground";
 import { HidePageScrollbar } from "@/components/website/HidePageScrollbar";
 import { SkinTypesClient } from "@/components/website/SkinTypesClient";
-import { GiftLink } from "@/components/website/GiftLink";
 import { BreadcrumbSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
