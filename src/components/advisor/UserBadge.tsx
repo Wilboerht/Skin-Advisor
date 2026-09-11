@@ -71,7 +71,7 @@ export default function UserBadge() {
         </span>
 
         {/* 用户名 */}
-        <span className="max-w-[96px] lg:max-w-[140px] truncate text-[12px] font-medium text-brand-charcoal group-hover:text-[var(--color-brand-cocoa)] transition-colors">
+        <span className="max-w-[110px] lg:max-w-[160px] truncate text-[13px] lg:text-[14px] font-medium text-brand-charcoal group-hover:text-[var(--color-brand-cocoa)] transition-colors">
           {nickname}
         </span>
       </button>

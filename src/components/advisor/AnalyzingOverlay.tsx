@@ -146,13 +146,13 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                             onCancel();
                         }}
                         disabled={isExiting}
-                        className="absolute top-8 right-4 md:right-12 lg:right-20 z-50 flex items-center gap-2 min-h-[44px] min-w-[44px] px-3 py-2 transition-all group text-brand-charcoal/60 hover:text-brand-charcoal disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="absolute top-8 right-4 md:right-12 lg:right-20 z-50 flex items-center gap-1.5 h-9 px-3 rounded-full border border-brand-charcoal/[0.12] text-brand-charcoal/50 transition-colors duration-300 hover:text-brand-charcoal hover:border-brand-charcoal/30 hover:bg-brand-charcoal/[0.03] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                         aria-label="离开此页（分析将在后台继续）"
                     >
-                        <span className="text-[12px] font-light tracking-[0.12em] transition-colors">
+                        <span className="text-[12px] font-light tracking-[0.08em]">
                             {isExiting ? "正在离开..." : "离开此页"}
                         </span>
-                        <LogOut className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
+                        <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
                     </m.button>
                 )}
             </AnimatePresence>
