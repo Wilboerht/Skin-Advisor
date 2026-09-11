@@ -217,35 +217,35 @@ export default function ShareCardPage({
                             {summary || "详细分析见下方报告。"}
                         </m.p>
 
-                        {/* 证书操作：单 CTA 焦点（翻到报告）+ 次级文字入口（保存证书） */}
-                        <m.div {...stagger(0.42)} className="flex flex-col items-stretch sm:items-start gap-3 w-full">
-                            {onOpenReport && (
-                                <m.button
-                                    whileHover={{ scale: 1.01 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    onClick={onOpenReport}
-                                    className="inline-flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[48px] px-8 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] sm:text-[14px] font-medium tracking-[0.06em] shadow-[0_8px_20px_rgba(61,47,37,0.18)] transition-colors hover:bg-[#4a3a2c]"
-                                >
-                                    查看完整报告
-                                    <ChevronDown className="w-4 h-4" strokeWidth={2} />
-                                </m.button>
-                            )}
-                            <button
-                                onClick={onDownloadPoster}
-                                disabled={isPosterLoading}
-                                className="self-center sm:self-auto inline-flex items-center gap-1.5 px-2 py-1 text-[12px] text-[var(--color-brand-cocoa)]/60 font-light tracking-[0.04em] transition-colors hover:text-[var(--color-brand-cocoa)] disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isPosterLoading ? (
-                                    <Loader2 className="w-3.5 h-3.5 stroke-[2] animate-spin" />
-                                ) : (
-                                    <Share2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                        {/* 证书操作：主 CTA（翻到报告）+ 次级按钮（保存证书）+ 三级文字入口（抽奖），层级分明 */}
+                        <m.div {...stagger(0.42)} className="flex flex-col gap-2.5 w-full">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                                {onOpenReport && (
+                                    <button
+                                        onClick={onOpenReport}
+                                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-7 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-medium tracking-[0.06em] transition-colors hover:bg-[#4a3a2c] cursor-pointer"
+                                    >
+                                        查看完整报告
+                                        <ChevronDown className="w-4 h-4" strokeWidth={2} />
+                                    </button>
                                 )}
-                                {isPosterLoading ? "生成中..." : "保存测肤证书"}
-                            </button>
+                                <button
+                                    onClick={onDownloadPoster}
+                                    disabled={isPosterLoading}
+                                    className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-7 rounded-full border border-[var(--color-brand-cocoa)]/30 bg-transparent text-[var(--color-brand-cocoa)] text-[13px] font-light tracking-[0.06em] transition-colors hover:border-[var(--color-brand-cocoa)] hover:bg-[var(--color-brand-cocoa)]/[0.05] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    {isPosterLoading ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2} />
+                                    ) : (
+                                        <Share2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                    )}
+                                    {isPosterLoading ? "生成中..." : "保存测肤证书"}
+                                </button>
+                            </div>
                             {onGift && (
                                 <button
                                     onClick={onGift}
-                                    className="self-center sm:self-auto inline-flex items-center gap-1.5 px-2 py-1 text-[12px] text-[var(--color-brand-cocoa)]/60 font-light tracking-[0.04em] transition-colors hover:text-[var(--color-brand-cocoa)]"
+                                    className="self-start inline-flex items-center gap-1.5 px-1 py-0.5 text-[12px] text-[var(--color-brand-cocoa)]/60 font-light tracking-[0.04em] transition-colors hover:text-[var(--color-brand-cocoa)] cursor-pointer"
                                 >
                                     <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
                                     肌智派送好礼 · 参与抽奖
