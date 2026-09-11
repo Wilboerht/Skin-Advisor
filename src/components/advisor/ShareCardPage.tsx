@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion as m, useReducedMotion } from "framer-motion";
-import { ChevronDown, Gift, Loader2, Share2 } from "lucide-react";
+import { Gift, Loader2, Share2 } from "lucide-react";
 import Image from "next/image";
 import { getCharacterImage, getSkinTypeName, type IPMatchParams } from "@/lib/result-utils";
 
@@ -90,21 +90,6 @@ export default function ShareCardPage({
     const dateText = formatCertDate(certDate);
     const idText = formatCertId(certId);
 
-    // IP 形象入场 + idle 漂浮（尊重减弱动效偏好）。
-    // useMemo 固定引用：父组件状态变化（如海报按钮 loading）不应触发动画对象重建导致漂浮循环重启
-    const ipAnimation = useMemo(
-        () => ({
-            initial: { opacity: 0, scale: 0.92 },
-            animate: { opacity: 1, scale: 1, y: reduceMotion ? 0 : [0, -5, 0] },
-            transition: {
-                opacity: { duration: 0.5, delay: 0.05 },
-                scale: { type: "spring" as const, stiffness: 260, damping: 20, delay: 0.05 },
-                y: reduceMotion ? { duration: 0 } : { duration: 4.5, repeat: Infinity, ease: "easeInOut" as const },
-            },
-        }),
-        [reduceMotion]
-    );
-
     // 揭晓仪式 stagger：文字逐行淡入（尊重减弱动效）
     const stagger = (delay: number) => ({
         initial: { opacity: 0, y: reduceMotion ? 0 : 10 },
@@ -133,19 +118,19 @@ export default function ShareCardPage({
                 />
 
                 {/* 移动端：形象顶部居中，虚线横向分隔 */}
-                <div className="lg:hidden relative z-10 flex flex-col items-center pt-6">
+                <div className="lg:hidden relative z-10 flex flex-col items-center pt-5">
                     {characterReady && !characterImgFailed && (
                         <Image
                             src={characterImgSrc}
                             alt={skinTypeName}
-                            width={200}
-                            height={200}
-                            className="w-[200px] h-[200px] object-contain"
+                            width={160}
+                            height={160}
+                            className="w-[160px] h-[160px] object-contain"
                             priority
                             onError={handleCharacterImageError}
                         />
                     )}
-                    <div className="w-[calc(100%-3rem)] mt-5 border-t border-dashed border-brand-espresso/[0.2]" />
+                    <div className="w-[calc(100%-3rem)] mt-4 border-t border-dashed border-brand-espresso/[0.2]" />
                 </div>
 
                 {/* 桌面端：文字区与形象区之间的竖向虚线分隔 */}
@@ -157,49 +142,48 @@ export default function ShareCardPage({
                 {/* 文字区 */}
                 <div className="relative z-10 w-full p-6 lg:p-10 lg:pr-[36%]">
                     <div className="flex flex-col justify-center">
-                        {/* 分享版标签 */}
+                        {/* 分享版标签：弱化处理，不抢派系名焦点 */}
                         <m.div
                             {...stagger(0.1)}
-                            className="relative z-10 mb-4 lg:mb-6 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-xs font-bold text-[var(--color-brand-charcoal)] lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap self-start"
+                            className="relative z-10 mb-4 lg:mb-5 inline-flex h-[24px] px-2.5 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/12 bg-transparent text-[11px] font-medium text-[var(--color-brand-charcoal)]/60 tracking-[0.12em] whitespace-nowrap self-start"
                         >
                             肌智派证书
                         </m.div>
 
+                        {/* 归属标题：层级低于派系名，中等字重、紧凑行高 */}
                         <m.h2
                             {...stagger(0.18)}
-                            className="text-balance text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-2 lg:mb-3"
+                            className="text-balance text-[16px] lg:text-[19px] font-medium text-brand-espresso leading-snug tracking-[0.01em] mb-2 lg:mb-2.5"
                         >
-                            {isReturning ? "欢迎回来，您的最新「肌智派测肤报告」已生成" : "恭喜完成首次「肌智派测肤」！您的报告已生成"}
+                            {isReturning ? "欢迎回来，您的测肤报告已更新" : "恭喜完成首次测肤，您的报告已生成"}
                         </m.h2>
 
                         {/* 派系名巨大化：结果即主角 */}
                         <m.p
                             {...stagger(0.26)}
-                            className="text-[13px] text-[var(--color-brand-cocoa)]/70 font-light tracking-[0.06em] mb-1"
+                            className="text-[13px] text-brand-espresso/50 font-light tracking-[0.06em] mb-1.5"
                         >
                             根据检测结果，您的肌智派系为
                         </m.p>
                         <m.h3
                             {...stagger(0.3)}
-                            className="text-balance text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.04em] mb-4 lg:mb-5"
+                            className="text-balance text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.04em] mb-3 lg:mb-4"
                         >
                             「{skinTypeName}」
                         </m.h3>
 
+                        {/* 摘要：适读字号 + 1.7 行高，移动端三行/桌面两行截断 */}
                         <m.p
                             {...stagger(0.36)}
-                            className="text-[12px] leading-relaxed text-[var(--color-brand-cocoa)]/60 max-w-full lg:max-w-[400px] line-clamp-2"
+                            className="text-[13px] leading-[1.7] text-[var(--color-brand-cocoa)]/60 max-w-full lg:max-w-[400px] line-clamp-3 lg:line-clamp-2"
                         >
                             {summary || "详细分析见下方报告。"}
                         </m.p>
                     </div>
 
-                    {/* Desktop: Character IP Image（右侧，无背景色块，与文字区以虚线分隔） */}
+                    {/* Desktop: Character IP Image（右侧静态，无背景色块，与文字区以虚线分隔） */}
                     {characterReady && !characterImgFailed && (
-                        <m.div
-                            {...ipAnimation}
-                            className="hidden lg:block absolute right-[1%] top-1/2 -translate-y-1/2 z-10 pointer-events-none"
-                        >
+                        <div className="hidden lg:block absolute right-[1%] top-1/2 -translate-y-1/2 z-10 pointer-events-none">
                             <Image
                                 src={characterImgSrc}
                                 alt={skinTypeName}
@@ -209,27 +193,26 @@ export default function ShareCardPage({
                                 priority
                                 onError={handleCharacterImageError}
                             />
-                        </m.div>
+                        </div>
                     )}
                 </div>
             </m.div>
 
-            {/* 证书卡外操作区：主 CTA / 保存证书 / 抽奖入口 / 落款 / 重新测试，整体居中 */}
-            <m.div {...stagger(0.42)} className="flex flex-col items-center gap-3 mt-5">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            {/* 证书卡外操作区：极简——单一实心主按钮 + 纯文字次级入口，弱化一切装饰 */}
+            <m.div {...stagger(0.42)} className="flex flex-col items-center gap-3 mt-6">
+                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
                     {onOpenReport && (
                         <button
                             onClick={onOpenReport}
-                            className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-7 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-medium tracking-[0.06em] transition-colors hover:bg-[#4a3a2c] cursor-pointer"
+                            className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-light tracking-[0.06em] transition-colors hover:bg-[#4a3a2c] cursor-pointer"
                         >
                             查看完整报告
-                            <ChevronDown className="w-4 h-4" strokeWidth={2} />
                         </button>
                     )}
                     <button
                         onClick={onDownloadPoster}
                         disabled={isPosterLoading}
-                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-7 rounded-full border border-[var(--color-brand-cocoa)]/30 bg-transparent text-[var(--color-brand-cocoa)] text-[13px] font-light tracking-[0.06em] transition-colors hover:border-[var(--color-brand-cocoa)] hover:bg-[var(--color-brand-cocoa)]/[0.05] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        className="inline-flex items-center gap-1.5 h-10 px-1 text-[13px] text-brand-charcoal/55 font-light tracking-[0.04em] transition-colors hover:text-brand-charcoal disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                         {isPosterLoading ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2} />
@@ -242,7 +225,7 @@ export default function ShareCardPage({
                 {onGift && (
                     <button
                         onClick={onGift}
-                        className="inline-flex items-center gap-1.5 px-1 py-0.5 text-[12px] text-[var(--color-brand-cocoa)]/60 font-light tracking-[0.04em] transition-colors hover:text-[var(--color-brand-cocoa)] cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-1 py-0.5 text-[12px] text-brand-charcoal/50 font-light tracking-[0.04em] transition-colors hover:text-brand-charcoal cursor-pointer"
                     >
                         <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
                         肌智派送好礼 · 参与抽奖
@@ -251,7 +234,7 @@ export default function ShareCardPage({
 
                 {/* 证书落款：日期 · 编号 */}
                 {(dateText || idText) && (
-                    <m.p {...stagger(0.5)} className="text-[11px] font-light tracking-[0.08em] text-[var(--color-brand-cocoa)]/50 tabular-nums">
+                    <m.p {...stagger(0.5)} className="text-[11px] font-light tracking-[0.08em] text-brand-charcoal/45 tabular-nums">
                         {dateText || ""}
                         {dateText && idText ? " · " : ""}
                         {idText ? `No.${idText}` : ""}
@@ -263,7 +246,7 @@ export default function ShareCardPage({
                         {...stagger(0.55)}
                         type="button"
                         onClick={onReTest}
-                        className="text-[12px] font-medium text-[var(--color-brand-cocoa)]/70 underline underline-offset-4 hover:text-[var(--color-brand-cocoa)] transition-colors tracking-[0.04em] cursor-pointer"
+                        className="text-[12px] font-light text-brand-charcoal/55 underline underline-offset-4 hover:text-brand-charcoal transition-colors tracking-[0.04em] cursor-pointer"
                     >
                         认为派系判断不准确？重新测试（消耗 1 次测试额度）
                     </m.button>
