@@ -10,9 +10,9 @@
     --result-text-heading: #3d2f25;
     --result-bg: #E8E2D9;
     --result-border: #3d2f25;
-    /* 顶部栏占用高度：与 questions 页头一致（移动端 pt 28 + logo 28 + pb 28 = 84；md+ logo 36 → 92）。
+    /* 顶部栏占用高度：与 questions 页头一致（移动端 pt 28 + logo 28 + pb 20 = 76；md+ logo 36 → 84）。
        pageLayer 的 padding-top 统一引用此变量，调整高度只需改这里 */
-    --result-topbar-h: 84px;
+    --result-topbar-h: 76px;
 
     width: 100%;
     /* 两页版式：容器固定视口高、自身不滚动；两个页面层各自 absolute inset-0 内部滚动，
@@ -59,7 +59,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: calc(1.75rem + env(safe-area-inset-top, 0px)) 0 28px;
+    padding: calc(1.75rem + env(safe-area-inset-top, 0px)) 0 20px;
     background: rgba(232, 226, 217, 0.88);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -86,7 +86,7 @@
 
 @media (min-width: 768px) {
     .container {
-        --result-topbar-h: 92px;
+        --result-topbar-h: 84px;
     }
 
     .topBarInner {
