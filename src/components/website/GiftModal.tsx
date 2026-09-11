@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
@@ -27,10 +28,22 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
   // 焦点圈定 + Escape 关闭
   const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
 
+  // 遮罩防误触：记录打开时刻，打开后 350ms 内忽略遮罩点击关闭——
+  // 入口双击的第二下会穿透到遮罩上，若不设保护会"打开即被关闭"
+  const openSinceRef = useRef(0);
+  useEffect(() => {
+    if (isOpen) openSinceRef.current = Date.now();
+  }, [isOpen]);
+
+  const handleBackdropClick = () => {
+    if (Date.now() - openSinceRef.current < 350) return;
+    onClose();
+  };
+
   const steps = [
-    { title: "完成测肤或护肤习惯问卷", desc: "获取您的肌智派测肤结果及所属派系形象海报" },
+    { title: "登录完成测肤", desc: "获取您的肌智派测肤结果及所属派系形象海报" },
     { title: "分享小红书", desc: "发布海报并 @NIHPLOD" },
-    { title: "赢取好礼", desc: "参与活动即有机会获得 NIHPLOD 精选护肤好礼" },
+    { title: "赢取好礼", desc: "参与活动即可获得 NIHPLOD 活动抽奖机会" },
   ];
 
   return (
@@ -50,7 +63,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleBackdropClick}
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
           />
 

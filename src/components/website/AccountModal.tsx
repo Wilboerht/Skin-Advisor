@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { createElement, useEffect, useState } from "react";
+import { createElement, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { ChevronRight, LogOut, NotebookPen, Settings2, Smartphone, X } from "lucide-react";
@@ -59,6 +59,18 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+
+  // 遮罩防误触：记录打开时刻，打开后 350ms 内忽略遮罩点击关闭——
+  // 入口双击的第二下会穿透到遮罩上，若不设保护会"打开即被关闭"
+  const openSinceRef = useRef(0);
+  useEffect(() => {
+    if (isOpen) openSinceRef.current = Date.now();
+  }, [isOpen]);
+
+  const handleBackdropClick = () => {
+    if (Date.now() - openSinceRef.current < 350) return;
+    onClose();
+  };
 
   // Portal 到 body：fixed 定位在带 transform/backdrop-filter 的祖先（如结果页顶部栏的毛玻璃底）
   // 内会被重新相对该祖先定位，导致弹窗"挂"在顶部栏上而不是视口居中
@@ -119,7 +131,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={onClose}
+              onClick={handleBackdropClick}
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
             />
 

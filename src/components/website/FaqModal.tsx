@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import { X } from "lucide-react";
 import { faqs } from "@/lib/faq-data";
@@ -20,6 +21,18 @@ export function FaqModal({ isOpen, onClose }: FaqModalProps) {
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
+  // 遮罩防误触：记录打开时刻，打开后 350ms 内忽略遮罩点击关闭——
+  // 入口双击的第二下会穿透到遮罩上，若不设保护会"打开即被关闭"
+  const openSinceRef = useRef(0);
+  useEffect(() => {
+    if (isOpen) openSinceRef.current = Date.now();
+  }, [isOpen]);
+
+  const handleBackdropClick = () => {
+    if (Date.now() - openSinceRef.current < 350) return;
+    onClose();
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -36,7 +49,7 @@ export function FaqModal({ isOpen, onClose }: FaqModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleBackdropClick}
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
           />
 
@@ -46,7 +59,7 @@ export function FaqModal({ isOpen, onClose }: FaqModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full max-h-[85dvh] sm:max-h-none sm:max-w-lg sm:h-auto bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+            className="relative z-10 w-full h-[85dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-lg bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}

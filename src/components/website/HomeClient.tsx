@@ -124,7 +124,14 @@ export default function HomeClient() {
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   // 测肤有礼活动弹窗（替代原独立 /gift 页面）
   const [showGiftModal, setShowGiftModal] = useState(false);
-  const openGiftModal = useCallback(() => setShowGiftModal(true), []);
+  // 活动弹窗入口防抖：250ms 内忽略重复打开（前缘节流，双击第二下会被遮罩防误触拦截）
+  const giftLastOpenRef = useRef(0);
+  const openGiftModal = useCallback(() => {
+    const now = Date.now();
+    if (now - giftLastOpenRef.current < 250) return;
+    giftLastOpenRef.current = now;
+    setShowGiftModal(true);
+  }, []);
   // FAQ 模态框（首页"常见问题"描边胶囊入口）
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [nickname, setNickname] = useState("");
@@ -132,6 +139,16 @@ export default function HomeClient() {
 
   // 防止用户在 checkTestLimit 进行过程中关闭弹窗后，异步回调又重新打开弹窗
   const startCancelledRef = useRef(false);
+
+  // FAQ 入口防抖：打开后 250ms 内忽略重复点击——双击第二下会落在弹层遮罩上导致"秒关"，
+  // 前缘节流不延迟首次响应
+  const faqLastOpenRef = useRef(0);
+  const handleOpenFaq = () => {
+    const now = Date.now();
+    if (now - faqLastOpenRef.current < 250) return;
+    faqLastOpenRef.current = now;
+    setShowFaqModal(true);
+  };
 
   // Location/Region states
   const [isLocating, setIsLocating] = useState(false);
@@ -521,7 +538,7 @@ export default function HomeClient() {
               <span>测肤有礼 · 参与赢好礼</span>
             </button>
             <button
-              onClick={() => setShowFaqModal(true)}
+              onClick={handleOpenFaq}
               className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-all duration-300 hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer touch-manipulation"
             >
               <CircleHelp className="w-3.5 h-3.5" strokeWidth={1.5} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
@@ -54,6 +54,16 @@ export function BottomDock() {
   const { openDiaryModal, isOpen: diaryOpen } = useDiaryModal();
   // 「我的」账户弹层（未登录时弹层内展示登录引导）
   const [showAccountModal, setShowAccountModal] = useState(false);
+  // 账户弹层入口防抖：250ms 内忽略重复打开（前缘节流，双击第二下会被遮罩防误触拦截）
+  const accountLastOpenRef = useRef(0);
+  const openAccountModal = () => {
+    // 仅在点击事件中调用（非渲染期），Date.now 用于前缘节流
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    if (now - accountLastOpenRef.current < 250) return;
+    accountLastOpenRef.current = now;
+    setShowAccountModal(true);
+  };
   // Portal 需等客户端挂载（SSR 期无 document）
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -115,7 +125,7 @@ export function BottomDock() {
               <button
                 key={tab.href}
                 type="button"
-                onClick={() => (tab.panel === "diary" ? openDiaryModal() : setShowAccountModal(true))}
+                onClick={() => (tab.panel === "diary" ? openDiaryModal() : openAccountModal())}
                 aria-haspopup="dialog"
                 aria-expanded={tab.panel === "diary" ? diaryOpen : showAccountModal}
                 className={`${tabClass(active)} cursor-pointer`}
