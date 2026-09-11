@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { createElement } from "react";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
 import type { SkinTypeData } from "@/lib/result-content";
+import { getFactionIcon } from "@/components/website/faction-icons";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
@@ -76,8 +78,9 @@ export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
                 />
                 <h2
                   id="skin-type-modal-title"
-                  className="text-2xl font-serif font-light text-brand-charcoal tracking-[0.08em] mb-3"
+                  className="text-2xl font-serif font-light text-brand-charcoal tracking-[0.08em] mb-3 inline-flex items-center justify-center gap-2"
                 >
+                  {createElement(getFactionIcon(data.ipKey), { className: "w-6 h-6 text-brand-charcoal/60 shrink-0", strokeWidth: 1.5 })}
                   {data.typeName}
                 </h2>
                 <p className="text-[13px] md:text-sm text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em] max-w-3xl mx-auto">

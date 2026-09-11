@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import type { SkinTypeData } from "@/lib/result-content";
 import { SkinTypeModal } from "@/components/website/SkinTypeModal";
+import { getFactionIcon } from "@/components/website/faction-icons";
 
 interface SkinTypesClientProps {
   types: SkinTypeData[];
@@ -74,11 +75,12 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         onTouchStart={onCarouselTouchStart}
         onTouchEnd={onCarouselTouchEnd}
       >
-        <div className="relative h-[280px] md:h-[320px] flex items-center justify-center">
+        <div className="relative h-[240px] md:h-[360px] flex items-center justify-center">
           {types.map((type, i) => {
             const d = offsetOf(i, activeIdx, types.length);
             const abs = Math.abs(d);
             const isCenter = abs === 0;
+            const Icon = getFactionIcon(type.ipKey);
             // 变换：环形透视 = X 横向展开 + rotateY 转出 + Z 轴纵深缩进，中央正面
             const transform = isCenter
               ? "translateX(-50%) rotateY(0deg) translateZ(0px)"
@@ -96,7 +98,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                 aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                 aria-hidden={hidden}
                 tabIndex={isCenter ? 0 : -1}
-                className="absolute left-1/2 top-0 w-[280px] md:w-[440px] rounded-2xl border border-brand-espresso/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_16px_40px_rgba(61,47,37,0.12)] p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                className="absolute left-1/2 top-0 w-[280px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_16px_40px_rgba(61,47,37,0.12)] p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
                 style={{
                   transform,
                   opacity,
@@ -106,16 +108,17 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                 }}
               >
                 {/* 横向结构：左形象 + 右文字 */}
-                <div className="flex items-center gap-3 md:gap-5">
+                <div className="flex h-full items-center gap-3 md:gap-5">
                   <Image
                     src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
                     alt=""
                     width={180}
                     height={180}
-                    className="shrink-0 w-[96px] h-[96px] md:w-[160px] md:h-[160px] object-contain pointer-events-none"
+                    className="shrink-0 w-[112px] h-[112px] md:w-[192px] md:h-[192px] object-contain pointer-events-none"
                   />
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal">
+                    <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal inline-flex items-center gap-1.5">
+                      <Icon className="w-4 h-4 md:w-5 md:h-5 text-brand-charcoal/60 shrink-0" strokeWidth={1.5} />
                       {type.typeName}
                     </h2>
                     {isCenter && (
