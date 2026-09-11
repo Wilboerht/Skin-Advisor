@@ -148,6 +148,59 @@ export function refreshSsoTokensSingleFlight(refreshToken: string): Promise<Refr
 }
 
 /**
+ * 登出时撤销在途轮换：等待该 refresh token 尚未完成的单飞轮换，
+ * 返回轮换出的新 token（若有），供登出路由一并撤销。
+ * 无在途轮换时立即返回 null。
+ */
+export function awaitInflightRotation(refreshToken: string): Promise<RefreshedTokens | null> {
+    const existing = inflightRefresh.get(refreshToken);
+    if (!existing) return Promise.resolve(null);
+    return existing.catch(() => null);
+}
+
+/**
+ * 登出后毒化该 refresh token 的单飞缓存：30 秒内任何携带该旧 token
+ * 到达的静默轮换请求直接得到 null（视为已登出），阻止在途
+ * /api/auth/me（session-init）轮换响应把新 token 种回浏览器。
+ */
+export function poisonRefreshCache(refreshToken: string): void {
+    if (inflightRefresh.has(refreshToken)) return;
+    const poisoned = Promise.resolve(null);
+    inflightRefresh.set(refreshToken, poisoned);
+    setTimeout(() => {
+        if (inflightRefresh.get(refreshToken) === poisoned) {
+            inflightRefresh.delete(refreshToken);
+        }
+    }, REFRESH_RESULT_TTL_MS);
+}
+
+/**
+ * 撤销指定 token（尽力而为，失败不抛错）。
+ * 登出时用于撤销「轮换后的新 token」与当前 access token，
+ * 掐掉 access token 剩余有效期造成的短暂复活窗口。
+ */
+export async function revokeSsoToken(
+    token: string,
+    tokenTypeHint: "refresh_token" | "access_token"
+): Promise<void> {
+    if (!SSO_CLIENT_SECRET) return;
+    try {
+        await fetch(`${SSO_BASE_URL}/api/oauth/revoke`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                token,
+                token_type_hint: tokenTypeHint,
+                client_id: SSO_CLIENT_ID,
+                client_secret: SSO_CLIENT_SECRET,
+            }),
+        });
+    } catch {
+        // 撤销失败不阻断登出流程；SDK 已撤销请求 Cookie 中的旧 refresh token
+    }
+}
+
+/**
  * access_token 过期/失效时的自愈：读 refresh_token Cookie 轮换新 token，
  * 并尽力把新 token 种回 httpOnly Cookie（Route Handler 可写；
  * Server Component 上下文 Cookie 只读，静默跳过，由下一次可写请求持久化）。

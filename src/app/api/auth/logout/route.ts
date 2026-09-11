@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createLogoutRouteHandler } from "@nihplod/sso-sdk/next";
 import { clearLocalSession } from "@/lib/auth";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
+import {
+    awaitInflightRotation,
+    poisonRefreshCache,
+    revokeSsoToken,
+    REFRESH_TOKEN_COOKIE,
+    ACCESS_TOKEN_COOKIE,
+} from "@/lib/sso-auth";
 
 const handler = createLogoutRouteHandler({
   clientId: process.env.NEXT_PUBLIC_SSO_CLIENT_ID!,
@@ -59,8 +66,37 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 403 }
     );
   }
+
+  // 登出与静默轮换的竞态防护：
+  // UserProvider 的定时/visibilitychange 刷新会在后台触发 /api/auth/me 的
+  // refresh_token 轮换。若轮换与登出并发，轮换响应携带的新 token Set-Cookie
+  // 会在登出清理之后落地，把有效会话重新种回浏览器（"退出后过一会儿又自动登录"）。
+  // 因此登出前先等待在途轮换拿到新 token，随后一并撤销新 token 并毒化缓存，
+  // 让 30 秒内携带旧 refresh token 到达的轮换请求直接失败。
+  const refreshToken = req.cookies.get(REFRESH_TOKEN_COOKIE)?.value ?? null;
+  const rotated = refreshToken ? await awaitInflightRotation(refreshToken) : null;
+
   const response = await handler(req);
   // 不论 SSO 登出是否成功，始终清除本地 JWT + CSRF Cookie
   clearLocalSession(response);
+
+  const revocations: Promise<void>[] = [];
+  if (refreshToken) {
+    poisonRefreshCache(refreshToken);
+    if (rotated) {
+      revocations.push(revokeSsoToken(rotated.refresh_token, "refresh_token"));
+      revocations.push(revokeSsoToken(rotated.access_token, "access_token"));
+    }
+  }
+  // 同时撤销浏览器当前持有的 access token：否则轮换响应若已把新 token
+  // 种回 Cookie，未撤销的 access token 在剩余有效期内仍可通过 /api/auth/me 校验
+  const accessToken = req.cookies.get(ACCESS_TOKEN_COOKIE)?.value ?? null;
+  if (accessToken) {
+    revocations.push(revokeSsoToken(accessToken, "access_token"));
+  }
+  if (revocations.length > 0) {
+    await Promise.allSettled(revocations);
+  }
+
   return response;
 }

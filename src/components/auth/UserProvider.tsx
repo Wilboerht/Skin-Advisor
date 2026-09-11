@@ -51,10 +51,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // 单飞：并发 loadUser（挂载 + 定时器 + visibilitychange）共享同一次请求，
     // 避免 /api/auth/me 的 refresh_token 轮换被并发调用打爆
     const inflightRef = useRef<Promise<void> | null>(null);
+    // 会话代际：logout 自增，使登出前已发出的在途 loadUser 结果作废，
+    // 防止其响应在登出后落地把用户态"复活"
+    const sessionGenRef = useRef(0);
 
     const loadUser = useCallback(async () => {
         if (inflightRef.current) return inflightRef.current;
 
+        const gen = sessionGenRef.current;
         inflightRef.current = (async () => {
         // 10s 超时兜底；超时不视为未登录，保留现有会话状态（避免弱网误踢）
         const controller = new AbortController();
@@ -68,6 +72,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
             }
             const data = (await res.json()) as { user: User | null };
             const nextUser = data.user ?? null;
+            // 期间已登出（logout 使代际递增）：丢弃本次结果，不更新用户态
+            if (gen !== sessionGenRef.current) {
+                return;
+            }
             // 内容无变化时不更新引用：/api/auth/me 每次返回新对象，
             // 若直接 setUser 会引发全站消费组件（含已打开的弹层）无谓重渲染/数据重置
             setUser((prev) => {
@@ -146,6 +154,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const register = useCallback(async (_userData?: { email?: string; phone?: string; password?: string; name?: string; code?: string }) => login(), [login]);
 
     const logout = useCallback(async () => {
+        // 先作废在途 loadUser（其响应可能携带登出前的旧会话），再走服务端登出
+        sessionGenRef.current += 1;
         try {
             // POST-only + 同源校验；服务端会清除 SSO Cookie、撤销 refresh_token 并清本地会话
             await fetch("/api/auth/logout", { method: "POST" });
