@@ -104,17 +104,17 @@ export default function ShareCardPage({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.5, delay: 0.05 }}
-                className="relative rounded-[20px] lg:rounded-[24px] border border-brand-espresso/8 overflow-hidden"
+                className="relative rounded-[20px] lg:rounded-[24px] border border-brand-espresso/8"
                 style={{ background: "#F5F2ED" }}
             >
                 {/* 金色双线证书框（烫金质感，全周） */}
                 <div
                     aria-hidden="true"
-                    className="absolute inset-2 rounded-[14px] lg:rounded-[18px] border border-[#C9A86C]/25 pointer-events-none"
+                    className="absolute inset-2 rounded-[14px] lg:rounded-[18px] border border-[#C9A86C]/30 pointer-events-none"
                 />
                 <div
                     aria-hidden="true"
-                    className="absolute inset-[10px] rounded-[10px] lg:rounded-[14px] border border-[#C9A86C]/12 pointer-events-none"
+                    className="absolute inset-[10px] rounded-[10px] lg:rounded-[14px] border border-[#C9A86C]/14 pointer-events-none"
                 />
 
                 {/* 移动端：形象顶部居中，虚线横向分隔 */}
@@ -181,9 +181,9 @@ export default function ShareCardPage({
                         </m.p>
                     </div>
 
-                    {/* Desktop: Character IP Image（右侧静态，无背景色块，与文字区以虚线分隔） */}
+                    {/* Desktop: Character IP Image（底部与文字区对齐，顶部可略超出卡片上缘） */}
                     {characterReady && !characterImgFailed && (
-                        <div className="hidden lg:block absolute right-[1%] top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                        <div className="hidden lg:block absolute right-0 bottom-10 z-10 pointer-events-none">
                             <Image
                                 src={characterImgSrc}
                                 alt={skinTypeName}
