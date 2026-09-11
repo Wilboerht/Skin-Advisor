@@ -206,6 +206,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         {types.map((t, i) => {
           const active = i === activeIdx;
           const Icon = getFactionIcon(t.ipKey);
+          const accent = getFactionAccent(t.ipKey);
           return (
             <button
               key={t.route}
@@ -215,10 +216,9 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
               aria-pressed={active}
               className={cn(
                 "shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[12px] font-light tracking-[0.04em] transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2",
-                active
-                  ? "border-[#00263E] bg-[#00263E] text-white"
-                  : "border-brand-espresso/[0.12] text-brand-charcoal/55 hover:border-brand-espresso/30 hover:text-brand-charcoal"
+                !active && "border-brand-espresso/[0.12] text-brand-charcoal/55 hover:border-brand-espresso/30 hover:text-brand-charcoal"
               )}
+              style={active ? { borderColor: accent, backgroundColor: `${accent}14`, color: accent } : undefined}
             >
               <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
               {t.typeName}
