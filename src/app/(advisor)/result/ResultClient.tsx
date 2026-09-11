@@ -1184,6 +1184,40 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         );
     }
 
+    // 隐私守卫：游客测肤已下线，登出后不应再展示本机缓存的分析报告。
+    // 仅对非历史报告生效（/reports/:id 由中间件保护）；本地 dev mock 预览放行；
+    // 未初始化（authInitialized=false）或存在服务端会话（serverUser）时先放行，避免误伤。
+    const privacyGate = !isHistoricalReport && !isMock && authInitialized && !user && !serverUser;
+    if (privacyGate) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm" />
+                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                        <div className="sm:w-[60%] text-center sm:text-left">
+                            <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">登录后查看报告</h3>
+                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">测肤报告与您的账户绑定，请登录后查看属于您的分析结果。</p>
+                        </div>
+                        <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
+                            <button
+                                onClick={() => openAuthModal("login")}
+                                className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                            >
+                                登录 / 注册
+                            </button>
+                            <button
+                                onClick={() => navPush("/")}
+                                className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                            >
+                                返回首页
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     // Error State
     if (analysisState.status === 'error') {
         // 额度/限流类错误：重拍照片无法解决问题，按钮引导返回首页而非重测

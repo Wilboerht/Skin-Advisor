@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { advisorStorage } from '@/lib/advisor-storage';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
 
 // --- Types ---
 
@@ -162,6 +164,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
         } catch {
             // 网络异常也继续本地清理并回首页
         }
+        // 隐私清理：登出即清除本机缓存的测肤数据（报告/问卷/面部照片/昵称等），
+        // 防止共享设备上下一位使用者看到上一位用户的报告与照片
+        try {
+            // clearAll 同时清理 IndexedDB（面部照片/结果）与 localStorage 全部测肤键
+            await advisorStorage.clearAll();
+        } catch { /* 清理失败不阻断登出 */ }
+        try {
+            // sessionStorage 侧（分析中会话/全局锁等 localStorage 覆盖不到的部分）
+            const sessionKeys = [
+                STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID,
+                STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT,
+                STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK,
+                STORAGE_KEYS.LOCATION_CONSENT,
+            ];
+            for (const key of sessionKeys) {
+                try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+            }
+        } catch { /* ignore */ }
         setUser(null);
         window.location.href = "/";
     }, []);
