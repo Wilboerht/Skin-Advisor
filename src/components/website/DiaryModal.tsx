@@ -635,6 +635,7 @@ export function DiaryModal() {
                           <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                             <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
                               {summary.currentStreak}
+                              <span className="ml-0.5 text-[11px] font-light text-brand-charcoal/50">天</span>
                             </p>
                             <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
                               <Flame className="w-3 h-3 text-[#D9730D]" strokeWidth={1.8} />
@@ -644,6 +645,7 @@ export function DiaryModal() {
                           <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                             <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
                               {summary.totalCheckins}
+                              <span className="ml-0.5 text-[11px] font-light text-brand-charcoal/50">次</span>
                             </p>
                             <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
                               <CalendarCheck className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
@@ -653,6 +655,7 @@ export function DiaryModal() {
                           <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                             <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
                               {summary.testCount}
+                              <span className="ml-0.5 text-[11px] font-light text-brand-charcoal/50">次</span>
                             </p>
                             <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
                               <ScanFace className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
@@ -663,6 +666,7 @@ export function DiaryModal() {
                             <div className="flex flex-col items-center gap-1 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                               <p className="text-[17px] font-semibold text-brand-charcoal leading-none">
                                 {summary.longestStreak}
+                                <span className="ml-0.5 text-[11px] font-light text-brand-charcoal/50">天</span>
                               </p>
                               <p className="flex items-center gap-1 text-[10px] text-brand-charcoal/50 font-light">
                                 <Trophy className="w-3 h-3 text-[#C9A86C]" strokeWidth={1.8} />
