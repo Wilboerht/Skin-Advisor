@@ -112,6 +112,41 @@ function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; onSwitc
     );
 }
 
+// 两页版式共享页脚：版权 + 备案 + AI 声明（证书面/报告面共用）
+function ResultFooter() {
+    return (
+        <div className="text-center flex flex-col items-center gap-3">
+            <p className="text-[11px] font-light tracking-[0.15em] text-brand-charcoal/48" suppressHydrationWarning>
+                © {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+            </p>
+
+            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
+                <a
+                    href="https://beian.miit.gov.cn/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition-colors hover:text-brand-charcoal/70"
+                >
+                    沪ICP备2026014764号-1
+                </a>
+                <span aria-hidden="true" className="hidden sm:inline">|</span>
+                <a
+                    href="http://www.beian.gov.cn/portal/registerSystemInfo"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 transition-colors hover:text-brand-charcoal/70"
+                >
+                    <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
+                    <span>沪公网安备31010702010178号</span>
+                </a>
+            </div>
+            <p className="text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
+                *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
+            </p>
+        </div>
+    );
+}
+
 // 两页版式共享页头：归属标题 + 拍摄时肌肤状态标签 + 两页切换 tab（logo 已上移到固定顶部栏）
 function ResultHeader({
     nickname,
@@ -1430,7 +1465,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     内容超高一屏时 my-auto 自动退化为正常滚动（margin:auto 溢出归零） */}
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
                                 <div className="my-auto w-full">
-                                    <div className={`${styles.main} lg:gap-8`}>
+                                    <div className="max-w-[900px] mx-auto px-6 md:px-8">
                                         <section aria-label="肌智派证书（第一面）">
                                         <ShareCardPage
                                             nickname={userNickname}
@@ -1451,6 +1486,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         />
                                     </section>
                                 </div>
+                                </div>
+                                {/* 证书面页脚：版权 + 备案（与报告面共用） */}
+                                <div className="w-full max-w-[900px] mx-auto px-6 md:px-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
+                                    <ResultFooter />
                                 </div>
                             </m.div>
                         )}
@@ -1540,38 +1579,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         centered
                                     />
 
-                                    {/* Global Footer */}
+                                    {/* Global Footer（与证书面共用） */}
                                     <footer className="w-full bg-transparent mt-0">
-                                        {/* Minimal Footer Text — 与首页 Footer 对齐 */}
-                                        <div className="text-center flex flex-col items-center gap-3">
-                                            <p className="text-[11px] font-light tracking-[0.15em] text-brand-charcoal/48" suppressHydrationWarning>
-                                                © {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-                                            </p>
-
-                                            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
-                                                <a
-                                                    href="https://beian.miit.gov.cn/"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="transition-colors hover:text-brand-charcoal/70"
-                                                >
-                                                    沪ICP备2026014764号-1
-                                                </a>
-                                                <span aria-hidden="true" className="hidden sm:inline">|</span>
-                                                <a
-                                                    href="http://www.beian.gov.cn/portal/registerSystemInfo"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center gap-1 transition-colors hover:text-brand-charcoal/70"
-                                                >
-                                                    <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
-                                                    <span>沪公网安备31010702010178号</span>
-                                                </a>
-                                            </div>
-                                            <p className="text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
-                                                *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
-                                            </p>
-                                        </div>
+                                        <ResultFooter />
                                     </footer>
                                 </div>
                             </m.div>
