@@ -68,24 +68,24 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   return (
     <>
-      {/* 3D 旋转木马（宽度由父级 80% 容器控制）；overflow-hidden 裁剪远端卡防横向页面溢出 */}
+      {/* 3D 旋转木马（宽度由父级容器控制）；overflow-hidden 裁剪远端卡防横向页面溢出 */}
       <div
         className="relative w-full overflow-hidden select-none"
-        style={{ perspective: "1200px" }}
+        style={{ perspective: "1600px" }}
         onTouchStart={onCarouselTouchStart}
         onTouchEnd={onCarouselTouchEnd}
       >
-        <div className="relative h-[240px] md:h-[360px] flex items-center justify-center">
+        {/* 卡片舞台：高度与卡片一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
+        <div className="relative h-[240px] md:h-[360px] [--fan-offset:150px] md:[--fan-offset:180px]">
           {types.map((type, i) => {
             const d = offsetOf(i, activeIdx, types.length);
             const abs = Math.abs(d);
             const isCenter = abs === 0;
             const Icon = getFactionIcon(type.ipKey);
-            // 变换：环形透视 = X 横向展开 + rotateY 转出 + Z 轴纵深缩进，中央正面
-            const transform = isCenter
-              ? "translateX(-50%) rotateY(0deg) translateZ(0px)"
-              : `translateX(calc(-50% + ${d * 230}px)) rotateY(${d * -30}deg) translateZ(${-abs * 90}px) scale(${1 - abs * 0.08})`;
-            const opacity = abs === 0 ? 1 : abs === 1 ? 0.75 : abs === 2 ? 0.45 : abs === 3 ? 0.2 : 0;
+            // 变换：横向展开 + 内倾弧面（rotateY 朝圆心方向）+ Z 轴纵深 + 轻微缩放；
+            // 垂直方向 -50% 平移使卡片在舞台内垂直居中
+            const transform = `translate(calc(-50% + ${d} * var(--fan-offset)), -50%) rotateY(${d * 26}deg) translateZ(${-abs * 100}px) scale(${1 - abs * 0.06})`;
+            const opacity = abs === 0 ? 1 : abs === 1 ? 0.85 : abs === 2 ? 0.5 : abs === 3 ? 0.22 : 0;
             const zIndex = 10 - abs;
             // 完全隐藏的远端卡不接收点击（避免"点空气"聚焦到不可见卡片）
             const hidden = abs >= 3;
@@ -98,7 +98,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                 aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                 aria-hidden={hidden}
                 tabIndex={isCenter ? 0 : -1}
-                className="absolute left-1/2 top-0 w-[280px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                className="absolute left-1/2 top-1/2 w-[280px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
                 style={{
                   transform,
                   opacity,
@@ -141,25 +141,25 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
               </button>
             );
           })}
-        </div>
 
-        {/* 桌面左右箭头：简洁幽灵圆钮，去阴影仅 hover 轻微浮起 */}
-        <button
-          type="button"
-          onClick={() => step(-1)}
-          aria-label="上一个"
-          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 hover:-translate-x-2.5 transition-all cursor-pointer"
-        >
-          <ChevronLeft className="w-5 h-5" strokeWidth={1.75} />
-        </button>
-        <button
-          type="button"
-          onClick={() => step(1)}
-          aria-label="下一个"
-          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 hover:translate-x-2.5 transition-all cursor-pointer"
-        >
-          <ChevronRight className="w-5 h-5" strokeWidth={1.75} />
-        </button>
+          {/* 桌面左右箭头：位于卡片舞台内，与卡片垂直居中 */}
+          <button
+            type="button"
+            onClick={() => step(-1)}
+            aria-label="上一个"
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 hover:-translate-x-2.5 transition-all cursor-pointer"
+          >
+            <ChevronLeft className="w-5 h-5" strokeWidth={1.75} />
+          </button>
+          <button
+            type="button"
+            onClick={() => step(1)}
+            aria-label="下一个"
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 hover:translate-x-2.5 transition-all cursor-pointer"
+          >
+            <ChevronRight className="w-5 h-5" strokeWidth={1.75} />
+          </button>
+        </div>
       </div>
 
       {/* 进度点：当前位置指示（可点击跳转） */}
