@@ -187,7 +187,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                       className: "w-3 h-3 text-brand-charcoal/45 shrink-0",
                       strokeWidth: 1.5,
                     })}
-                    我的派系 · {latestPersonaType.typeName}
+                    我的肌智派形象 · {latestPersonaType.typeName}
                   </span>
                 )}
 

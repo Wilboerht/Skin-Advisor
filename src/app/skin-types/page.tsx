@@ -90,10 +90,6 @@ export default async function ResultIndexPage({
             types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
             initialType={initialType}
           />
-          {/* 视觉收尾：木马下方小字提示 */}
-          <p className="mt-6 text-center text-[12px] text-brand-charcoal/40 font-light tracking-[0.08em]">
-            点击任意派系，查看完整解读
-          </p>
         </div>
       </section>
     </div>

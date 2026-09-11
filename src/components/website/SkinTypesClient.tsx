@@ -133,7 +133,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                       alt=""
                       width={180}
                       height={180}
-                      className="w-full max-w-[144px] md:max-w-[240px] h-auto object-contain pointer-events-none"
+                      className="w-full max-w-[128px] md:max-w-[216px] h-auto object-contain pointer-events-none"
                     />
                   </div>
                     <div className="flex-1 min-w-0">
@@ -168,17 +168,17 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
           type="button"
           onClick={() => step(-1)}
           aria-label="上一个"
-          className="hidden md:flex absolute -left-4 lg:-left-8 top-[130px] md:top-[215px] -translate-y-1/2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 transition-all cursor-pointer"
+          className="group hidden md:flex absolute -left-4 lg:-left-8 top-[130px] md:top-[215px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/45 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
         >
-          <ChevronLeft className="w-5 h-5" strokeWidth={1.75} />
+          <ChevronLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-0.5" strokeWidth={1.5} />
         </button>
         <button
           type="button"
           onClick={() => step(1)}
           aria-label="下一个"
-          className="hidden md:flex absolute -right-4 lg:-right-8 top-[130px] md:top-[215px] -translate-y-1/2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 transition-all cursor-pointer"
+          className="group hidden md:flex absolute -right-4 lg:-right-8 top-[130px] md:top-[215px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/45 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
         >
-          <ChevronRight className="w-5 h-5" strokeWidth={1.75} />
+          <ChevronRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={1.5} />
         </button>
       </div>
 
