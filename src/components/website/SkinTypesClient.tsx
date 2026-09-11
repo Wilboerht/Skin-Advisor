@@ -80,32 +80,6 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   return (
     <>
-      {/* 派系快捷菜单：全部派系（名称 + 图标），点击聚焦对应卡片；移动端横向滚动，桌面端自动换行居中 */}
-      <div className="mb-5 flex gap-2 overflow-x-auto no-scrollbar md:flex-wrap md:justify-center md:overflow-visible">
-        {types.map((t, i) => {
-          const active = i === activeIdx;
-          const Icon = getFactionIcon(t.ipKey);
-          return (
-            <button
-              key={t.route}
-              type="button"
-              ref={(el) => { chipRefs.current[i] = el; }}
-              onClick={() => setActiveIdx(i)}
-              aria-pressed={active}
-              className={cn(
-                "shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[12px] font-light tracking-[0.04em] transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30",
-                active
-                  ? "border-[#00263E]/60 bg-[#00263E]/[0.06] text-[#00263E]"
-                  : "border-brand-espresso/[0.12] text-brand-charcoal/55 hover:border-brand-espresso/30 hover:text-brand-charcoal"
-              )}
-            >
-              <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
-              {t.typeName}
-            </button>
-          );
-        })}
-      </div>
-
       {/* 外层相对容器：轮播裁剪区 + 两侧翻页按钮（按钮在裁剪容器外，垂直线与卡片舞台中线对齐） */}
       <div className="relative">
         {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出 */}
@@ -220,19 +194,31 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         </button>
       </div>
 
-      {/* 进度点：当前位置指示（可点击跳转） */}
-      <div className="flex items-center justify-center gap-1.5 mt-6" aria-hidden="true">
-        {types.map((t, i) => (
-          <button
-            key={t.route}
-            type="button"
-            tabIndex={-1}
-            onClick={() => setActiveIdx(i)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === activeIdx ? "w-5 bg-[var(--color-brand-cocoa)]" : "w-1.5 bg-brand-charcoal/15"
-            }`}
-          />
-        ))}
+      {/* 派系导航（替代原进度圆点指示器）：全部派系（名称 + 图标），点击聚焦对应卡片；
+          激活 chip 实心高亮即当前位置指示；移动端横向滚动 + 边缘渐隐提示可滑，桌面端换行居中 */}
+      <div className="mt-5 flex gap-2 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,black_24px,black_calc(100%-24px),transparent)] md:flex-wrap md:justify-center md:overflow-visible md:[mask-image:none]">
+        {types.map((t, i) => {
+          const active = i === activeIdx;
+          const Icon = getFactionIcon(t.ipKey);
+          return (
+            <button
+              key={t.route}
+              type="button"
+              ref={(el) => { chipRefs.current[i] = el; }}
+              onClick={() => setActiveIdx(i)}
+              aria-pressed={active}
+              className={cn(
+                "shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[12px] font-light tracking-[0.04em] transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2",
+                active
+                  ? "border-[#00263E] bg-[#00263E] text-white"
+                  : "border-brand-espresso/[0.12] text-brand-charcoal/55 hover:border-brand-espresso/30 hover:text-brand-charcoal"
+              )}
+            >
+              <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
+              {t.typeName}
+            </button>
+          );
+        })}
       </div>
 
       <SkinTypeModal data={selected} onClose={() => setSelected(null)} />
