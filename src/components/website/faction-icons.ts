@@ -54,3 +54,20 @@ export const FACTION_EDGE_TEXTURES: Record<string, string> = {
 export function getFactionEdgeTexture(ipKey: string): string {
     return FACTION_EDGE_TEXTURES[ipKey] ?? "linear-gradient(#C9A86C 0 0)";
 }
+
+/** 派系主色（与边缘纹理同一套配色，供导航 chip 激活态等使用） */
+export const FACTION_ACCENTS: Record<string, string> = {
+    sensitive: "#E4A6B5",
+    minimalist: "#A9A29A",
+    luxury: "#C9A86C",
+    ageless: "#A8C6DF",
+    desert: "#D9B98C",
+    oily: "#E0A75E",
+    combination: "#8FB7A8",
+    guardian: "#6B8CAE",
+};
+
+/** 未知 ipKey 兜底金棕 */
+export function getFactionAccent(ipKey: string): string {
+    return FACTION_ACCENTS[ipKey] ?? "#C9A86C";
+}
