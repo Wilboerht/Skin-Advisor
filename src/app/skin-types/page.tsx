@@ -69,13 +69,13 @@ export default async function ResultIndexPage({
             找到与你匹配的肌肤形象，获取专属护理方案
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
-            {/* 主 CTA：Next 风格极简黑胶囊——无阴影/无位移/无多余图标，hover 仅微调底色与箭头 */}
+            {/* 主 CTA：空心描边胶囊（#00263E），hover 轻微填充底色，Next 风格克制 */}
             <Link
               href="/?start=1"
-              className="group inline-flex items-center justify-center gap-2 px-6 h-11 rounded-full bg-[#1A1A1A] text-white text-sm font-medium transition-colors duration-200 hover:bg-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A]/30 focus-visible:ring-offset-2 opacity-0 animate-fade-in-up"
+              className="group inline-flex items-center justify-center gap-2 px-6 h-11 rounded-full border border-[#00263E]/40 bg-transparent text-[#00263E] text-sm font-medium transition-colors duration-200 hover:border-[#00263E] hover:bg-[#00263E]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2 opacity-0 animate-fade-in-up"
               style={{ animationDelay: "0.15s", animationFillMode: "forwards" }}
             >
-              <span>了解我的肤质类型</span>
+              <span>测一测，了解我的肤质类型</span>
               <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
             </Link>
           </div>
