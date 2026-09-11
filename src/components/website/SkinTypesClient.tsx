@@ -96,6 +96,11 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         >
           {/* 卡片舞台：高度与中央卡一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
           <div className="relative h-[210px] md:h-[360px] [--fan-offset:130px] md:[--fan-offset:150px]">
+            {/* 环境光晕：舞台后方的柔光椭圆，给平面布局一点空气感 */}
+            <div
+              aria-hidden="true"
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[75%] h-[85%] bg-brand-charcoal/[0.03] rounded-full blur-[70px] pointer-events-none"
+            />
             {types.map((type, i) => {
               const d = offsetOf(i, activeIdx, types.length);
               const abs = Math.abs(d);
@@ -130,6 +135,10 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                     pointerEvents: hidden ? "none" : "auto",
                     // 已隐藏的远端卡不参与绘制，节省合成开销
                     visibility: hidden ? "hidden" : "visible",
+                    // 中央卡保留极轻的多层空气感投影，侧卡保持无影平面，形成"浮起"层次
+                    boxShadow: isCenter
+                      ? "0 2px 6px rgba(61,47,37,0.04), 0 14px 32px rgba(61,47,37,0.06), 0 32px 64px -20px rgba(61,47,37,0.10)"
+                      : "none",
                     // 只过渡合成器友好的属性；z-index/pointer-events 等离散属性即时切换，
                     // 避免 transition-all 造成的"中途跳层级"卡顿观感
                     transition: "transform 500ms cubic-bezier(0.16,1,0.3,1), opacity 500ms cubic-bezier(0.16,1,0.3,1), filter 500ms cubic-bezier(0.16,1,0.3,1)",
