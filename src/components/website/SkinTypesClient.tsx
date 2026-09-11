@@ -86,6 +86,9 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
               // 大小与透明度的层级：中央最大，左右各两张依次缩小、越远越透明
               const scale = [1, 0.85, 0.7, 0.55][abs] ?? 0.5;
               const opacity = [1, 0.7, 0.45, 0.25][abs] ?? 0.15;
+              // 失焦层级：离中央越远，内容越模糊、遮罩越重，凸显中央卡
+              const blurPx = [0, 2.5, 4, 6][abs] ?? 8;
+              const veilOpacity = [0, 0.15, 0.3, 0.42][abs] ?? 0.5;
               // 平面层叠：仅横向展开 + 层级缩放，无旋转角度；垂直 -50% 居中
               const transform = `translate(calc(-50% + ${d} * var(--fan-offset)), -50%) scale(${scale})`;
               const zIndex = 10 - abs;
@@ -101,17 +104,26 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                   aria-hidden={hidden}
                   tabIndex={isCenter ? 0 : -1}
                   className="absolute left-1/2 top-1/2 w-[256px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                  style={{
-                    transform,
-                    opacity,
-                    zIndex,
+                style={{
+                  transform,
+                  opacity,
+                  zIndex,
+                  filter: isCenter ? "none" : `blur(${blurPx}px)`,
                   pointerEvents: hidden ? "none" : "auto",
                   // 中央卡：多层柔和投影（近景锐利 + 远景弥散），侧卡仅保留贴地极浅投影
                   boxShadow: isCenter
                     ? "0 1px 2px rgba(61,47,37,0.05), 0 4px 10px rgba(61,47,37,0.06), 0 16px 32px rgba(61,47,37,0.08), 0 28px 56px -12px rgba(61,47,37,0.10)"
                     : "0 1px 2px rgba(61,47,37,0.04), 0 6px 14px -4px rgba(61,47,37,0.06)",
-                  }}
-                >
+                }}
+              >
+                {/* 侧卡失焦遮罩：一层半透明白膜，配合 blur 强化"未聚焦"层次 */}
+                {!isCenter && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 rounded-2xl bg-white pointer-events-none"
+                    style={{ opacity: veilOpacity }}
+                  />
+                )}
                   {/* 横向结构：左形象 + 右文字 */}
                   <div className="flex h-full items-center gap-3 md:gap-5">
                     <Image
