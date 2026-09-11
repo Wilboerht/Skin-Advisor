@@ -68,97 +68,100 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   return (
     <>
-      {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出 */}
-      <div
-        className="relative w-full overflow-hidden select-none"
-        onTouchStart={onCarouselTouchStart}
-        onTouchEnd={onCarouselTouchEnd}
-      >
-        {/* 卡片舞台：高度与中央卡一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
-        <div className="relative h-[240px] md:h-[360px] [--fan-offset:130px] md:[--fan-offset:180px]">
-          {types.map((type, i) => {
-            const d = offsetOf(i, activeIdx, types.length);
-            const abs = Math.abs(d);
-            const isCenter = abs === 0;
-            const Icon = getFactionIcon(type.ipKey);
-            // 大小与透明度的层级：中央最大，左右各两张依次缩小、越远越透明
-            const scale = [1, 0.85, 0.7, 0.55][abs] ?? 0.5;
-            const opacity = [1, 0.7, 0.45, 0.25][abs] ?? 0.15;
-            // 平面层叠：仅横向展开 + 层级缩放，无旋转角度；垂直 -50% 居中
-            const transform = `translate(calc(-50% + ${d} * var(--fan-offset)), -50%) scale(${scale})`;
-            const zIndex = 10 - abs;
-            // 第三张起完全隐藏，不接收点击（避免"点空气"聚焦到不可见卡片）
-            const hidden = abs >= 3;
+      {/* 外层相对容器：轮播裁剪区 + 两侧翻页按钮（按钮在裁剪容器外，垂直线与卡片舞台中线对齐） */}
+      <div className="relative">
+        {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出 */}
+        <div
+          className="relative w-full overflow-hidden select-none"
+          onTouchStart={onCarouselTouchStart}
+          onTouchEnd={onCarouselTouchEnd}
+        >
+          {/* 卡片舞台：高度与中央卡一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
+          <div className="relative h-[240px] md:h-[360px] [--fan-offset:130px] md:[--fan-offset:180px]">
+            {types.map((type, i) => {
+              const d = offsetOf(i, activeIdx, types.length);
+              const abs = Math.abs(d);
+              const isCenter = abs === 0;
+              const Icon = getFactionIcon(type.ipKey);
+              // 大小与透明度的层级：中央最大，左右各两张依次缩小、越远越透明
+              const scale = [1, 0.85, 0.7, 0.55][abs] ?? 0.5;
+              const opacity = [1, 0.7, 0.45, 0.25][abs] ?? 0.15;
+              // 平面层叠：仅横向展开 + 层级缩放，无旋转角度；垂直 -50% 居中
+              const transform = `translate(calc(-50% + ${d} * var(--fan-offset)), -50%) scale(${scale})`;
+              const zIndex = 10 - abs;
+              // 第三张起完全隐藏，不接收点击（避免"点空气"聚焦到不可见卡片）
+              const hidden = abs >= 3;
 
-            return (
-              <button
-                key={type.route}
-                type="button"
-                onClick={() => (isCenter ? setSelected(type) : setActiveIdx(i))}
-                aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
-                aria-hidden={hidden}
-                tabIndex={isCenter ? 0 : -1}
-                className="absolute left-1/2 top-1/2 w-[240px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                style={{
-                  transform,
-                  opacity,
-                  zIndex,
-                  pointerEvents: hidden ? "none" : "auto",
-                  // 中央卡保留柔和投影，侧卡去阴影，减少堆叠视觉噪点
-                  boxShadow: isCenter
-                    ? "0 12px 32px rgba(61,47,37,0.10)"
-                    : "0 2px 10px rgba(61,47,37,0.05)",
-                }}
-              >
-                {/* 横向结构：左形象 + 右文字 */}
-                <div className="flex h-full items-center gap-3 md:gap-5">
-                  <Image
-                    src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
-                    alt=""
-                    width={180}
-                    height={180}
-                    className="shrink-0 w-[112px] h-[112px] md:w-[192px] md:h-[192px] object-contain pointer-events-none"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal inline-flex items-center gap-1.5">
-                      <Icon className="w-4 h-4 md:w-5 md:h-5 text-brand-charcoal/60 shrink-0" strokeWidth={1.5} />
-                      {type.typeName}
-                    </h2>
-                    {isCenter && (
-                      <>
-                        <p className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/60 font-light leading-relaxed line-clamp-2">
-                          {type.m1.persona}
-                        </p>
-                        <div className="mt-3 inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60">
-                          查看完整解读
-                          <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                        </div>
-                      </>
-                    )}
+              return (
+                <button
+                  key={type.route}
+                  type="button"
+                  onClick={() => (isCenter ? setSelected(type) : setActiveIdx(i))}
+                  aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
+                  aria-hidden={hidden}
+                  tabIndex={isCenter ? 0 : -1}
+                  className="absolute left-1/2 top-1/2 w-[240px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  style={{
+                    transform,
+                    opacity,
+                    zIndex,
+                    pointerEvents: hidden ? "none" : "auto",
+                    // 中央卡保留柔和投影，侧卡去阴影，减少堆叠视觉噪点
+                    boxShadow: isCenter
+                      ? "0 12px 32px rgba(61,47,37,0.10)"
+                      : "0 2px 10px rgba(61,47,37,0.05)",
+                  }}
+                >
+                  {/* 横向结构：左形象 + 右文字 */}
+                  <div className="flex h-full items-center gap-3 md:gap-5">
+                    <Image
+                      src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
+                      alt=""
+                      width={180}
+                      height={180}
+                      className="shrink-0 w-[112px] h-[112px] md:w-[192px] md:h-[192px] object-contain pointer-events-none"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal inline-flex items-center gap-1.5">
+                        <Icon className="w-4 h-4 md:w-5 md:h-5 text-brand-charcoal/60 shrink-0" strokeWidth={1.5} />
+                        {type.typeName}
+                      </h2>
+                      {isCenter && (
+                        <>
+                          <p className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/60 font-light leading-relaxed line-clamp-2">
+                            {type.m1.persona}
+                          </p>
+                          <div className="mt-3 inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60">
+                            查看完整解读
+                            <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </button>
-            );
-          })}
-
-          {/* 桌面左右箭头：位于卡片舞台内，与卡片垂直居中 */}
-          <button
-            type="button"
-            onClick={() => step(-1)}
-            aria-label="上一个"
-            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 hover:-translate-x-2.5 transition-all cursor-pointer"
-          >
-            <ChevronLeft className="w-5 h-5" strokeWidth={1.75} />
-          </button>
-          <button
-            type="button"
-            onClick={() => step(1)}
-            aria-label="下一个"
-            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 hover:translate-x-2.5 transition-all cursor-pointer"
-          >
-            <ChevronRight className="w-5 h-5" strokeWidth={1.75} />
-          </button>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {/* 桌面左右翻页按钮：置于裁剪容器外（页边距槽内），垂直对齐舞台中线 */}
+        <button
+          type="button"
+          onClick={() => step(-1)}
+          aria-label="上一个"
+          className="hidden md:flex absolute -left-4 lg:-left-8 top-[120px] md:top-[180px] -translate-y-1/2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 transition-all cursor-pointer"
+        >
+          <ChevronLeft className="w-5 h-5" strokeWidth={1.75} />
+        </button>
+        <button
+          type="button"
+          onClick={() => step(1)}
+          aria-label="下一个"
+          className="hidden md:flex absolute -right-4 lg:-right-8 top-[120px] md:top-[180px] -translate-y-1/2 z-30 w-10 h-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-brand-espresso/[0.08] text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-white hover:border-brand-espresso/25 transition-all cursor-pointer"
+        >
+          <ChevronRight className="w-5 h-5" strokeWidth={1.75} />
+        </button>
       </div>
 
       {/* 进度点：当前位置指示（可点击跳转） */}
