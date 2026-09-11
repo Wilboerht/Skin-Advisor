@@ -100,7 +100,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                   aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                   aria-hidden={hidden}
                   tabIndex={isCenter ? 0 : -1}
-                  className="absolute left-1/2 top-1/2 w-[240px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  className="absolute left-1/2 top-1/2 w-[256px] md:w-[440px] aspect-[4/3] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
                   style={{
                     transform,
                     opacity,
@@ -119,7 +119,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                       alt=""
                       width={180}
                       height={180}
-                      className="shrink-0 w-[112px] h-[112px] md:w-[192px] md:h-[192px] object-contain pointer-events-none"
+                      className="shrink-0 w-[128px] h-[128px] md:w-[232px] md:h-[232px] object-contain pointer-events-none"
                     />
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal inline-flex items-center gap-1.5">
