@@ -76,10 +76,10 @@ export function BottomDock() {
     tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
 
   const tabClass = (active: boolean) =>
-    `group relative flex flex-col items-center justify-center gap-1 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.05em] transition-colors duration-300 hover:bg-brand-charcoal/[0.04] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:bg-brand-charcoal/5 ${
+    `group relative flex flex-col items-center justify-center gap-1 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.05em] transition-colors duration-300 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
       active
         ? "text-brand-charcoal"
-        : "text-brand-charcoal/50 hover:text-brand-charcoal/80 active:text-brand-charcoal"
+        : "text-brand-charcoal/50 hover:text-brand-charcoal/85 active:text-brand-charcoal"
     }`;
 
   // 点击当前已激活 tab：不重复导航；仅移动端保留"平滑回顶部"习惯（PC 端点击不产生滚动副作用）
