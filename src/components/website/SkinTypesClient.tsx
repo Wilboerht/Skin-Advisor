@@ -105,11 +105,11 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                     transform,
                     opacity,
                     zIndex,
-                    pointerEvents: hidden ? "none" : "auto",
-                    // 中央卡保留柔和投影，侧卡去阴影，减少堆叠视觉噪点
-                    boxShadow: isCenter
-                      ? "0 12px 32px rgba(61,47,37,0.10)"
-                      : "0 2px 10px rgba(61,47,37,0.05)",
+                  pointerEvents: hidden ? "none" : "auto",
+                  // 中央卡：多层柔和投影（近景锐利 + 远景弥散），侧卡仅保留贴地极浅投影
+                  boxShadow: isCenter
+                    ? "0 1px 2px rgba(61,47,37,0.05), 0 4px 10px rgba(61,47,37,0.06), 0 16px 32px rgba(61,47,37,0.08), 0 28px 56px -12px rgba(61,47,37,0.10)"
+                    : "0 1px 2px rgba(61,47,37,0.04), 0 6px 14px -4px rgba(61,47,37,0.06)",
                   }}
                 >
                   {/* 横向结构：左形象 + 右文字 */}
