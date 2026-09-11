@@ -127,17 +127,17 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
                 {onStartTest ? (
                   <button
                     onClick={onStartTest}
-                    className="w-full inline-flex items-center justify-center gap-3 px-8 h-11 rounded-full bg-[#5c4937] text-[#FDFBF7] text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c4937]/40 focus-visible:ring-offset-2"
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 h-11 rounded-full border border-[#00263E]/40 bg-transparent text-[#00263E] text-sm font-medium transition-colors duration-200 hover:border-[#00263E] hover:bg-[#00263E]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2 cursor-pointer"
                   >
                     <span>开始测肤</span>
                   </button>
                 ) : (
                   <Link
                     href="/"
-                    className="w-full inline-flex items-center justify-center gap-3 px-8 h-11 rounded-full bg-[#5c4937] text-[#FDFBF7] text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c4937]/40 focus-visible:ring-offset-2"
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 h-11 rounded-full border border-[#00263E]/40 bg-transparent text-[#00263E] text-sm font-medium transition-colors duration-200 hover:border-[#00263E] hover:bg-[#00263E]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2"
                   >
                     <span>前往测试，看看你的肌肤形象</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
+                    <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                   </Link>
                 )}
                 <Link
