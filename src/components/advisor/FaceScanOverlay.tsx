@@ -69,30 +69,27 @@ export function FaceScanOverlay({
                     )}
 
                     {/* 椭圆框进度描边：随倒计时稳定度从 0 逐渐闭合到 100%（金色的"进度圈"）。
-                        ready 态保持完全闭合一圈，直到 success 绿环确认动画接手——用户能看到"完整闭合"瞬间 */}
+                        ready 态保持完全闭合一圈，直到 success 绿环确认动画接手——用户能看到"完整闭合"瞬间。
+                        实现为 conic-gradient 环 + 前缘圆点（SVG dash 在非等比拉伸下会铺贴错乱成多段圆弧） */}
                     {(faceStatus === "found" || faceStatus === "ready") && stabilityProgress > 0 && stabilityProgress <= 100 && (
-                        <svg
-                            className="absolute inset-0 h-full w-full overflow-visible pointer-events-none"
-                            viewBox="0 0 100 100"
-                            preserveAspectRatio="none"
-                            aria-hidden="true"
-                            style={{ filter: "drop-shadow(0 0 6px rgba(201,168,108,0.5))" }}
+                        <div
+                            className="scan-progress-ring absolute inset-0 rounded-[50%] pointer-events-none"
+                            style={{
+                                "--scan-progress": `${Math.min(stabilityProgress, 100)}%`,
+                                filter: "drop-shadow(0 0 6px rgba(201,168,108,0.5))",
+                            } as React.CSSProperties}
                         >
-                            <m.ellipse
-                                cx="50"
-                                cy="50"
-                                rx="49"
-                                ry="49"
-                                fill="none"
-                                stroke="#C9A86C"
-                                strokeWidth={3}
-                                vectorEffect="non-scaling-stroke"
-                                strokeLinecap="round"
-                                initial={{ pathLength: 0 }}
-                                animate={{ pathLength: Math.min(stabilityProgress, 100) / 100 }}
-                                transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "linear" }}
-                            />
-                        </svg>
+                            {/* 前缘圆点：随进度角绕椭圆边界旋转，模拟圆头笔端 */}
+                            <div
+                                className="absolute inset-0"
+                                style={{
+                                    transform: `rotate(${Math.min(stabilityProgress, 100) * 3.6}deg)`,
+                                    transition: prefersReducedMotion ? "none" : "transform 250ms linear",
+                                }}
+                            >
+                                <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[6px] h-[6px] rounded-full bg-[#C9A86C] shadow-[0_0_8px_rgba(201,168,108,0.8)]" />
+                            </div>
+                        </div>
                     )}
 
                     {/* 拍摄成功确认态 */}
@@ -103,32 +100,14 @@ export function FaceScanOverlay({
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.3 }}
                         >
-                            {/* 绿色圆环描边绘制动画：沿椭圆轨迹从 0 逐渐闭合到 100% */}
-                            <svg
-                                className="absolute inset-0 h-full w-full overflow-visible"
-                                viewBox="0 0 100 100"
-                                preserveAspectRatio="none"
-                                aria-hidden="true"
-                                style={{ filter: "drop-shadow(0 0 8px rgba(16,185,129,0.45))" }}
-                            >
-                                <m.ellipse
-                                    cx="50"
-                                    cy="50"
-                                    rx="49"
-                                    ry="49"
-                                    fill="none"
-                                    stroke="#10B981"
-                                    strokeWidth={3}
-                                    vectorEffect="non-scaling-stroke"
-                                    strokeLinecap="round"
-                                    initial={{ pathLength: 0 }}
-                                    animate={{ pathLength: 1 }}
-                                    transition={{
-                                        duration: prefersReducedMotion ? 0 : 0.5,
-                                        ease: "easeInOut",
-                                    }}
-                                />
-                            </svg>
+                            {/* 绿色圆环描边绘制动画：沿椭圆轨迹从 0 逐渐闭合到 100%（conic-gradient 环，与进度环同方案） */}
+                            <div
+                                className="scan-success-ring absolute inset-0 rounded-[50%] pointer-events-none"
+                                style={{
+                                    ...(prefersReducedMotion ? { "--scan-progress": "100%" } : {}),
+                                    filter: "drop-shadow(0 0 8px rgba(16,185,129,0.45))",
+                                } as React.CSSProperties}
+                            />
 
                             {/* 中央成功提示 */}
                             <m.div

@@ -739,3 +739,41 @@ html.hide-page-scrollbar {
 html.hide-page-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* ========== 扫脸进度环（conic-gradient 方案） ========== */
+/* 注册自定义属性以获得平滑插值（SVG dash + non-scaling-stroke 在非等比拉伸下
+   会被浏览器按屏幕空间重新铺贴 dash 图案，出现"多段圆环转动"的错乱效果，
+   故弃用 SVG pathLength，改用 conic-gradient + ring mask） */
+@property --scan-progress {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+.scan-progress-ring {
+  background: conic-gradient(from -90deg, #C9A86C var(--scan-progress), transparent 0);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  transition: --scan-progress 250ms linear;
+}
+
+@keyframes scan-ring-close {
+  from { --scan-progress: 0%; }
+  to { --scan-progress: 100%; }
+}
+
+.scan-success-ring {
+  background: conic-gradient(from -90deg, #10B981 var(--scan-progress), transparent 0);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  animation: scan-ring-close 0.5s ease-in-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scan-progress-ring {
+    transition: none;
+  }
+  .scan-success-ring {
+    animation: none;
+  }
+}
