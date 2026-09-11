@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Gift, ScanFace } from "lucide-react";
+import { ArrowRight, ScanFace } from "lucide-react";
 import { skinTypes, routeOrder, type SkinTypeData } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
 import { KineticBackground } from "@/components/website/KineticBackground";
@@ -73,21 +73,13 @@ export default async function ResultIndexPage({
             {/* 主 CTA：与首页一致的品牌色实心胶囊，直达测肤流程（?start=1 由首页自动拉起完整流程） */}
             <Link
               href="/?start=1"
-              className="group inline-flex items-center justify-center gap-2 px-7 md:px-8 h-11 rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[13px] md:text-[14px] tracking-[0.12em] font-light transition-all duration-300 hover:bg-[#4a3a2c] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(61,47,37,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 active:translate-y-0 active:shadow-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 opacity-0 animate-fade-in-up"
+              className="group inline-flex items-center justify-center gap-2.5 px-9 md:px-10 h-12 rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[14px] md:text-[15px] tracking-[0.12em] font-light transition-all duration-300 hover:bg-[#4a3a2c] hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(61,47,37,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 focus-visible:ring-offset-2 active:translate-y-0 active:shadow-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 opacity-0 animate-fade-in-up"
               style={{ animationDelay: "0.15s", animationFillMode: "forwards" }}
             >
-              <ScanFace className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+              <ScanFace className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />
               <span>了解我的肤质类型</span>
-              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none" />
+              <ArrowRight className="w-[18px] h-[18px] transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none" />
             </Link>
-            {/* 次 CTA：描边胶囊，与主按钮同高度形成并列层级 */}
-            <GiftLink
-              className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-brand-espresso/[0.15] text-[13px] md:text-[14px] text-brand-charcoal/70 tracking-[0.08em] font-light opacity-0 animate-fade-in-up hover:border-brand-espresso/40 hover:text-brand-charcoal transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40"
-              style={{ animationDelay: "0.25s", animationFillMode: "forwards" }}
-            >
-              参与「肌智派」活动，抽奖赢好礼
-              <Gift className="w-4 h-4 shrink-0" strokeWidth={1.5} />
-            </GiftLink>
           </div>
         </div>
       </section>
