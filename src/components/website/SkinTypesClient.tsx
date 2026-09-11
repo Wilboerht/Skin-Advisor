@@ -77,23 +77,23 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
           onTouchEnd={onCarouselTouchEnd}
         >
           {/* 卡片舞台：高度与中央卡一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
-          <div className="relative h-[260px] md:h-[430px] [--fan-offset:130px] md:[--fan-offset:180px]">
+          <div className="relative h-[260px] md:h-[430px] [--fan-offset:130px] md:[--fan-offset:150px]">
             {types.map((type, i) => {
               const d = offsetOf(i, activeIdx, types.length);
               const abs = Math.abs(d);
               const isCenter = abs === 0;
               const Icon = getFactionIcon(type.ipKey);
-              // 大小与透明度的层级：中央最大，左右各两张依次缩小、越远越透明
-              const scale = [1, 0.85, 0.7, 0.55][abs] ?? 0.5;
-              const opacity = [1, 0.7, 0.45, 0.25][abs] ?? 0.15;
+              // 大小与透明度的层级：中央最大，左右各三张依次缩小、越远越透明
+              const scale = [1, 0.85, 0.7, 0.58, 0.45][abs] ?? 0.4;
+              const opacity = [1, 0.7, 0.45, 0.25, 0.12][abs] ?? 0.1;
               // 失焦层级：离中央越远，内容越模糊、遮罩越重，凸显中央卡
-              const blurPx = [0, 2.5, 4, 6][abs] ?? 8;
-              const veilOpacity = [0, 0.15, 0.3, 0.42][abs] ?? 0.5;
+              const blurPx = [0, 2.5, 4, 6, 8][abs] ?? 10;
+              const veilOpacity = [0, 0.15, 0.3, 0.42, 0.55][abs] ?? 0.6;
               // 平面层叠：仅横向展开 + 层级缩放，无旋转角度；垂直 -50% 居中
               const transform = `translate(calc(-50% + ${d} * var(--fan-offset)), -50%) scale(${scale})`;
               const zIndex = 10 - abs;
-              // 第三张起完全隐藏，不接收点击（避免"点空气"聚焦到不可见卡片）
-              const hidden = abs >= 3;
+              // 第四张起完全隐藏，不接收点击（避免"点空气"聚焦到不可见卡片）
+              const hidden = abs >= 4;
 
               return (
                 <button
@@ -125,18 +125,18 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                     className="absolute inset-0 rounded-2xl bg-white pointer-events-none transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
                     style={{ opacity: isCenter ? 0 : veilOpacity }}
                   />
-                {/* 横向结构：左形象 + 右文字，各占一半（1:1） */}
+                {/* 横向结构：左形象 40% + 右文字 60%（4:6） */}
                 <div className="flex h-full items-center gap-3 md:gap-5">
-                  <div className="flex-1 min-w-0 h-full flex items-center justify-center">
+                  <div className="flex-[4_1_0%] min-w-0 h-full flex items-center justify-center">
                     <Image
                       src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
                       alt=""
                       width={180}
                       height={180}
-                      className="w-full max-w-[128px] md:max-w-[216px] h-auto object-contain pointer-events-none"
+                      className="w-full max-w-[112px] md:max-w-[184px] h-auto object-contain pointer-events-none"
                     />
                   </div>
-                    <div className="flex-1 min-w-0">
+                  <div className="flex-[6_1_0%] min-w-0">
                       <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal inline-flex items-center gap-1.5">
                         <Icon className="w-4 h-4 md:w-5 md:h-5 text-brand-charcoal/60 shrink-0" strokeWidth={1.5} />
                         {type.typeName}
