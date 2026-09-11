@@ -21,7 +21,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
 
     const guideItems = [
         // 带妆时"保持素颜"的提示与实际状态矛盾，改为"如实记录状态"
-        { icon: Sparkles, title: isMakeupState(skinState) ? "如实记录状态" : "保持素颜" },
+        { icon: Sparkles, title: isMakeupState(skinState) ? "记录状态" : "保持素颜" },
         { icon: Sun, title: "光线充足" },
         { icon: ScanEye, title: "对准镜头" }
     ];
@@ -90,9 +90,9 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 <h3 className="text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-6 md:mb-8">
                                     开始面部扫描
                                 </h3>
-                                {/* 扫脸示意：以图标替代原配图，风格与下方 checklist 一致 */}
-                                <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-brand-charcoal/[0.04] flex items-center justify-center mx-auto mb-8 md:mb-10">
-                                    <ScanFace className="w-11 h-11 md:w-13 md:h-13 text-brand-charcoal/40" strokeWidth={1} />
+                                {/* 扫脸示意：无背景 icon */}
+                                <div className="flex items-center justify-center mx-auto mb-8 md:mb-10">
+                                    <ScanFace className="w-16 h-16 md:w-20 md:h-20 text-brand-charcoal/40" strokeWidth={1} />
                                 </div>
                             </motion.div>
 
