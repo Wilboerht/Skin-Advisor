@@ -110,10 +110,6 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                   zIndex,
                   filter: isCenter ? "none" : `blur(${blurPx}px)`,
                   pointerEvents: hidden ? "none" : "auto",
-                  // 中央卡：多层柔和投影（近景锐利 + 远景弥散），侧卡仅保留贴地极浅投影
-                  boxShadow: isCenter
-                    ? "0 1px 2px rgba(61,47,37,0.05), 0 4px 10px rgba(61,47,37,0.06), 0 16px 32px rgba(61,47,37,0.08), 0 28px 56px -12px rgba(61,47,37,0.10)"
-                    : "0 1px 2px rgba(61,47,37,0.04), 0 6px 14px -4px rgba(61,47,37,0.06)",
                 }}
               >
                 {/* 侧卡失焦遮罩：一层半透明白膜，配合 blur 强化"未聚焦"层次 */}
