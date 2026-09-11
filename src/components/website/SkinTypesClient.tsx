@@ -137,7 +137,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                     visibility: hidden ? "hidden" : "visible",
                     // 中央卡保留极轻的多层空气感投影，侧卡保持无影平面，形成"浮起"层次
                     boxShadow: isCenter
-                      ? "0 2px 6px rgba(61,47,37,0.04), 0 14px 32px rgba(61,47,37,0.06), 0 32px 64px -20px rgba(61,47,37,0.10)"
+                      ? "0 1px 3px rgba(61,47,37,0.03), 0 8px 20px rgba(61,47,37,0.04), 0 24px 48px -24px rgba(61,47,37,0.06)"
                       : "none",
                     // 只过渡合成器友好的属性；z-index/pointer-events 等离散属性即时切换，
                     // 避免 transition-all 造成的"中途跳层级"卡顿观感
