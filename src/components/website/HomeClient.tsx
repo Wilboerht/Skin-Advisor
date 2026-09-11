@@ -526,14 +526,14 @@ export default function HomeClient() {
           </section>
           </div>
 
-          {/* 页脚（移动端：沉底于 Dock 上方；桌面端见下方固定左下角版本） */}
-          <div className="mt-auto pt-6 px-6 md:hidden">
+          {/* 页脚（移动端/中屏：沉底于 Dock 上方；xl 以上见下方固定通栏版本） */}
+          <div className="mt-auto pt-6 px-6 md:mb-4 xl:hidden">
             <HomepageFooter />
           </div>
         </m.div>
 
-      {/* 桌面端页脚：固定屏幕底部通栏，备案居左、链接与版权居右（z 高于内容层 z-20、低于 Dock） */}
-      <div className="hidden md:block fixed bottom-2 left-4 right-4 z-30">
+      {/* xl 桌面端页脚：固定屏幕底部通栏，备案居左、链接与版权居右（z 高于内容层 z-20、低于 Dock；<1280px 时全宽页脚会与居中悬浮 Dock 胶囊横向交叠，故改走上方沉底版） */}
+      <div className="hidden xl:block fixed bottom-2 left-4 right-4 z-30">
         <HomepageFooter />
       </div>
 

@@ -51,7 +51,7 @@ const TABS: DockTab[] = [
 export function BottomDock() {
   const pathname = usePathname();
   const { user } = useUser();
-  const { openDiaryModal } = useDiaryModal();
+  const { openDiaryModal, isOpen: diaryOpen } = useDiaryModal();
   // 「我的」账户弹层（未登录时弹层内展示登录引导）
   const [showAccountModal, setShowAccountModal] = useState(false);
   // Portal 需等客户端挂载（SSR 期无 document）
@@ -66,17 +66,19 @@ export function BottomDock() {
     tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
 
   const tabClass = (active: boolean) =>
-    `relative flex flex-col items-center justify-center gap-1 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.05em] transition-colors duration-300 motion-reduce:transition-none focus-visible:outline-none focus-visible:bg-brand-charcoal/5 ${
+    `group relative flex flex-col items-center justify-center gap-1 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.05em] transition-colors duration-300 hover:bg-brand-charcoal/[0.04] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:bg-brand-charcoal/5 ${
       active
         ? "text-brand-charcoal"
         : "text-brand-charcoal/50 hover:text-brand-charcoal/80 active:text-brand-charcoal"
     }`;
 
-  // 点击当前已激活 tab：不重复导航，平滑回顶部（移动端用户习惯）
+  // 点击当前已激活 tab：不重复导航；仅移动端保留"平滑回顶部"习惯（PC 端点击不产生滚动副作用）
   const handleActiveClick = (active: boolean) => (e: React.MouseEvent) => {
     if (active) {
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (window.innerWidth < 768) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   };
 
@@ -88,7 +90,7 @@ export function BottomDock() {
         </span>
       ) : (
         <tab.icon
-          className="w-[22px] h-[22px]"
+          className="w-[22px] h-[22px] transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
           strokeWidth={active ? 2 : 1.5}
         />
       )}
@@ -114,6 +116,8 @@ export function BottomDock() {
                 key={tab.href}
                 type="button"
                 onClick={() => (tab.panel === "diary" ? openDiaryModal() : setShowAccountModal(true))}
+                aria-haspopup="dialog"
+                aria-expanded={tab.panel === "diary" ? diaryOpen : showAccountModal}
                 className={`${tabClass(active)} cursor-pointer`}
               >
                 {renderContent(tab, active)}
