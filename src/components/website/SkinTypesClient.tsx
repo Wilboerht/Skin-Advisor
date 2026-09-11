@@ -6,7 +6,7 @@ import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SkinTypeData } from "@/lib/result-content";
 import { SkinTypeModal } from "@/components/website/SkinTypeModal";
-import { getFactionIcon } from "@/components/website/faction-icons";
+import { getFactionIcon, getFactionEdgeTexture } from "@/components/website/faction-icons";
 
 interface SkinTypesClientProps {
   types: SkinTypeData[];
@@ -136,6 +136,12 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                     aria-hidden="true"
                     className="absolute inset-0 rounded-2xl bg-white pointer-events-none transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
                     style={{ opacity: isCenter ? 0 : veilOpacity }}
+                  />
+                  {/* 派系边缘纹理：卡片顶部饰条，颜色与图案契合各派系气质 */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-[6px] rounded-t-2xl pointer-events-none"
+                    style={{ background: getFactionEdgeTexture(type.ipKey) }}
                   />
                 {/* 横向结构：左形象 40% + 右文字 60%（4:6） */}
                 <div className="flex h-full items-center gap-3 md:gap-5">
