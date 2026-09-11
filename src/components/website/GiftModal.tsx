@@ -40,7 +40,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
         <div
           ref={dialogRef}
           tabIndex={-1}
-          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-0 sm:p-4"
+          className="fixed inset-0 z-[var(--z-modal)] flex items-end sm:items-center justify-center p-0 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="gift-modal-title"
@@ -54,13 +54,13 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
           />
 
-          {/* 弹窗主体 */}
+          {/* 弹窗主体：移动端底部升起（与用户面板一致），桌面端居中卡片 */}
           <m.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[85dvh] bg-[#FDFBF7] rounded-none sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+            className="relative z-10 w-full max-h-[85dvh] sm:max-h-none sm:max-w-lg sm:h-auto bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
@@ -73,10 +73,10 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             </button>
 
             {/* 可滚动内容区：移动端适配上下安全区 */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
               <h2
                 id="gift-modal-title"
-                className="text-2xl font-serif font-light text-brand-charcoal text-center tracking-[0.08em] mb-8"
+                className="text-xl font-serif font-light text-brand-charcoal text-center tracking-[0.08em] mb-6"
               >
                 肌智派送好礼
               </h2>
@@ -95,10 +95,10 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
                   {steps.map((item, i) => (
                     <div key={i} className="flex items-start gap-4">
                       <div className="flex flex-col items-center self-stretch">
-                        <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm font-medium text-brand-charcoal">
+                        <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/[0.25] flex items-center justify-center text-sm font-light text-brand-charcoal/70">
                           {i + 1}
                         </span>
-                        {i < steps.length - 1 && <div className="w-px flex-1 bg-brand-charcoal/15 my-2" />}
+                        {i < steps.length - 1 && <div className="w-px flex-1 bg-brand-charcoal/10 my-2" />}
                       </div>
                       <div className={`flex-1 text-left ${i < steps.length - 1 ? "pb-6" : ""}`}>
                         <h3 className="text-sm font-light text-brand-charcoal tracking-[0.06em] mb-1">{item.title}</h3>
@@ -114,26 +114,26 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
                 {onStartTest ? (
                   <button
                     onClick={onStartTest}
-                    className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-[#5c4937] text-[#FDFBF7] text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer shadow-[0_6px_20px_rgba(92,73,55,0.3)] transition-all duration-500 hover:bg-[#4a3a2c] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c4937]/40 active:translate-y-0"
+                    className="w-full inline-flex items-center justify-center gap-3 px-8 h-11 rounded-full bg-[#5c4937] text-[#FDFBF7] text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c4937]/40 focus-visible:ring-offset-2"
                   >
                     <span>开始测肤</span>
                   </button>
                 ) : (
                   <Link
                     href="/"
-                    className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-[#5c4937] text-[#FDFBF7] text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer shadow-[0_6px_20px_rgba(92,73,55,0.3)] transition-all duration-500 hover:bg-[#4a3a2c] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c4937]/40 active:translate-y-0"
+                    className="w-full inline-flex items-center justify-center gap-3 px-8 h-11 rounded-full bg-[#5c4937] text-[#FDFBF7] text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c4937]/40 focus-visible:ring-offset-2"
                   >
                     <span>前往测试，看看你的肌肤形象</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                   </Link>
                 )}
                 <Link
                   href="/skin-types"
                   onClick={onClose}
-                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal"
+                  className="w-full inline-flex items-center justify-center gap-3 h-11 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer text-brand-charcoal/60 transition-colors duration-300 hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal"
                 >
                   <span>查看全部肌智派类型</span>
-                  <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                 </Link>
               </div>
 
