@@ -80,10 +80,10 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   return (
     <>
-      {/* 派系导航说明：置于轮播上方 */}
-      <p className="mb-4 flex items-center justify-center gap-1.5 text-center text-[11px] text-brand-charcoal/35 font-light tracking-[0.08em]">
+      {/* 派系导航说明：置于轮播上方，与 hero 副标题同字号，主色 #00263E */}
+      <p className="mb-4 flex items-center justify-center gap-1.5 text-center text-[13px] md:text-sm text-[#00263E] font-light tracking-[0.06em]">
         点击对应派系，查看派系详情
-        <ArrowDown className="w-3 h-3 shrink-0" strokeWidth={1.5} />
+        <ArrowDown className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
       </p>
 
       {/* 外层相对容器：轮播裁剪区 + 两侧翻页按钮（按钮在裁剪容器外，垂直线与卡片舞台中线对齐） */}
