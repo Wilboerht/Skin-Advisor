@@ -57,7 +57,7 @@ export default async function ResultIndexPage({
       <section className="relative pt-8 md:pt-12 pb-3 md:pb-6 px-6 md:px-12 lg:px-20 overflow-hidden shrink-0">
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {/* 印章徽标（标题上方居中，与首页一致） */}
+          {/* 印章徽标（标题上方居中，与首页统一规格：h-10 md:h-12 保证可读性） */}
           <div
             className="mb-3 md:mb-4 inline-flex items-center opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
@@ -67,7 +67,7 @@ export default async function ResultIndexPage({
               alt="肌智派"
               width={514}
               height={258}
-              className="h-8 md:h-10 w-auto opacity-90 mix-blend-multiply"
+              className="h-10 md:h-12 w-auto opacity-90 mix-blend-multiply"
               priority
             />
           </div>
