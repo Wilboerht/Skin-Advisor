@@ -1,11 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
     AUTO_DIARY_NOTE_PREFIX,
+    checkinPointsForStreak,
     computeStreak,
     isAutoDiaryEntry,
     isDiaryDateInRange,
     parseClientDate,
-    scoreToSkinState
+    scoreToSkinState,
+    streakEndingAt
 } from "./diary-utils";
 import { localDateStr } from "./local-date";
 
@@ -130,5 +132,47 @@ describe("computeStreak", () => {
         const r = computeStreak(days("2026-09-03", "2026-09-01", "2026-09-01", "2026-09-02"), now);
         expect(r.current).toBe(3);
         expect(r.longest).toBe(3);
+    });
+});
+
+describe("streakEndingAt", () => {
+    const days = (...iso: string[]) => iso.map((s) => new Date(`${s}T00:00:00.000Z`));
+    const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
+
+    it("目标日无记录：0", () => {
+        expect(streakEndingAt(days("2026-09-01"), day("2026-09-03"))).toBe(0);
+    });
+
+    it("连续段截至目标日", () => {
+        const dates = days("2026-09-01", "2026-09-02", "2026-09-03");
+        expect(streakEndingAt(dates, day("2026-09-03"))).toBe(3);
+        expect(streakEndingAt(dates, day("2026-09-02"))).toBe(2);
+        expect(streakEndingAt(dates, day("2026-09-01"))).toBe(1);
+    });
+
+    it("断开后重新从 1 算起", () => {
+        // 9-01 打卡，9-02 断开，9-03 打卡 → 9-03 连续天数为 1
+        const dates = days("2026-09-01", "2026-09-03");
+        expect(streakEndingAt(dates, day("2026-09-03"))).toBe(1);
+    });
+
+    it("目标日之后的记录不影响结果（补打卡场景）", () => {
+        const dates = days("2026-09-01", "2026-09-02", "2026-09-05");
+        expect(streakEndingAt(dates, day("2026-09-02"))).toBe(2);
+    });
+
+    it("重复日期不多算", () => {
+        const dates = days("2026-09-02", "2026-09-02", "2026-09-03");
+        expect(streakEndingAt(dates, day("2026-09-03"))).toBe(2);
+    });
+});
+
+describe("checkinPointsForStreak", () => {
+    it("第 1/2/3/4+ 天分别得 1/2/3/3 分", () => {
+        expect(checkinPointsForStreak(1)).toBe(1);
+        expect(checkinPointsForStreak(2)).toBe(2);
+        expect(checkinPointsForStreak(3)).toBe(3);
+        expect(checkinPointsForStreak(10)).toBe(3);
+        expect(checkinPointsForStreak(0)).toBe(0);
     });
 });

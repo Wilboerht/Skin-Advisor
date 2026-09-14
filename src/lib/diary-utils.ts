@@ -80,3 +80,24 @@ export function computeStreak(
 
     return { current, longest };
 }
+
+/**
+ * 截至指定日历日（含当日）的连续打卡天数。
+ * 用于打卡积分：连续第 1/2/3+ 天分别 +1/+2/+3 分（断开重新从 1 算起）。
+ * 与 computeStreak 的"current"语义一致，但锚点可以是任意历史日期（补打卡场景）。
+ */
+export function streakEndingAt(dates: Date[], target: Date): number {
+    const daySet = new Set(dates.map(dayIndexOf));
+    let streak = 0;
+    let cursor = dayIndexOf(target);
+    while (daySet.has(cursor)) {
+        streak++;
+        cursor--;
+    }
+    return streak;
+}
+
+/** 打卡积分：连续第 N 天得分 = min(N, 3) */
+export function checkinPointsForStreak(streak: number): number {
+    return Math.min(Math.max(streak, 0), 3);
+}

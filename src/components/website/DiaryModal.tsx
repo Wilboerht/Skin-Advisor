@@ -26,7 +26,7 @@ import { TrendChart, type TrendsData } from "@/components/website/TrendChart";
 import { CheckInTrend } from "@/components/website/CheckInTrend";
 import { CheckInModal } from "@/components/website/CheckInModal";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
-import { LoginGuide } from "@/components/website/LoginGuide";
+import { AccountModal } from "@/components/website/AccountModal";
 import { useToast } from "@/components/ui/Toast";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { localDateStr } from "@/lib/local-date";
@@ -422,6 +422,11 @@ export function DiaryModal() {
     }
   }, [deletingId, refreshEntries, toast]);
 
+  // 未登录：直接复用「我的」账户弹层的未登录视图（同一紧凑壳 + LoginGuide），保持全站一致性
+  if (!user) {
+    return <AccountModal isOpen={isOpen} onClose={closeDiaryModal} />;
+  }
+
   return (
     <LazyMotion features={domAnimation}>
       <AnimatePresence>
@@ -513,15 +518,9 @@ export function DiaryModal() {
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.18 }}
                     >
-                {!user ? (
-                  /* ===== 游客：统一登录引导（LoginGuide），内容垂直居中 ===== */
-                  <div className="flex flex-col items-center justify-center text-center flex-1 py-4">
-                    <LoginGuide onNavigateLogin={closeDiaryModal} />
-                  </div>
-                ) : (
-                  /* ===== 登录：趋势 + 时间线 ===== */
-                  /* PC 端（lg+）双列：左「肌肤变化」sticky，右「护肤历程」；移动端单列堆叠 */
-                  <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-10">
+                {/* ===== 登录：趋势 + 时间线 ===== */}
+                {/* PC 端（lg+）双列：左「肌肤变化」sticky，右「护肤历程」；移动端单列堆叠 */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-10">
                     {/* 肌肤变化：标题行承载时间窗切换与全部记录入口 */}
                     <section className="mb-8 lg:mb-0 lg:self-start lg:sticky lg:top-0">
                       <div className="flex items-center justify-between mb-4">
@@ -766,8 +765,7 @@ export function DiaryModal() {
                         </>
                       )}
                     </section>
-                  </div>
-                )}
+                </div>
                   </m.div>
                 )}
                 </AnimatePresence>

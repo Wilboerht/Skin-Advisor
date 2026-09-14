@@ -89,6 +89,12 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
         }),
       });
       if (!res.ok) throw new Error("保存未成功");
+      // 打卡积分（仅首次手动打卡返回）：连续第 1/2/3+ 天 +1/+2/+3 分
+      const resData = (await res.json().catch(() => null)) as {
+        points?: { granted?: number };
+      } | null;
+      const granted = resData?.points?.granted ?? 0;
+      const pointsSuffix = granted > 0 ? `，+${granted} 积分` : "";
       const submitLabel = new Date(`${submitDate}T00:00:00.000Z`).toLocaleDateString("zh-CN", {
         month: "numeric",
         day: "numeric",
@@ -97,7 +103,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
       toast.success(
         existing
           ? submitIsToday ? "今日记录已更新" : "记录已更新"
-          : submitIsToday ? "打卡成功" : `已补打卡 ${submitLabel}`
+          : submitIsToday ? `打卡成功${pointsSuffix}` : `已补打卡 ${submitLabel}${pointsSuffix}`
       );
       onSaved();
       onClose();

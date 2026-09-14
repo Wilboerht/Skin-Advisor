@@ -3,7 +3,8 @@ import prisma from "@/lib/prisma";
 import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
-import { computeStreak, isDiaryDateInRange, parseClientDate } from "@/lib/diary-utils";
+import { computeStreak, isDiaryDateInRange, parseClientDate, streakEndingAt, checkinPointsForStreak, isAutoDiaryEntry } from "@/lib/diary-utils";
+import { grantCheckinPoints } from "@/lib/diary-points";
 
 const DEFAULT_PAGE_SIZE = 30;
 const MAX_PAGE_SIZE = 50;
@@ -143,6 +144,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "日期超出可记录范围" }, { status: 400 });
         }
 
+        // 打卡积分判定：仅"当日首次手动打卡"发放——新建条目，或接管当日测肤自动条目
+        //（自动条目无情境标签；与 src/lib/diary.ts 的手动接管语义一致）。
+        // 编辑已有手动打卡不重复发放；主站账本按 checkin:{userId}:{date} 幂等兜底
+        const existing = await prisma.diaryEntry.findUnique({
+            where: { userId_date: { userId: user.id, date } },
+            select: { note: true, tags: true },
+        });
+        const isFirstManualCheckin =
+            !existing ||
+            (isAutoDiaryEntry(existing) && ((existing.tags as unknown[] | null)?.length ?? 0) === 0);
+
         const entry = await prisma.diaryEntry.upsert({
             where: { userId_date: { userId: user.id, date } },
             update: { skinState, tags, note },
@@ -150,7 +162,29 @@ export async function POST(request: NextRequest) {
             select: { id: true, date: true, skinState: true, tags: true, note: true },
         });
 
-        return NextResponse.json({ success: true, data: entry });
+        // 打卡积分：连续第 1/2/3+ 天 +1/+2/+3 分（断开重新从 1 算起）；
+        // 连续天数口径与里程碑"连续打卡"一致（含测肤自动条目）。
+        // 官网不可达/超时不阻断打卡，仅不返回 points（前端 toast 不提示积分）
+        let points: { granted: number; streak: number } | undefined;
+        if (isFirstManualCheckin) {
+            const rows = await prisma.diaryEntry.findMany({
+                where: { userId: user.id },
+                select: { date: true },
+            });
+            const streak = streakEndingAt(rows.map((r) => r.date), date);
+            const amount = checkinPointsForStreak(streak);
+            const result = await grantCheckinPoints({
+                userId: user.id,
+                dateStr: date.toISOString().slice(0, 10),
+                streak,
+                points: amount,
+            });
+            if (result && result.granted > 0) {
+                points = { granted: result.granted, streak };
+            }
+        }
+
+        return NextResponse.json({ success: true, data: entry, ...(points ? { points } : {}) });
     } catch (error) {
         logger.error("Diary save error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
