@@ -29,7 +29,7 @@ function offsetOf(i: number, activeIdx: number, total: number): number {
  * 桌面左右箭头 + 键盘 ←/→，底部进度点指示当前位置。移动端/PC 同构。
  */
 export function SkinTypesClient({ types, initialType = null }: SkinTypesClientProps) {
-  const [selected, setSelected] = useState<SkinTypeData | null>(initialType);
+  const [selected, setSelected] = useState<SkinTypeData | null>(null);
   const [activeIdx, setActiveIdx] = useState(() => {
     if (initialType) {
       const idx = types.findIndex((t) => t.route === initialType.route);
@@ -47,6 +47,15 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   const step = (dir: 1 | -1) =>
     setActiveIdx((prev) => (prev + dir + types.length) % types.length);
+
+  // 深链接自动打开详情：仅桌面端（移动端由 SkinTypesMobileList 负责，
+  // 避免 display:none 的轮播弹窗在移动端抢占焦点与滚动锁）
+  useEffect(() => {
+    if (!initialType) return;
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) {
+      setSelected(initialType);
+    }
+  }, [initialType]);
 
   // 关闭详情弹窗：深链接（?type=xxx）进入时清理 URL，避免刷新后又自动弹出
   const closeDetail = () => {
@@ -89,18 +98,23 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
     }
   };
 
-  // 桌面鼠标拖拽：pointer capture 保证移出容器后仍能收到 move/up
+  // 桌面鼠标拖拽：惰性指针捕获——仅当确认是拖拽（位移 > 8px）后才 capture，
+  // 保证普通点击的 click 事件仍落在卡片按钮上（先捕获会导致点击被容器吞掉）
   const onCarouselPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType !== "mouse") return; // 触摸走 Touch 逻辑
     dragMovedRef.current = false;
     dragRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
-    e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onCarouselPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = dragRef.current;
     if (!d || e.pointerId !== d.id) return;
-    // 位移超过 8px 视为拖拽，抑制随后的 click
-    if (!d.moved && Math.abs(e.clientX - d.x) > 8) d.moved = true;
+    // 位移超过 8px 视为拖拽：抑制随后的 click，并在此刻才捕获指针
+    if (!d.moved && Math.abs(e.clientX - d.x) > 8) {
+      d.moved = true;
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch { /* 捕获失败不影响后续逻辑 */ }
+    }
   };
   const finishPointerDrag = (e: React.PointerEvent<HTMLDivElement>, cancelled: boolean) => {
     const d = dragRef.current;

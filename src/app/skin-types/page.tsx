@@ -7,6 +7,7 @@ import { withDefaultOgImage } from "@/lib/metadata";
 import { KineticBackground } from "@/components/website/KineticBackground";
 import { HidePageScrollbar } from "@/components/website/HidePageScrollbar";
 import { SkinTypesClient } from "@/components/website/SkinTypesClient";
+import { SkinTypesMobileList } from "@/components/website/SkinTypesMobileList";
 import { BreadcrumbSchema, SkinTypesItemListSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
@@ -110,10 +111,19 @@ export default async function ResultIndexPage({
       {/* 旋转木马：标题与 Dock 之间的剩余空间垂直居中，区域宽度移动端全宽/桌面 90% */}
       <section className="relative z-10 flex-1 flex items-center justify-center px-6 md:px-12 lg:px-20 pb-6 md:pb-8">
         <div className="w-full md:w-[90%]">
-          <SkinTypesClient
-            types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
-            initialType={initialType}
-          />
+          {/* 移动端：纵向列表（替代轮播，全宽可读）；桌面端：轮播 */}
+          <div className="md:hidden">
+            <SkinTypesMobileList
+              types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
+              initialType={initialType}
+            />
+          </div>
+          <div className="hidden md:block">
+            <SkinTypesClient
+              types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
+              initialType={initialType}
+            />
+          </div>
         </div>
       </section>
     </div>
