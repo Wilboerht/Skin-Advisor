@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -48,7 +49,7 @@ export function SkinTypesMobileList({ types, initialType = null }: SkinTypesMobi
                 type="button"
                 onClick={() => setSelected(type)}
                 aria-label={`${type.typeName}（查看详情）`}
-                className="group w-full flex items-center gap-4 rounded-2xl border border-brand-espresso/[0.12] bg-white p-4 text-left transition-colors duration-300 hover:border-brand-espresso/[0.22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
+                className="group w-full flex items-center gap-4 rounded-2xl border border-brand-espresso/[0.12] bg-white p-4 text-left transition-colors duration-300 hover:border-brand-espresso/[0.22] active:bg-brand-charcoal/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
               >
                 <span className="shrink-0 w-[96px] h-[96px] flex items-center justify-center">
                   <Image
@@ -56,6 +57,7 @@ export function SkinTypesMobileList({ types, initialType = null }: SkinTypesMobi
                     alt=""
                     width={180}
                     height={180}
+                    sizes="96px"
                     className="w-full h-full object-contain pointer-events-none"
                   />
                 </span>
@@ -77,6 +79,15 @@ export function SkinTypesMobileList({ types, initialType = null }: SkinTypesMobi
           );
         })}
       </ul>
+
+      {/* 列表末尾重复 CTA：长滚动后的转化出口（与 hero 主 CTA 同款） */}
+      <Link
+        href="/?start=1"
+        className="group mt-5 flex items-center justify-center gap-2 h-11 w-full rounded-full border border-[#00263E]/40 bg-transparent text-[#00263E] text-sm font-medium transition-colors duration-200 hover:border-[#00263E] hover:bg-[#00263E]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2"
+      >
+        <span>测一测，了解我的肤质类型</span>
+        <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
+      </Link>
 
       <SkinTypeModal data={selected} onClose={closeDetail} />
     </>

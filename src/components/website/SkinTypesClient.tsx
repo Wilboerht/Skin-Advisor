@@ -215,6 +215,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                       height={180}
                       loading={isCenter ? "eager" : "lazy"}
                       fetchPriority={isCenter ? "high" : "auto"}
+                      sizes="184px"
                       className="w-full max-w-[112px] md:max-w-[184px] h-auto object-contain pointer-events-none"
                     />
                   </div>
