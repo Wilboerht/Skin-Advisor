@@ -87,6 +87,16 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
 
             {/* 可滚动内容区：移动端适配上下安全区 */}
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
+              {/* 品牌 logo：标题上方居中 */}
+              <div className="mb-4 flex justify-center">
+                <Image
+                  src="/NIHPLOD-logo.svg"
+                  alt="NIHPLOD"
+                  width={136}
+                  height={34}
+                  className="h-[34px] w-auto object-contain"
+                />
+              </div>
               <h2
                 id="gift-modal-title"
                 className="text-xl font-serif font-light text-brand-charcoal text-center tracking-[0.08em] mb-6"

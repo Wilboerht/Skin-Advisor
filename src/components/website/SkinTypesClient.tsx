@@ -121,11 +121,11 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
   return (
     <>
       {/* 派系导航：置于轮播上方（替代进度圆点），激活 chip 高亮即当前位置指示；
-          网格排布消灭孤儿行——平板 4×2 均衡、桌面 lg+ 单行 8×1 */}
+          紧凑排布——平板固定 4 个一行（受控宽度避免孤儿行），桌面单行 8 个 */}
       <div
         role="group"
         aria-label="派系导航"
-        className="mb-4 md:mb-5 grid grid-cols-4 lg:grid-cols-8 justify-items-center gap-2"
+        className="mb-4 md:mb-5 mx-auto flex flex-wrap justify-center gap-2 md:max-w-[360px] lg:max-w-none"
       >
         {types.map((t, i) => {
           const active = i === activeIdx;
