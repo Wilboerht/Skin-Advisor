@@ -6,7 +6,7 @@ import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SkinTypeData } from "@/lib/result-content";
 import { SkinTypeModal } from "@/components/website/SkinTypeModal";
-import { getFactionIcon, getFactionEdgeTexture } from "@/components/website/faction-icons";
+import { getFactionIcon } from "@/components/website/faction-icons";
 
 interface SkinTypesClientProps {
   types: SkinTypeData[];
@@ -115,7 +115,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                   aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                   aria-hidden={hidden}
                   tabIndex={isCenter ? 0 : -1}
-                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer hover:border-brand-espresso/[0.15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 motion-reduce:transition-none"
+                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer overflow-hidden hover:border-brand-espresso/[0.15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 motion-reduce:transition-none"
                   style={{
                     transform,
                     opacity,
@@ -131,20 +131,30 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                     willChange: hidden ? "auto" : "transform, opacity, filter",
                   }}
                 >
-                  {/* 派系边缘纹理：卡片顶部饰条（先于白膜渲染，侧卡上随失焦一起变淡） */}
+                  {/* 派系水印：大尺寸图标压印在卡片右下角（凹版效果：深色内影 + 下缘高光），被卡片圆角裁切 */}
                   <span
                     aria-hidden="true"
-                    className="absolute inset-x-0 top-0 h-[6px] rounded-t-2xl pointer-events-none"
-                    style={{ background: getFactionEdgeTexture(type.ipKey) }}
-                  />
+                    className="pointer-events-none absolute -right-7 -bottom-9 md:-right-9 md:-bottom-11"
+                  >
+                    <Icon
+                      className="w-[150px] h-[150px] md:w-[200px] md:h-[200px]"
+                      fill="currentColor"
+                      strokeWidth={0}
+                      style={{
+                        color: "rgba(61,47,37,0.055)",
+                        filter:
+                          "drop-shadow(-1px -1px 0 rgba(61,47,37,0.06)) drop-shadow(1px 1px 0 rgba(255,255,255,0.9))",
+                      }}
+                    />
+                  </span>
                   {/* 侧卡失焦遮罩：常驻挂载（中央卡 opacity 0），随层级平滑淡入淡出，避免中途卸载造成的"闪变" */}
                   <span
                     aria-hidden="true"
                     className="absolute inset-0 rounded-2xl bg-white pointer-events-none transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
                     style={{ opacity: isCenter ? 0 : veilOpacity }}
                   />
-                {/* 横向结构：左形象 40% + 右文字 60%（4:6） */}
-                <div className="flex h-full items-center gap-3 md:gap-5">
+                {/* 横向结构：左形象 40% + 右文字 60%（4:6）；relative 保证内容在水印之上 */}
+                <div className="relative flex h-full items-center gap-3 md:gap-5">
                   <div className="flex-[4_1_0%] min-w-0 h-full flex items-center justify-center">
                     <Image
                       src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
