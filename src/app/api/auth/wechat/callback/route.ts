@@ -21,6 +21,7 @@ import {
 import prisma from "@/lib/prisma";
 import { UserRole } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
+import { getPublicOrigin } from "@/lib/sso-config";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,9 @@ export const dynamic = "force-dynamic";
 function getSafeRedirect(req: NextRequest, redirect: string | null): string {
     if (!redirect || redirect === "/") return "/";
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL;
-    const origin = new URL(req.url).origin;
+    // standalone 部署下 req.url 是进程监听地址（如 http://0.0.0.0:3002），
+    // 同源判定必须基于公网 origin
+    const origin = getPublicOrigin() || new URL(req.url).origin;
 
     // 相对路径
     if (redirect.startsWith("/") && !redirect.startsWith("//")) return redirect;
@@ -57,10 +60,14 @@ export async function GET(req: NextRequest) {
     const redirect = getSafeRedirect(req, rawRedirect);
     const wechatAuth = searchParams.get("wechat_auth");
 
+    // 重定向基准取站点公网 origin：standalone 部署下 req.url 是进程监听地址
+    //（如 http://0.0.0.0:3002），直接用它会把浏览器重定向到不可达地址
+    const siteOrigin = getPublicOrigin() || new URL(req.url).origin;
+
     // 处理微信用户取消授权等错误场景，直接透传回前端
     // 注意：有 exchangeToken 时优先兑换，不要把 token 留在 URL 中
     if (wechatAuth && wechatAuth !== "binding_required" && !exchangeToken) {
-        const errorUrl = new URL(redirect, req.url);
+        const errorUrl = new URL(redirect, siteOrigin);
         searchParams.forEach((value, key) => {
             if (key !== "redirect") {
                 errorUrl.searchParams.set(key, value);
@@ -70,7 +77,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (!exchangeToken) {
-        const errorUrl = new URL(redirect, req.url);
+        const errorUrl = new URL(redirect, siteOrigin);
         errorUrl.searchParams.set("wechat_auth", "error");
         errorUrl.searchParams.set("code", "MISSING_EXCHANGE_TOKEN");
         errorUrl.searchParams.set("message", encodeURIComponent("缺少微信授权凭证"));
@@ -117,7 +124,7 @@ export async function GET(req: NextRequest) {
         const data = parsed.data;
 
         if (!officialResponse.ok || !data.success) {
-            const errorUrl = new URL(redirect, req.url);
+            const errorUrl = new URL(redirect, siteOrigin);
             errorUrl.searchParams.set("wechat_auth", "error");
             errorUrl.searchParams.set("code", data.error?.code || "EXCHANGE_FAILED");
             errorUrl.searchParams.set("message", encodeURIComponent(data.error?.message || "微信授权兑换失败"));
@@ -128,7 +135,7 @@ export async function GET(req: NextRequest) {
 
         // 需要绑定手机号：将 exchange token 存入 httpOnly 临时 Cookie（避免 URL 泄露），重定向到绑定页
         if (result?.bindingRequired) {
-            const bindUrl = new URL("/auth/wechat-bind", req.url);
+            const bindUrl = new URL("/auth/wechat-bind", siteOrigin);
             bindUrl.searchParams.set("redirect", redirect);
             const bindResponse = NextResponse.redirect(bindUrl, 302);
             bindResponse.cookies.set("__Host-wechat_bind_token", exchangeToken, {
@@ -142,7 +149,7 @@ export async function GET(req: NextRequest) {
         }
 
         if (!result?.user || !result.accessToken || !result.refreshToken) {
-            const errorUrl = new URL(redirect, req.url);
+            const errorUrl = new URL(redirect, siteOrigin);
             errorUrl.searchParams.set("wechat_auth", "error");
             errorUrl.searchParams.set("code", "INVALID_EXCHANGE_RESPONSE");
             errorUrl.searchParams.set("message", encodeURIComponent("上游响应不完整"));
@@ -179,7 +186,7 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        const successUrl = new URL(redirect, req.url);
+        const successUrl = new URL(redirect, siteOrigin);
         successUrl.searchParams.set("wechat_auth", "success");
         if (result.passwordGenerated) {
             successUrl.searchParams.set("password_generated", "true");
@@ -203,7 +210,7 @@ export async function GET(req: NextRequest) {
         });
 
         if (!sessionSigned) {
-            const errorUrl = new URL(redirect, req.url);
+            const errorUrl = new URL(redirect, siteOrigin);
             errorUrl.searchParams.set("wechat_auth", "error");
             errorUrl.searchParams.set("code", "SESSION_SIGN_FAILED");
             errorUrl.searchParams.set("message", encodeURIComponent("会话创建失败"));
@@ -214,7 +221,7 @@ export async function GET(req: NextRequest) {
 
     } catch (error) {
         logger.error("[WechatCallback] 处理微信授权回调失败", { error: String(error) });
-        const errorUrl = new URL(redirect, req.url);
+        const errorUrl = new URL(redirect, siteOrigin);
         errorUrl.searchParams.set("wechat_auth", "error");
         errorUrl.searchParams.set("code", "INTERNAL_ERROR");
         errorUrl.searchParams.set("message", encodeURIComponent("服务器内部错误"));

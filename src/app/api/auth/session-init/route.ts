@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, ssoVerifier, upsertLocalUser, refreshSsoTokensSingleFlight, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, type RefreshedTokens } from "@/lib/sso-auth";
-import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
+import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
 import { signLocalSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { isDisabledUser } from "@/lib/permissions";
@@ -35,11 +35,15 @@ export async function GET(req: NextRequest) {
     // 让客户端能可靠判断重建结果（auth_token 是 httpOnly，document.cookie 读不到）
     const wantsJson = req.nextUrl.searchParams.get("json") === "1";
 
+    // 重定向基准取站点公网 origin：standalone 部署下 req.url 是进程监听地址
+    //（如 http://0.0.0.0:3002），直接用它会把浏览器重定向到不可达地址
+    const siteOrigin = getPublicOrigin() || new URL(req.url).origin;
+
     const fail = (error: string, status = 200) => {
         if (wantsJson) {
             return NextResponse.json({ ok: false, error }, { status });
         }
-        return NextResponse.redirect(new URL(`/?error=${error}&return_to=${encodeURIComponent(returnTo)}`, req.url));
+        return NextResponse.redirect(new URL(`/?error=${error}&return_to=${encodeURIComponent(returnTo)}`, siteOrigin));
     };
 
     const ip = getClientIP(req);
@@ -98,7 +102,7 @@ export async function GET(req: NextRequest) {
 
         const response = wantsJson
             ? NextResponse.json({ ok: true })
-            : NextResponse.redirect(new URL(returnTo, req.url));
+            : NextResponse.redirect(new URL(returnTo, siteOrigin));
 
         // 本轮发生过静默轮换：把新 SSO token 种回 httpOnly Cookie（与 /api/auth/me 的 Cookie 约定一致）
         if (rotated) {

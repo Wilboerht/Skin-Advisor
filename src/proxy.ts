@@ -5,7 +5,7 @@ import { verifySessionSignature, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session
 import { verifyCsrfToken } from "@/lib/csrf";
 import { AUTH_COOKIE_NAME, verifyToken } from "@/lib/auth-config";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/sso-auth";
-import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
+import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
 
 /**
  * Next.js 全局 Proxy (formerly Middleware)
@@ -165,7 +165,9 @@ export async function proxy(request: NextRequest) {
         const ssoTokenCookie = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
         const localAuthCookieVal = request.cookies.get(AUTH_COOKIE_NAME)?.value;
         if (ssoTokenCookie && (!localAuthCookieVal || !(await verifyToken(localAuthCookieVal)))) {
-            const recoveryUrl = new URL("/api/auth/session-init", request.url);
+            // 重定向基准取站点公网 origin：standalone 部署下 request.url 是进程
+            // 监听地址（如 http://0.0.0.0:3002），会把浏览器重定向到不可达地址
+            const recoveryUrl = new URL("/api/auth/session-init", getPublicOrigin() || request.url);
             recoveryUrl.searchParams.set("return_to", pathname + request.nextUrl.search);
             return NextResponse.redirect(recoveryUrl);
         }
@@ -204,8 +206,8 @@ export async function proxy(request: NextRequest) {
                     { status: 401 }
                 );
             }
-            // Admin page — redirect to login
-            return NextResponse.redirect(new URL("/admin/login", request.url));
+            // Admin page — redirect to login（基准取公网 origin，standalone 下 request.url 是监听地址）
+            return NextResponse.redirect(new URL("/admin/login", getPublicOrigin() || request.url));
         }
     }
 

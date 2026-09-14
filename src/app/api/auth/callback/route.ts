@@ -4,7 +4,7 @@ import {
   DEFAULT_RETURN_COOKIE_NAME,
   toInsecureCookieName,
 } from "@nihplod/sso-sdk/next";
-import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
+import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
 
 const ssoCallback = createCallbackRouteHandler({
   clientId: process.env.NEXT_PUBLIC_SSO_CLIENT_ID!,
@@ -32,6 +32,10 @@ function sanitizeReturnTo(value: string | null): string {
  * 然后再跳转到最终目标页面。
  */
 export async function GET(req: NextRequest) {
+  // 重定向基准取站点公网 origin：standalone 部署下 req.url 是进程监听地址
+  //（如 http://0.0.0.0:3002），直接用它会把浏览器重定向到不可达地址
+  const siteOrigin = getPublicOrigin() || new URL(req.url).origin;
+
   // 用户在授权页取消/拒绝：SDK 会吐裸 JSON 错误页，这里改为跳回发起登录的页面
   //（return_to 由 /api/auth/login 在发起时写入 Cookie）
   if (req.nextUrl.searchParams.has("error")) {
@@ -39,7 +43,7 @@ export async function GET(req: NextRequest) {
       ? toInsecureCookieName(DEFAULT_RETURN_COOKIE_NAME)
       : DEFAULT_RETURN_COOKIE_NAME;
     const returnTo = sanitizeReturnTo(req.cookies.get(returnCookieName)?.value ?? null);
-    return NextResponse.redirect(new URL(returnTo, req.url));
+    return NextResponse.redirect(new URL(returnTo, siteOrigin));
   }
 
   const response = await ssoCallback(req);
@@ -49,7 +53,7 @@ export async function GET(req: NextRequest) {
     // 用 URL 解析判断错误态：原 `includes("error=")` 会把合法 query（如 ?return_to=/x?error=0）误判为失败
     let target: URL;
     try {
-      target = new URL(location, req.url);
+      target = new URL(location, siteOrigin);
     } catch {
       return response;
     }
@@ -57,14 +61,16 @@ export async function GET(req: NextRequest) {
     if (!target.searchParams.has("error")) {
       // session-init 仅接受同源相对路径（防开放重定向），绝对 URL 会被丢弃回退到 "/"；
       // 此处规范化为同源相对路径，保留原始 pathname + query
+      // 同源判定同时接受公网 origin（SDK ≥1.2.1 的跳转基准）与请求 origin
+      //（SDK 1.2.0 的 Location 基于 req.url，standalone 下是监听地址）
       const requestOrigin = new URL(req.url).origin;
-      if (target.origin !== requestOrigin) {
+      if (target.origin !== siteOrigin && target.origin !== requestOrigin) {
         // 跨域目标不经过 session-init 包装，直接透传 SDK 响应
         return response;
       }
 
       // 将最终跳转目标作为 return_to 参数，先经过 session-init 引导签发本地 session
-      const sessionInitUrl = new URL("/api/auth/session-init", req.url);
+      const sessionInitUrl = new URL("/api/auth/session-init", siteOrigin);
       sessionInitUrl.searchParams.set("return_to", target.pathname + target.search);
 
       const newResponse = NextResponse.redirect(sessionInitUrl);
