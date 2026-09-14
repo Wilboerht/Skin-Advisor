@@ -237,6 +237,10 @@ export async function proxy(request: NextRequest) {
         "/api/auth/wechat",
         "/api/auth/wechat/bind",
         "/api/auth/session-init",   // SSO 本地 session 引导（尚无本地 JWT）
+        // 登出：豁免 CSRF。路由内自带 POST-only + Origin/Referer 白名单同源校验，
+        // 且登出是幂等降权操作；不豁免会让本地 JWT 过期/CSRF 不同步的用户
+        // 陷入"会话已坏但退不出去"的死锁
+        "/api/auth/logout",
         // 主站资料/会员变更 webhook：服务端到服务端调用，无浏览器 Cookie，
         // 无法通过 CSRF 校验；安全性由路由内 event_token 的 RS256 验签保证
         "/api/auth/profile-webhook",
