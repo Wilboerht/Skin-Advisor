@@ -262,7 +262,7 @@ export function DiaryTimeline({
                         <button
                           type="button"
                           onClick={() => onCheckIn(null, todayStr)}
-                          className="text-left text-[12px] text-brand-charcoal/45 font-light hover:text-brand-charcoal transition-colors cursor-pointer"
+                          className="inline-flex items-center min-h-[30px] px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                         >
                           今天还没有打卡，记录一下今日肌肤状态 →
                         </button>
