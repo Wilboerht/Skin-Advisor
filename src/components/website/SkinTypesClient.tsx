@@ -141,10 +141,10 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                       className="w-[150px] h-[150px] md:w-[200px] md:h-[200px]"
                       strokeWidth={1}
                       style={{
-                        // 实色淡调（不用透明度）：暖浅米灰，与米白卡面同族、略深一档，像浅浅的墨印
-                        color: "#F0EBE4",
+                        // 实色淡调（不用透明度）：极浅暖米白，与卡面几乎融为一体、隐约可辨
+                        color: "#F7F4EF",
                         filter:
-                          "drop-shadow(-1px -1px 0 rgba(61,47,37,0.05)) drop-shadow(1px 1px 0 rgba(255,255,255,0.85))",
+                          "drop-shadow(-1px -1px 0 rgba(61,47,37,0.04)) drop-shadow(1px 1px 0 rgba(255,255,255,0.85))",
                       }}
                     />
                   </span>
