@@ -22,11 +22,11 @@ export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }
 
   return (
     <div className="flex flex-col items-center text-center py-4">
-      <CircleUserRound className="w-20 h-20 text-brand-charcoal mb-6" strokeWidth={1} />
-      <h3 className="text-2xl font-serif font-light text-brand-charcoal tracking-[0.08em] mb-3">
+      <CircleUserRound className="w-16 h-16 text-brand-charcoal/70 mb-5" strokeWidth={1} />
+      <h3 className="text-2xl font-serif font-light text-brand-charcoal tracking-[0.08em] mb-2.5">
         登录肌智派
       </h3>
-      <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] text-center mb-5">
+      <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] text-center mb-6">
         登录后同步你的测肤记录与护肤档案
         <br />
         随时随地延续你的护肤旅程
@@ -51,7 +51,7 @@ export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }
       </div>
       <button
         onClick={handleLogin}
-        className="inline-flex items-center justify-center px-10 py-3 rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[13px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c]"
+        className="inline-flex items-center justify-center h-11 px-8 min-w-[200px] rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[13px] font-normal tracking-[0.08em] cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c]"
       >
         登录 / 注册
       </button>
