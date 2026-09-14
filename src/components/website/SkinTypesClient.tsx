@@ -131,22 +131,13 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                     willChange: hidden ? "auto" : "transform, opacity, filter",
                   }}
                 >
-                  {/* 派系水印：大尺寸线稿图标压印在卡片右下角（凹版效果：深色内影 + 下缘高光），被卡片圆角裁切。
-                      注意用描边渲染（图标为线稿结构，填充会导致光线/枝杈等线段丢失） */}
+                  {/* 派系小印章：右下角内侧的规整小圆章（1px 描边 + 图标线稿），像证书角落的钢印；
+                      位于白膜之下，侧卡失焦时随卡片一起变淡 */}
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -right-6 -bottom-6 md:-right-8 md:-bottom-8"
+                    className="pointer-events-none absolute bottom-3 right-3 md:bottom-5 md:right-5 inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full border border-brand-espresso/[0.14]"
                   >
-                    <Icon
-                      className="w-[150px] h-[150px] md:w-[200px] md:h-[200px]"
-                      strokeWidth={1}
-                      style={{
-                        // 实色淡调（不用透明度）：极浅暖米白，与卡面几乎融为一体、隐约可辨
-                        color: "#F7F4EF",
-                        filter:
-                          "drop-shadow(-1px -1px 0 rgba(61,47,37,0.04)) drop-shadow(1px 1px 0 rgba(255,255,255,0.85))",
-                      }}
-                    />
+                    <Icon className="w-4 h-4 md:w-[18px] md:h-[18px] text-brand-espresso/35" strokeWidth={1.5} />
                   </span>
                   {/* 侧卡失焦遮罩：常驻挂载（中央卡 opacity 0），随层级平滑淡入淡出，避免中途卸载造成的"闪变" */}
                   <span
