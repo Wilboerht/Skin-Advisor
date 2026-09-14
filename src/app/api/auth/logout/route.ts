@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createLogoutRouteHandler } from "@nihplod/sso-sdk/next";
 import { clearLocalSession } from "@/lib/auth";
-import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
+import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
+import {
+    USER_COOKIE_NAME,
+    USER_REFRESH_COOKIE_NAME,
+    USER_ACCESS_COOKIE_OPTIONS,
+    USER_REFRESH_COOKIE_OPTIONS,
+} from "@/lib/wechat-constants";
 import {
     awaitInflightRotation,
     poisonRefreshCache,
@@ -23,10 +29,14 @@ const handler = createLogoutRouteHandler({
 });
 
 // 允许的登出请求源（防 CSRF 登出：恶意页面不得通过 GET 链接/图片强制用户登出）
+// getPublicOrigin() 兜底：env 未配置 NEXT_PUBLIC_SITE_URL 时也能匹配配置化公网域名
 const ALLOWED_LOGOUT_ORIGINS = [
+  getPublicOrigin(),
   process.env.NEXT_PUBLIC_SITE_URL || "",
   process.env.NEXT_PUBLIC_BASE_URL || "",
-  ...(process.env.NODE_ENV !== "production" ? ["http://localhost:3000", "http://127.0.0.1:3000"] : []),
+  ...(process.env.NODE_ENV !== "production"
+    ? ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3002", "http://127.0.0.1:3002"]
+    : []),
 ].filter(Boolean);
 
 function isSameOriginRequest(req: NextRequest): boolean {
@@ -96,6 +106,24 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   if (revocations.length > 0) {
     await Promise.allSettled(revocations);
+  }
+
+  // 微信登录种在子站域名下的官网凭证 Cookie 一并清除
+  //（SDK 只清 SSO Cookie，clearLocalSession 只清本地 JWT/CSRF）
+  response.cookies.set(USER_COOKIE_NAME, "", { ...USER_ACCESS_COOKIE_OPTIONS, maxAge: 0 });
+  response.cookies.set(USER_REFRESH_COOKIE_NAME, "", { ...USER_REFRESH_COOKIE_OPTIONS, maxAge: 0 });
+
+  // SDK 成功时返回的是 302（RP-Initiated Logout 指向主站 end-session）。
+  // 前端以 fetch 调用时该跨域跳转不会真正执行主站登出（主站 /logout 是交互确认页，
+  // fetch 不执行页面 JS；且 credentials: same-origin 下跨域 Cookie 不发送/不落地）。
+  // 改为 200 JSON 把目标 URL 交给前端做整页跳转，同时保留所有清 Cookie 头
+  const ssoLogoutUrl = response.headers.get("location");
+  if (ssoLogoutUrl) {
+    const json = NextResponse.json({ success: true, ssoLogoutUrl });
+    for (const h of response.headers.getSetCookie?.() ?? []) {
+      json.headers.append("Set-Cookie", h);
+    }
+    return json;
   }
 
   return response;

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { advisorStorage } from '@/lib/advisor-storage';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { useToast } from '@/components/ui/Toast';
 
 // --- Types ---
 
@@ -45,11 +46,15 @@ const UserContext = createContext<AuthContextType | undefined>(undefined);
  *
  * 登录/登出均为整页跳转的服务端流程：
  * - login  → /api/auth/login（服务端种 PKCE Cookie 后 302 到主站 authorize）
- * - logout → POST /api/auth/logout（清 SSO + 本地会话 Cookie）后回首页
+ * - logout → POST /api/auth/logout（清 SSO + 本地会话 Cookie）成功后整页跳转到
+ *   主站登出流程（确认页，清主站 SSO 会话），完成后经 post_logout_redirect_uri 回首页；
+ *   登出接口失败时提示并中止——Cookie 未被清除时绝不能假装已退出，
+ *   否则下一次 /api/auth/me 会用仍有效的 Cookie 把会话"复活"
  */
 export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const toast = useToast();
     // 单飞：并发 loadUser（挂载 + 定时器 + visibilitychange）共享同一次请求，
     // 避免 /api/auth/me 的 refresh_token 轮换被并发调用打爆
     const inflightRef = useRef<Promise<void> | null>(null);
@@ -158,12 +163,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const logout = useCallback(async () => {
         // 先作废在途 loadUser（其响应可能携带登出前的旧会话），再走服务端登出
         sessionGenRef.current += 1;
+
+        // POST-only + 同源校验；服务端会清除 SSO Cookie、撤销 refresh_token 并清本地会话
+        // 必须确认成功：失败时 Cookie 仍在，若照常跳首页，下一次 /api/auth/me 会把会话复活
+        let ssoLogoutUrl: string | null = null;
         try {
-            // POST-only + 同源校验；服务端会清除 SSO Cookie、撤销 refresh_token 并清本地会话
-            await fetch("/api/auth/logout", { method: "POST" });
+            const res = await fetch("/api/auth/logout", { method: "POST" });
+            if (!res.ok) {
+                toast.error("退出未成功，请稍后再试");
+                return;
+            }
+            const data = (await res.json().catch(() => null)) as { ssoLogoutUrl?: string } | null;
+            ssoLogoutUrl = typeof data?.ssoLogoutUrl === "string" ? data.ssoLogoutUrl : null;
         } catch {
-            // 网络异常也继续本地清理并回首页
+            toast.error("网络异常，退出未成功，请稍后再试");
+            return;
         }
+
         // 隐私清理：登出即清除本机缓存的测肤数据（报告/问卷/面部照片/昵称等），
         // 防止共享设备上下一位使用者看到上一位用户的报告与照片
         try {
@@ -183,8 +199,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
             }
         } catch { /* ignore */ }
         setUser(null);
-        window.location.href = "/";
-    }, []);
+        // 单点登出：整页跳转到主站登出流程（顶层导航携带主站 Cookie，/logout 确认页
+        // 能真正清除主站 SSO 会话），完成后经 post_logout_redirect_uri 回到子站首页
+        window.location.href = ssoLogoutUrl || "/";
+    }, [toast]);
 
     const refresh = useCallback(async () => {
         await loadUser();
