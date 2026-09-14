@@ -115,7 +115,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                   aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                   aria-hidden={hidden}
                   tabIndex={isCenter ? 0 : -1}
-                  className="absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer motion-reduce:transition-none"
+                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer hover:border-brand-espresso/[0.15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 motion-reduce:transition-none"
                   style={{
                     transform,
                     opacity,
@@ -126,22 +126,22 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                     visibility: hidden ? "hidden" : "visible",
                     // 只过渡合成器友好的属性；z-index/pointer-events 等离散属性即时切换，
                     // 避免 transition-all 造成的"中途跳层级"卡顿观感
-                    transition: "transform 500ms cubic-bezier(0.16,1,0.3,1), opacity 500ms cubic-bezier(0.16,1,0.3,1), filter 500ms cubic-bezier(0.16,1,0.3,1)",
-                    // 提前提升为独立合成层，避免首帧动画才触发层提升导致的掉帧
-                    willChange: "transform, opacity, filter",
+                    transition: "transform 500ms cubic-bezier(0.16,1,0.3,1), opacity 500ms cubic-bezier(0.16,1,0.3,1), filter 500ms cubic-bezier(0.16,1,0.3,1), border-color 300ms ease",
+                    // 提前提升为独立合成层，避免首帧动画才触发层提升导致的掉帧；隐藏卡不持有合成层
+                    willChange: hidden ? "auto" : "transform, opacity, filter",
                   }}
                 >
+                  {/* 派系边缘纹理：卡片顶部饰条（先于白膜渲染，侧卡上随失焦一起变淡） */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-[6px] rounded-t-2xl pointer-events-none"
+                    style={{ background: getFactionEdgeTexture(type.ipKey) }}
+                  />
                   {/* 侧卡失焦遮罩：常驻挂载（中央卡 opacity 0），随层级平滑淡入淡出，避免中途卸载造成的"闪变" */}
                   <span
                     aria-hidden="true"
                     className="absolute inset-0 rounded-2xl bg-white pointer-events-none transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
                     style={{ opacity: isCenter ? 0 : veilOpacity }}
-                  />
-                  {/* 派系边缘纹理：卡片顶部饰条，颜色与图案契合各派系气质 */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-0 top-0 h-[6px] rounded-t-2xl pointer-events-none"
-                    style={{ background: getFactionEdgeTexture(type.ipKey) }}
                   />
                 {/* 横向结构：左形象 40% + 右文字 60%（4:6） */}
                 <div className="flex h-full items-center gap-3 md:gap-5">
@@ -171,7 +171,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                         style={{ opacity: isCenter ? 1 : 0 }}
                       >
                         查看完整解读
-                        <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                        <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                       </div>
                     </div>
                   </div>
