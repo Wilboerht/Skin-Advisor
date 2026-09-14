@@ -14,14 +14,14 @@ interface DiaryCalendarProps {
   /** "今天"快照（YYYY-MM-DD，父级在弹层打开时刷新），避免渲染期调用 new Date() */
   todayStr: string;
   onMonthChange: (month: string) => void;
-  /** 点击窗口内、无记录的过去日期 → 补打卡（今天/未来日期由调用方处理） */
+  /** 点击窗口内、无记录的日期（含今天）→ 打卡/补打卡；未来日期不可点 */
   onBackfill: (dateStr: string) => void;
   loading?: boolean;
 }
 
 /**
  * DiaryCalendar — 护肤历程日历热力图（GitHub 贡献图风格）
- * 每日格子按当日肌肤状态着色，无记录为灰；今天描边；窗口内空日期可点击补打卡。
+ * 每日格子按当日肌肤状态着色，无记录为灰；今天描边；窗口内空日期可点击（今天=打卡，过去=补打卡）。
  */
 export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackfill, loading }: DiaryCalendarProps) {
   // 当前月份（"回到本月"目标）由 todayStr 快照推导
@@ -132,7 +132,7 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
                 entry
                   ? `${fmtShort(dateStr)} · ${meta?.label ?? ""}`
                   : clickable
-                    ? `${dateStr} 补打卡`
+                    ? isToday ? `${dateStr} 打卡` : `${dateStr} 补打卡`
                     : undefined
               }
             >
