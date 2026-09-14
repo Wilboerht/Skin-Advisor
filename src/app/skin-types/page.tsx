@@ -7,7 +7,7 @@ import { withDefaultOgImage } from "@/lib/metadata";
 import { KineticBackground } from "@/components/website/KineticBackground";
 import { HidePageScrollbar } from "@/components/website/HidePageScrollbar";
 import { SkinTypesClient } from "@/components/website/SkinTypesClient";
-import { BreadcrumbSchema } from "@/components/website/StructuredData";
+import { BreadcrumbSchema, SkinTypesItemListSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
@@ -50,6 +50,16 @@ export default async function ResultIndexPage({
           { name: "首页", url: BASE_URL },
           { name: "肌肤类型", url: `${BASE_URL}/skin-types` },
         ]}
+      />
+      {/* 8 派系 ItemList：名称 + 简介 + 深链接，辅助搜索结果展示 */}
+      <SkinTypesItemListSchema
+        items={orderedTypes
+          .filter((t): t is NonNullable<typeof t> => Boolean(t))
+          .map((t) => ({
+            name: t.typeName,
+            description: t.m1.persona,
+            url: `${BASE_URL}/skin-types?type=${t.route}`,
+          }))}
       />
       {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 

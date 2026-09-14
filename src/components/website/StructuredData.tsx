@@ -178,6 +178,36 @@ export function ProductSchema({
 }
 
 // ============================================================
+// 肌肤形象类型列表 ItemList Schema（skin-types 页用）
+// ============================================================
+export function SkinTypesItemListSchema({
+  items,
+}: {
+  items: { name: string; description: string; url: string }[];
+}) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "肌智派形象与护理方案",
+    description: "NIHPLOD 8 种肌肤形象类型（IP Types）与对应护理方案",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      description: item.description,
+      url: item.url,
+    })),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+// ============================================================
 // 网站搜索框 Sitelinks Searchbox Schema（首页用）
 // ============================================================
 export function WebsiteSearchSchema() {

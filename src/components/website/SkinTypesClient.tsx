@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -39,9 +40,19 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   // 派系菜单 chip 引用：切换焦点后把当前 chip 滚入可视区（移动端横向滚动场景）
   const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // 桌面指针拖拽（鼠标）：记录按下起点与是否产生位移，位移后抑制 click（避免"拖完顺带打开详情"）
+  const dragRef = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
+  const dragMovedRef = useRef(false);
+  const router = useRouter();
 
   const step = (dir: 1 | -1) =>
     setActiveIdx((prev) => (prev + dir + types.length) % types.length);
+
+  // 关闭详情弹窗：深链接（?type=xxx）进入时清理 URL，避免刷新后又自动弹出
+  const closeDetail = () => {
+    setSelected(null);
+    if (initialType) router.replace("/skin-types", { scroll: false });
+  };
 
   // 焦点变化：菜单里对应 chip 滚动到可视中心
   useEffect(() => {
@@ -78,15 +89,45 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
     }
   };
 
+  // 桌面鼠标拖拽：pointer capture 保证移出容器后仍能收到 move/up
+  const onCarouselPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse") return; // 触摸走 Touch 逻辑
+    dragMovedRef.current = false;
+    dragRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onCarouselPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (!d || e.pointerId !== d.id) return;
+    // 位移超过 8px 视为拖拽，抑制随后的 click
+    if (!d.moved && Math.abs(e.clientX - d.x) > 8) d.moved = true;
+  };
+  const finishPointerDrag = (e: React.PointerEvent<HTMLDivElement>, cancelled: boolean) => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    if (!d || e.pointerId !== d.id) return;
+    dragMovedRef.current = d.moved;
+    if (cancelled) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      step(dx < 0 ? 1 : -1);
+    }
+  };
+
   return (
     <>
       {/* 外层相对容器：轮播裁剪区 + 两侧翻页按钮（按钮在裁剪容器外，垂直线与卡片舞台中线对齐） */}
       <div className="relative">
-        {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出 */}
+        {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出；桌面可拖拽 */}
         <div
-          className="relative w-full overflow-hidden select-none"
+          className="relative w-full overflow-hidden select-none md:cursor-grab md:active:cursor-grabbing"
           onTouchStart={onCarouselTouchStart}
           onTouchEnd={onCarouselTouchEnd}
+          onPointerDown={onCarouselPointerDown}
+          onPointerMove={onCarouselPointerMove}
+          onPointerUp={(e) => finishPointerDrag(e, false)}
+          onPointerCancel={(e) => finishPointerDrag(e, true)}
         >
           {/* 卡片舞台：高度与中央卡一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
           <div className="relative h-[210px] md:h-[360px] [--fan-offset:130px] md:[--fan-offset:150px]">
@@ -111,11 +152,16 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                 <button
                   key={type.route}
                   type="button"
-                  onClick={() => (isCenter ? setSelected(type) : setActiveIdx(i))}
+                  onClick={() => {
+                    // 拖拽产生的 click 抑制一次，避免"拖完顺带翻卡/开弹窗"
+                    if (dragMovedRef.current) { dragMovedRef.current = false; return; }
+                    if (isCenter) setSelected(type);
+                    else setActiveIdx(i);
+                  }}
                   aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                   aria-hidden={hidden}
                   tabIndex={isCenter ? 0 : -1}
-                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left cursor-pointer overflow-hidden hover:border-brand-espresso/[0.15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 motion-reduce:transition-none"
+                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left overflow-hidden hover:border-brand-espresso/[0.15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 motion-reduce:transition-none"
                   style={{
                     transform,
                     opacity,
@@ -153,6 +199,8 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                       alt=""
                       width={180}
                       height={180}
+                      loading={isCenter ? "eager" : "lazy"}
+                      fetchPriority={isCenter ? "high" : "auto"}
                       className="w-full max-w-[112px] md:max-w-[184px] h-auto object-contain pointer-events-none"
                     />
                   </div>
@@ -233,7 +281,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         })}
       </div>
 
-      <SkinTypeModal data={selected} onClose={() => setSelected(null)} />
+      <SkinTypeModal data={selected} onClose={closeDetail} />
     </>
   );
 }
