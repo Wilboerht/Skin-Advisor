@@ -205,6 +205,10 @@ export function DiaryTimeline({
         // 当日的日记条目（含被隐藏的自动条目）：补打卡/打卡入口据此决定是新建还是接管编辑
         const dayDiaryEntry =
           group.events.flatMap((e) => (e.kind === "diary" ? [e.entry] : []))[0] ?? null;
+        // 仅"手动打卡"算已记录：测肤自动生成的条目对用户不算打卡（时间线上也与测肤事件去重隐藏），
+        // 未手动打卡时入口应显示"记录/补打卡"，点击以新建打卡覆盖自动条目
+        const manualDiaryEntry =
+          dayDiaryEntry && !isAutoDiaryEntry(dayDiaryEntry) ? dayDiaryEntry : null;
         // 当日测肤最高分（用于手动打卡卡片的同日对照提示）
         const dayScores = group.events
           .flatMap((e) => (e.kind === "test" ? [e.test] : []))
@@ -268,10 +272,10 @@ export function DiaryTimeline({
                         <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
                         <button
                           type="button"
-                          onClick={() => onCheckIn(dayDiaryEntry, todayStr)}
+                          onClick={() => onCheckIn(manualDiaryEntry, todayStr)}
                           className="inline-flex items-center min-h-[30px] px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                         >
-                          {dayDiaryEntry
+                          {manualDiaryEntry
                             ? "编辑今日记录 →"
                             : "今天还没有打卡，记录一下今日肌肤状态 →"}
                         </button>
@@ -290,10 +294,10 @@ export function DiaryTimeline({
                       <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
                       <button
                         type="button"
-                        onClick={() => onCheckIn(dayDiaryEntry, group.dateStr)}
+                        onClick={() => onCheckIn(manualDiaryEntry, group.dateStr)}
                         className="text-left text-[12px] text-brand-charcoal/40 font-light hover:text-brand-charcoal transition-colors cursor-pointer"
                       >
-                        {dayDiaryEntry ? "编辑记录 →" : "补打卡 →"}
+                        {manualDiaryEntry ? "编辑记录 →" : "补打卡 →"}
                       </button>
                     </div>
                   )}
