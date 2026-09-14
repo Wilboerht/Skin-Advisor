@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { createElement } from "react";
+import { createElement, useEffect, useRef } from "react";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -26,6 +26,18 @@ export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
+  // 遮罩防误触：记录打开时刻，打开后 350ms 内忽略遮罩点击关闭——
+  // 入口双击的第二下会穿透到遮罩上，若不设保护会"打开即被关闭"
+  const openSinceRef = useRef(0);
+  useEffect(() => {
+    if (isOpen) openSinceRef.current = Date.now();
+  }, [isOpen]);
+
+  const handleBackdropClick = () => {
+    if (Date.now() - openSinceRef.current < 350) return;
+    onClose();
+  };
+
   return (
     <LazyMotion features={domAnimation}>
     <AnimatePresence>
@@ -36,24 +48,24 @@ export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
           aria-modal="true"
           aria-labelledby="skin-type-modal-title"
           tabIndex={-1}
-          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-0 sm:p-4"
+          className="fixed inset-0 z-[var(--z-modal)] flex items-end sm:items-center justify-center p-0 sm:p-4"
         >
           {/* 背景遮罩 */}
           <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleBackdropClick}
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
           />
 
-          {/* 弹窗主体：移动端全屏，桌面端与护肤档案弹层同规格（1100 宽 / min(680, dvh-3rem) 高 / 40px 圆角） */}
+          {/* 弹窗主体：移动端底部升起（与全站模态框一致），桌面端与护肤档案弹层同规格（1100 宽 / min(680, dvh-3rem) 高） */}
           <m.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full h-full sm:h-[min(680px,calc(100dvh-3rem))] sm:max-h-none sm:max-w-[1100px] bg-[#F7F4EE] rounded-none sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
+            className="relative z-10 w-full h-[85dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-[1100px] bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
@@ -189,10 +201,10 @@ export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
                 <Link
                   href="/"
                   onClick={onClose}
-                  className="group inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] tracking-[0.12em] font-light transition-colors duration-300 hover:bg-[#4a3a2c]"
+                  className="group inline-flex items-center justify-center gap-2 h-11 px-8 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#4a3a2c]"
                 >
                   <span>开始测肤，解锁你的专属形象</span>
-                  <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                 </Link>
               </div>
             </div>
