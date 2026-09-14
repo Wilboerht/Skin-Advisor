@@ -1,12 +1,12 @@
 import {
     Blend,
+    Circle,
     Feather,
+    Flame,
     Gem,
-    Minus,
     Shield,
     Snowflake,
     Sun,
-    Waves,
     Sparkles,
     type LucideIcon,
 } from "lucide-react";
@@ -14,11 +14,11 @@ import {
 /** 派系配套图标（按 ipKey）：展示于派系名前方 */
 export const FACTION_ICONS: Record<string, LucideIcon> = {
     sensitive: Feather,
-    minimalist: Minus,
+    minimalist: Circle,
     luxury: Gem,
     ageless: Snowflake,
     desert: Sun,
-    oily: Waves,
+    oily: Flame,
     combination: Blend,
     guardian: Shield,
 };
