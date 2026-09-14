@@ -135,7 +135,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                       注意用描边渲染（图标为线稿结构，填充会导致光线/枝杈等线段丢失） */}
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -right-7 -bottom-9 md:-right-9 md:-bottom-11"
+                    className="pointer-events-none absolute -right-6 -bottom-6 md:-right-8 md:-bottom-8"
                   >
                     <Icon
                       className="w-[150px] h-[150px] md:w-[200px] md:h-[200px]"
