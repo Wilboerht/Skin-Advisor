@@ -161,7 +161,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                   aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                   aria-hidden={hidden}
                   tabIndex={isCenter ? 0 : -1}
-                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.07] bg-white p-4 md:p-5 text-left overflow-hidden hover:border-brand-espresso/[0.15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 motion-reduce:transition-none"
+                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.12] bg-white p-4 md:p-5 text-left overflow-hidden hover:border-brand-espresso/[0.22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 motion-reduce:transition-none"
                   style={{
                     transform,
                     opacity,
