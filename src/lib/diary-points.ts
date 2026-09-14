@@ -45,7 +45,8 @@ export async function grantCheckinPoints(params: {
     userId,
     points,
     reference: `checkin:${userId}:${dateStr}`,
-    note: `打卡奖励 · 连续第 ${streak} 天`,
+    // note 会展示在官网会员中心积分明细（类型列已含"打卡奖励"，此处只写连续天数）
+    note: `连续第 ${streak} 天`,
   });
 
   try {

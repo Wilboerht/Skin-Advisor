@@ -21,6 +21,7 @@ import { HomepageFooter } from "@/components/website/HomepageFooter";
 import { KineticBackground } from "@/components/website/KineticBackground";
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
 const FaqModal = dynamic(() => import("@/components/website/FaqModal").then((mod) => mod.FaqModal), { ssr: false });
+const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
 
 // Safe storage helper to prevent QuotaExceededError or Privacy Mode crashes
 const safeStorage = {
@@ -124,6 +125,8 @@ export default function HomeClient() {
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   // 测肤有礼活动弹窗（替代原独立 /gift 页面）
   const [showGiftModal, setShowGiftModal] = useState(false);
+  // 「我的」账户弹层：游客点击「立即开始」时打开其未登录视图（与 Dock「我的」一致）
+  const [showAccountModal, setShowAccountModal] = useState(false);
   // 活动弹窗入口防抖：250ms 内忽略重复打开（前缘节流，双击第二下会被遮罩防误触拦截）
   const giftLastOpenRef = useRef(0);
   const openGiftModal = useCallback(() => {
@@ -343,9 +346,10 @@ export default function HomeClient() {
       }
 
       if (!limit.canTest) {
-        // 需登录：不再弹"测肤需登录后使用"限制框，统一打开「登录肌智派」引导（AuthModal/LoginGuide）
+        // 需登录：打开「我的」账户弹层的未登录视图（紧凑卡片 + LoginGuide），
+        // 与 Dock「我的」/护肤档案未登录态保持全站一致；不再使用整屏 AuthModal 面板
         if (limit.requireLogin) {
-          openAuthModal("login");
+          setShowAccountModal(true);
           return;
         }
         setShowLimitModal(true);
@@ -370,7 +374,7 @@ export default function HomeClient() {
     } finally {
       startingRef.current = false;
     }
-  }, [checkTestLimit, user, showOnboardingModal, openAuthModal]);
+  }, [checkTestLimit, user, showOnboardingModal]);
 
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
@@ -561,6 +565,7 @@ export default function HomeClient() {
       {/* "测肤有礼"入口为主视觉卡下方的描边胶囊（见上方次级入口区），不再使用右下角悬浮卡片 */}
 
       {/* Modals */}
+      <AccountModal isOpen={showAccountModal} onClose={() => setShowAccountModal(false)} />
       <GiftModal
         isOpen={showGiftModal}
         onClose={() => setShowGiftModal(false)}
