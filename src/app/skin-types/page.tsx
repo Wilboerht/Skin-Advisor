@@ -54,12 +54,12 @@ export default async function ResultIndexPage({
       {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 
       {/* Hero（紧凑版：标题 + 副标题 + CTA，为轮播让出舞台空间） */}
-      <section className="relative pt-8 md:pt-12 pb-3 md:pb-6 px-6 md:px-12 lg:px-20 overflow-hidden shrink-0">
+      <section className="relative pt-8 md:pt-12 pb-4 md:pb-6 px-6 md:px-12 lg:px-20 overflow-hidden shrink-0">
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           {/* 印章徽标（标题上方居中，与首页统一规格：h-10 md:h-12 保证可读性） */}
           <div
-            className="mb-3 md:mb-4 inline-flex items-center opacity-0 animate-fade-in-up"
+            className="mb-4 md:mb-5 inline-flex items-center opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
             <Image
