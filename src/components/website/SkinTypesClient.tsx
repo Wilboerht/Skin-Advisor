@@ -38,8 +38,6 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
     return 0;
   });
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  // 派系菜单 chip 引用：切换焦点后把当前 chip 滚入可视区（移动端横向滚动场景）
-  const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
   // 桌面指针拖拽（鼠标）：记录按下起点与是否产生位移，位移后抑制 click（避免"拖完顺带打开详情"）
   const dragRef = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
   const dragMovedRef = useRef(false);
@@ -62,15 +60,6 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
     setSelected(null);
     if (initialType) router.replace("/skin-types", { scroll: false });
   };
-
-  // 焦点变化：菜单里对应 chip 滚动到可视中心
-  useEffect(() => {
-    chipRefs.current[activeIdx]?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
-    });
-  }, [activeIdx]);
 
   // 键盘 ←/→ 切换（详情弹窗打开时不响应）
   useEffect(() => {
@@ -131,6 +120,36 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   return (
     <>
+      {/* 派系导航：置于轮播上方（替代进度圆点），激活 chip 高亮即当前位置指示；
+          网格排布消灭孤儿行——平板 4×2 均衡、桌面 lg+ 单行 8×1 */}
+      <div
+        role="group"
+        aria-label="派系导航"
+        className="mb-4 md:mb-5 grid grid-cols-4 lg:grid-cols-8 justify-items-center gap-2"
+      >
+        {types.map((t, i) => {
+          const active = i === activeIdx;
+          const Icon = getFactionIcon(t.ipKey);
+          return (
+            <button
+              key={t.route}
+              type="button"
+              onClick={() => setActiveIdx(i)}
+              aria-pressed={active}
+              className={cn(
+                "inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12px] tracking-[0.04em] transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2",
+                active
+                  ? "border border-[var(--color-brand-cocoa)]/[0.3] bg-[var(--color-brand-cocoa)]/[0.06] text-[var(--color-brand-cocoa)] font-medium"
+                  : "border border-transparent text-brand-charcoal/55 font-light hover:text-brand-charcoal/75 hover:bg-brand-charcoal/[0.03]"
+              )}
+            >
+              <Icon aria-hidden="true" className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
+              {t.typeName}
+            </button>
+          );
+        })}
+      </div>
+
       {/* 外层相对容器：轮播裁剪区 + 两侧翻页按钮（按钮在裁剪容器外，垂直线与卡片舞台中线对齐） */}
       <div className="relative">
         {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出；桌面可拖拽 */}
@@ -265,36 +284,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
         </button>
       </div>
 
-      {/* 派系导航（替代原进度圆点指示器）：全部派系（名称 + 图标），点击聚焦对应卡片；
-          激活 chip 实心高亮即当前位置指示；移动端横向滚动 + 吸附 + 边缘渐隐提示可滑，桌面端换行居中 */}
-      <div
-        role="group"
-        aria-label="派系导航"
-        className="mt-4 md:mt-5 flex gap-2 overflow-x-auto no-scrollbar snap-x [mask-image:linear-gradient(to_right,transparent,black_24px,black_calc(100%-24px),transparent)] md:flex-wrap md:justify-center md:overflow-visible md:[mask-image:none]"
-      >
-        {types.map((t, i) => {
-          const active = i === activeIdx;
-          const Icon = getFactionIcon(t.ipKey);
-          return (
-            <button
-              key={t.route}
-              type="button"
-              ref={(el) => { chipRefs.current[i] = el; }}
-              onClick={() => setActiveIdx(i)}
-              aria-pressed={active}
-              className={cn(
-                "shrink-0 snap-center inline-flex items-center gap-1.5 h-9 md:h-8 px-3 rounded-full text-[12px] tracking-[0.04em] transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2",
-                active
-                  ? "border border-[var(--color-brand-cocoa)]/25 bg-[var(--color-brand-cocoa)]/[0.06] text-[var(--color-brand-cocoa)] font-medium"
-                  : "border border-transparent text-brand-charcoal/50 font-light hover:text-brand-charcoal/75 hover:bg-brand-charcoal/[0.03]"
-              )}
-            >
-              <Icon aria-hidden="true" className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
-              {t.typeName}
-            </button>
-          );
-        })}
-      </div>
+      {/* 派系导航已上移至轮播上方 */}
 
       <SkinTypeModal data={selected} onClose={closeDetail} />
     </>
