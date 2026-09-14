@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleUserRound, ScanFace, Smile, TrendingUp } from "lucide-react";
+import { CalendarCheck, CircleUserRound, ScanFace, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 
@@ -33,9 +33,9 @@ export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
         {[
-          { icon: TrendingUp, label: "肌肤变化" },
-          { icon: ScanFace, label: "里程碑记录" },
-          { icon: Smile, label: "每日打卡" },
+          { icon: ScanFace, label: "免费测肤" },
+          { icon: TrendingUp, label: "肌肤变化记录" },
+          { icon: CalendarCheck, label: "护肤跟踪" },
         ].map((f) => {
           const Icon = f.icon;
           return (
