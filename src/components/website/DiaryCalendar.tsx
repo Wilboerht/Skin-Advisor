@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { STATE_META, type DiaryEntry } from "@/components/website/DiaryTimeline";
 import { isDiaryDateInRange, parseClientDate } from "@/lib/diary-utils";
-import { localDateStr } from "@/lib/local-date";
 
 const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"];
 
@@ -12,6 +11,8 @@ interface DiaryCalendarProps {
   entries: DiaryEntry[];
   /** 当前展示月份 YYYY-MM */
   month: string;
+  /** "今天"快照（YYYY-MM-DD，父级在弹层打开时刷新），避免渲染期调用 new Date() */
+  todayStr: string;
   onMonthChange: (month: string) => void;
   /** 点击窗口内、无记录的过去日期 → 补打卡（今天/未来日期由调用方处理） */
   onBackfill: (dateStr: string) => void;
@@ -22,10 +23,9 @@ interface DiaryCalendarProps {
  * DiaryCalendar — 护肤历程日历热力图（GitHub 贡献图风格）
  * 每日格子按当日肌肤状态着色，无记录为灰；今天描边；窗口内空日期可点击补打卡。
  */
-export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loading }: DiaryCalendarProps) {
-  const todayStr = localDateStr(new Date());
-  // 当前月份（"回到本月"目标）：渲染期计算
-  const currentMonth = localDateStr(new Date()).slice(0, 7);
+export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackfill, loading }: DiaryCalendarProps) {
+  // 当前月份（"回到本月"目标）由 todayStr 快照推导
+  const currentMonth = todayStr.slice(0, 7);
   const isCurrentMonth = month === currentMonth;
 
   const entryByDay = useMemo(() => {
@@ -45,7 +45,8 @@ export function DiaryCalendar({ entries, month, onMonthChange, onBackfill, loadi
   };
 
   const canBackfill = (dateStr: string) =>
-    dateStr < todayStr && isDiaryDateInRange(parseClientDate(dateStr)!, new Date());
+    dateStr < todayStr &&
+    isDiaryDateInRange(parseClientDate(dateStr)!, parseClientDate(todayStr) ?? undefined);
 
   return (
     <div>

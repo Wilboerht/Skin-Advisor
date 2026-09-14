@@ -1,7 +1,7 @@
 "use client";
 
 import { STATE_META, type DiaryEntry } from "@/components/website/DiaryTimeline";
-import { localDateStr } from "@/lib/local-date";
+import { parseClientDate } from "@/lib/diary-utils";
 
 const TREND_DAYS = 30;
 
@@ -18,21 +18,25 @@ const STATE_LEVEL: Record<string, number> = {
  * CheckInTrend — 近 30 天打卡状态趋势（纯 SVG 色带图）
  * 每日一格按肌肤状态着色，缺卡日显示为浅色空位；
  * 让"肌肤变化"在测肤次数不足时也有每日数据可看。
+ *
+ * 数据完备性依赖：entries 为首屏分页（按日期倒序的最近 30 条），必然覆盖
+ * 近 30 天窗口内的全部打卡；若调整父级 ENTRIES_PAGE_SIZE 或服务端排序需重新评估。
  */
-export function CheckInTrend({ entries }: { entries: DiaryEntry[] }) {
+export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; todayStr: string }) {
   const dayMap = new Map<string, DiaryEntry>();
   for (const entry of entries) {
     const day = entry.date.slice(0, 10);
     if (STATE_META[entry.skinState] && !dayMap.has(day)) dayMap.set(day, entry);
   }
 
-  const today = new Date();
+  // 以 todayStr 快照（本地日历日的 UTC 零点）为基准向前推 30 天，保持纯渲染
+  const base = parseClientDate(todayStr);
   const days: { dateStr: string; entry?: DiaryEntry }[] = [];
-  for (let i = TREND_DAYS - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const dateStr = localDateStr(d);
-    days.push({ dateStr, entry: dayMap.get(dateStr) });
+  if (base) {
+    for (let i = TREND_DAYS - 1; i >= 0; i--) {
+      const dateStr = new Date(base.getTime() - i * 86_400_000).toISOString().slice(0, 10);
+      days.push({ dateStr, entry: dayMap.get(dateStr) });
+    }
   }
 
   const checkedCount = days.filter((d) => d.entry).length;
@@ -94,7 +98,7 @@ export function CheckInTrend({ entries }: { entries: DiaryEntry[] }) {
                   height={barH}
                   rx={Math.min(3, bw / 3)}
                   fill={meta.color}
-                  fillOpacity={dateStr === localDateStr(new Date()) ? 1 : 0.75}
+                  fillOpacity={dateStr === todayStr ? 1 : 0.75}
                 />
               ) : (
                 <rect

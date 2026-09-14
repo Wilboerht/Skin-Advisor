@@ -57,7 +57,9 @@ interface DiaryTimelineProps {
   entries: DiaryEntry[];
   tests: HistorySession[];
   loading: boolean;
-  /** 打开打卡弹层：existing 为 null 新建（dateStr 目标日期），非 null 编辑当日记录 */
+  /** "今天"快照（YYYY-MM-DD，父级在弹层打开时刷新），避免渲染期调用 new Date() */
+  todayStr: string;
+  /** 打开打卡弹层：existing 为 null 新建（dateStr 目标日期），非 null 编辑该日记录 */
   onCheckIn?: (existing: DiaryEntry | null, dateStr: string) => void;
   /** 删除指定日记条目（时间线卡片删除入口） */
   onDeleteEntry?: (entry: DiaryEntry) => void;
@@ -83,6 +85,7 @@ export function DiaryTimeline({
   entries,
   tests,
   loading,
+  todayStr,
   onCheckIn,
   onDeleteEntry,
   deletingId,
@@ -109,8 +112,6 @@ export function DiaryTimeline({
     const timer = setTimeout(() => setConfirmDeleteId(null), 3000);
     return () => clearTimeout(timer);
   }, [confirmDeleteId]);
-
-  const todayStr = localDateStr(new Date());
 
   const groups = useMemo<DayGroup[]>(() => {
     const byDay = new Map<string, TimelineEvent[]>();
@@ -161,7 +162,8 @@ export function DiaryTimeline({
     `${dateStr.slice(0, 4)} 年 ${parseInt(dateStr.slice(5, 7), 10)} 月`;
   const canBackfill = (dateStr: string) => {
     const d = parseClientDate(dateStr);
-    return !!d && isDiaryDateInRange(d, new Date());
+    const today = parseClientDate(todayStr);
+    return !!d && !!today && isDiaryDateInRange(d, today);
   };
 
   return (
@@ -194,10 +196,15 @@ export function DiaryTimeline({
       {hasAnyEvent && visibleGroups.map((group, gi) => {
         const isToday = group.dateStr === todayStr;
         const month = group.dateStr.slice(0, 7);
-        // 同日既有测肤又有其自动生成的日记条目时，隐藏自动日记卡，避免同一次测肤重复展示
+        const hasTest = group.events.some((e) => e.kind === "test");
+        // 同日既有测肤又有其自动生成的日记条目时，隐藏自动日记卡，避免同一次测肤重复展示；
+        // 当日无测肤事件时自动日记卡正常展示（如历史认领补建的条目）
         const visibleEvents = group.events.filter(
-          (e) => e.kind === "test" || !isAutoDiaryEntry(e.entry)
+          (e) => e.kind === "test" || !isAutoDiaryEntry(e.entry) || !hasTest
         );
+        // 当日的日记条目（含被隐藏的自动条目）：补打卡/打卡入口据此决定是新建还是接管编辑
+        const dayDiaryEntry =
+          group.events.flatMap((e) => (e.kind === "diary" ? [e.entry] : []))[0] ?? null;
         // 当日测肤最高分（用于手动打卡卡片的同日对照提示）
         const dayScores = group.events
           .flatMap((e) => (e.kind === "test" ? [e.test] : []))
@@ -261,17 +268,20 @@ export function DiaryTimeline({
                         <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
                         <button
                           type="button"
-                          onClick={() => onCheckIn(null, todayStr)}
+                          onClick={() => onCheckIn(dayDiaryEntry, todayStr)}
                           className="inline-flex items-center min-h-[30px] px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                         >
-                          今天还没有打卡，记录一下今日肌肤状态 →
+                          {dayDiaryEntry
+                            ? "编辑今日记录 →"
+                            : "今天还没有打卡，记录一下今日肌肤状态 →"}
                         </button>
                       </div>
                     )
                   )
                 )}
 
-                {/* 补打卡：过去的空日期（写入窗口内）提供补录入口，错过不再永久断档 */}
+                {/* 补打卡：过去的空日期（写入窗口内）提供补录入口，错过不再永久断档。
+                    当日已有被隐藏的测肤自动条目时改为编辑入口，避免 upsert 静默覆盖 */}
                 {!isToday &&
                   !visibleEvents.some((e) => e.kind === "diary") &&
                   onCheckIn &&
@@ -280,10 +290,10 @@ export function DiaryTimeline({
                       <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
                       <button
                         type="button"
-                        onClick={() => onCheckIn(null, group.dateStr)}
+                        onClick={() => onCheckIn(dayDiaryEntry, group.dateStr)}
                         className="text-left text-[12px] text-brand-charcoal/40 font-light hover:text-brand-charcoal transition-colors cursor-pointer"
                       >
-                        补打卡 →
+                        {dayDiaryEntry ? "编辑记录 →" : "补打卡 →"}
                       </button>
                     </div>
                   )}
@@ -301,13 +311,13 @@ export function DiaryTimeline({
                           className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE]"
                           style={{ backgroundColor: meta.color }}
                         />
-                        {/* 操作按钮：悬浮行尾，行内不占位（极简） */}
+                        {/* 操作按钮：悬浮行尾，行内不占位（极简）；可写窗口内的历史日期同样可编辑 */}
                         <div className="absolute right-0 -top-0.5 hidden group-hover:flex items-center gap-0.5">
-                          {isToday && onCheckIn && (
+                          {onCheckIn && (isToday || canBackfill(group.dateStr)) && (
                             <button
                               type="button"
-                              onClick={() => onCheckIn(ev.entry, todayStr)}
-                              aria-label="编辑今日记录"
+                              onClick={() => onCheckIn(ev.entry, group.dateStr)}
+                              aria-label={isToday ? "编辑今日记录" : "编辑记录"}
                               className="w-7 h-7 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
                             >
                               <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />

@@ -30,6 +30,7 @@ import { LoginGuide } from "@/components/website/LoginGuide";
 import { useToast } from "@/components/ui/Toast";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { localDateStr } from "@/lib/local-date";
+import { parseClientDate } from "@/lib/diary-utils";
 
 const TESTS_PAGE_SIZE = 50;
 const ENTRIES_PAGE_SIZE = 30;
@@ -95,6 +96,8 @@ export function DiaryModal() {
 
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [entriesLoaded, setEntriesLoaded] = useState(false);
+  // 日记列表加载失败标记：区分"查询失败"与"真的没有记录"，避免 401/网络抖动显示成空白引导
+  const [entriesError, setEntriesError] = useState(false);
   const [entriesTotal, setEntriesTotal] = useState(0);
   const [entriesLoadingMore, setEntriesLoadingMore] = useState(false);
   const [diaryRefreshKey, setDiaryRefreshKey] = useState(0);
@@ -111,6 +114,9 @@ export function DiaryModal() {
   const [testsExhausted, setTestsExhausted] = useState(false);
   const testsLoadedRef = useRef(0);
   const loadedTestIdsRef = useRef<Set<string>>(new Set());
+  // "今天"快照（YYYY-MM-DD）：每次打开弹层时刷新，供时间线/日历/打卡色带统一使用，
+  // 避免子组件渲染期调用 new Date()（react-hooks/purity）且跨午夜常驻后口径不刷新
+  const [todayStr, setTodayStr] = useState(() => localDateStr(new Date()));
   // 日历热力图
   const [calendarView, setCalendarView] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => localDateStr(new Date()).slice(0, 7));
@@ -134,13 +140,13 @@ export function DiaryModal() {
 
   // 近 30 天内有效打卡天数（与 CheckInTrend 的 30 天窗口口径一致，避免旧数据触发空图）
   const recentCheckInCount = useMemo(() => {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 29);
-    const cutoffStr = localDateStr(cutoff);
+    const today = parseClientDate(todayStr);
+    if (!today) return 0;
+    const cutoffStr = new Date(today.getTime() - 29 * 86_400_000).toISOString().slice(0, 10);
     return entries.filter(
       (e) => Boolean(STATE_META[e.skinState]) && e.date.slice(0, 10) >= cutoffStr
     ).length;
-  }, [entries]);
+  }, [entries, todayStr]);
 
   // 趋势按天聚合（本地日历日，同日多次测肤取当日最后一次）：
   // 图看趋势、时间线看明细——单日多次对长期趋势是噪声，且避免 X 轴出现重复日期/等距失真
@@ -267,10 +273,25 @@ export function DiaryModal() {
       await loadEntries(entriesOffsetRef.current, ENTRIES_PAGE_SIZE, true);
     } catch (e) {
       console.error("Load more entries error:", e);
+      toast.error("加载失败，请稍后再试");
     } finally {
       setEntriesLoadingMore(false);
     }
-  }, [entriesLoadingMore, loadEntries]);
+  }, [entriesLoadingMore, loadEntries, toast]);
+
+  // 日记首屏加载失败后的重试（与测肤列表 testsError 对称处理）
+  const retryEntries = useCallback(() => {
+    setEntriesError(false);
+    setEntriesLoaded(false);
+    entriesOffsetRef.current = 0;
+    loadEntries(0, ENTRIES_PAGE_SIZE, false)
+      .then(() => setEntriesLoaded(true))
+      .catch((e) => {
+        console.error("Diary fetch error:", e);
+        setEntriesError(true);
+        setEntriesLoaded(true);
+      });
+  }, [loadEntries]);
 
   // 依赖 user?.id 而非 user 引用：定时续期（/api/auth/me）返回内容相同的新对象时，
   // 不应触发本 effect 重置面板数据造成"刷新抖动"
@@ -281,8 +302,11 @@ export function DiaryModal() {
 
     setEntries([]);
     setEntriesLoaded(false);
+    setEntriesError(false);
     entriesOffsetRef.current = 0;
     setEntriesTotal(0);
+    // 每次打开刷新"今天"快照：跨午夜后重开弹层，今日打卡/日历描边等口径保持正确
+    setTodayStr(localDateStr(new Date()));
     setSummary(null);
     setTrends(null);
     setTrendsLoaded(false);
@@ -306,6 +330,8 @@ export function DiaryModal() {
       .catch((e) => {
         if (cancelled) return;
         console.error("Diary fetch error:", e);
+        // 区分"加载失败"与"无记录"：失败时展示错误条 + 重试，而非空态引导
+        setEntriesError(true);
         setEntriesLoaded(true);
       });
 
@@ -558,7 +584,7 @@ export function DiaryModal() {
                           {/* 打卡色带与测肤时间窗无关：有打卡数据即始终展示 */}
                           {recentCheckInCount >= 2 && (
                             <div className="mt-4">
-                              <CheckInTrend entries={entries} />
+                              <CheckInTrend entries={entries} todayStr={todayStr} />
                             </div>
                           )}
                           {/* 全部记录入口：图表板块收尾，居中 */}
@@ -574,7 +600,7 @@ export function DiaryModal() {
                         </div>
                       ) : recentCheckInCount >= 2 ? (
                         <div>
-                          <CheckInTrend entries={entries} />
+                          <CheckInTrend entries={entries} todayStr={todayStr} />
                           <p className="mt-3 text-[11px] text-brand-charcoal/45 font-light text-center">
                             完成两次不同日期的测肤后，可叠加查看测肤评分趋势
                           </p>
@@ -683,6 +709,7 @@ export function DiaryModal() {
                         <DiaryCalendar
                           entries={calendarEntries}
                           month={calendarMonth}
+                          todayStr={todayStr}
                           onMonthChange={setCalendarMonth}
                           onBackfill={(dateStr) => setCheckIn({ open: true, existing: null, dateStr })}
                           loading={calendarLoading}
@@ -704,10 +731,26 @@ export function DiaryModal() {
                             </button>
                           </div>
                         )}
+                        {entriesError ? (
+                          <div className="flex items-center justify-between gap-3 rounded-xl border border-[#C9A86C]/30 bg-[#C9A86C]/[0.06] px-4 py-3">
+                            <span className="text-[13px] text-brand-charcoal/70 font-light">
+                              护肤记录加载失败，可能是网络波动或登录状态过期
+                            </span>
+                            <button
+                              type="button"
+                              onClick={retryEntries}
+                              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-light hover:bg-[#4a3a2c] transition-colors"
+                            >
+                              <RefreshCw className="w-3 h-3" strokeWidth={1.8} />
+                              重试
+                            </button>
+                          </div>
+                        ) : (
                         <DiaryTimeline
                           entries={entries}
                           tests={tests}
                           loading={!entriesLoaded || !testsLoaded}
+                          todayStr={todayStr}
                           onCheckIn={(existing, dateStr) => setCheckIn({ open: true, existing, dateStr })}
                           onDeleteEntry={handleDeleteEntry}
                           deletingId={deletingId}
@@ -719,6 +762,7 @@ export function DiaryModal() {
                           onLoadMoreEntries={loadMoreEntries}
                           refreshKey={diaryRefreshKey}
                         />
+                        )}
                         </>
                       )}
                     </section>

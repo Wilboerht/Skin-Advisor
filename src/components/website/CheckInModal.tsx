@@ -40,11 +40,19 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
   // ref 双保险：state 更新有异步窗口，同步锁保证写入请求绝对只发一次
   const savingRef = useRef(false);
 
-  const targetDate = dateStr ?? localDateStr(new Date());
-  const isToday = targetDate === localDateStr(new Date());
+  // "今天"快照：打开弹层时刷新，避免渲染期直接调用 new Date() 且跨午夜常驻后口径过期
+  const [todayOnOpen, setTodayOnOpen] = useState(() => localDateStr(new Date()));
+  useEffect(() => {
+    if (isOpen) setTodayOnOpen(localDateStr(new Date()));
+  }, [isOpen]);
+
+  const targetDate = dateStr ?? todayOnOpen;
+  const isToday = targetDate === todayOnOpen;
+  // date 语义是 UTC 零点表示的本地日历日：格式化必须锁 UTC，否则 UTC 以西时区会显示前一天
   const targetLabel = new Date(`${targetDate}T00:00:00.000Z`).toLocaleDateString("zh-CN", {
     month: "numeric",
     day: "numeric",
+    timeZone: "UTC",
   });
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
@@ -67,18 +75,30 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
     savingRef.current = true;
     setSaving(true);
     try {
+      // 提交时重取实时"今天"：弹层跨午夜常驻时，"今日打卡"应落到提交当天
+      const submitDate = dateStr ?? localDateStr(new Date());
+      const submitIsToday = submitDate === localDateStr(new Date());
       const res = await fetchWithCsrf("/api/user/diary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date: targetDate,
+          date: submitDate,
           skinState,
           tags,
           note: note.trim() || undefined,
         }),
       });
       if (!res.ok) throw new Error("保存未成功");
-      toast.success(existing ? "今日记录已更新" : isToday ? "打卡成功" : `已补打卡 ${targetLabel}`);
+      const submitLabel = new Date(`${submitDate}T00:00:00.000Z`).toLocaleDateString("zh-CN", {
+        month: "numeric",
+        day: "numeric",
+        timeZone: "UTC",
+      });
+      toast.success(
+        existing
+          ? submitIsToday ? "今日记录已更新" : "记录已更新"
+          : submitIsToday ? "打卡成功" : `已补打卡 ${submitLabel}`
+      );
       onSaved();
       onClose();
     } catch (err) {
@@ -133,7 +153,9 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                 id="checkin-modal-title"
                 className="text-xl font-serif font-light text-brand-charcoal tracking-[0.08em] text-center mb-6"
               >
-                {existing ? "编辑今日记录" : isToday ? "记录今日肌肤状态" : `补打卡 · ${targetLabel}`}
+                {existing
+                  ? isToday ? "编辑今日记录" : `编辑记录 · ${targetLabel}`
+                  : isToday ? "记录今日肌肤状态" : `补打卡 · ${targetLabel}`}
               </h2>
 
               {/* 肌肤状态（单选） */}
