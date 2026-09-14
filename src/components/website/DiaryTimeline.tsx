@@ -180,7 +180,7 @@ export function DiaryTimeline({
                 onClick={() => onCheckIn(null, todayStr)}
                 className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] tracking-[0.08em] font-medium transition-colors hover:bg-[#4a3a2c] cursor-pointer"
               >
-                打卡
+                记录今日状态
               </button>
             )}
             <Link
@@ -255,7 +255,7 @@ export function DiaryTimeline({
                             onClick={() => onCheckIn(null, todayStr)}
                             className="shrink-0 min-h-[30px] px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                           >
-                            打卡
+                            记录今日状态
                           </button>
                         )}
                         <Link
@@ -275,7 +275,7 @@ export function DiaryTimeline({
                           onClick={() => onCheckIn(manualDiaryEntry, todayStr)}
                           className="inline-flex items-center min-h-[30px] px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                         >
-                          {manualDiaryEntry ? "编辑今日记录 →" : "打卡"}
+                          {manualDiaryEntry ? "编辑今日记录 →" : "记录今日状态"}
                         </button>
                       </div>
                     )
