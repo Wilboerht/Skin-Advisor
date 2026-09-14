@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { skinTypes, routeOrder, type SkinTypeData } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
@@ -56,15 +57,29 @@ export default async function ResultIndexPage({
       <section className="relative pt-8 md:pt-12 pb-3 md:pb-6 px-6 md:px-12 lg:px-20 overflow-hidden shrink-0">
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
+          {/* 印章徽标（标题上方居中，与首页一致） */}
+          <div
+            className="mb-3 md:mb-4 inline-flex items-center opacity-0 animate-fade-in-up"
+            style={{ animationFillMode: "forwards" }}
+          >
+            <Image
+              src="/images/jzp-eyebrow.png"
+              alt="肌智派"
+              width={514}
+              height={258}
+              className="h-8 md:h-10 w-auto opacity-90 mix-blend-multiply"
+              priority
+            />
+          </div>
           <h1
             className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4 opacity-0 animate-fade-in-up"
-            style={{ animationFillMode: "forwards" }}
+            style={{ animationDelay: "0.06s", animationFillMode: "forwards" }}
           >
             肌智派<sup className="text-[0.55em] align-super font-sans">™</sup>形象与护理方案
           </h1>
           <p
             className="text-[13px] md:text-sm text-brand-charcoal/50 font-light tracking-[0.06em] mb-5 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.08s", animationFillMode: "forwards" }}
+            style={{ animationDelay: "0.12s", animationFillMode: "forwards" }}
           >
             找到与你匹配的肌肤形象，获取专属护理方案
           </p>
@@ -73,7 +88,7 @@ export default async function ResultIndexPage({
             <Link
               href="/?start=1"
               className="group inline-flex items-center justify-center gap-2 px-6 h-11 w-full sm:w-auto rounded-full border border-[#00263E]/40 bg-transparent text-[#00263E] text-sm font-medium transition-colors duration-200 hover:border-[#00263E] hover:bg-[#00263E]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2 opacity-0 animate-fade-in-up"
-              style={{ animationDelay: "0.15s", animationFillMode: "forwards" }}
+              style={{ animationDelay: "0.18s", animationFillMode: "forwards" }}
             >
               <span>测一测，了解我的肤质类型</span>
               <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />

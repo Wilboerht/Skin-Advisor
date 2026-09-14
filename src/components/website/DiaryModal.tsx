@@ -71,35 +71,6 @@ function daysAgoCutoff(days: number): number {
   return Date.now() - days * 24 * 60 * 60 * 1000;
 }
 
-/** 游客视图的装饰性示意曲线（无数值，不代表真实数据） */
-function GuestTrendCurve() {
-  return (
-    <svg viewBox="0 0 200 70" className="w-full h-auto" aria-hidden="true">
-      {[18, 36, 54].map((y) => (
-        <line key={y} x1="12" y1={y} x2="188" y2={y} stroke="#5c4937" strokeOpacity="0.08" strokeDasharray="2 4" />
-      ))}
-      <path
-        d="M12,56 C42,54 56,36 80,38 S132,54 150,30 S178,20 188,18"
-        fill="none"
-        stroke="#5c4937"
-        strokeOpacity="0.35"
-        strokeWidth="2"
-        strokeDasharray="5 6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12,62 C48,60 66,48 94,50 S146,58 172,40"
-        fill="none"
-        stroke="#5c4937"
-        strokeOpacity="0.12"
-        strokeWidth="2"
-        strokeDasharray="4 6"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 /**
  * DiaryModal — 「护肤档案」弹层（原独立页 /diary，2026-09 改为全局弹层）
  * 未登录：紧凑登录引导视图（示意曲线 + 功能胶囊 + CTA）；
@@ -517,11 +488,8 @@ export function DiaryModal() {
                       transition={{ duration: 0.18 }}
                     >
                 {!user ? (
-                  /* ===== 游客：档案特色曲线 + 统一登录引导（LoginGuide），内容垂直居中 ===== */
+                  /* ===== 游客：统一登录引导（LoginGuide），内容垂直居中 ===== */
                   <div className="flex flex-col items-center justify-center text-center flex-1 py-4">
-                    <div className="max-w-[220px] sm:max-w-[300px] w-full mb-2">
-                      <GuestTrendCurve />
-                    </div>
                     <LoginGuide onNavigateLogin={closeDiaryModal} />
                   </div>
                 ) : (

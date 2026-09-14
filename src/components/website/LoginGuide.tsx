@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { CircleUserRound, ScanFace, Smile, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
@@ -42,7 +41,7 @@ export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }
           return (
             <span
               key={f.label}
-              className="inline-flex h-[24px] px-2 items-center justify-center gap-1.5 rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-xs font-bold text-[var(--color-brand-charcoal)] lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap"
+              className="inline-flex h-[26px] px-2.5 items-center justify-center gap-1.5 rounded-full border border-brand-charcoal/[0.12] bg-transparent text-[11px] font-light text-brand-charcoal/60 tracking-[0.04em] whitespace-nowrap"
             >
               <Icon className="w-3.5 h-3.5 text-brand-charcoal/45" strokeWidth={1.5} />
               {f.label}
@@ -52,16 +51,10 @@ export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }
       </div>
       <button
         onClick={handleLogin}
-        className="inline-flex items-center justify-center px-10 py-3 rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[13px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c] mb-4"
+        className="inline-flex items-center justify-center px-10 py-3 rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[13px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c]"
       >
         登录 / 注册
       </button>
-      <Link
-        href="/questions"
-        className="text-[13px] text-brand-charcoal/60 font-light tracking-[0.06em] hover:text-brand-charcoal transition-colors"
-      >
-        先去测肤，稍后再登录 →
-      </Link>
     </div>
   );
 }
