@@ -131,19 +131,19 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                     willChange: hidden ? "auto" : "transform, opacity, filter",
                   }}
                 >
-                  {/* 派系水印：大尺寸图标压印在卡片右下角（凹版效果：深色内影 + 下缘高光），被卡片圆角裁切 */}
+                  {/* 派系水印：大尺寸线稿图标压印在卡片右下角（凹版效果：深色内影 + 下缘高光），被卡片圆角裁切。
+                      注意用描边渲染（图标为线稿结构，填充会导致光线/枝杈等线段丢失） */}
                   <span
                     aria-hidden="true"
                     className="pointer-events-none absolute -right-7 -bottom-9 md:-right-9 md:-bottom-11"
                   >
                     <Icon
                       className="w-[150px] h-[150px] md:w-[200px] md:h-[200px]"
-                      fill="currentColor"
-                      strokeWidth={0}
+                      strokeWidth={1}
                       style={{
-                        color: "rgba(61,47,37,0.055)",
+                        color: "rgba(61,47,37,0.07)",
                         filter:
-                          "drop-shadow(-1px -1px 0 rgba(61,47,37,0.06)) drop-shadow(1px 1px 0 rgba(255,255,255,0.9))",
+                          "drop-shadow(-1px -1px 0 rgba(61,47,37,0.05)) drop-shadow(1px 1px 0 rgba(255,255,255,0.85))",
                       }}
                     />
                   </span>
