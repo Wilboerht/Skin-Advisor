@@ -463,7 +463,7 @@ export default function HomeClient() {
                     </m.div>
 
                     {/* Title（矮屏降一档字号，保证一屏放下） */}
-                    <h1 className="text-[40px] sm:text-[48px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] [@media(min-width:768px)_and_(min-height:761px)]:text-[58px] [@media(min-width:768px)_and_(max-height:760px)]:text-[48px]">
+                    <h1 className="text-[40px] sm:text-[48px] max-[360px]:text-[34px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] [@media(min-width:768px)_and_(min-height:761px)]:text-[58px] [@media(min-width:768px)_and_(max-height:760px)]:text-[48px]">
                       肌智派<sup className="text-[0.5em] align-super font-sans">™</sup>在线测肤
                     </h1>
 
