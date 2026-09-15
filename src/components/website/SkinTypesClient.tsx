@@ -55,6 +55,20 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
     }
   }, [initialType]);
 
+  // 视口缩到移动端时自动关闭详情：组件被 display:none 隐藏后，
+  // 弹窗状态与滚动锁会残留（看不见弹窗但整页无法滚动），必须在此释放
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onChange = (e: MediaQueryListEvent) => {
+      if (e.matches) return;
+      setSelected(null);
+      if (initialType) router.replace("/skin-types", { scroll: false });
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [initialType, router]);
+
   // 关闭详情弹窗：深链接（?type=xxx）进入时清理 URL，避免刷新后又自动弹出
   const closeDetail = () => {
     setSelected(null);
