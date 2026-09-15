@@ -769,11 +769,25 @@ html.hide-page-scrollbar::-webkit-scrollbar {
   animation: scan-ring-close 0.5s ease-in-out forwards;
 }
 
+/* 绿色确认环的前缘圆点：与环同 duration/easing 同步旋转一周（0→360°），
+   作为独立兄弟层渲染，避免被环的 mask 裁成半圆 */
+.scan-success-dot {
+  animation: scan-ring-dot-rotate 0.5s ease-in-out forwards;
+}
+
+@keyframes scan-ring-dot-rotate {
+  from { transform: rotate(0turn); }
+  to { transform: rotate(1turn); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .scan-progress-ring {
     transition: none;
   }
   .scan-success-ring {
+    animation: none;
+  }
+  .scan-success-dot {
     animation: none;
   }
 }

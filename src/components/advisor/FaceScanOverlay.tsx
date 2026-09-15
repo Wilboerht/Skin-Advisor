@@ -70,15 +70,16 @@ export function FaceScanOverlay({
 
                     {/* 椭圆框进度描边：随倒计时稳定度从 0 逐渐闭合到 100%（金色的"进度圈"）。
                         ready 态保持完全闭合一圈，直到 success 绿环确认动画接手——用户能看到"完整闭合"瞬间。
-                        实现为 conic-gradient 环 + 前缘圆点（SVG dash 在非等比拉伸下会铺贴错乱成多段圆弧） */}
+                        实现为 conic-gradient 环 + 前缘圆点；圆点为独立兄弟层（不被环的 mask 裁切） */}
                     {(faceStatus === "found" || faceStatus === "ready") && stabilityProgress > 0 && stabilityProgress <= 100 && (
-                        <div
-                            className="scan-progress-ring absolute inset-0 rounded-[50%] pointer-events-none"
-                            style={{
-                                "--scan-progress": `${Math.min(stabilityProgress, 100)}%`,
-                                filter: "drop-shadow(0 0 6px rgba(201,168,108,0.5))",
-                            } as React.CSSProperties}
-                        >
+                        <div className="absolute inset-0 pointer-events-none">
+                            <div
+                                className="scan-progress-ring absolute inset-0 rounded-[50%]"
+                                style={{
+                                    "--scan-progress": `${Math.min(stabilityProgress, 100)}%`,
+                                    filter: "drop-shadow(0 0 6px rgba(201,168,108,0.5))",
+                                } as React.CSSProperties}
+                            />
                             {/* 前缘圆点：随进度角绕椭圆边界旋转，模拟圆头笔端 */}
                             <div
                                 className="absolute inset-0"
@@ -100,14 +101,20 @@ export function FaceScanOverlay({
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.3 }}
                         >
-                            {/* 绿色圆环描边绘制动画：沿椭圆轨迹从 0 逐渐闭合到 100%（conic-gradient 环，与进度环同方案） */}
-                            <div
-                                className="scan-success-ring absolute inset-0 rounded-[50%] pointer-events-none"
-                                style={{
-                                    ...(prefersReducedMotion ? { "--scan-progress": "100%" } : {}),
-                                    filter: "drop-shadow(0 0 8px rgba(16,185,129,0.45))",
-                                } as React.CSSProperties}
-                            />
+                            {/* 绿色圆环描边绘制动画：沿椭圆轨迹从 0 逐渐闭合到 100%（conic-gradient 环，与进度环同方案）；
+                                前缘圆点作为独立层与环同步旋转（0.5s / ease-in-out 与环相同） */}
+                            <div className="pointer-events-none absolute inset-0">
+                                <div
+                                    className="scan-success-ring absolute inset-0 rounded-[50%]"
+                                    style={{
+                                        ...(prefersReducedMotion ? { "--scan-progress": "100%" } : {}),
+                                        filter: "drop-shadow(0 0 8px rgba(16,185,129,0.45))",
+                                    } as React.CSSProperties}
+                                />
+                                <div className="scan-success-dot absolute inset-0">
+                                    <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[6px] h-[6px] rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                                </div>
+                            </div>
 
                             {/* 中央成功提示 */}
                             <m.div
