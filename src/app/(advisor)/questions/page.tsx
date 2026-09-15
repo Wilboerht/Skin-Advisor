@@ -13,6 +13,7 @@ import { ChevronLeft, LogOut, Loader2 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
+import { useUser } from "@/components/auth/UserProvider";
 import { cn } from "@/lib/utils";
 import { scheduleFaceModelPreload } from "@/lib/preload-models";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
@@ -61,7 +62,12 @@ export default function QuestionsPage() {
     // 预取首页与扫脸页路由，避免顶部栏按钮冷导航"点了没反应"；isNavigating 提供即时反馈
     const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/face-scan"]);
     const toast = useToast();
+    // 登录用户的官网资料性别：作为问卷性别默认值，跳过独立性别选择页
+    const { user, isInitialized: isUserInitialized } = useUser();
     const [gender, setGender] = useState<"female" | "male" | null>(null);
+    // 性别来自官网资料默认值（而非用户手动选择/本地恢复）时，
+    // 第一题顶部显示"测肤对象"切换入口——代家人测肤场景的纠偏通道
+    const [genderFromProfile, setGenderFromProfile] = useState(false);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, unknown>>({});
     const [direction, setDirection] = useState(0);
@@ -458,6 +464,31 @@ export default function QuestionsPage() {
         }
     };
 
+    // 官网资料性别作为问卷默认值：会话就绪后，若用户资料已填性别且本地无
+    // 已保存的进度/选择，则跳过独立性别选择页直接开答（第一题顶部保留切换入口）。
+    // 本地已有 ADVISOR_GENDER 时以本机选择为准（用户上次可能特意为家人测过）。
+    const profileGenderApplied = useRef(false);
+    useEffect(() => {
+        if (profileGenderApplied.current || !isUserInitialized) return;
+        const profileGender = user?.gender;
+        if (profileGender !== "male" && profileGender !== "female") return;
+        if (gender !== null) return;
+        if (safeStorage.get(STORAGE_KEYS.ADVISOR_GENDER)) return;
+        profileGenderApplied.current = true;
+        setGenderFromProfile(true);
+        handleGenderSelect(profileGender);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isUserInitialized, user?.gender, gender]);
+
+    // 第一题顶部的"测肤对象"一键切换：仅在采用资料默认值时提供，
+    // 不影响手动选择路径（GenderSelection 页本就由用户显式确认）
+    const handleGenderSwitch = () => {
+        const next = gender === "female" ? "male" : "female";
+        setGender(next);
+        setAnswers(prev => ({ ...prev, gender: next }));
+        safeStorage.set(STORAGE_KEYS.ADVISOR_GENDER, next);
+    };
+
     // 调度自动切题：回调里通过 answersRef 校验该题答案未被改动（闭包捕获的是旧 state，必须读 ref），
     // 防止 500ms 内改选/回退后 pending 的定时器把用户推到错误位置
     const scheduleAutoAdvance = (fieldName: string, expected: unknown, newAnswers: Record<string, unknown>) => {
@@ -641,6 +672,16 @@ export default function QuestionsPage() {
     }
 
     // 如果没有选择性别，显示性别选择
+    // 会话初始化期间（/api/auth/me 未返回）先渲染加载态：登录用户资料里若已填性别，
+    // 会直接跳过性别选择页——不做这道门会对他们闪一下选择页
+    if (!gender && !isUserInitialized) {
+        return (
+            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9]">
+                <Loader2 className="w-6 h-6 text-brand-charcoal/60 animate-spin" />
+            </div>
+        );
+    }
+
     if (!gender) {
         return (
             <AnimatePresence mode="wait">
@@ -892,6 +933,26 @@ export default function QuestionsPage() {
             {/* Main Content Area */}
             <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scrollbar-hide relative w-full max-w-5xl mx-auto z-10 px-4 md:px-8 mb-4">
                 <div className="min-h-full flex flex-col justify-start md:justify-center">
+                    {/* 资料性别默认值提示：仅第一题展示，一键切换（代家人测肤的纠偏通道）；
+                        固定高度折叠动画避免切题时布局跳动 */}
+                    <div
+                        className={cn(
+                            "flex justify-center overflow-hidden transition-all duration-300",
+                            genderFromProfile && currentStepIndex === 0 && gender
+                                ? "h-10 opacity-100"
+                                : "h-0 opacity-0"
+                        )}
+                    >
+                        <button
+                            type="button"
+                            onClick={handleGenderSwitch}
+                            className="inline-flex items-center gap-1.5 h-8 px-4 rounded-full border border-brand-charcoal/15 text-[12px] font-light text-brand-charcoal/55 tracking-[0.05em] transition-colors hover:border-brand-charcoal/30 hover:text-brand-charcoal touch-manipulation active:scale-95"
+                        >
+                            本次测肤对象：{gender === "female" ? "女性" : "男性"}
+                            <span className="text-brand-charcoal/35">·</span>
+                            <span className="underline underline-offset-2 decoration-brand-charcoal/30">切换</span>
+                        </button>
+                    </div>
                     <AnimatePresence mode="wait" custom={direction}>
                         <m.div
                             key={currentStepIndex}

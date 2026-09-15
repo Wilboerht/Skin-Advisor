@@ -179,6 +179,10 @@ model User {
   // 主站累计消费金额（元，userinfo total_spent claim），用于 SILVER 银卡测肤加赠：每满 1000 元 +20 次
   totalSpent      Int              @default(0)
 
+  // 主站资料性别（userinfo gender claim）：male / female / null（未设置=保密）；
+  // 仅作问卷性别默认值（免重复选择），当次测肤的选择仍以问卷为准，不回写主站
+  gender        String?
+
   // 主站 userinfo 资料（会员等级/累计消费等）上次回源同步时间；
   // /api/auth/me 据此在超过 6 小时后强制回源刷新，保证银卡消费加赠在两次登录之间也能生效
   profileSyncedAt DateTime?

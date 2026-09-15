@@ -73,11 +73,16 @@ export function FaceScanOverlay({
                         实现为 conic-gradient 环 + 前缘圆点；圆点为独立兄弟层（不被环的 mask 裁切） */}
                     {(faceStatus === "found" || faceStatus === "ready") && stabilityProgress > 0 && stabilityProgress <= 100 && (
                         <div className="absolute inset-0 pointer-events-none">
+                            {/* 静态光晕：一次性光栅化后走合成层，不随进度逐帧重绘 */}
+                            <div
+                                aria-hidden="true"
+                                className="absolute inset-0 rounded-[50%]"
+                                style={{ boxShadow: "0 0 10px rgba(201,168,108,0.5)" }}
+                            />
                             <div
                                 className="scan-progress-ring absolute inset-0 rounded-[50%]"
                                 style={{
                                     "--scan-progress": `${Math.min(stabilityProgress, 100)}%`,
-                                    filter: "drop-shadow(0 0 6px rgba(201,168,108,0.5))",
                                 } as React.CSSProperties}
                             />
                             {/* 前缘圆点：随进度角绕椭圆边界旋转，模拟圆头笔端 */}
@@ -102,13 +107,18 @@ export function FaceScanOverlay({
                             transition={{ duration: 0.3 }}
                         >
                             {/* 绿色圆环描边绘制动画：沿椭圆轨迹从 0 逐渐闭合到 100%（conic-gradient 环，与进度环同方案）；
-                                前缘圆点作为独立层与环同步旋转（0.5s / ease-in-out 与环相同） */}
+                                前缘圆点作为独立层与环同步旋转（0.5s / ease-in-out 与环相同）；
+                                静态光晕一次性光栅化，不随动画逐帧重绘 */}
                             <div className="pointer-events-none absolute inset-0">
+                                <div
+                                    aria-hidden="true"
+                                    className="absolute inset-0 rounded-[50%]"
+                                    style={{ boxShadow: "0 0 12px rgba(16,185,129,0.45)" }}
+                                />
                                 <div
                                     className="scan-success-ring absolute inset-0 rounded-[50%]"
                                     style={{
                                         ...(prefersReducedMotion ? { "--scan-progress": "100%" } : {}),
-                                        filter: "drop-shadow(0 0 8px rgba(16,185,129,0.45))",
                                     } as React.CSSProperties}
                                 />
                                 <div className="scan-success-dot absolute inset-0">

@@ -18,6 +18,8 @@ export interface User {
     membershipLevel?: string | null;
     /** 主站累计消费金额（元），用于 SILVER 银卡测肤加赠 */
     totalSpent?: number | null;
+    /** 主站资料性别（male/female），null=未设置；问卷据此预填性别（可一键切换），不当次回写 */
+    gender?: "male" | "female" | null;
 }
 
 interface AuthContextType {
@@ -95,6 +97,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     prev?.avatar === nextUser?.avatar &&
                     prev?.membershipLevel === nextUser?.membershipLevel &&
                     prev?.totalSpent === nextUser?.totalSpent &&
+                    prev?.gender === nextUser?.gender &&
                     prev?.role === nextUser?.role
                 ) {
                     return prev;

@@ -44,6 +44,10 @@ export interface SsoProfileClaims {
     membershipLevel?: string;
     /** 主站累计消费金额（元，membership scope 的 total_spent claim） */
     totalSpent?: number;
+    /** 性别（OIDC 标准 profile claim）。undefined=本次未携带（不动本地值）；
+     * null=主站明确为未设置/保密（清除本地值）；male/female=设定值。
+     * 仅作问卷默认值的体验优化，非权益判定依据，展示级字段可从 id_token 读取 */
+    gender?: "male" | "female" | null;
 }
 
 /**
@@ -97,6 +101,10 @@ export async function fetchSsoUserinfo(accessToken: string): Promise<SsoProfileC
             phone: typeof data.phone === "string" ? data.phone : undefined,
             membershipLevel: typeof data.membership_level === "string" ? data.membership_level : undefined,
             totalSpent: typeof data.total_spent === "number" && Number.isFinite(data.total_spent) ? data.total_spent : undefined,
+            // 键存在才视为"主站明确下发"（含 null=清除），旧版主站无此字段时不动本地值
+            gender: "gender" in data
+                ? (data.gender === "male" || data.gender === "female" ? data.gender : null)
+                : undefined,
         };
     } catch {
         return null;
@@ -319,6 +327,8 @@ export async function upsertLocalUser(
             ...(avatarUrl ? { avatarUrl } : {}),
             ...(membershipLevel ? { membershipLevel } : {}),
             ...(totalSpent !== undefined ? { totalSpent } : {}),
+            // gender 三态：undefined 不动；null 清除；male/female 设定（见 SsoProfileClaims）
+            ...(profile?.gender !== undefined ? { gender: profile.gender } : {}),
             // userinfo 回源成功时由调用方传入当前时间，标记资料已同步（/api/auth/me 据此做 6 小时强制刷新）
             ...(options?.profileSyncedAt ? { profileSyncedAt: options.profileSyncedAt } : {}),
         },
@@ -329,6 +339,7 @@ export async function upsertLocalUser(
             avatarUrl: avatarUrl || null,
             membershipLevel: membershipLevel || null,
             totalSpent: totalSpent ?? 0,
+            gender: profile?.gender ?? null,
             profileSyncedAt: options?.profileSyncedAt ?? null,
             password: null,
             role: UserRole.USER,
@@ -342,6 +353,7 @@ export async function upsertLocalUser(
             avatarUrl: true,
             membershipLevel: true,
             totalSpent: true,
+            gender: true,
             profileSyncedAt: true,
             role: true,
             dailyTestLimit: true,

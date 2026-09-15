@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
                 phone: info.phone ?? profileClaims?.phone,
                 membershipLevel: info.membershipLevel,
                 totalSpent: info.totalSpent,
+                gender: info.gender,
             }, { profileSyncedAt: new Date() });
         }
     }
@@ -80,6 +81,7 @@ export async function GET(req: NextRequest) {
             avatar: localUser?.avatarUrl || null,
             membershipLevel: localUser?.membershipLevel || null,
             totalSpent: localUser?.totalSpent ?? null,
+            gender: localUser?.gender ?? null,
             role: localUser?.role || "user",
         },
     });
