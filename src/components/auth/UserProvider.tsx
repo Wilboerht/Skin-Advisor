@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { Loader2 } from 'lucide-react';
 import { advisorStorage } from '@/lib/advisor-storage';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
 import { useToast } from '@/components/ui/Toast';
@@ -59,6 +60,9 @@ const LOGOUT_NOTICE_KEY = "nihplod_logout_notice";
 export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    // 登出进行态：点击立即给出全屏反馈（登出链路含多次服务器间往返与主站跳转，
+    // 无反馈会显得"点了没反应"）
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const toast = useToast();
     // 单飞：并发 loadUser（挂载 + 定时器 + visibilitychange）共享同一次请求，
     // 避免 /api/auth/me 的 refresh_token 轮换被并发调用打爆
@@ -185,6 +189,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const logout = useCallback(async () => {
         // 先作废在途 loadUser（其响应可能携带登出前的旧会话），再走服务端登出
         sessionGenRef.current += 1;
+        setIsLoggingOut(true);
 
         // POST-only + 同源校验；服务端会清除 SSO Cookie、撤销 refresh_token 并清本地会话
         // 必须确认成功：失败时 Cookie 仍在，若照常跳首页，下一次 /api/auth/me 会把会话复活
@@ -193,12 +198,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
             const res = await fetch("/api/auth/logout", { method: "POST" });
             if (!res.ok) {
                 toast.error("退出未成功，请稍后再试");
+                setIsLoggingOut(false);
                 return;
             }
             const data = (await res.json().catch(() => null)) as { ssoLogoutUrl?: string } | null;
             ssoLogoutUrl = typeof data?.ssoLogoutUrl === "string" ? data.ssoLogoutUrl : null;
         } catch {
             toast.error("网络异常，退出未成功，请稍后再试");
+            setIsLoggingOut(false);
             return;
         }
 
@@ -247,6 +254,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return (
         <UserContext.Provider value={value}>
             {children}
+            {isLoggingOut && (
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 bg-[#F5F2E9]">
+                    <Loader2 className="h-7 w-7 animate-spin text-stone-500" />
+                    <p className="text-sm font-light tracking-wide text-stone-500">正在退出登录…</p>
+                </div>
+            )}
         </UserContext.Provider>
     );
 }

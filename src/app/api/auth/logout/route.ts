@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createLogoutRouteHandler } from "@nihplod/sso-sdk/next";
 import { clearLocalSession } from "@/lib/auth";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
@@ -105,7 +105,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     revocations.push(revokeSsoToken(accessToken, "access_token"));
   }
   if (revocations.length > 0) {
-    await Promise.allSettled(revocations);
+    // 撤销是尽力而为的清理（revokeSsoToken 内部已 catch），不阻断响应：
+    // await 会让登出请求多等若干次子站→主站（经 Cloudflare 回源）的 HTTP 往返，
+    // 用户点击退出后长时间无反馈。after() 保证响应发出后继续执行完毕。
+    after(() => Promise.allSettled(revocations).then(() => undefined));
   }
 
   // 微信登录种在子站域名下的官网凭证 Cookie 一并清除

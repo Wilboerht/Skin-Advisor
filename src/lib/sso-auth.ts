@@ -193,9 +193,11 @@ export async function revokeSsoToken(
 ): Promise<void> {
     if (!SSO_CLIENT_SECRET) return;
     try {
+        // 3s 超时兜底：撤销请求经 Cloudflare 回源，主站缓慢/不可达时不得长时间挂起
         await fetch(`${SSO_BASE_URL}/api/oauth/revoke`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            signal: AbortSignal.timeout(3000),
             body: new URLSearchParams({
                 token,
                 token_type_hint: tokenTypeHint,
