@@ -16,9 +16,10 @@ interface SkinTypesMobileListProps {
 }
 
 /**
- * SkinTypesMobileList — 移动端派系列表（替代轮播）
- * 窄屏下轮播侧卡露边过窄、信息密度低，改为纵向单列卡片：
- * 全宽阅读（简介可读）、点击打开详情弹窗；桌面端仍由 SkinTypesClient 轮播承载。
+ * SkinTypesMobileList — 移动端派系图鉴网格（替代轮播/列表）
+ * 窄屏下轮播侧卡露边过窄、信息密度低，列表则过于"阅读流"；
+ * 改为 2 列图鉴网格：形象为主角，名字为辅，点击打开详情弹窗（简介在弹窗内完整呈现）。
+ * 桌面端仍由 SkinTypesClient 轮播承载。
  */
 export function SkinTypesMobileList({ types, initialType = null }: SkinTypesMobileListProps) {
   const [selected, setSelected] = useState<SkinTypeData | null>(null);
@@ -40,39 +41,28 @@ export function SkinTypesMobileList({ types, initialType = null }: SkinTypesMobi
 
   return (
     <>
-      <ul className="flex flex-col gap-3">
+      <ul className="grid grid-cols-2 gap-3">
         {types.map((type) => {
           const Icon = getFactionIcon(type.ipKey);
           return (
-            <li key={type.route}>
+            <li key={type.route} className="min-w-0">
               <button
                 type="button"
                 onClick={() => setSelected(type)}
                 aria-label={`${type.typeName}（查看详情）`}
-                className="group w-full flex items-center gap-4 rounded-2xl border border-brand-espresso/[0.12] bg-white p-4 text-left transition-colors duration-300 hover:border-brand-espresso/[0.22] active:bg-brand-charcoal/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
+                className="group w-full flex flex-col items-center rounded-2xl border border-brand-espresso/[0.12] bg-white px-3 pt-4 pb-3.5 text-center transition-colors duration-300 hover:border-brand-espresso/[0.22] active:bg-brand-charcoal/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
               >
-                <span className="shrink-0 w-[96px] h-[96px] flex items-center justify-center">
-                  <Image
-                    src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
-                    alt=""
-                    width={180}
-                    height={180}
-                    sizes="96px"
-                    className="w-full h-full object-contain pointer-events-none"
-                  />
-                </span>
-                <span className="flex-1 min-w-0">
-                  <span className="flex items-center gap-1.5 text-[16px] font-serif font-light tracking-[0.02em] text-brand-charcoal">
-                    <Icon aria-hidden="true" className="w-4 h-4 text-brand-charcoal/60 shrink-0" strokeWidth={1.75} />
-                    {type.typeName}
-                  </span>
-                  <span className="mt-1.5 block text-[12px] leading-relaxed text-brand-charcoal/60 font-light line-clamp-2">
-                    {type.m1.persona}
-                  </span>
-                  <span className="mt-2 inline-flex items-center text-[12px] font-light tracking-[0.08em] text-brand-charcoal/55">
-                    查看完整解读
-                    <ArrowRight className="w-3.5 h-3.5 ml-1 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
-                  </span>
+                <Image
+                  src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
+                  alt=""
+                  width={180}
+                  height={180}
+                  sizes="110px"
+                  className="w-full max-w-[110px] h-auto object-contain pointer-events-none"
+                />
+                <span className="mt-2.5 flex items-center gap-1.5 text-[15px] font-serif font-light tracking-[0.02em] text-brand-charcoal">
+                  <Icon aria-hidden="true" className="w-4 h-4 text-brand-charcoal/60 shrink-0" strokeWidth={1.75} />
+                  {type.typeName}
                 </span>
               </button>
             </li>

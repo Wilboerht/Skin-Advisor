@@ -245,7 +245,7 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
                       </h2>
                       {/* 简介与入口常驻挂载，随聚焦状态淡入淡出：避免切换瞬间插入 DOM 导致图层重栅格化掉帧 */}
                       <p
-                        className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/60 font-light leading-relaxed line-clamp-2 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                        className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/65 font-light leading-relaxed line-clamp-2 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
                         style={{ opacity: isCenter ? 1 : 0 }}
                       >
                         {type.m1.persona}
