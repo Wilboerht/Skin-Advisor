@@ -432,9 +432,9 @@ export default function HomeClient() {
 
       {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 
-      {/* 内容区域 - 一屏布局（h-dvh 不滚动）；pb-dock 为底部 Dock 留白 */}
+      {/* 内容区域 - 一屏布局（min-h-dvh：常规屏幕一屏垂直居中；矮屏/横屏放不下时可滚动，避免裁切）；pb-dock 为底部 Dock 留白 */}
       <m.div
-        className="relative z-20 flex flex-col h-dvh overflow-hidden pb-dock"
+        className="relative z-20 flex flex-col min-h-dvh pb-dock"
         initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
         animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
@@ -484,8 +484,8 @@ export default function HomeClient() {
                   <h2 className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4">
                     开始完整肌肤检测
                   </h2>
-                  {/* 三步流程预告：降低"点进去要干嘛"的不确定感（单行不折行） */}
-                  <div className="flex items-center gap-x-2 whitespace-nowrap text-brand-charcoal/60 text-[12px] md:text-sm font-light tracking-[0.06em] mb-6 md:mb-8">
+                  {/* 三步流程预告：降低"点进去要干嘛"的不确定感（单行不折行；移动端收窄字号与间距防溢出） */}
+                  <div className="flex items-center gap-x-1.5 md:gap-x-2 whitespace-nowrap text-brand-charcoal/60 text-[11px] md:text-sm font-light tracking-[0.06em] mb-6 md:mb-8">
                     <span className="flex items-center gap-1.5">
                       <ScanFace className="w-3.5 h-3.5" strokeWidth={1.5} />
                       问卷及面部扫描
