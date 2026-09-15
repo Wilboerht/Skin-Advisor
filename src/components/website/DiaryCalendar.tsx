@@ -89,7 +89,7 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
       {/* 星期表头 */}
       <div className="grid grid-cols-7 mb-1.5">
         {WEEKDAYS.map((w) => (
-          <span key={w} className="text-center text-[11px] text-brand-charcoal/35 font-light">
+          <span key={w} className="text-center text-[11px] text-brand-charcoal/45 font-light">
             {w}
           </span>
         ))}
@@ -122,10 +122,10 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
                 entry
                   ? ""
                   : clickable
-                    ? "text-brand-charcoal/35 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/60"
+                    ? "text-brand-charcoal/50 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/75"
                     : isWeekend
-                      ? "text-brand-charcoal/12"
-                      : "text-brand-charcoal/20"
+                      ? "text-brand-charcoal/18"
+                      : "text-brand-charcoal/28"
               }`}
               style={entry && meta ? { backgroundColor: `${meta.color}1F`, color: meta.color } : undefined}
               title={

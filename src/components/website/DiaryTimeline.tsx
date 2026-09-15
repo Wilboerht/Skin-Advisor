@@ -225,16 +225,16 @@ export function DiaryTimeline({
           <div key={group.dateStr}>
             {monthDivider && (
               <div className="mb-4 mt-3 first:mt-0">
-                <span className="text-[10px] tracking-[0.2em] text-brand-charcoal/35">
+                <span className="text-[12px] tracking-[0.2em] text-brand-charcoal/35">
                   {monthDivider}
                 </span>
               </div>
             )}
             <div className="flex gap-3 md:gap-4">
-              {/* 左轴：日号（极简，无星期）；今天以字面标注 */}
-              <div className="w-7 shrink-0 pt-0.5 text-center">
+              {/* 左轴：日号（极简，无星期）；今天以「今日」字面标注 */}
+              <div className="w-10 shrink-0 pt-0.5 text-center">
                 <div className={`text-base font-serif leading-tight ${isToday ? "text-brand-charcoal font-medium" : "text-brand-charcoal/75"}`}>
-                  {isToday ? "今" : dayOf(group.dateStr)}
+                  {isToday ? "今日" : `${dayOf(group.dateStr)}日`}
                 </div>
               </div>
 
