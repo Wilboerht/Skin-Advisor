@@ -51,6 +51,9 @@ const UserContext = createContext<AuthContextType | undefined>(undefined);
  *   登出接口失败时提示并中止——Cookie 未被清除时绝不能假装已退出，
  *   否则下一次 /api/auth/me 会用仍有效的 Cookie 把会话"复活"
  */
+// 登出成功回跳提示的 sessionStorage 键（跨主站整页跳转传递，一次性消费）
+const LOGOUT_NOTICE_KEY = "nihplod_logout_notice";
+
 export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -147,6 +150,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
         };
     }, [loadUser]);
 
+    // 登出回跳反馈：从主站登出流程整页跳回后提示一次，并清掉主站回跳附加的 state 参数
+    useEffect(() => {
+        try {
+            if (!sessionStorage.getItem(LOGOUT_NOTICE_KEY)) return;
+            sessionStorage.removeItem(LOGOUT_NOTICE_KEY);
+        } catch {
+            return;
+        }
+        toast.success("已退出登录");
+        const url = new URL(window.location.href);
+        if (url.searchParams.has("state")) {
+            url.searchParams.delete("state");
+            window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+        }
+    }, [toast]);
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const login = useCallback(async (_credentials?: { email?: string; phone?: string; password?: string }) => {
         // 登录/注册页自身不作为回跳目标，避免登录成功后回到 /login 再次触发跳转
@@ -201,6 +220,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setUser(null);
         // 单点登出：整页跳转到主站登出流程（顶层导航携带主站 Cookie，/logout 确认页
         // 能真正清除主站 SSO 会话），完成后经 post_logout_redirect_uri 回到子站首页
+        // 登出成功提示：经主站整页跳转回来后组件已重建，用 sessionStorage 跨导航传递；
+        // 在 clearAll 之后写入，避免被登出清理一并抹掉
+        try { sessionStorage.setItem(LOGOUT_NOTICE_KEY, "1"); } catch { /* ignore */ }
         window.location.href = ssoLogoutUrl || "/";
     }, [toast]);
 
