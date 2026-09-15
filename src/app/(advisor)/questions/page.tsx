@@ -68,6 +68,9 @@ export default function QuestionsPage() {
     // 性别来自官网资料默认值（而非用户手动选择/本地恢复）时，
     // 第一题顶部显示"测肤对象"切换入口——代家人测肤场景的纠偏通道
     const [genderFromProfile, setGenderFromProfile] = useState(false);
+    // 资料性别默认值是否已决策（套用/不套用）。未决时性别页位置渲染加载态，
+    // 避免"先闪出 GenderSelection 再被默认值跳走"
+    const [profileGenderResolved, setProfileGenderResolved] = useState(false);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, unknown>>({});
     const [direction, setDirection] = useState(0);
@@ -464,21 +467,28 @@ export default function QuestionsPage() {
         }
     };
 
-    // 官网资料性别作为问卷默认值：会话就绪后，若用户资料已填性别且本地无
-    // 已保存的进度/选择，则跳过独立性别选择页直接开答（第一题顶部保留切换入口）。
+    // 官网资料性别作为问卷默认值：会话就绪【且入口守卫全部通过】后才套用。
+    // 守卫（AI 配置检查 / 测肤次数预检 / 排队提示）全部渲染在 !gender 分支里——
+    // 若不待守卫通过就套用性别，次数用完或服务异常的用户会被直接放进问卷，
+    // 白答一遍到提交时才被拒（预检的设计初衷正是避免这个）。
     // 本地已有 ADVISOR_GENDER 时以本机选择为准（用户上次可能特意为家人测过）。
-    const profileGenderApplied = useRef(false);
     useEffect(() => {
-        if (profileGenderApplied.current || !isUserInitialized) return;
+        if (profileGenderResolved || !isUserInitialized) return;
+        if (gender !== null) { setProfileGenderResolved(true); return; }
         const profileGender = user?.gender;
-        if (profileGender !== "male" && profileGender !== "female") return;
-        if (gender !== null) return;
-        if (safeStorage.get(STORAGE_KEYS.ADVISOR_GENDER)) return;
-        profileGenderApplied.current = true;
+        const hasLocalGender = !!safeStorage.get(STORAGE_KEYS.ADVISOR_GENDER);
+        if ((profileGender !== "male" && profileGender !== "female") || hasLocalGender) {
+            setProfileGenderResolved(true);
+            return;
+        }
+        // 守卫未通过：return 且不设 resolved——提示界面照常渲染在 !gender 分支；
+        // 排队提示被用户点掉（queueDismissed）或服务恢复后本 effect 会重新评估
+        if (aiConfigured !== true || limitExceeded || (queueBusy && !queueDismissed)) return;
+        setProfileGenderResolved(true);
         setGenderFromProfile(true);
         handleGenderSelect(profileGender);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isUserInitialized, user?.gender, gender]);
+    }, [profileGenderResolved, isUserInitialized, user?.gender, gender, aiConfigured, limitExceeded, queueBusy, queueDismissed]);
 
     // 第一题顶部的"测肤对象"一键切换：仅在采用资料默认值时提供，
     // 不影响手动选择路径（GenderSelection 页本就由用户显式确认）
@@ -808,6 +818,13 @@ export default function QuestionsPage() {
                                             稍后再来
                                         </button>
                                     </div>
+                                </div>
+                            ) : !profileGenderResolved ? (
+                                // 资料性别决策未落定（会话/守卫检查中）：保持加载态，
+                                // 避免对有资料性别的用户闪出 GenderSelection 再跳走
+                                <div className="flex items-center gap-2 text-brand-charcoal/60">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    正在检查服务状态...
                                 </div>
                             ) : (
                                 <GenderSelection onSelect={handleGenderSelect} selectedGender={gender} />
