@@ -74,6 +74,8 @@ const ssoMiddleware = createSsoMiddleware({
     publicPaths: PUBLIC_PATHS,
     // 本地 HTTP 开发模式：与 callback/logout/login 保持一致（生产被 SDK 强制忽略）
     insecureLocalDev: SSO_INSECURE_LOCAL_DEV,
+    // 服务器间调用（introspect）的内网地址；未配置时走公网（SDK 默认行为）
+    serverBaseUrl: process.env.SSO_SERVER_BASE_URL || undefined,
 });
 
 /**

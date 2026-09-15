@@ -14,6 +14,8 @@ const ssoCallback = createCallbackRouteHandler({
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   // 本地 HTTP 开发模式：必须与 middleware/logout/login 保持一致
   insecureLocalDev: SSO_INSECURE_LOCAL_DEV,
+  // 服务器间调用（token 交换）的内网地址；未配置时走公网（SDK 默认行为）
+  serverBaseUrl: process.env.SSO_SERVER_BASE_URL || undefined,
 });
 
 /** return_to 仅允许站内相对路径，防开放重定向（与 login 入口同一规则） */

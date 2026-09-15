@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { createTokenVerifier, type VerifiedTokenPayload } from "@nihplod/sso-verify";
 import { toInsecureCookieName } from "@nihplod/sso-sdk/next";
-import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
+import { SSO_INSECURE_LOCAL_DEV, SSO_SERVER_BASE_URL } from "@/lib/sso-config";
 import { UserRole, isDisabledUser } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth";
@@ -90,7 +90,8 @@ export function normalizeSsoAvatarUrl(avatar?: string | null): string | undefine
  */
 export async function fetchSsoUserinfo(accessToken: string): Promise<SsoProfileClaims | null> {
     try {
-        const res = await fetch(`${SSO_BASE_URL}/api/oauth/userinfo`, {
+        // 服务器间调用：配置了 SSO_SERVER_BASE_URL 时走内网直连
+        const res = await fetch(`${SSO_SERVER_BASE_URL}/api/oauth/userinfo`, {
             headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (!res.ok) return null;
@@ -112,7 +113,9 @@ export async function fetchSsoUserinfo(accessToken: string): Promise<SsoProfileC
 }
 
 export const ssoVerifier = createTokenVerifier({
-    introspectionEndpoint: `${SSO_BASE_URL}/api/oauth/introspect`,
+    // introspect 是服务器间调用：走内网地址（若配置）；
+    // issuer 校验仍用公网地址（token 中的 iss 按公网 origin 签发）
+    introspectionEndpoint: `${SSO_SERVER_BASE_URL}/api/oauth/introspect`,
     clientId: SSO_CLIENT_ID,
     clientSecret: SSO_CLIENT_SECRET,
     audience: SSO_CLIENT_ID,
@@ -194,7 +197,7 @@ export async function revokeSsoToken(
     if (!SSO_CLIENT_SECRET) return;
     try {
         // 3s 超时兜底：撤销请求经 Cloudflare 回源，主站缓慢/不可达时不得长时间挂起
-        await fetch(`${SSO_BASE_URL}/api/oauth/revoke`, {
+        await fetch(`${SSO_SERVER_BASE_URL}/api/oauth/revoke`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             signal: AbortSignal.timeout(3000),
@@ -251,7 +254,8 @@ export async function refreshSessionFromCookie(): Promise<VerifiedTokenPayload |
 export async function refreshSsoTokens(refreshToken: string): Promise<RefreshedTokens | null> {
     if (!SSO_CLIENT_SECRET) return null;
     try {
-        const res = await fetch(`${SSO_BASE_URL}/api/oauth/token`, {
+        // 服务器间调用：配置了 SSO_SERVER_BASE_URL 时走内网直连
+        const res = await fetch(`${SSO_SERVER_BASE_URL}/api/oauth/token`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({

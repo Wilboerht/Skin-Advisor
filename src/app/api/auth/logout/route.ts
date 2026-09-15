@@ -24,6 +24,8 @@ const handler = createLogoutRouteHandler({
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   postLogoutRedirectUri: process.env.NEXT_PUBLIC_BASE_URL || "https://advisor.nihplod.cn",
   redirectToSso: true,
+  // 服务器间调用（discovery/revoke）的内网地址；未配置时走公网（SDK 默认行为）
+  serverBaseUrl: process.env.SSO_SERVER_BASE_URL || undefined,
   // 本地 HTTP 开发模式：必须与 middleware/callback/login 保持一致
   insecureLocalDev: SSO_INSECURE_LOCAL_DEV,
 });

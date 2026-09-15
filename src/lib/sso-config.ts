@@ -16,6 +16,20 @@
 export const SSO_INSECURE_LOCAL_DEV = process.env.NODE_ENV !== "production";
 
 /**
+ * 服务端到服务端调用的内网地址（可选，仅服务端使用，勿加 NEXT_PUBLIC_ 前缀）。
+ *
+ * 子站与主站同机/同内网部署时配置（如 http://127.0.0.1:3000）：discovery /
+ * token / userinfo / introspect / revoke 等服务器间请求直连内网，避免经
+ * Cloudflare 公网回源的延迟与限流。浏览器跳转（authorize / end-session）
+ * 始终走 NEXT_PUBLIC_SSO_BASE_URL 公网地址。未配置时等于公网地址。
+ */
+export const SSO_SERVER_BASE_URL = (
+    process.env.SSO_SERVER_BASE_URL ||
+    process.env.NEXT_PUBLIC_SSO_BASE_URL ||
+    "https://nihplod.cn"
+).replace(/\/+$/, "");
+
+/**
  * 站点公网 origin（如 https://advisor.nihplod.cn），所有服务端 302 重定向的跳转基准。
  *
  * Next standalone 部署下 request.url / request.nextUrl.origin 是进程监听地址
