@@ -76,38 +76,34 @@ async function waitForImages(container: HTMLElement): Promise<void> {
     );
 }
 
-// 两页切换 tab：极简单色风；PC 端挂载在顶部栏，移动端位于标题下方
+// 两页切换 tab：样式对齐主站用户中心「安全中心」的分段标签（胶囊容器 + 选中浅底）
+const RESULT_PAGE_TABS = [
+    { index: 0 as const, label: "测肤证书" },
+    { index: 1 as const, label: "完整报告" },
+];
+
 function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; onSwitchPage: (idx: 0 | 1) => void }) {
     return (
         <div
             role="tablist"
             aria-label="报告页面切换"
-            className="flex items-center gap-1"
+            className="inline-flex rounded-full border border-stone-200 bg-white/40 p-1"
         >
-            <button
-                role="tab"
-                aria-selected={pageIndex === 0}
-                onClick={() => { if (pageIndex !== 0) onSwitchPage(0); }}
-                className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
-                    pageIndex === 0
-                        ? "border border-brand-charcoal/[0.18] bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
-                        : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
-                }`}
-            >
-                测肤证书
-            </button>
-            <button
-                role="tab"
-                aria-selected={pageIndex === 1}
-                onClick={() => { if (pageIndex !== 1) onSwitchPage(1); }}
-                className={`px-4 h-8 rounded-full text-[12px] tracking-[0.05em] transition-colors cursor-pointer ${
-                    pageIndex === 1
-                        ? "border border-brand-charcoal/[0.18] bg-brand-charcoal/[0.06] text-brand-charcoal font-medium"
-                        : "border border-transparent text-brand-charcoal/45 font-light hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03]"
-                }`}
-            >
-                完整报告
-            </button>
+            {RESULT_PAGE_TABS.map(({ index, label }) => (
+                <button
+                    key={label}
+                    role="tab"
+                    aria-selected={pageIndex === index}
+                    onClick={() => { if (pageIndex !== index) onSwitchPage(index); }}
+                    className={`rounded-full px-4 py-2 text-xs transition-colors active:opacity-70 cursor-pointer ${
+                        pageIndex === index
+                            ? "bg-[var(--color-brand-charcoal)]/10 font-medium text-[var(--color-brand-charcoal)]"
+                            : "text-stone-500 hover:text-stone-800"
+                    }`}
+                >
+                    {label}
+                </button>
+            ))}
         </div>
     );
 }
