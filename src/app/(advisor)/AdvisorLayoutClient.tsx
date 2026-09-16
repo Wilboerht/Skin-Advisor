@@ -10,7 +10,7 @@ export function AdvisorLayoutClient({
   // ToastProvider 由根布局统一提供，此处不再嵌套（避免挂两个 ToastContainer）
   return (
     <LazyMotion features={domAnimation}>
-      <div className="w-full min-h-screen">
+      <div className="w-full min-h-dvh">
         {children}
       </div>
     </LazyMotion>

@@ -11,8 +11,6 @@ import { getFactionIcon } from "@/components/website/faction-icons";
 
 interface SkinTypesMobileListProps {
   types: SkinTypeData[];
-  /** ?type=<route> 深链接（服务端解析）的初始选中派系 */
-  initialType?: SkinTypeData | null;
 }
 
 /**
@@ -21,17 +19,26 @@ interface SkinTypesMobileListProps {
  * 改为 2 列图鉴网格：形象为主角，名字为辅，点击打开详情弹窗（简介在弹窗内完整呈现）。
  * 桌面端仍由 SkinTypesClient 轮播承载。
  */
-export function SkinTypesMobileList({ types, initialType = null }: SkinTypesMobileListProps) {
+export function SkinTypesMobileList({ types }: SkinTypesMobileListProps) {
+  // ?type=<route> 深链接：页面为静态渲染，searchParams 由客户端在挂载后读取
+  const [deepLinkType, setDeepLinkType] = useState<SkinTypeData | null>(null);
+  useEffect(() => {
+    const type = new URLSearchParams(window.location.search).get("type");
+    if (!type) return;
+    const found = types.find((t) => t.route === type);
+    if (found) setDeepLinkType(found);
+  }, [types]);
+
   const [selected, setSelected] = useState<SkinTypeData | null>(null);
   const router = useRouter();
 
   // 深链接自动打开详情：仅移动端（桌面端由轮播组件负责，避免隐藏的一侧重复弹窗）
   useEffect(() => {
-    if (!initialType) return;
+    if (!deepLinkType) return;
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 767.98px)").matches) {
-      setSelected(initialType);
+      setSelected(deepLinkType);
     }
-  }, [initialType]);
+  }, [deepLinkType]);
 
   // 视口放大到桌面端时自动关闭详情：本组件被 display:none 隐藏后，
   // 弹窗状态与滚动锁会残留（看不见弹窗但整页无法滚动），必须在此释放
@@ -41,16 +48,16 @@ export function SkinTypesMobileList({ types, initialType = null }: SkinTypesMobi
     const onChange = (e: MediaQueryListEvent) => {
       if (e.matches) return;
       setSelected(null);
-      if (initialType) router.replace("/skin-types", { scroll: false });
+      if (deepLinkType) router.replace("/skin-types", { scroll: false });
     };
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [initialType, router]);
+  }, [deepLinkType, router]);
 
   // 关闭详情弹窗：深链接进入时清理 URL，避免刷新后又自动弹出
   const closeDetail = () => {
     setSelected(null);
-    if (initialType) router.replace("/skin-types", { scroll: false });
+    if (deepLinkType) router.replace("/skin-types", { scroll: false });
   };
 
   return (

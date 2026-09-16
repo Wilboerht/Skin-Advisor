@@ -56,8 +56,8 @@ export function HomepageFooter() {
 
                 {separator}
 
-                {/* 移动端版权用简写避免拥挤 */}
-                <p>
+                {/* 移动端版权用简写避免拥挤；年份跨年瞬间 SSR/CSR 会不一致，抑制 hydration 告警 */}
+                <p suppressHydrationWarning>
                     <span className="hidden sm:inline">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
                     <span className="sm:hidden">&copy; {new Date().getFullYear()} NIHPLOD</span>
                 </p>

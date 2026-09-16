@@ -14,6 +14,7 @@ import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useLazyOpen } from "@/hooks/use-lazy-open";
 import { useNavPush } from "@/hooks/use-nav-push";
 import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
@@ -139,6 +140,12 @@ export default function HomeClient() {
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
+
+  // 弹窗懒加载 latch：首次打开前不渲染 dynamic 组件（chunk 不下载），打开过后保持挂载以保留退场动画
+  const shouldRenderAccount = useLazyOpen(showAccountModal);
+  const shouldRenderGift = useLazyOpen(showGiftModal);
+  const shouldRenderFaq = useLazyOpen(showFaqModal);
+  const shouldRenderOnboarding = useLazyOpen(showOnboardingModal);
 
   // 防止用户在 checkTestLimit 进行过程中关闭弹窗后，异步回调又重新打开弹窗
   const startCancelledRef = useRef(false);
@@ -425,6 +432,7 @@ export default function HomeClient() {
           alt="NIHPLOD"
           width={130}
           height={33}
+          sizes="130px"
           className="w-[130px] h-auto"
           priority
         />
@@ -457,6 +465,7 @@ export default function HomeClient() {
                         alt="肌智派"
                         width={514}
                         height={258}
+                        sizes="(min-width: 768px) 104px, 86px"
                         className="h-10 md:h-12 w-auto opacity-90 mix-blend-multiply"
                         priority
                       />
@@ -472,13 +481,22 @@ export default function HomeClient() {
                 </div>
           </section>
 
-          {/* 主视觉卡：浅色设计，藏青只留给标题与按钮；整卡可点击，触发 handleStart 流程（隐私同意 → 问卷） */}
+          {/* 主视觉卡：浅色设计，藏青只留给标题与按钮；整卡可点击，触发 handleStart 流程（隐私同意 → 问卷）
+              卡片本体不可交互，点击由覆盖层按钮承担——button 的 content model 不允许嵌入 h2，
+              覆盖层方案保住标题语义（读屏可正常按标题导航，按钮名单独用 aria-label） */}
           <section className="w-full px-6 md:px-12 mt-8 md:mt-10">
-            <button
-              onClick={handleStart}
-              disabled={isLoading || isNavigating}
-              className="group relative block w-full max-w-3xl mx-auto text-left bg-white border border-brand-espresso/[0.08] rounded-3xl cursor-pointer transition-colors duration-300 hover:border-brand-espresso/[0.2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 disabled:opacity-60 disabled:cursor-not-allowed"
+            <div
+              className={`group relative w-full max-w-3xl mx-auto text-left bg-white border border-brand-espresso/[0.08] rounded-3xl transition-colors duration-300 hover:border-brand-espresso/[0.2] ${
+                isLoading || isNavigating ? "opacity-60" : ""
+              }`}
             >
+              <button
+                type="button"
+                onClick={handleStart}
+                disabled={isLoading || isNavigating}
+                aria-label="开始完整肌肤检测"
+                className="absolute inset-0 z-10 rounded-3xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 disabled:cursor-not-allowed"
+              />
               <div className="flex flex-col md:flex-row md:items-center">
                 <div className="flex-1 p-6 [@media(min-width:768px)_and_(min-height:761px)]:p-10 [@media(min-width:768px)_and_(max-height:760px)]:p-7">
                   <h2 className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4">
@@ -515,19 +533,22 @@ export default function HomeClient() {
                     )}
                   </span>
                 </div>
-                {/* 礼盒图：底部与卡片底边对齐，探出卡片顶部与右侧，呼应"测肤有礼"活动 */}
+                {/* 礼盒图：底部与卡片底边对齐，探出卡片顶部与右侧，呼应"测肤有礼"活动；
+                    纯装饰（活动语义在下方"测肤有礼"胶囊），故 alt 留空 */}
                 <div className="shrink-0 self-end -mt-6 md:-mt-14 -mr-4 md:-mr-14 [@media(max-height:700px)]:hidden">
                   <Image
-                    src="/images/gift-box-new.png"
-                    alt="测肤有礼礼盒"
-                    width={960}
-                    height={551}
+                    src="/images/gift-box-hero.webp"
+                    alt=""
+                    aria-hidden="true"
+                    width={1200}
+                    height={900}
+                    sizes="(min-width: 768px) 420px, 256px"
                     className="w-64 md:w-[420px] h-auto object-contain mx-auto drop-shadow-[0_8px_16px_rgba(61,47,37,0.12)]"
                     priority
                   />
                 </div>
               </div>
-            </button>
+            </div>
           </section>
 
             {/* 老用户快捷入口已移除：最近测肤分数展示不再于首页渲染 */}
@@ -564,40 +585,48 @@ export default function HomeClient() {
 
       {/* "测肤有礼"入口为主视觉卡下方的描边胶囊（见上方次级入口区），不再使用右下角悬浮卡片 */}
 
-      {/* Modals */}
-      <AccountModal isOpen={showAccountModal} onClose={() => setShowAccountModal(false)} />
-      <GiftModal
-        isOpen={showGiftModal}
-        onClose={() => setShowGiftModal(false)}
-        onStartTest={() => {
-          setShowGiftModal(false);
-          handleStart();
-        }}
-      />
-      <FaqModal
-        isOpen={showFaqModal}
-        onClose={() => setShowFaqModal(false)}
-      />
-      <OnboardingFlowModal
-        key={onboardingOpenCount}        isOpen={showOnboardingModal}
-        onClose={() => {
-          // 标记用户已主动取消，防止 handleStart 中待完成的异步回调重新打开弹窗或恢复 loading
-          startCancelledRef.current = true;
-          setShowOnboardingModal(false);
-          setIsLoading(false);
-          setIsHomeExiting(false);
-        }}
-        nickname={nickname}
-        setNickname={setNickname}
-        onNicknameSubmit={handleNicknameSubmit}
-        isLocating={isLocating}
-        onLocationAccept={handleLocationAccept}
-        onLocationDecline={handleLocationDecline}
-        onSkipLocation={handleSkipRegionSelect}
-        onRegionSelect={handleRegionSelect}
-        regionOptions={regionOptions}
-        isLoggedIn={!!user}
-      />
+      {/* Modals：首次打开才加载对应 chunk（见上方 shouldRender* latch） */}
+      {shouldRenderAccount && (
+        <AccountModal isOpen={showAccountModal} onClose={() => setShowAccountModal(false)} />
+      )}
+      {shouldRenderGift && (
+        <GiftModal
+          isOpen={showGiftModal}
+          onClose={() => setShowGiftModal(false)}
+          onStartTest={() => {
+            setShowGiftModal(false);
+            handleStart();
+          }}
+        />
+      )}
+      {shouldRenderFaq && (
+        <FaqModal
+          isOpen={showFaqModal}
+          onClose={() => setShowFaqModal(false)}
+        />
+      )}
+      {shouldRenderOnboarding && (
+        <OnboardingFlowModal
+          key={onboardingOpenCount}        isOpen={showOnboardingModal}
+          onClose={() => {
+            // 标记用户已主动取消，防止 handleStart 中待完成的异步回调重新打开弹窗或恢复 loading
+            startCancelledRef.current = true;
+            setShowOnboardingModal(false);
+            setIsLoading(false);
+            setIsHomeExiting(false);
+          }}
+          nickname={nickname}
+          setNickname={setNickname}
+          onNicknameSubmit={handleNicknameSubmit}
+          isLocating={isLocating}
+          onLocationAccept={handleLocationAccept}
+          onLocationDecline={handleLocationDecline}
+          onSkipLocation={handleSkipRegionSelect}
+          onRegionSelect={handleRegionSelect}
+          regionOptions={regionOptions}
+          isLoggedIn={!!user}
+        />
+      )}
 
       <AnimatePresence>
         {showLimitModal && (

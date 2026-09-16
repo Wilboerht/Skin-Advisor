@@ -206,6 +206,9 @@
     font-family: var(--font-sans);
     overflow-x: hidden;
     min-height: 100vh;
+    /* 移动端浏览器工具栏可见时 100vh 大于可视高度，会把文档撑出可滚动区域；
+       一屏页面（扫脸/问卷）因此出现"假滚动"。dvh 跟随动态视口，vh 作旧浏览器兜底 */
+    min-height: 100dvh;
     line-height: 1.6;
     overscroll-behavior-y: none;
   }

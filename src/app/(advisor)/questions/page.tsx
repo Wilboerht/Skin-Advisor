@@ -702,7 +702,7 @@ export default function QuestionsPage() {
                     className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-[#F5F2E9] overflow-hidden pointer-events-auto"
                 >
                     {/* Top Bar */}
-                    <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 max-md:border-b border-[#3D4430]/5 z-20">
+                    <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 z-20">
                         <button
                             onClick={() => navPush("/")}
                             disabled={isNavigating}
@@ -889,7 +889,7 @@ export default function QuestionsPage() {
             </AnimatePresence>
 
             {/* Top Bar: Back & Logo & Exit */}
-            <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 z-20 shrink-0 max-md:border-b border-[#3D4430]/5">
+            <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 z-20 shrink-0">
                 <button
                     onClick={handleBack}
                     className={cn(

@@ -59,6 +59,25 @@ export function AuthUrlDetector() {
         }
     }, [searchParams, user, router]);
 
+    // 检测 ?login=wechat_bind（/wechat-bind 服务端重定向而来）：
+    // AuthModal 改为懒挂载后无法自行感知 URL 参数，本检测上移至常驻组件；
+    // exchange token 走 httpOnly Cookie，这里只负责保存回跳目标、打开绑定视图并清理 URL
+    useEffect(() => {
+        if (searchParams.get("login") !== "wechat_bind") return;
+        const redirectUrl = searchParams.get("redirect");
+        if (redirectUrl && isSafeInternalPath(redirectUrl)) {
+            sessionStorage.setItem(STORAGE_KEYS.AUTH_REDIRECT, redirectUrl);
+        }
+        openAuthModalRef.current("wechat_bind");
+        if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("login");
+            url.searchParams.delete("wechat_exchange_token");
+            url.searchParams.delete("redirect");
+            window.history.replaceState({}, "", url.toString());
+        }
+    }, [searchParams]);
+
     // 登录后自动消费 pending redirect（覆盖微信OAuth回调等场景）
     useEffect(() => {
         if (user) {

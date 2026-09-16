@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect, useSyncExternalStore } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 import { useAuthModal } from "./AuthModalContext";
-import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
-import { motion, AnimatePresence, useAnimationControls, useReducedMotion } from "framer-motion";
+import { LazyMotion, domAnimation, m, AnimatePresence, useAnimationControls, useReducedMotion } from "framer-motion";
 import { X, Eye, EyeOff, CheckCircle, Check, ChevronLeft } from "lucide-react";
 import { validatePasswordStrength, PASSWORD_MIN_LENGTH } from "@/lib/password";
 import { fetchWithCsrf } from "@/lib/fetch-client";
@@ -19,28 +17,11 @@ import { LoginGuide } from "@/components/website/LoginGuide";
 // 仅 wechat_bind 仍在弹窗内完成。
 
 export function AuthModal() {
-    const { isOpen, view, openAuthModal, closeAuthModal } = useAuthModal();
+    const { isOpen, view, closeAuthModal } = useAuthModal();
     const toast = useToast();
-    const searchParams = useSearchParams();
-    const router = useRouter();
 
-    useEffect(() => {
-        if (searchParams.get("login") === "wechat_bind") {
-            // exchange token 已通过 httpOnly Cookie 传递，无需从 URL 读取
-            // 保留最终重定向目标，供绑定成功后使用（仅允许站内路径）
-            const redirect = searchParams.get("redirect");
-            if (redirect && isSafeInternalPath(redirect)) {
-                sessionStorage.setItem(STORAGE_KEYS.AUTH_REDIRECT, redirect);
-            }
-            openAuthModal("wechat_bind");
-            // Remove params from URL so it doesn't trigger again
-            const cleanUrl = new URL(window.location.href);
-            cleanUrl.searchParams.delete("login");
-            cleanUrl.searchParams.delete("wechat_exchange_token");
-            cleanUrl.searchParams.delete("redirect");
-            router.replace(cleanUrl.pathname + cleanUrl.search, { scroll: false });
-        }
-    }, [searchParams, openAuthModal, router]);
+    // 说明：?login=wechat_bind 深链接检测已上移至常驻的 AuthUrlDetector
+    // （本组件改为懒挂载后，挂载前无法自行感知 URL 参数）
 
     // Form States
     const [loading, setLoading] = useState(false);
@@ -219,10 +200,11 @@ export function AuthModal() {
     );
 
     return (
+        <LazyMotion features={domAnimation}>
         <AnimatePresence>
             {isOpen && (
                 <div key="auth-modal-container" ref={dialogRef} className="contents">
-                <motion.div
+                <m.div
                     key="backdrop"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -232,7 +214,7 @@ export function AuthModal() {
                     className="fixed inset-0 z-[100002] bg-black/20 backdrop-blur-md"
                 />
                 {isDesktop ? (
-                <motion.div
+                <m.div
                     key={`pc-panel-${view}`}
                     role="dialog"
                     aria-modal="true"
@@ -342,7 +324,7 @@ export function AuthModal() {
                                                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                                 </button>
                                             </div>
-                                            <motion.div
+                                            <m.div
                                                 initial={{ x: 0 }}
                                                 animate={agreementShakeControls}
                                             >
@@ -364,7 +346,7 @@ export function AuthModal() {
                                                         <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
                                                     </span>
                                                 </label>
-                                            </motion.div>
+                                            </m.div>
                                             <button
                                                 type="submit"
                                                 disabled={loading || !mobileAgreed}
@@ -381,9 +363,9 @@ export function AuthModal() {
                                 )}
                             </div>
                         </div>
-                    </motion.div>
+                    </m.div>
                 ) : (
-                <motion.div
+                <m.div
                     key={`mobile-modal-${view}`}
                     role="dialog"
                     aria-modal="true"
@@ -535,10 +517,11 @@ export function AuthModal() {
                             &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
                         </p>
                     </div>
-                </motion.div>
+                </m.div>
                 )}
                 </div>
             )}
         </AnimatePresence>
+        </LazyMotion>
     );
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { skinTypes, routeOrder, type SkinTypeData } from "@/lib/result-content";
+import { skinTypes, routeOrder } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
 import { KineticBackground } from "@/components/website/KineticBackground";
 import { HidePageScrollbar } from "@/components/website/HidePageScrollbar";
@@ -28,17 +28,12 @@ export const metadata: Metadata = withDefaultOgImage({
 
 export const revalidate = 86400;
 
-export default async function ResultIndexPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ type?: string }>;
-}) {
-  const { type } = await searchParams;
+// 页面不读 searchParams（?type= 深链接由客户端组件挂载后自行解析），
+// 保证 /skin-types 以静态内容产出并走 ISR，而不是每次请求服务端渲染
+export default function ResultIndexPage() {
   const orderedTypes = routeOrder
     .map((route) => skinTypes.find((t) => t.route === route))
     .filter(Boolean);
-  // ?type=<route> 深链接：服务端解析为初始选中派系（详情弹窗自动打开）
-  const initialType = (orderedTypes.find((t) => t && t.route === type) ?? null) as SkinTypeData | null;
 
   return (
     <div className="relative min-h-dvh text-brand-charcoal pb-dock flex flex-col overflow-x-hidden">
@@ -78,6 +73,7 @@ export default async function ResultIndexPage({
               alt="肌智派"
               width={514}
               height={258}
+              sizes="(min-width: 768px) 104px, 86px"
               className="h-10 md:h-12 w-auto opacity-90 mix-blend-multiply"
               priority
             />
@@ -115,13 +111,11 @@ export default async function ResultIndexPage({
           <div className="md:hidden">
             <SkinTypesMobileList
               types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
-              initialType={initialType}
             />
           </div>
           <div className="hidden md:block">
             <SkinTypesClient
               types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))}
-              initialType={initialType}
             />
           </div>
         </div>

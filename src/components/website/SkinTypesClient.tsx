@@ -11,8 +11,6 @@ import { getFactionIcon } from "@/components/website/faction-icons";
 
 interface SkinTypesClientProps {
   types: SkinTypeData[];
-  /** ?type=<route> 深链接（服务端解析）的初始选中派系 */
-  initialType?: SkinTypeData | null;
 }
 
 /** 环形偏移归一化：8 张卡对称排布，d ∈ [-4, 3] */
@@ -28,15 +26,18 @@ function offsetOf(i: number, activeIdx: number, total: number): number {
  * 中央卡正面大图，两侧透视缩小，点击侧卡聚焦、中央卡打开详情弹窗；
  * 桌面左右箭头 + 键盘 ←/→，底部进度点指示当前位置。移动端/PC 同构。
  */
-export function SkinTypesClient({ types, initialType = null }: SkinTypesClientProps) {
+export function SkinTypesClient({ types }: SkinTypesClientProps) {
+  // ?type=<route> 深链接：页面为静态渲染，searchParams 由客户端在挂载后读取
+  const [deepLinkType, setDeepLinkType] = useState<SkinTypeData | null>(null);
+  useEffect(() => {
+    const type = new URLSearchParams(window.location.search).get("type");
+    if (!type) return;
+    const found = types.find((t) => t.route === type);
+    if (found) setDeepLinkType(found);
+  }, [types]);
+
   const [selected, setSelected] = useState<SkinTypeData | null>(null);
-  const [activeIdx, setActiveIdx] = useState(() => {
-    if (initialType) {
-      const idx = types.findIndex((t) => t.route === initialType.route);
-      if (idx >= 0) return idx;
-    }
-    return 0;
-  });
+  const [activeIdx, setActiveIdx] = useState(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   // 桌面指针拖拽（鼠标）：记录按下起点与是否产生位移，位移后抑制 click（避免"拖完顺带打开详情"）
   const dragRef = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
@@ -48,12 +49,16 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
 
   // 深链接自动打开详情：仅桌面端（移动端由 SkinTypesMobileList 负责，
   // 避免 display:none 的轮播弹窗在移动端抢占焦点与滚动锁）
+  // 深链接自动打开详情：仅桌面端（移动端由 SkinTypesMobileList 负责，
+  // 避免 display:none 的轮播弹窗在移动端抢占焦点与滚动锁）；同时把轮播定位到该派系
   useEffect(() => {
-    if (!initialType) return;
+    if (!deepLinkType) return;
+    const idx = types.findIndex((t) => t.route === deepLinkType.route);
+    if (idx >= 0) setActiveIdx(idx);
     if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) {
-      setSelected(initialType);
+      setSelected(deepLinkType);
     }
-  }, [initialType]);
+  }, [deepLinkType, types]);
 
   // 视口缩到移动端时自动关闭详情：组件被 display:none 隐藏后，
   // 弹窗状态与滚动锁会残留（看不见弹窗但整页无法滚动），必须在此释放
@@ -63,16 +68,16 @@ export function SkinTypesClient({ types, initialType = null }: SkinTypesClientPr
     const onChange = (e: MediaQueryListEvent) => {
       if (e.matches) return;
       setSelected(null);
-      if (initialType) router.replace("/skin-types", { scroll: false });
+      if (deepLinkType) router.replace("/skin-types", { scroll: false });
     };
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [initialType, router]);
+  }, [deepLinkType, router]);
 
   // 关闭详情弹窗：深链接（?type=xxx）进入时清理 URL，避免刷新后又自动弹出
   const closeDetail = () => {
     setSelected(null);
-    if (initialType) router.replace("/skin-types", { scroll: false });
+    if (deepLinkType) router.replace("/skin-types", { scroll: false });
   };
 
   // 键盘 ←/→ 切换（详情弹窗打开时不响应）

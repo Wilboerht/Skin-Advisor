@@ -44,6 +44,6 @@ export const faqs: FaqItem[] = [
   {
     question: "NIHPLOD 支持哪些平台？",
     answer:
-      "NIHPLOD 是 Web 应用，支持所有主流浏览器（Chrome、Safari、Edge、Firefox）。在手机端浏览器中打开 nihplod.cn 即可使用完整功能。多平台服务正在规划中，最新动态请关注官方服务号。",
+      "NIHPLOD 提供的服务主要为 Web 应用，支持所有主流浏览器（Chrome、Safari、Edge、Firefox）。在手机端浏览器中打开 nihplod.cn 即可使用完整功能。多平台服务正在规划中，最新动态请关注官方服务号。",
   },
 ];

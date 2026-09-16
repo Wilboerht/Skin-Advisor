@@ -4,11 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { ScanFace, NotebookPen, Sparkles, CircleUserRound } from "lucide-react";
 import { useUser } from "@/components/auth/UserProvider";
-import { AccountModal } from "@/components/website/AccountModal";
+import { useLazyOpen } from "@/hooks/use-lazy-open";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
+
+// 账户弹层懒加载：挂在全站 Dock 上，但只有用户点「我的」才需要
+const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
 
 /**
  * BottomDock — 全端统一底部导航（移动端贴底通栏 / 桌面端悬浮胶囊）
@@ -67,6 +71,8 @@ export function BottomDock() {
   // Portal 需等客户端挂载（SSR 期无 document）
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  // 账户弹层懒加载 latch：首次打开前不渲染（chunk 不下载），打开过后保持挂载以保留退场动画
+  const shouldRenderAccountModal = useLazyOpen(showAccountModal);
 
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return null;
@@ -148,8 +154,8 @@ export function BottomDock() {
         })}
       </div>
 
-      {/* 账户弹层：Portal 到 body，避免受 Dock 容器样式影响 */}
-      {mounted && createPortal(
+      {/* 账户弹层：Portal 到 body，避免受 Dock 容器样式影响；首次打开才加载 chunk */}
+      {mounted && shouldRenderAccountModal && createPortal(
         <AccountModal isOpen={showAccountModal} onClose={() => setShowAccountModal(false)} />,
         document.body
       )}

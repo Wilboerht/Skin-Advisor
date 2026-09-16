@@ -98,10 +98,10 @@ import { UserProvider } from "@/components/auth/UserProvider";
 
 
 import { AuthModalProvider } from "@/components/auth/AuthModalContext";
-import { AuthModal } from "@/components/auth/AuthModal";
+import { AuthModalGate } from "@/components/auth/AuthModalGate";
 import { AuthUrlDetector } from "@/components/auth/AuthUrlDetector";
 import { DiaryModalProvider } from "@/components/website/DiaryModalContext";
-import { DiaryModal } from "@/components/website/DiaryModal";
+import { DiaryModalGate } from "@/components/website/DiaryModalGate";
 import { WebsiteLayoutClient } from "@/components/website/WebsiteLayoutClient";
 import { BottomDock } from "@/components/website/BottomDock";
 
@@ -158,18 +158,19 @@ export default function RootLayout({
                   <main
                     id="main-content"
                     tabIndex={-1}
-                    className="relative z-10 pointer-events-none [&>*]:pointer-events-auto min-h-screen"
+                    className="relative z-10 pointer-events-none [&>*]:pointer-events-auto min-h-dvh"
                   >
                     {children}
                   </main>
                 </WebsiteLayoutClient>
                 <Suspense fallback={null}>
-                  <AuthModal />
+                  {/* 认证弹窗懒挂载：首次打开才加载 AuthModal chunk */}
+                  <AuthModalGate />
                   {/* URL 认证参数（?auth= / ?login=wechat_bind 等）的全局监听器，无 UI */}
                   <AuthUrlDetector />
                 </Suspense>
-                {/* 护肤档案弹层：全局开关（Dock/账户弹层均为入口）；Provider 需包住页面内容，结果页 UserBadge 内的 AccountModal 也消费该 context */}
-                <DiaryModal />
+                {/* 护肤档案弹层：全局开关（Dock/账户弹层均为入口）；Provider 需包住页面内容，结果页 UserBadge 内的 AccountModal 也消费该 context。懒挂载：首次打开才加载 */}
+                <DiaryModalGate />
                 {/* 全端底部 Dock：置于 <main> 外，避开 main 的 pointer-events hack；组件内按路由自我排除 */}
                 <BottomDock />
                 </DiaryModalProvider>
