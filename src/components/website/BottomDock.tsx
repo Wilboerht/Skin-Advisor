@@ -78,14 +78,19 @@ export function BottomDock() {
     return null;
   }
 
-  const isActive = (tab: DockTab) =>
-    tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
+  const isActive = (tab: DockTab) => {
+    // 面板 tab：弹层打开期间也视为激活（dock 在弹层打开时会随滚动锁下移隐藏，
+    // 这里主要用于 aria/状态正确性与过渡阶段的高亮）
+    if (tab.panel === "diary") return diaryOpen || pathname.startsWith(tab.href);
+    if (tab.panel === "account") return showAccountModal || pathname.startsWith(tab.href);
+    return tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
+  };
 
   const tabClass = (active: boolean) =>
-    `group relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.02em] transition-colors duration-300 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
+    `group relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.02em] select-none touch-manipulation [-webkit-tap-highlight-color:transparent] transition duration-300 active:scale-[0.97] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
       active
         ? "text-[var(--color-brand-cocoa)]"
-        : "text-brand-charcoal/55 hover:text-brand-charcoal/85 active:text-brand-charcoal"
+        : "text-brand-charcoal/70 hover:text-brand-charcoal/90 active:text-brand-charcoal"
     }`;
 
   // 点击当前已激活 tab：不重复导航；仅移动端保留"平滑回顶部"习惯（PC 端点击不产生滚动副作用）
@@ -98,8 +103,15 @@ export function BottomDock() {
     }
   };
 
-  const renderContent = (tab: DockTab) => (
+  const renderContent = (tab: DockTab, active: boolean) => (
     <>
+      {/* 激活指示：2px 短横线（与 DiaryModal 内的 tab 指示样式一致） */}
+      {active && (
+        <span
+          aria-hidden="true"
+          className="absolute bottom-1 left-1/2 -translate-x-1/2 h-[2px] w-4 rounded-full bg-[var(--color-brand-cocoa)]"
+        />
+      )}
       {tab.panel === "account" && user?.avatar ? (
         <span className="relative block w-[22px] h-[22px] rounded-full overflow-hidden">
           <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
@@ -119,9 +131,10 @@ export function BottomDock() {
       aria-label="主导航"
       className="fixed bottom-0 left-0 right-0 z-[var(--z-dock)] pointer-events-none"
     >
-      {/* 移动端：贴底通栏；桌面端：居中悬浮胶囊（仅胶囊响应点击，透明区域放行下方内容） */}
+      {/* 移动端：贴底通栏（实色、无磨砂——全宽 backdrop-blur 在低端机上滚动合成开销高）；
+          桌面端：居中悬浮胶囊（磨砂 + 阴影，仅胶囊响应点击，透明区域放行下方内容） */}
       <div
-        className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 bg-[#FDFBF7]/90 backdrop-blur-md border-t border-brand-charcoal/[0.08] pb-[env(safe-area-inset-bottom,0px)] md:mb-8 md:max-w-md md:rounded-full md:border md:shadow-[0_8px_30px_rgba(61,47,37,0.12)] box-content pointer-events-auto"
+        className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 bg-[#FDFBF7] md:bg-[#FDFBF7]/90 md:backdrop-blur-md border-t border-brand-charcoal/[0.08] pb-[env(safe-area-inset-bottom,0px)] md:mb-8 md:max-w-md md:rounded-full md:border md:shadow-[0_8px_30px_rgba(61,47,37,0.12)] box-content pointer-events-auto"
       >
         {TABS.map((tab) => {
           const active = isActive(tab);
@@ -136,7 +149,7 @@ export function BottomDock() {
                 aria-expanded={tab.panel === "diary" ? diaryOpen : showAccountModal}
                 className={`${tabClass(active)} cursor-pointer`}
               >
-                {renderContent(tab)}
+                {renderContent(tab, active)}
               </button>
             );
           }
@@ -148,7 +161,7 @@ export function BottomDock() {
               onClick={handleActiveClick(active)}
               className={tabClass(active)}
             >
-              {renderContent(tab)}
+              {renderContent(tab, active)}
             </Link>
           );
         })}
