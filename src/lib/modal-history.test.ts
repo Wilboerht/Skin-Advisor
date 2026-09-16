@@ -7,6 +7,8 @@ function createFakeEnv() {
   let backCount = 0;
   let nowMs = 0;
   const scheduled: (() => void)[] = [];
+  const guardCalls: boolean[] = [];
+  const timeouts: (() => void)[] = [];
 
   const env: ModalHistoryEnv = {
     getState: () => state,
@@ -22,16 +24,30 @@ function createFakeEnv() {
     schedule: (fn) => {
       scheduled.push(fn);
     },
+    setViewTransitionGuard: (on) => {
+      guardCalls.push(on);
+    },
+    setTimeout: (fn) => {
+      timeouts.push(fn);
+      return () => {
+        const i = timeouts.indexOf(fn);
+        if (i >= 0) timeouts.splice(i, 1);
+      };
+    },
   };
 
   return {
     env,
     pushed,
+    guardCalls,
     get backCount() {
       return backCount;
     },
     flush: () => {
       while (scheduled.length) scheduled.shift()!();
+    },
+    flushTimeouts: () => {
+      while (timeouts.length) timeouts.shift()!();
     },
     setNow: (v: number) => {
       nowMs = v;
@@ -143,5 +159,62 @@ describe("createModalHistory", () => {
     h.handlePopState();
 
     expect(onCloseC).toHaveBeenCalledTimes(1);
+  });
+
+  it("受管弹层打开期间屏蔽 View Transition，关闭并吞掉 popstate 后恢复", () => {
+    const f = createFakeEnv();
+    const h = createModalHistory(f.env);
+
+    h.open("a", vi.fn());
+    expect(f.guardCalls).toEqual([true]);
+
+    h.close("a");
+    f.flush();
+    expect(f.backCount).toBe(1);
+    expect(f.guardCalls).toEqual([true]); // popstate 到达前保持屏蔽
+
+    h.handlePopState();
+    expect(f.guardCalls).toEqual([true, false]);
+  });
+
+  it("嵌套返回：屏蔽保持到栈空才恢复", () => {
+    const f = createFakeEnv();
+    const h = createModalHistory(f.env);
+
+    h.open("a", vi.fn());
+    h.open("b", vi.fn());
+    expect(f.guardCalls).toEqual([true]);
+
+    h.handlePopState(); // 关 b，仍有 a
+    expect(f.guardCalls).toEqual([true]);
+
+    h.handlePopState(); // 关 a，栈空
+    expect(f.guardCalls).toEqual([true, false]);
+  });
+
+  it("导航让位关闭：恢复屏蔽且不回退历史", () => {
+    const f = createFakeEnv();
+    const h = createModalHistory(f.env);
+
+    h.open("a", vi.fn());
+    f.setState({ url: "reports" });
+    h.close("a");
+    f.flush();
+
+    expect(f.backCount).toBe(0);
+    expect(f.guardCalls).toEqual([true, false]);
+  });
+
+  it("程序化回退后 popstate 未到达：兜底定时器恢复屏蔽", () => {
+    const f = createFakeEnv();
+    const h = createModalHistory(f.env);
+
+    h.open("a", vi.fn());
+    h.close("a");
+    f.flush();
+    expect(f.guardCalls).toEqual([true]);
+
+    f.flushTimeouts();
+    expect(f.guardCalls).toEqual([true, false]);
   });
 });
