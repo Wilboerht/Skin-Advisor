@@ -103,15 +103,8 @@ export function BottomDock() {
     }
   };
 
-  const renderContent = (tab: DockTab, active: boolean) => (
+  const renderContent = (tab: DockTab) => (
     <>
-      {/* 激活指示：2px 短横线（与 DiaryModal 内的 tab 指示样式一致） */}
-      {active && (
-        <span
-          aria-hidden="true"
-          className="absolute bottom-1 left-1/2 -translate-x-1/2 h-[2px] w-4 rounded-full bg-[var(--color-brand-cocoa)]"
-        />
-      )}
       {tab.panel === "account" && user?.avatar ? (
         <span className="relative block w-[22px] h-[22px] rounded-full overflow-hidden">
           <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
@@ -148,7 +141,7 @@ export function BottomDock() {
                 aria-expanded={tab.panel === "diary" ? diaryOpen : showAccountModal}
                 className={`${tabClass(active)} cursor-pointer`}
               >
-                {renderContent(tab, active)}
+                {renderContent(tab)}
               </button>
             );
           }
@@ -160,7 +153,7 @@ export function BottomDock() {
               onClick={handleActiveClick(active)}
               className={tabClass(active)}
             >
-              {renderContent(tab, active)}
+              {renderContent(tab)}
             </Link>
           );
         })}
