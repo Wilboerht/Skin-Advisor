@@ -161,7 +161,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
               >
                 {existing
                   ? isToday ? "编辑今日记录" : `编辑记录 · ${targetLabel}`
-                  : isToday ? "记录今日肌肤状态" : `补打卡 · ${targetLabel}`}
+                  : isToday ? "今日打卡" : `补打卡 · ${targetLabel}`}
               </h2>
 
               {/* 肌肤状态（单选） */}
