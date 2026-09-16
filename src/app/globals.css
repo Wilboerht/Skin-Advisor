@@ -143,6 +143,8 @@
 
     /* 底部 Dock 高度：内容页底部留白统一引用，调高度只改这里 */
     --dock-height: 64px;
+    /* 底部 Dock 悬浮上浮量（移动端胶囊距 safe-area 的距离；桌面端胶囊用 mb-8 独立控制） */
+    --dock-bottom-offset: 8px;
 
     /* Notion-like Design System (from result.module.css) */
     --notion-bg: #FFFFFF;
@@ -183,9 +185,9 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* 内容页底部留白：避免被固定底部 Dock 遮挡，统一引用 --dock-height */
+  /* 内容页底部留白：避免被悬浮 Dock 胶囊遮挡，统一引用 --dock-height / --dock-bottom-offset */
   .pb-dock {
-    padding-bottom: calc(var(--dock-height) + env(safe-area-inset-bottom, 0px) + 16px);
+    padding-bottom: calc(var(--dock-height) + var(--dock-bottom-offset) + env(safe-area-inset-bottom, 0px) + 16px);
   }
 
   /* 桌面端 Dock 悬浮上移 32px（md:mb-8），留白同步加大 */

@@ -129,12 +129,11 @@ export function BottomDock() {
   return (
     <nav
       aria-label="主导航"
-      className="fixed bottom-0 left-0 right-0 z-[var(--z-dock)] pointer-events-none"
+      className="fixed bottom-0 left-0 right-0 z-[var(--z-dock)] pointer-events-none px-3"
     >
-      {/* 移动端：贴底通栏（实色、无磨砂——全宽 backdrop-blur 在低端机上滚动合成开销高）；
-          桌面端：居中悬浮胶囊（磨砂 + 阴影，仅胶囊响应点击，透明区域放行下方内容） */}
+      {/* 全端统一悬浮胶囊：移动端实色（全宽磨砂在低端机上合成开销高）+ 上浮 8px；桌面端磨砂 + 更宽定宽 */}
       <div
-        className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 bg-[#FDFBF7] md:bg-[#FDFBF7]/90 md:backdrop-blur-md border-t border-brand-charcoal/[0.08] pb-[env(safe-area-inset-bottom,0px)] md:mb-8 md:max-w-md md:rounded-full md:border md:shadow-[0_8px_30px_rgba(61,47,37,0.12)] box-content pointer-events-auto"
+        className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 max-w-[420px] md:max-w-md bg-[#FDFBF7] md:bg-[#FDFBF7]/90 md:backdrop-blur-md rounded-full border border-brand-charcoal/[0.08] shadow-[0_8px_30px_rgba(61,47,37,0.12)] mb-[calc(env(safe-area-inset-bottom,0px)+var(--dock-bottom-offset))] md:mb-8 pointer-events-auto"
       >
         {TABS.map((tab) => {
           const active = isActive(tab);
