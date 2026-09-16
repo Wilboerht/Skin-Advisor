@@ -8,6 +8,7 @@ import { ChevronRight, LogOut, NotebookPen, Settings2, Smartphone, X } from "luc
 import { useAuth } from "@/hooks/useAuth";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { LoginGuide } from "@/components/website/LoginGuide";
 import { getFactionIcon } from "@/components/website/faction-icons";
@@ -59,6 +60,8 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+  // 移动端返回键/返回手势：先关账户弹层（再按返回才离开页面）
+  useModalBackClose(isOpen, onClose);
 
   // 遮罩防误触：记录打开时刻，打开后 350ms 内忽略遮罩点击关闭——
   // 入口双击的第二下会穿透到遮罩上，若不设保护会"打开即被关闭"

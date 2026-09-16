@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import type { HistorySession } from "@/components/website/TestHistoryList";
 import { TestHistoryList } from "@/components/website/TestHistoryList";
 import { DiaryTimeline, STATE_META, type DiaryEntry } from "@/components/website/DiaryTimeline";
@@ -88,6 +89,9 @@ export function DiaryModal() {
   const userId = user?.id;
   const toast = useToast();
   const pathname = usePathname();
+
+  // 移动端返回键/返回手势：先关档案弹层（再按返回才离开页面）
+  useModalBackClose(isOpen, closeDiaryModal);
 
   // 路由变化（如点击时间线/测肤记录跳转 /reports/:id、去测肤等）时自动关闭面板：
   // 弹层是 context 状态，客户端导航不会卸载组件，不处理会盖在新页面上

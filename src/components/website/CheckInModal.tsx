@@ -7,6 +7,7 @@ import { fetchWithCsrf } from "@/lib/fetch-client";
 import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { localDateStr } from "@/lib/local-date";
 import { STATE_META, type DiaryEntry } from "./DiaryTimeline";
 
@@ -57,6 +58,8 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+  // 移动端返回键：优先关打卡弹层（档案弹层由 DiaryModal 自身注册，逐层关闭）
+  useModalBackClose(isOpen, onClose);
 
   // 打开时初始化表单（编辑带入旧值；新建重置）
   useEffect(() => {
