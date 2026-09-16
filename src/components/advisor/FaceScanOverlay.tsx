@@ -68,12 +68,10 @@ export function FaceScanOverlay({
                         />
                     )}
 
-                    {/* 椭圆框进度描边：随稳定进度从 0 闭合到 100%（金色进度环）。
+                    {/* 椭圆框进度描边：随稳定进度从 0 闭合到 100%（金色进度环，conic-gradient 实现）。
                         进度 > 0 即常驻显示：detecting（姿势抖动/短暂丢脸）时降低透明度而非卸载，
                         配合稳定度的衰减式下降，避免环随状态切换闪烁消失/重现；
-                        进度分母与拍照帧数一致，环闭合瞬间即拍照瞬间，随后 success 绿环确认动画接手。
-                        实现为 conic-gradient 环 + 前缘圆点；圆点按椭圆参数方程定位（见 .scan-dot-head），
-                        作为独立兄弟层渲染（不被环的 mask 裁切）且永不脱轨 */}
+                        进度分母与拍照帧数一致，环闭合瞬间即拍照瞬间，随后 success 绿环确认动画接手 */}
                     {stabilityProgress > 0 && stabilityProgress <= 100 && faceStatus !== "success" && (
                         <div className={cn(
                             "absolute inset-0 pointer-events-none transition-opacity duration-300",
@@ -91,13 +89,6 @@ export function FaceScanOverlay({
                                     "--scan-progress": `${Math.min(stabilityProgress, 100)}%`,
                                 } as React.CSSProperties}
                             />
-                            {/* 前缘圆点：--scan-angle 与 --scan-progress 同源同步更新，模拟圆头笔端 */}
-                            <span
-                                className="scan-dot-head scan-progress-dot-head w-[6px] h-[6px] rounded-full bg-[#C9A86C] shadow-[0_0_8px_rgba(201,168,108,0.8)]"
-                                style={{
-                                    "--scan-angle": `${Math.min(stabilityProgress, 100) * 3.6}deg`,
-                                } as React.CSSProperties}
-                            />
                         </div>
                     )}
 
@@ -110,7 +101,6 @@ export function FaceScanOverlay({
                             transition={{ duration: 0.3 }}
                         >
                             {/* 绿色圆环描边绘制动画：沿椭圆轨迹从 0 逐渐闭合到 100%（conic-gradient 环，与进度环同方案）；
-                                前缘圆点按椭圆参数方程定位，由 scan-dot-orbit 关键帧驱动，与环同 duration/easing 同步；
                                 静态光晕一次性光栅化，不随动画逐帧重绘 */}
                             <div className="pointer-events-none absolute inset-0">
                                 <div
@@ -124,7 +114,6 @@ export function FaceScanOverlay({
                                         ...(prefersReducedMotion ? { "--scan-progress": "100%" } : {}),
                                     } as React.CSSProperties}
                                 />
-                                <span className="scan-dot-head scan-success-dot-head w-[6px] h-[6px] rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                             </div>
 
                             {/* 中央成功提示 */}

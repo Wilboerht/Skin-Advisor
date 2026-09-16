@@ -752,9 +752,9 @@ html.hide-page-scrollbar::-webkit-scrollbar {
 
 .scan-progress-ring {
   background: conic-gradient(from -90deg, #C9A86C var(--scan-progress), transparent 0);
-  /* mask 边缘留 ~1.5px 羽化，消除椭圆平缓弧线上的硬边锯齿 */
-  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 3.5px), #000 calc(100% - 2px));
-  mask: radial-gradient(closest-side, transparent calc(100% - 3.5px), #000 calc(100% - 2px));
+  /* 环体 5px + 内缘 ~1.5px 羽化，消除椭圆平缓弧线上的硬边锯齿 */
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 6.5px), #000 calc(100% - 5px));
+  mask: radial-gradient(closest-side, transparent calc(100% - 6.5px), #000 calc(100% - 5px));
   transition: --scan-progress 200ms linear;
 }
 
@@ -765,58 +765,16 @@ html.hide-page-scrollbar::-webkit-scrollbar {
 
 .scan-success-ring {
   background: conic-gradient(from -90deg, #10B981 var(--scan-progress), transparent 0);
-  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 3.5px), #000 calc(100% - 2px));
-  mask: radial-gradient(closest-side, transparent calc(100% - 3.5px), #000 calc(100% - 2px));
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 6.5px), #000 calc(100% - 5px));
+  mask: radial-gradient(closest-side, transparent calc(100% - 6.5px), #000 calc(100% - 5px));
   animation: scan-ring-close 0.5s ease-in-out forwards;
-}
-
-/* 前缘圆点角度：注册为 <angle> 使过渡/关键帧可以插值。
-   圆点按椭圆参数方程定位（x 半径 = 50% 宽，y 半径 = 50% 高，0deg 在顶部、顺时针），
-   无论容器宽高比如何都始终贴合椭圆轨道——旧的 rotate 方案旋转半径是"半高"的圆，
-   转到 90°/270° 时圆点会脱轨偏出环外。
-   不支持 sin()/cos() 的旧浏览器上 calc 声明无效，回退为静止在顶部起点（left:50%; top:0）。 */
-@property --scan-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
-.scan-dot-head {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  left: calc(50% + 50% * sin(var(--scan-angle, 0deg)));
-  top: calc(50% - 50% * cos(var(--scan-angle, 0deg)));
-  transform: translate(-50%, -50%);
-}
-
-/* 金色进度圆点：--scan-angle 由 JS 内联更新（与 --scan-progress 同源同步），
-   过渡时序与环一致，任何浏览器（含不支持 @property、两者离散跳变）下都不会脱节 */
-.scan-progress-dot-head {
-  transition: --scan-angle 200ms linear;
-}
-
-/* 绿色确认圆点：与成功环同 duration/easing 同步绕椭圆一周 */
-.scan-success-dot-head {
-  animation: scan-dot-orbit 0.5s ease-in-out forwards;
-}
-
-@keyframes scan-dot-orbit {
-  from { --scan-angle: 0deg; }
-  to { --scan-angle: 360deg; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .scan-progress-ring {
     transition: none;
   }
-  .scan-progress-dot-head {
-    transition: none;
-  }
   .scan-success-ring {
-    animation: none;
-  }
-  .scan-success-dot-head {
     animation: none;
   }
 }
