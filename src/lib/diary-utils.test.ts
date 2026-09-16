@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
     AUTO_DIARY_NOTE_PREFIX,
+    cappedCheckinStreak,
     checkinPointsForStreak,
     computeStreak,
     isAutoDiaryEntry,
@@ -174,5 +175,20 @@ describe("checkinPointsForStreak", () => {
         expect(checkinPointsForStreak(3)).toBe(3);
         expect(checkinPointsForStreak(10)).toBe(3);
         expect(checkinPointsForStreak(0)).toBe(0);
+    });
+});
+
+describe("cappedCheckinStreak", () => {
+    it("昨天无记录：连续 1 天（断开重算）", () => {
+        expect(cappedCheckinStreak(false, false)).toBe(1);
+        expect(cappedCheckinStreak(false, true)).toBe(1);
+    });
+
+    it("昨天有、前天无：连续 2 天", () => {
+        expect(cappedCheckinStreak(true, false)).toBe(2);
+    });
+
+    it("昨天前天都有：封顶 3 天（积分规则 min(streak,3) 只需到此）", () => {
+        expect(cappedCheckinStreak(true, true)).toBe(3);
     });
 });

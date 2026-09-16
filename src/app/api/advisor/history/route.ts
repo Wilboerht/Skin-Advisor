@@ -107,21 +107,29 @@ export async function GET(req: NextRequest) {
         const skip = (page - 1) * pageSize;
         // lite=1：只回传时间线/列表所需字段（score + 肤质标签），裁剪掉产品推荐等大 JSON，节省带宽
         const lite = searchParams.get("lite") === "1";
+        // before=<ISO 时间>：游标分页（只取该完成时间之前的记录），追加式"加载更早"专用——
+        // offset 分页在分页期间新增测肤时会漂移，游标不会
+        const beforeRaw = searchParams.get("before");
+        const before = beforeRaw ? new Date(beforeRaw) : null;
+        const beforeValid = before && !Number.isNaN(before.getTime()) ? before : null;
+
+        const sessionWhere = {
+            userId: user.id,
+            completedAt: beforeValid ? { lt: beforeValid } : { not: null },
+            archivedAt: null // 冷层归档摘要对用户不可见
+        };
 
         const [history, total] = await Promise.all([
             prisma.advisorSession.findMany({
-                where: {
-                    userId: user.id,
-                    completedAt: { not: null },
-                    archivedAt: null // 冷层归档摘要对用户不可见
-                },
+                where: sessionWhere,
                 orderBy: { completedAt: "desc" },
                 select: {
                     sessionId: true,
                     completedAt: true,
                     analysisResult: true
                 },
-                skip,
+                // 游标模式下 skip 无意义（where 已截断），page 模式保持原逻辑
+                skip: beforeValid ? 0 : skip,
                 take: pageSize
             }),
             prisma.advisorSession.count({

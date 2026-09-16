@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
-import { computeStreak, isDiaryDateInRange, parseClientDate, streakEndingAt, checkinPointsForStreak, isAutoDiaryEntry } from "@/lib/diary-utils";
+import { computeStreak, isDiaryDateInRange, parseClientDate, cappedCheckinStreak, streakEndingAt, checkinPointsForStreak, isAutoDiaryEntry } from "@/lib/diary-utils";
 import { grantCheckinPoints } from "@/lib/diary-points";
 
 const DEFAULT_PAGE_SIZE = 30;
@@ -11,9 +11,12 @@ const MAX_PAGE_SIZE = 50;
 const MONTH_RE = /^\d{4}-\d{2}$/;
 
 // GET: 获取当前用户日记列表。
-// - 默认：按日期倒序 offset 分页（供时间线"加载更早"逐页拉取）
+// - 默认：按日期倒序分页（供时间线"加载更早"逐页拉取）；
+//   before=YYYY-MM-DD：游标分页（只取该日期之前的条目），数据变动时不会像 offset 那样漂移
 // - month=YYYY-MM：返回该月全部条目（日历热力图用，≤31 条）
 // - summary=1：返回连续/累计打卡与测肤次数统计（里程碑胶囊用）
+// - bootstrap=1：弹层打开时的聚合首屏（首屏条目 + 分页信息 + 里程碑统计一次返回），
+//   避免打开弹层扇出多个请求触发限流
 export async function GET(request: NextRequest) {
     try {
         const user = await getSessionUser(request);
@@ -38,13 +41,19 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const month = searchParams.get("month");
         const summaryOnly = searchParams.get("summary") === "1";
+        const bootstrap = searchParams.get("bootstrap") === "1";
+        // before=YYYY-MM-DD：游标分页（只取该日历日之前的条目），数据变动时不会像 offset 那样漂移
+        const beforeRaw = searchParams.get("before");
+        const before = beforeRaw ? parseClientDate(beforeRaw) : null;
 
-        const where: { userId: string; date?: { gte: Date; lt: Date } } = { userId: user.id };
+        const where: { userId: string; date?: { gte?: Date; lt?: Date } } = { userId: user.id };
         if (month && MONTH_RE.test(month)) {
             const start = new Date(`${month}-01T00:00:00.000Z`);
             const [y, m] = month.split("-").map(Number);
             const end = new Date(Date.UTC(m === 12 ? y + 1 : y, m === 12 ? 0 : m, 1));
             where.date = { gte: start, lt: end };
+        } else if (before) {
+            where.date = { lt: before };
         }
 
         if (summaryOnly) {
@@ -71,13 +80,36 @@ export async function GET(request: NextRequest) {
         );
         const offset = Math.max(0, parseInt(searchParams.get("offset") || "0", 10) || 0);
 
+        const entrySelect = { id: true, date: true, skinState: true, tags: true, note: true, sessionId: true, updatedAt: true } as const;
+        const summaryWhere = { userId: user.id, completedAt: { not: null }, archivedAt: null } as const;
+
+        if (bootstrap) {
+            // 聚合首屏：首屏条目 + 分页信息 + 里程碑统计，一次请求全部返回
+            const [entries, total, streakRows, testCount] = await Promise.all([
+                prisma.diaryEntry.findMany({ where, orderBy: { date: "desc" }, take: pageSize, select: entrySelect }),
+                prisma.diaryEntry.count({ where }),
+                prisma.diaryEntry.findMany({ where: { userId: user.id }, select: { date: true }, orderBy: { date: "desc" } }),
+                prisma.advisorSession.count({ where: summaryWhere })
+            ]);
+            const { current, longest } = computeStreak(streakRows.map((r) => r.date));
+            return NextResponse.json(
+                {
+                    success: true,
+                    data: entries,
+                    pagination: { total, offset: 0, limit: pageSize, hasMore: entries.length < total },
+                    summary: { totalCheckins: streakRows.length, currentStreak: current, longestStreak: longest, testCount }
+                },
+                { headers: rateLimitHeaders }
+            );
+        }
+
         const [entries, total] = await Promise.all([
             prisma.diaryEntry.findMany({
                 where,
                 orderBy: { date: "desc" },
-                skip: month ? undefined : offset,
+                skip: month || before ? undefined : offset,
                 take: month ? undefined : pageSize,
-                select: { id: true, date: true, skinState: true, tags: true, note: true, sessionId: true, updatedAt: true }
+                select: entrySelect
             }),
             prisma.diaryEntry.count({ where })
         ]);
@@ -164,14 +196,27 @@ export async function POST(request: NextRequest) {
 
         // 打卡积分：连续第 1/2/3+ 天 +1/+2/+3 分（断开重新从 1 算起）；
         // 连续天数口径与里程碑"连续打卡"一致（含测肤自动条目）。
+        // 积分规则在 streak=3 封顶（checkinPointsForStreak = min(streak,3)），
+        // 先回查昨天/前天两个点得出封顶内天数，多数打卡免去全量历史扫描；
+        // 仅当两天都有（streak ≥ 3）才补一次全量查询取精确连续天数——
+        // 精确值要写进官网积分明细 note（"连续第 N 天"），不能用封顶值冒充。
         // 官网不可达/超时不阻断打卡，仅不返回 points（前端 toast 不提示积分）
         let points: { granted: number; streak: number } | undefined;
         if (isFirstManualCheckin) {
-            const rows = await prisma.diaryEntry.findMany({
-                where: { userId: user.id },
+            const prevDates = [1, 2].map((n) => new Date(date.getTime() - n * 86_400_000));
+            const prevRows = await prisma.diaryEntry.findMany({
+                where: { userId: user.id, date: { in: prevDates } },
                 select: { date: true },
             });
-            const streak = streakEndingAt(rows.map((r) => r.date), date);
+            const prevSet = new Set(prevRows.map((r) => r.date.getTime()));
+            let streak = cappedCheckinStreak(prevSet.has(prevDates[0].getTime()), prevSet.has(prevDates[1].getTime()));
+            if (streak === 3) {
+                const rows = await prisma.diaryEntry.findMany({
+                    where: { userId: user.id },
+                    select: { date: true },
+                });
+                streak = streakEndingAt(rows.map((r) => r.date), date);
+            }
             const amount = checkinPointsForStreak(streak);
             const result = await grantCheckinPoints({
                 userId: user.id,

@@ -15,7 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
 import { cn } from "@/lib/utils";
-import { scheduleFaceModelPreload } from "@/lib/preload-models";
+import { scheduleFaceModelPreload } from "@/lib/face-models";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useNavPush } from "@/hooks/use-nav-push";

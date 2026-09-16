@@ -16,14 +16,17 @@ interface DiaryCalendarProps {
   onMonthChange: (month: string) => void;
   /** 点击窗口内、无记录的日期（含今天）→ 打卡/补打卡；未来日期不可点 */
   onBackfill: (dateStr: string) => void;
+  /** 点按写入窗口内、已有记录的日期 → 查看/编辑该日记录（移动端无 hover 浮层，这是唯一详情入口） */
+  onSelectEntry?: (entry: DiaryEntry) => void;
   loading?: boolean;
 }
 
 /**
  * DiaryCalendar — 护肤历程日历热力图（GitHub 贡献图风格）
- * 每日格子按当日肌肤状态着色，无记录为灰；今天描边；窗口内空日期可点击（今天=打卡，过去=补打卡）。
+ * 每日格子按当日肌肤状态着色，无记录为灰；今天描边；
+ * 窗口内空日期可点击（今天=打卡，过去=补打卡），已记录日期可点按查看/编辑。
  */
-export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackfill, loading }: DiaryCalendarProps) {
+export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackfill, onSelectEntry, loading }: DiaryCalendarProps) {
   // 当前月份（"回到本月"目标）由 todayStr 快照推导
   const currentMonth = todayStr.slice(0, 7);
   const isCurrentMonth = month === currentMonth;
@@ -44,9 +47,12 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
     onMonthChange(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
   };
 
-  const canBackfill = (dateStr: string) =>
-    dateStr < todayStr &&
-    isDiaryDateInRange(parseClientDate(dateStr)!, parseClientDate(todayStr) ?? undefined);
+  const inWriteWindow = (dateStr: string) => {
+    const d = parseClientDate(dateStr);
+    const today = parseClientDate(todayStr);
+    return !!d && !!today && isDiaryDateInRange(d, today);
+  };
+  const canBackfill = (dateStr: string) => dateStr < todayStr && inWriteWindow(dateStr);
 
   return (
     <div>
@@ -106,6 +112,8 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
           const meta = entry ? STATE_META[entry.skinState] ?? STATE_META.normal : null;
           const isToday = dateStr === todayStr;
           const clickable = !entry && canBackfill(dateStr);
+          // 写入窗口内的已记录日期可点按查看/编辑（移动端无 hover，这是详情的唯一入口）
+          const editable = !!entry && !!onSelectEntry && inWriteWindow(dateStr);
           // 列位置（0=周一）：周末日号淡化；hover 浮层的边缘对齐
           const colIndex = (leadBlanks + i) % 7;
           const isWeekend = colIndex >= 5;
@@ -120,7 +128,9 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
                 isToday ? "ring-1 ring-inset ring-brand-charcoal/30" : ""
               } ${
                 entry
-                  ? ""
+                  ? editable
+                    ? "hover:ring-1 hover:ring-inset hover:ring-brand-charcoal/40"
+                    : ""
                   : clickable
                     ? "text-brand-charcoal/50 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/75"
                     : isWeekend
@@ -130,7 +140,7 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
               style={entry && meta ? { backgroundColor: `${meta.color}1F`, color: meta.color } : undefined}
               title={
                 entry
-                  ? `${fmtShort(dateStr)} · ${meta?.label ?? ""}`
+                  ? `${fmtShort(dateStr)} · ${meta?.label ?? ""}${editable ? "（点按编辑）" : ""}`
                   : clickable
                     ? isToday ? `${dateStr} 打卡` : `${dateStr} 补打卡`
                     : undefined
@@ -163,8 +173,14 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
             </div>
           );
 
-          return clickable ? (
-            <button key={dateStr} type="button" onClick={() => onBackfill(dateStr)} className="cursor-pointer block">
+          return clickable || editable ? (
+            <button
+              key={dateStr}
+              type="button"
+              onClick={() => (entry && editable ? onSelectEntry(entry) : onBackfill(dateStr))}
+              aria-label={entry ? `${fmtShort(dateStr)} 查看/编辑记录` : undefined}
+              className="cursor-pointer block"
+            >
               {cell}
             </button>
           ) : (

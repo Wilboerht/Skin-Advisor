@@ -30,7 +30,7 @@ import { AccountModal } from "@/components/website/AccountModal";
 import { useToast } from "@/components/ui/Toast";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { localDateStr } from "@/lib/local-date";
-import { parseClientDate } from "@/lib/diary-utils";
+import { parseClientDate, isAutoDiaryEntry } from "@/lib/diary-utils";
 
 const TESTS_PAGE_SIZE = 50;
 const ENTRIES_PAGE_SIZE = 30;
@@ -44,24 +44,27 @@ interface DiarySummary {
 
 // 60s 短缓存：趋势与测肤列表重复开关弹层时不重复请求（打卡/删除通过刷新路径绕开）
 // 注意缓存解析后的 JSON 而非 Response——Response body 只能消费一次，缓存 Response 会导致二次读取抛 "body stream already read"
+// key 必须带用户标识（scope）：同设备退出再登录另一账号时（SPA 无刷新），
+// 仅按 URL 缓存会把上一账号的趋势/测肤记录透给新账号
 const SHORT_CACHE_TTL_MS = 60_000;
 const shortCache = new Map<string, { ts: number; promise: Promise<unknown> }>();
-function fetchWithShortCache(url: string): Promise<unknown> {
-  const hit = shortCache.get(url);
+function fetchWithShortCache(url: string, scope: string): Promise<unknown> {
+  const key = `${scope}:${url}`;
+  const hit = shortCache.get(key);
   if (hit && Date.now() - hit.ts < SHORT_CACHE_TTL_MS) return hit.promise;
   const promise = fetch(url).then((res) => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json() as Promise<unknown>;
   });
-  promise.catch(() => shortCache.delete(url));
-  shortCache.set(url, { ts: Date.now(), promise });
+  promise.catch(() => shortCache.delete(key));
+  shortCache.set(key, { ts: Date.now(), promise });
   return promise;
 }
 
 // 打卡/删除等数据变更后作废趋势与测肤列表缓存，保证下次打开立即拉取新数据
 function bustShortCache(): void {
   for (const key of Array.from(shortCache.keys())) {
-    if (key.startsWith("/api/user/skin-trends") || key.startsWith("/api/advisor/history")) {
+    if (key.includes("/api/user/skin-trends") || key.includes("/api/advisor/history")) {
       shortCache.delete(key);
     }
   }
@@ -81,6 +84,8 @@ function daysAgoCutoff(days: number): number {
 export function DiaryModal() {
   const { isOpen, closeDiaryModal } = useDiaryModal();
   const { user } = useAuth();
+  // 短缓存/请求的用户隔离标识：依赖 user?.id 而非 user 引用（定时续期返回同内容新对象不应触发重置）
+  const userId = user?.id;
   const toast = useToast();
   const pathname = usePathname();
 
@@ -98,10 +103,12 @@ export function DiaryModal() {
   const [entriesLoaded, setEntriesLoaded] = useState(false);
   // 日记列表加载失败标记：区分"查询失败"与"真的没有记录"，避免 401/网络抖动显示成空白引导
   const [entriesError, setEntriesError] = useState(false);
-  const [entriesTotal, setEntriesTotal] = useState(0);
+  // 服务端是否还有更早的日记条目（来自分页响应的 hasMore；游标分页下 total 口径会变化，不能再用 length < total 判断）
+  const [entriesHasMore, setEntriesHasMore] = useState(false);
   const [entriesLoadingMore, setEntriesLoadingMore] = useState(false);
   const [diaryRefreshKey, setDiaryRefreshKey] = useState(0);
-  const entriesOffsetRef = useRef(0);
+  // 游标分页：当前已加载最旧一条的日历日（YYYY-MM-DD），"加载更早"时作为 before 参数
+  const entriesCursorRef = useRef<string | null>(null);
   const [summary, setSummary] = useState<DiarySummary | null>(null);
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [trendsLoaded, setTrendsLoaded] = useState(false);
@@ -112,7 +119,8 @@ export function DiaryModal() {
   const [testsTotal, setTestsTotal] = useState(0);
   const [testsLoadingMore, setTestsLoadingMore] = useState(false);
   const [testsExhausted, setTestsExhausted] = useState(false);
-  const testsLoadedRef = useRef(0);
+  // 游标分页：当前已加载最旧一条测肤记录的完成时间（ISO），"加载更早"时作为 before 参数
+  const testsCursorRef = useRef<string | null>(null);
   const loadedTestIdsRef = useRef<Set<string>>(new Set());
   // "今天"快照（YYYY-MM-DD）：每次打开弹层时刷新，供时间线/日历/打卡色带统一使用，
   // 避免子组件渲染期调用 new Date()（react-hooks/purity）且跨午夜常驻后口径不刷新
@@ -194,33 +202,24 @@ export function DiaryModal() {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [historyView]);
 
-  // 日记列表分页加载：offset 分页，append 时按 id 去重
-  const loadEntries = useCallback(async (offset: number, limit: number, append: boolean) => {
-    const res = await fetch(`/api/user/diary?limit=${limit}&offset=${offset}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const list: DiaryEntry[] = data.data ?? [];
-    const total: number = data.pagination?.total ?? 0;
-    setEntries((prev) => {
-      if (!append) return list;
-      const seen = new Set(prev.map((e) => e.id));
-      return [...prev, ...list.filter((e) => !seen.has(e.id))];
-    });
-    setEntriesTotal(total);
-    entriesOffsetRef.current = offset + list.length;
+  // 聚合首屏响应落库：条目 + 分页信息 + 里程碑统计（含游标复位）
+  const applyBootstrap = useCallback((data: {
+    data?: DiaryEntry[];
+    pagination?: { total?: number; hasMore?: boolean };
+    summary?: DiarySummary | null;
+  }) => {
+    const list = data.data ?? [];
+    setEntries(list);
+    setEntriesHasMore(data.pagination?.hasMore ?? false);
+    entriesCursorRef.current = list.length > 0 ? list[list.length - 1].date.slice(0, 10) : null;
+    setSummary(data.summary ?? null);
   }, []);
 
-  // 里程碑统计（连续/累计打卡、测肤次数）；isCancelled 供弹层关闭后中止 setState
-  const loadSummary = useCallback(async (isCancelled?: () => boolean) => {
-    try {
-      const res = await fetch("/api/user/diary?summary=1");
-      if (!res.ok) return;
-      const data = await res.json();
-      if (isCancelled?.()) return;
-      setSummary(data.summary ?? null);
-    } catch (e) {
-      console.error("Diary summary fetch error:", e);
-    }
+  // 聚合首屏直传（不走缓存）：打卡/删除/重试等需要立即回源的路径
+  const fetchBootstrap = useCallback(async (limit: number) => {
+    const res = await fetch(`/api/user/diary?bootstrap=1&limit=${limit}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
   }, []);
 
   // 测肤记录首屏加载：带 60s 短缓存（重复开关弹层不重复请求）；
@@ -229,13 +228,13 @@ export function DiaryModal() {
     if (bustCache) bustShortCache();
     setTestsError(false);
     try {
-      const data = (await fetchWithShortCache(`/api/advisor/history?page=1&limit=${TESTS_PAGE_SIZE}&lite=1`)) as {
+      const data = (await fetchWithShortCache(`/api/advisor/history?page=1&limit=${TESTS_PAGE_SIZE}&lite=1`, userId ?? "anon")) as {
         history?: HistorySession[];
         pagination?: { total?: number };
       };
       const history: HistorySession[] = data.history ?? [];
       setTests(history);
-      testsLoadedRef.current = history.length;
+      testsCursorRef.current = history.length > 0 ? history[history.length - 1].completedAt : null;
       loadedTestIdsRef.current = new Set(history.map((t) => t.sessionId));
       setTestsTotal(data.pagination?.total ?? 0);
     } catch (e) {
@@ -244,13 +243,15 @@ export function DiaryModal() {
     } finally {
       setTestsLoaded(true);
     }
-  }, []);
+  }, [userId]);
 
-  // 打卡保存/删除后刷新：带回已加载过的条目数量 + 折叠回"近 30 天"（refreshKey 自增触发时间线收起）
+  // 打卡保存/删除后刷新：聚合首屏直传回源（条目 + 里程碑统计一次返回），
+  // 带回已加载过的条目数量（不多拉一页）+ 折叠回"近 30 天"（refreshKey 自增触发时间线收起）
   const refreshEntries = useCallback(() => {
-    const limit = Math.max(ENTRIES_PAGE_SIZE, entriesOffsetRef.current + ENTRIES_PAGE_SIZE);
-    loadEntries(0, limit, false)
-      .then(() => {
+    const limit = Math.max(ENTRIES_PAGE_SIZE, entries.length);
+    fetchBootstrap(limit)
+      .then((data) => {
+        applyBootstrap(data);
         setEntriesLoaded(true);
         setDiaryRefreshKey((k) => k + 1);
       })
@@ -258,53 +259,65 @@ export function DiaryModal() {
         console.error("Diary fetch error:", e);
         setEntriesLoaded(true);
       });
-    // 里程碑统计与日历视图同步刷新
-    loadSummary();
+    // 日历视图同步刷新
     setCalendarRefreshKey((k) => k + 1);
-    // 数据变更后作废短缓存，保证趋势与测肤列表下次打开拉取新数据
+    // 数据变更后作废短缓存，保证趋势/测肤列表/聚合首屏下次打开拉取新数据
     bustShortCache();
-  }, [loadEntries, loadSummary]);
+  }, [entries.length, fetchBootstrap, applyBootstrap]);
 
-  // 时间线"加载更早"：追加下一页日记
+  // 时间线"加载更早"：游标分页追加更早的日记（before = 当前最旧一条的日历日），
+  // 分页期间新增打卡不会像 offset 分页那样漂移；append 时按 id 去重兜底
   const loadMoreEntries = useCallback(async () => {
-    if (entriesLoadingMore) return;
+    const cursor = entriesCursorRef.current;
+    if (entriesLoadingMore || !cursor) return;
     setEntriesLoadingMore(true);
     try {
-      await loadEntries(entriesOffsetRef.current, ENTRIES_PAGE_SIZE, true);
+      const res = await fetch(`/api/user/diary?limit=${ENTRIES_PAGE_SIZE}&before=${cursor}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const list: DiaryEntry[] = data.data ?? [];
+      setEntries((prev) => {
+        const seen = new Set(prev.map((e) => e.id));
+        return [...prev, ...list.filter((e) => !seen.has(e.id))];
+      });
+      setEntriesHasMore(data.pagination?.hasMore ?? false);
+      if (list.length > 0) entriesCursorRef.current = list[list.length - 1].date.slice(0, 10);
     } catch (e) {
       console.error("Load more entries error:", e);
       toast.error("加载失败，请稍后再试");
     } finally {
       setEntriesLoadingMore(false);
     }
-  }, [entriesLoadingMore, loadEntries, toast]);
+  }, [entriesLoadingMore, toast]);
 
   // 日记首屏加载失败后的重试（与测肤列表 testsError 对称处理）
   const retryEntries = useCallback(() => {
     setEntriesError(false);
     setEntriesLoaded(false);
-    entriesOffsetRef.current = 0;
-    loadEntries(0, ENTRIES_PAGE_SIZE, false)
-      .then(() => setEntriesLoaded(true))
+    entriesCursorRef.current = null;
+    fetchBootstrap(ENTRIES_PAGE_SIZE)
+      .then((data) => {
+        applyBootstrap(data);
+        setEntriesLoaded(true);
+      })
       .catch((e) => {
         console.error("Diary fetch error:", e);
         setEntriesError(true);
         setEntriesLoaded(true);
       });
-  }, [loadEntries]);
+  }, [fetchBootstrap, applyBootstrap]);
 
-  // 依赖 user?.id 而非 user 引用：定时续期（/api/auth/me）返回内容相同的新对象时，
+  // 依赖 userId 而非 user 引用：定时续期（/api/auth/me）返回内容相同的新对象时，
   // 不应触发本 effect 重置面板数据造成"刷新抖动"
   useEffect(() => {
-    const userId = user?.id;
     if (!isOpen || !userId) return;
     let cancelled = false;
 
     setEntries([]);
     setEntriesLoaded(false);
     setEntriesError(false);
-    entriesOffsetRef.current = 0;
-    setEntriesTotal(0);
+    setEntriesHasMore(false);
+    entriesCursorRef.current = null;
     // 每次打开刷新"今天"快照：跨午夜后重开弹层，今日打卡/日历描边等口径保持正确
     setTodayStr(localDateStr(new Date()));
     setSummary(null);
@@ -316,15 +329,19 @@ export function DiaryModal() {
     setTestsExhausted(false);
     loadedTestIdsRef.current = new Set();
     setHistoryView(false);
-    testsLoadedRef.current = 0;
+    testsCursorRef.current = null;
     setCalendarView(false);
     setCalendarEntries([]);
     setLastHistoryPage(1);
     setDeletingId(null);
 
-    loadEntries(0, ENTRIES_PAGE_SIZE, false)
-      .then(() => {
+    // 聚合首屏（条目 + 里程碑统计一次请求）始终直传回源：测肤完成会在服务端自动生成
+    // 当日日记条目，若走 60s 短缓存，测肤后立刻重开弹层会看不到刚生成的记录；
+    // 请求扇出已由聚合减半（原来 entries + summary 两次独立请求），无需再靠缓存省流
+    fetchBootstrap(ENTRIES_PAGE_SIZE)
+      .then((data) => {
         if (cancelled) return;
+        applyBootstrap(data);
         setEntriesLoaded(true);
       })
       .catch((e) => {
@@ -335,10 +352,8 @@ export function DiaryModal() {
         setEntriesLoaded(true);
       });
 
-    loadSummary(() => cancelled);
-
-    // 趋势与测肤首屏带 60s 短缓存，重复开关弹层不重复请求
-    fetchWithShortCache("/api/user/skin-trends")
+    // 趋势首屏带 60s 短缓存，重复开关弹层不重复请求
+    fetchWithShortCache("/api/user/skin-trends", userId)
       .then((raw) => {
         if (cancelled) return;
         const data = raw as { data?: TrendsData | null };
@@ -356,11 +371,10 @@ export function DiaryModal() {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, user?.id, loadEntries, loadSummary, loadTests]);
+  }, [isOpen, userId, fetchBootstrap, applyBootstrap, loadTests]);
 
   // 日历热力图：切换视图/月份时按需拉取该月条目；打卡保存/删除后随 refreshKey 重拉
   useEffect(() => {
-    const userId = user?.id;
     if (!isOpen || !userId || !calendarView) return;
     let cancelled = false;
     setCalendarLoading(true);
@@ -380,22 +394,28 @@ export function DiaryModal() {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, user?.id, calendarView, calendarMonth, calendarRefreshKey]);
+  }, [isOpen, userId, calendarView, calendarMonth, calendarRefreshKey]);
 
-  // 时间线「加载更早」：分页追加测肤记录（sessionId 去重；无新增时置 exhausted 防止重复拉取）
+  // 时间线「加载更早」：游标分页追加更早的测肤记录（before = 当前最旧一条的完成时间），
+  // 分页期间新增测肤不会像 offset 页码推导那样漂移；sessionId 去重兜底，无新增时置 exhausted
   const loadMoreTests = useCallback(async () => {
+    const cursor = testsCursorRef.current;
     if (testsLoadingMore) return;
+    // 游标为空说明首屏为空（或数据不一致：total>0 但首页无记录）——无法定位"更早"，直接封底避免死按钮
+    if (!cursor) {
+      setTestsExhausted(true);
+      return;
+    }
     setTestsLoadingMore(true);
     try {
-      const page = Math.floor(testsLoadedRef.current / TESTS_PAGE_SIZE) + 1;
-      const res = await fetch(`/api/advisor/history?page=${page}&limit=${TESTS_PAGE_SIZE}&lite=1`);
+      const res = await fetch(`/api/advisor/history?limit=${TESTS_PAGE_SIZE}&lite=1&before=${encodeURIComponent(cursor)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const more: HistorySession[] = data.history ?? [];
       const unique = more.filter((t) => !loadedTestIdsRef.current.has(t.sessionId));
       unique.forEach((t) => loadedTestIdsRef.current.add(t.sessionId));
       setTests((prev) => [...prev, ...unique]);
-      testsLoadedRef.current += unique.length;
+      if (more.length > 0) testsCursorRef.current = more[more.length - 1].completedAt;
       setTestsTotal(data.pagination?.total ?? 0);
       if (unique.length === 0) setTestsExhausted(true);
     } catch (e) {
@@ -711,6 +731,15 @@ export function DiaryModal() {
                           todayStr={todayStr}
                           onMonthChange={setCalendarMonth}
                           onBackfill={(dateStr) => setCheckIn({ open: true, existing: null, dateStr })}
+                          onSelectEntry={(entry) => {
+                            // 测肤自动条目对用户不算手动打卡：点按走"接管"语义（existing=null 新建覆盖）；
+                            // 手动打卡条目带入旧值编辑（与时间线的入口语义一致）
+                            setCheckIn({
+                              open: true,
+                              existing: isAutoDiaryEntry(entry) ? null : entry,
+                              dateStr: entry.date.slice(0, 10),
+                            });
+                          }}
                           loading={calendarLoading}
                         />
                       ) : (
@@ -756,7 +785,7 @@ export function DiaryModal() {
                           hasMoreTests={!testsExhausted && tests.length < testsTotal}
                           testsLoadingMore={testsLoadingMore}
                           onLoadMoreTests={loadMoreTests}
-                          hasMoreEntries={entries.length < entriesTotal}
+                          hasMoreEntries={entriesHasMore}
                           entriesLoadingMore={entriesLoadingMore}
                           onLoadMoreEntries={loadMoreEntries}
                           refreshKey={diaryRefreshKey}

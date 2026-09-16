@@ -19,11 +19,10 @@ import {
 import { cn } from "@/lib/utils";
 import { FaceScanOverlay } from "./FaceScanOverlay";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
-import type * as FaceApi from "@vladmandic/face-api";
+import { useFaceModels } from "@/hooks/use-face-models";
+import { faceModels } from "@/lib/face-models";
 
 const DEBUG = process.env.NODE_ENV === 'development';
-
-type FaceApiModule = typeof FaceApi;
 
 // 四张照片的数据结构
 export interface FaceCaptureImages {
@@ -35,8 +34,6 @@ export interface FaceCaptureImages {
 
 interface FaceCaptureProps {
   onCapture: (images: FaceCaptureImages) => Promise<void> | void;
-  onModelsLoaded?: () => void;
-  externalFaceApi?: FaceApiModule; // 外部预加载的 face-api 实例
 }
 
 type LightLevel = "excellent" | "good" | "low" | "too_dark" | "too_bright" | "uneven" | "unknown";
@@ -116,9 +113,11 @@ const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; ic
  * - 光线检测提示
  * - 前置/后置摄像头切换
  */
-export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: FaceCaptureProps) {
+export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const router = useRouter();
   const { trackFaceScanStep } = useAdvisorAnalytics();
+  // 面部模型状态：全站唯一事实源（face-models store 单飞加载，组件只订阅不持有副本）
+  const { status: faceModelStatus, load: loadFaceModels } = useFaceModels();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const faceDetectionRef = useRef<number | null>(null);
@@ -162,17 +161,15 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const [faceStatus, setFaceStatus] = useState<FaceStatus>("none");
   const [showManualButton, setShowManualButton] = useState(false); // 是否显示手动拍照按钮
   const [qualityHint, setQualityHint] = useState<string | null>(null); // 质量提示（闭眼/模糊）
-  const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [faceApiLoaded, setFaceApiLoaded] = useState(false);
   const [isAllCaptured, setIsAllCaptured] = useState(false);
   const isAllCapturedRef = useRef(isAllCaptured);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(() => {
     if (typeof navigator === 'undefined') return false;
     return /Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/i.test(navigator.userAgent);
   });
-  const [modelLoadFailed, setModelLoadFailed] = useState(false); // 模型加载失败状态
-  const modelLoadFailedRef = useRef(modelLoadFailed);
-  const faceApiRef = useRef<FaceApiModule | null>(null);
+  // 慢加载降级（纯本地 UI 状态，15 秒未就绪先给手动拍照；模型晚到会自动恢复自动检测，
+  // 绝不把"等太久"写回全局 failed——这是历史竞态的根源）
+  const [slowModelLoad, setSlowModelLoad] = useState(false);
   // 检测循环回调 ref，避免依赖变化导致 requestAnimationFrame 重启
   const detectFaceRef = useRef<() => Promise<void>>(async () => {});
   // 保存最新的面部检测框，用于裁剪
@@ -246,7 +243,29 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   useEffect(() => { reducedMotionRef.current = reducedMotion; }, [reducedMotion]);
   useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
   useEffect(() => { isAllCapturedRef.current = isAllCaptured; }, [isAllCaptured]);
-  useEffect(() => { modelLoadFailedRef.current = modelLoadFailed; }, [modelLoadFailed]);
+
+  // 15 秒慢加载降级：仅驱动 UI（手动拍照入口），不写回全局状态
+  useEffect(() => {
+    if (faceModelStatus !== "loading") {
+      setSlowModelLoad(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlowModelLoad(true), 15000);
+    return () => clearTimeout(timer);
+  }, [faceModelStatus]);
+
+  // 手动拍照降级入口：模型失败或等待过久（慢加载）时均可用；
+  // 模型晚到后 slowModelLoad 自动复位，自动检测无缝恢复
+  const manualFallback = faceModelStatus === "failed" || slowModelLoad;
+  const manualHint =
+    faceModelStatus === "failed"
+      ? "面部检测不可用，点击手动拍照"
+      : slowModelLoad
+        ? "检测准备较慢，可先手动拍照"
+        : "无法自动识别？点击手动拍照";
+  const retryModelLoad = () => {
+    void loadFaceModels().catch(() => { /* 失败保持降级态，可再次重试 */ });
+  };
 
   // 挂载时初始化“最近检测到面部的时间”为当前时间（避免 render 期间调用 Date.now）
   useEffect(() => {
@@ -427,83 +446,6 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   useEffect(() => {
     initCameraRef.current = initCamera;
   }, [initCamera]);
-
-  /**
-   * 加载 face-api.js 和模型
-   * 支持外部预加载：如果父组件已经加载了模型，直接使用外部实例
-   */
-  const loadFaceApi = useCallback(async () => {
-    if (faceApiLoaded) return;
-
-    // 如果外部已经预加载了 face-api 实例，直接复用
-    if (externalFaceApi) {
-      faceApiRef.current = externalFaceApi;
-      setModelsLoaded(true);
-      setFaceApiLoaded(true);
-      setModelLoadFailed(false);
-      if (DEBUG) {
-        console.log("Face detection models reused from preload");
-      }
-      onModelsLoaded?.();
-      return;
-    }
-
-    try {
-      // 动态导入 @vladmandic/face-api
-      const faceapi = await import("@vladmandic/face-api");
-      faceApiRef.current = faceapi;
-
-      // 从本地加载 TinyFaceDetector 和 faceLandmark68Net 模型
-      const loadPromise = Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-        faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-      ]);
-
-      try {
-        // 15 秒内未完成则先降级为手动拍照，避免用户无限等待
-        await Promise.race([
-          loadPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error("模型加载超时")), 15000))
-        ]);
-
-        setModelsLoaded(true);
-        setFaceApiLoaded(true);
-        setModelLoadFailed(false);
-        if (DEBUG) {
-          console.log("Face detection models loaded (including landmarks)");
-        }
-        onModelsLoaded?.();
-      } catch (timeoutErr) {
-        console.error("Failed to load face detection:", timeoutErr);
-        setModelsLoaded(false);
-        setModelLoadFailed(true);
-        // 已进入手动拍照降级模式，通知页面关闭全屏准备遮罩，避免遮罩永不消失
-        onModelsLoaded?.();
-        // 恢复路径：超时只是"等不及"，后台加载仍会继续。
-        // 若模型最终加载成功（如网络慢），自动恢复自动检测状态，
-        // 避免用户永久停留在"手动拍照"降级模式。
-        loadPromise
-          .then(() => {
-            setModelsLoaded(true);
-            setFaceApiLoaded(true);
-            setModelLoadFailed(false);
-            if (DEBUG) {
-              console.log("Face detection models loaded after timeout, auto-detection restored");
-            }
-            onModelsLoaded?.();
-          })
-          .catch(() => {
-            // 真实加载失败，保持手动拍照降级模式
-          });
-      }
-    } catch (err) {
-      console.error("Failed to load face detection:", err);
-      setModelsLoaded(false);
-      setModelLoadFailed(true);
-      // 已进入手动拍照降级模式，通知页面关闭全屏准备遮罩，避免遮罩永不消失
-      onModelsLoaded?.();
-    }
-  }, [faceApiLoaded, externalFaceApi, onModelsLoaded]);
 
   /**
    * 计算仰头指标 tiltRatio：鼻尖到眼连线垂距 / 眼到下巴垂距（越小越仰头）
@@ -744,7 +686,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
    */
   const detectFace = async () => {
     if (cooldownRef.current || isDetectingRef.current) return;
-    if (!videoRef.current || !faceApiRef.current || !modelsLoaded || isAllCapturedRef.current || isLoadingRef.current || modelLoadFailedRef.current) return;
+    if (!videoRef.current || !faceModels.getApi() || faceModelStatus !== "ready" || isAllCapturedRef.current || isLoadingRef.current) return;
 
     const video = videoRef.current;
     if (video.readyState < 2) return;
@@ -753,7 +695,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     const detectStart = performance.now();
 
     try {
-      const faceapi = faceApiRef.current;
+      const faceapi = faceModels.getApi();
+      if (!faceapi) return;
       // 移动设备降低输入分辨率（416→320），降低单帧推理耗时，避免主线程被占满导致触摸事件排队
       const isMobileInput = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
       const detection = await faceapi
@@ -993,7 +936,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   // 监听步骤变化并播报语音指令
   useEffect(() => {
-    if (isAllCaptured || isLoading || !modelsLoaded) return;
+    if (isAllCaptured || isLoading || faceModelStatus !== "ready") return;
 
     const instruction = CAPTURE_STEPS.find(s => s.step === currentStep)?.instruction;
     if (instruction) {
@@ -1027,7 +970,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
       return () => clearTimeout(timer);
     }
-  }, [currentStep, isAllCaptured, isLoading, modelsLoaded, speak]);
+  }, [currentStep, isAllCaptured, isLoading, faceModelStatus, speak]);
 
   /**
    * 获取下一步骤
@@ -1528,11 +1471,6 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
   }, []);
 
-  // 加载 face-api.js（异步初始化外部模型，必须在 effect 中执行）
-  useEffect(() => {
-    void loadFaceApi();
-  }, [loadFaceApi]);
-
   // 检测是否有多个摄像头；默认在移动端显示切换按钮，授权后重新枚举以获取标签
   useEffect(() => {
     // 非 HTTPS 或旧 webview 中 mediaDevices 可能不存在
@@ -1602,7 +1540,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   // 面部检测循环：依赖项精简，避免 currentStep/facingMode 等变化导致 loop 重启
   useEffect(() => {
-    if (!stream || !modelsLoaded || isAllCaptured || isLoading || modelLoadFailed) return;
+    if (!stream || faceModelStatus !== "ready" || isAllCaptured || isLoading) return;
 
     let animationId: number;
     let lastDetectionTime = 0;
@@ -1640,7 +1578,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         cancelAnimationFrame(animationId);
       }
     };
-  }, [stream, modelsLoaded, isAllCaptured, isLoading, modelLoadFailed]);
+  }, [stream, faceModelStatus, isAllCaptured, isLoading]);
 
   // 定时检测光线（analyzeLightLevel 内部已节流）
   useEffect(() => {
@@ -1652,16 +1590,16 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   // 定时检测画面清晰度（analyzeFrameSharpness 内部已节流）
   useEffect(() => {
-    if (!stream || isAllCaptured || modelLoadFailed) return;
+    if (!stream || isAllCaptured || faceModelStatus === "failed") return;
 
     const interval = setInterval(analyzeFrameSharpness, BLUR_ANALYSIS_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [stream, isAllCaptured, modelLoadFailed, analyzeFrameSharpness]);
+  }, [stream, isAllCaptured, faceModelStatus, analyzeFrameSharpness]);
 
   // 步骤切换时重置手动拍照按钮；计时到 MANUAL_BUTTON_DELAY_MS（3秒）后显示手动按钮
   useEffect(() => {
     setShowManualButton(false);
-    if (isAllCaptured || isLoading || error || isInCooldown || modelLoadFailed) {
+    if (isAllCaptured || isLoading || error || isInCooldown || faceModelStatus === "failed") {
       return;
     }
 
@@ -1671,11 +1609,11 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     }, remaining);
 
     return () => clearTimeout(timer);
-  }, [isAllCaptured, isLoading, error, isInCooldown, currentStep, modelLoadFailed]);
+  }, [isAllCaptured, isLoading, error, isInCooldown, currentStep, faceModelStatus]);
 
   // 若长时间未检测到面部，也提前显示手动拍照按钮，避免用户一直卡在当前步骤
   useEffect(() => {
-    if (isAllCaptured || isLoading || error || isInCooldown || modelLoadFailed || showManualButton) {
+    if (isAllCaptured || isLoading || error || isInCooldown || faceModelStatus === "failed" || showManualButton) {
       return;
     }
 
@@ -1686,7 +1624,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isAllCaptured, isLoading, error, isInCooldown, modelLoadFailed, showManualButton]);
+  }, [isAllCaptured, isLoading, error, isInCooldown, faceModelStatus, showManualButton]);
 
   // 人脸捕获期间保持屏幕常亮，NotAllowedError 静默忽略
   useEffect(() => {
@@ -1882,13 +1820,13 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           </m.div>
 
           {/* 手动拍照按钮 (Fallback) */}
-          {(showManualButton || modelLoadFailed) && (
+          {(showManualButton || manualFallback) && (
             <div className="pointer-events-auto mt-4">
               <button
                 onClick={() => takePhotoAuto("manual")}
                 className="px-6 py-2 min-h-[44px] rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors backdrop-blur-sm touch-manipulation"
               >
-                {modelLoadFailed ? "面部检测不可用，点击手动拍照" : "无法自动识别？点击手动拍照"}
+                {manualHint}
               </button>
             </div>
           )}
@@ -1903,12 +1841,28 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         </div>
       )}
 
-      {/* 模型加载失败提示 —— pointer-events-none 让点击穿透到底部的手动拍照按钮 */}
-      {modelLoadFailed && !isLoading && (
+      {/* 模型降级提示 —— pointer-events-none 让点击穿透到底部的手动拍照按钮；
+          失败时提供"重试自动检测"（重试幂等，成功后自动恢复自动检测） */}
+      {manualFallback && !isLoading && (
         <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-8 text-center pointer-events-none">
           <AlertCircle className="h-10 w-10 text-yellow-400 mb-3" />
-           <p className="text-white/80 text-sm mb-2">面部检测加载未成功</p>
-          <p className="text-white/50 text-xs">您可以点击下方按钮手动拍照</p>
+          {faceModelStatus === "failed" ? (
+            <>
+              <p className="text-white/80 text-sm mb-2">面部检测加载未成功</p>
+              <p className="text-white/50 text-xs">您可以点击下方按钮手动拍照</p>
+              <button
+                onClick={retryModelLoad}
+                className="pointer-events-auto mt-5 px-6 py-2.5 min-h-[44px] rounded-full bg-white text-black text-sm font-medium hover:bg-gray-200 shadow-xl transition-colors"
+              >
+                重试自动检测
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-white/80 text-sm mb-2">面部检测仍在准备中</p>
+              <p className="text-white/50 text-xs">您可以点击下方按钮手动拍照</p>
+            </>
+          )}
         </div>
       )}
 

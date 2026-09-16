@@ -101,3 +101,12 @@ export function streakEndingAt(dates: Date[], target: Date): number {
 export function checkinPointsForStreak(streak: number): number {
     return Math.min(Math.max(streak, 0), 3);
 }
+
+/**
+ * 打卡连续天数（封顶 3 天即够积分规则使用）：仅按"昨天/前天是否有条目"推导。
+ * 积分规则 checkinPointsForStreak 在 streak=3 封顶，因此无需 streakEndingAt 的全量
+ * 历史扫描——打卡 POST 只需回查前两天两个点，查询开销不随用户数据量增长。
+ */
+export function cappedCheckinStreak(hasYesterday: boolean, hasDayBefore: boolean): number {
+    return hasYesterday ? (hasDayBefore ? 3 : 2) : 1;
+}

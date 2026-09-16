@@ -13,7 +13,8 @@ import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useNavPush } from "@/hooks/use-nav-push";
-import { runWhenIdle } from "@/lib/idle";
+import { useFaceModels } from "@/hooks/use-face-models";
+import { scheduleFaceModelPreload } from "@/lib/face-models";
 import type { UploadMetadata } from "@/lib/upload-client";
 
 export default function FaceScanPage() {
@@ -34,8 +35,8 @@ export default function FaceScanPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [storageError, setStorageError] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [preloadedFaceApi, setPreloadedFaceApi] = useState<any>(null);
+    // 面部模型全局状态（唯一事实源）：face-models store 单飞加载，问卷页已触发、这里只订阅
+    const { status: faceModelStatus } = useFaceModels();
 
     // 模态框打开时锁定 body 滚动，防止 iOS 上顶部栏跟随滑动
     useBodyScrollLock({ enabled: isModalOpen || showExitConfirm });
@@ -82,30 +83,17 @@ export default function FaceScanPage() {
         return () => clearTimeout(timer);
     }, [isPreparing]);
 
-    // 预加载 face-api 模型：用户还在看引导页时就开始加载，减少等待时间
-    // 空闲调度启动：直接进入本页（如刷新恢复）时，face-api/TF.js 的解析编译是
-    // 主线程长任务，避免挤占顶部栏"返回/退出"的点击响应
+    // 模型就绪/失败后关闭准备遮罩（失败时 FaceCapture 会给出"手动拍照 + 重试"降级引导）
     useEffect(() => {
-        let cancelled = false;
-        const cancelIdle = runWhenIdle(() => {
-        const preloadModels = async () => {
-            try {
-                const faceapi = await import("@vladmandic/face-api");
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-                    faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-                ]);
-                if (!cancelled) {
-                    setPreloadedFaceApi(faceapi);
-                    if (process.env.NODE_ENV !== "production") console.log("Face-api models preloaded successfully");
-                }
-            } catch (err) {
-                console.error("Failed to preload face-api models:", err);
-            }
-        };
-        preloadModels();
-        }, { timeout: 3000, fallbackDelay: 1000 });
-        return () => { cancelled = true; cancelIdle(); };
+        if (faceModelStatus === "ready" || faceModelStatus === "failed") {
+            setIsPreparing(false);
+        }
+    }, [faceModelStatus]);
+
+    // 模型预加载：统一走 face-models store（问卷页选性别时已空闲调度，这里是刷新直达本页的兜底）；
+    // 空闲调度启动，避免 face-api/TF.js 的解析编译长任务挤占顶部栏"返回/退出"的点击响应
+    useEffect(() => {
+        scheduleFaceModelPreload(3000, 1000);
     }, []);
 
     const handleCaptureComplete = async (images: FaceCaptureImages) => {
@@ -282,11 +270,7 @@ export default function FaceScanPage() {
                             className="relative w-full max-w-[420px] md:max-w-[480px] aspect-[3/4] max-h-[65dvh] md:max-h-[70dvh] bg-black rounded-[2rem] overflow-hidden shadow-[0_8px_32px_-8px_rgba(0,38,62,0.12),0_24px_60px_-20px_rgba(0,38,62,0.18)] ring-[3px] ring-[#FAF8F5] z-10 flex flex-col before:absolute before:inset-0 before:rounded-[2rem] before:ring-1 before:ring-inset before:ring-white/10 before:pointer-events-none"
                         >
                             {/* Real Camera Component */}
-                            <FaceCapture
-                                onCapture={handleCaptureComplete}
-                                onModelsLoaded={() => setIsPreparing(false)}
-                                externalFaceApi={preloadedFaceApi}
-                            />
+                            <FaceCapture onCapture={handleCaptureComplete} />
                         </m.div>
                     )}
                 </AnimatePresence>
@@ -456,7 +440,8 @@ export default function FaceScanPage() {
                     // 记录拍摄时肌肤状态（供分析条件化与结果页提示）
                     try { localStorage.setItem(STORAGE_KEYS.ADVISOR_SKIN_STATE, skinState); } catch { /* ignore */ }
                     setHasStarted(true);
-                    setIsPreparing(true);
+                    // 模型已就绪时不闪准备遮罩；失败/加载中则由遮罩或 FaceCapture 降级态接管
+                    if (faceModelStatus !== "ready") setIsPreparing(true);
                     setIsModalOpen(false);
                 }}
                 onExit={() => navPush("/questions?edit=true")}
