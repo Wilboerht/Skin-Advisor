@@ -570,8 +570,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             gender: socialGender,
         });
 
-        preloadImage("/images/poster-template.png?v=4");
-        preloadImage("/images/poster-overlay.png");
+        preloadImage("/images/poster-template.webp?v=5");
+        preloadImage("/images/poster-overlay.webp");
         preloadImage(avatarUrl);
     }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender]);
 
@@ -1264,7 +1264,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         </div>
                     </div>
                 </div>
-                <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
+                <Image src="/images/watermark.webp" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
             </div>
         );
     }
@@ -1351,7 +1351,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         </div>
                     </div>
                 </div>
-                <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
+                <Image src="/images/watermark.webp" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
             </div>
         );
     }
@@ -1381,7 +1381,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         </div>
                     </div>
                 </div>
-                <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
+                <Image src="/images/watermark.webp" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
             </div>
         );
     }
@@ -1647,8 +1647,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 skincareFrequency: ipSkincareFrequency,
                                 gender: socialGender,
                             }) : ""}
-                            posterTemplate="/images/poster-template.png?v=4"
-                            posterOverlay="/images/poster-overlay.png"
+                            posterTemplate="/images/poster-template.webp?v=5"
+                            posterOverlay="/images/poster-overlay.webp"
                             qrDataUrl={qrDataUrl}
                             persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
                             summary={result?.analysis?.summary}

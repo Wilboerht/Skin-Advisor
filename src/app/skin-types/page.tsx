@@ -71,9 +71,9 @@ export default function ResultIndexPage() {
             <Image
               src="/images/jzp-eyebrow.png"
               alt="肌智派"
-              width={514}
-              height={258}
-              sizes="(min-width: 768px) 104px, 86px"
+              width={256}
+              height={156}
+              sizes="(min-width: 768px) 79px, 66px"
               className="h-10 md:h-12 w-auto opacity-90 mix-blend-multiply"
               priority
             />

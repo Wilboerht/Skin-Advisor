@@ -107,10 +107,10 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
               {/* 玩法步骤 */}
               <div className="flex flex-col items-center mb-8">
                 <Image
-                  src="/images/gift-badge.png"
+                  src="/images/gift-badge.webp"
                   alt="肌智派送好礼"
-                  width={200}
-                  height={150}
+                  width={640}
+                  height={396}
                   className="w-52 h-auto object-contain mb-8"
                   unoptimized
                 />

@@ -14,7 +14,7 @@ export function OrganizationSchema() {
     "@type": "Organization",
     name: "NIHPLOD",
     url: BASE_URL,
-    logo: `${BASE_URL}/images/watermark.png`,
+    logo: `${BASE_URL}/images/watermark.webp`,
     description:
       "基于 AI 面部识别技术的专业护肤分析与个性化护肤方案推荐平台，支持 8 种肌肤形象类型检测。",
     foundingDate: "2024",

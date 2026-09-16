@@ -371,7 +371,7 @@ export default function FaceScanPage() {
                                 </div>
                             </div>
                         </m.div>
-                        <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
+                        <Image src="/images/watermark.webp" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
                     </div>
                 )}
             </AnimatePresence>
@@ -428,7 +428,7 @@ export default function FaceScanPage() {
                                 </div>
                             </div>
                         </m.div>
-                        <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
+                        <Image src="/images/watermark.webp" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
                     </div>
                 )}
             </AnimatePresence>
