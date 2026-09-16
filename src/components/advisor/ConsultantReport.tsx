@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 const SEVERITY_META: Record<ConsultantIssue["severity"], { label: string; badge: string; bar: string }> = {
     severe: { label: "重点", badge: "bg-red-100 text-red-700", bar: "bg-red-400" },
     moderate: { label: "改善", badge: "bg-amber-100 text-amber-700", bar: "bg-amber-400" },
-    mild: { label: "轻微", badge: "bg-gray-100 text-gray-600", bar: "bg-gray-300" },
+    mild: { label: "轻微", badge: "bg-[#F1ECE3] text-[#8c7a6b]", bar: "bg-[#D9D0C3]" },
 };
 
 const GRADE_LABELS: Record<string, string> = {
@@ -57,7 +57,7 @@ function SectionTitle({ children, en }: { children: ReactNode; en?: string }) {
 function scoreTone(score: number): string {
     if (score < 40) return "text-red-600";
     if (score < 55) return "text-amber-600";
-    return "text-brand-charcoal/70";
+    return "text-[var(--color-brand-cocoa)]";
 }
 
 function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensions?: ConsultantReportProps["dimensions"] }) {
@@ -82,7 +82,7 @@ function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensio
             {chips.map((chip) => (
                 <span
                     key={chip.key}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/12 bg-white/70 px-2.5 py-1 text-[11px] text-brand-charcoal/70 font-light"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand-espresso)]/10 bg-white px-2.5 py-1 text-[11px] text-[var(--color-brand-espresso)]/70 font-light"
                 >
                     {chip.label}
                     <span className={cn("font-medium", scoreTone(chip.score))}>
@@ -113,11 +113,11 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
     return (
         <article className={cn(
             "relative rounded-xl border overflow-hidden motion-safe:transition-all motion-safe:duration-200",
-            // 重点问题整卡淡红 tint：扫读时严重程度一眼可辨，无需依赖细色条
+            // 重点问题：白底 + 实色红描边（左侧色条/徽章已足够传达严重度），避免半透明红底显脏
             isSevere
-                ? "border-red-200/50 bg-red-50/50"
-                : "border-brand-charcoal/[0.08] bg-white/60",
-            expanded ? "shadow-[0_8px_24px_rgba(61,47,37,0.06)]" : "hover:shadow-[0_4px_16px_rgba(61,47,37,0.04)] hover:border-brand-charcoal/[0.14]"
+                ? "border-red-200 bg-white"
+                : "border-[var(--color-brand-espresso)]/[0.10] bg-white",
+            expanded ? "shadow-[0_8px_24px_rgba(61,47,37,0.06)]" : "hover:shadow-[0_4px_16px_rgba(61,47,37,0.04)] hover:border-[var(--color-brand-espresso)]/[0.18]"
         )}>
             {/* 严重度色条 */}
             <div className={cn("absolute left-0 top-0 bottom-0 w-1.5", meta.bar)} />
@@ -144,15 +144,15 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                         </span>
                     </div>
                     {!expanded && issue.observation && (
-                        <p className="mt-1 text-[12px] text-brand-charcoal/45 font-light leading-relaxed line-clamp-1">
+                        <p className="mt-1 text-[12px] text-[var(--color-brand-taupe)] font-light leading-relaxed line-clamp-1">
                             {issue.observation}
                         </p>
                     )}
                 </div>
-                <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-brand-charcoal/[0.04] group-hover:bg-brand-charcoal/[0.08] transition-colors">
+                <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-[var(--color-brand-espresso)]/[0.05] group-hover:bg-[var(--color-brand-espresso)]/[0.10] transition-colors">
                     <ChevronDown
                         className={cn(
-                            "w-4 h-4 text-brand-charcoal/40 group-hover:text-brand-charcoal/60 motion-safe:transition-transform motion-safe:duration-200",
+                            "w-4 h-4 text-[var(--color-brand-cocoa)]/50 group-hover:text-[var(--color-brand-cocoa)]/75 motion-safe:transition-transform motion-safe:duration-200",
                             expanded && "rotate-180"
                         )}
                         strokeWidth={2}
@@ -174,7 +174,7 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                     >
                         <div className={cn(
                             "pl-6 pr-5 lg:pl-7 lg:pr-6 pb-5 lg:pb-6 pt-4 lg:pt-5 space-y-5 border-t",
-                            isSevere ? "border-red-200/40" : "border-brand-charcoal/[0.05]"
+                            isSevere ? "border-red-200/70" : "border-[var(--color-brand-espresso)]/[0.08]"
                         )}>
                             {/* 我看到的 */}
                             <div>
@@ -195,13 +195,13 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                                     为什么会出现这个问题
                                 </StepLabel>
                                 <div className="space-y-2.5">
-                                    <div className="rounded-lg bg-brand-charcoal/[0.03] px-4 py-3">
-                                        <p className="text-[11px] text-brand-charcoal/45 mb-1">直接诱因 · 皮肤层面</p>
-                                        <p className="text-sm leading-[1.85] text-brand-charcoal/80">{issue.directCauses}</p>
+                                    <div className="rounded-lg bg-[#F7F3EC] px-4 py-3">
+                                        <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">直接诱因 · 皮肤层面</p>
+                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{issue.directCauses}</p>
                                     </div>
-                                    <div className="rounded-lg bg-brand-charcoal/[0.03] px-4 py-3">
-                                        <p className="text-[11px] text-brand-charcoal/45 mb-1">间接诱因 · 生活习惯</p>
-                                        <p className="text-sm leading-[1.85] text-brand-charcoal/80">{issue.indirectCauses}</p>
+                                    <div className="rounded-lg bg-[#F7F3EC] px-4 py-3">
+                                        <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">间接诱因 · 生活习惯</p>
+                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{issue.indirectCauses}</p>
                                     </div>
                                 </div>
                             </div>
@@ -214,11 +214,11 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                                     怎么办
                                 </StepLabel>
                                 <div className="space-y-2.5">
-                                    <div className="rounded-lg border border-[#C9A86C]/25 bg-[#FBF8F3] px-4 py-3">
+                                    <div className="rounded-lg border border-[#C9A86C]/35 bg-[#FBF8F3] px-4 py-3">
                                         <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1">护理方案</p>
                                         <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{issue.skincarePlan}</p>
                                     </div>
-                                    <div className="rounded-lg border border-[#C9A86C]/25 bg-[#FBF8F3] px-4 py-3">
+                                    <div className="rounded-lg border border-[#C9A86C]/35 bg-[#FBF8F3] px-4 py-3">
                                         <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1">生活调整</p>
                                         <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{issue.lifestylePlan}</p>
                                     </div>
@@ -232,7 +232,7 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                                     {issue.medicalBoundary}
                                 </p>
                             ) : (
-                                <p className="flex items-start gap-1.5 text-[12px] leading-relaxed text-brand-charcoal/45">
+                                <p className="flex items-start gap-1.5 text-[12px] leading-relaxed text-[var(--color-brand-taupe)]">
                                     <Stethoscope className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.8} />
                                     {issue.medicalBoundary}
                                 </p>
@@ -250,7 +250,7 @@ function StepLabel({ step, children, emphasize = false }: { step: number; childr
     return (
         <p className={cn(
             "flex items-center gap-2 text-[12px] font-medium tracking-wide mb-2",
-            emphasize ? "text-[var(--color-brand-cocoa)]" : "text-brand-charcoal/50"
+            emphasize ? "text-[var(--color-brand-cocoa)]" : "text-[var(--color-brand-taupe)]"
         )}>
             <span className="shrink-0 w-[18px] h-[18px] rounded-full bg-[var(--color-brand-cocoa)]/10 text-[var(--color-brand-cocoa)] text-[10px] font-bold flex items-center justify-center">
                 {step}

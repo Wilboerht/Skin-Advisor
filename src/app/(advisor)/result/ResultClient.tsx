@@ -162,7 +162,7 @@ function ResultHeader({
     const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
 
     return (
-        <div className="w-full flex flex-col items-center pt-6 lg:pt-8">
+        <div className="w-full flex flex-col items-center pt-6 lg:pt-8 pb-4 lg:pb-6">
             {/* 状态标签属于标题一体：紧跟标题文字同行参与布局（整体居中） */}
             <p className="mt-0 mb-3 lg:mb-4 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
                 <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
