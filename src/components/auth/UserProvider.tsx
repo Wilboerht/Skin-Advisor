@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, Re
 import { Loader2 } from 'lucide-react';
 import { advisorStorage } from '@/lib/advisor-storage';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { getModalHistory } from '@/lib/modal-history';
 import { useToast } from '@/components/ui/Toast';
 
 // --- Types ---
@@ -178,6 +179,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
         // 登录/注册页自身不作为回跳目标，避免登录成功后回到 /login 再次触发跳转
         const { pathname, search } = window.location;
         const returnTo = pathname === "/login" || pathname === "/register" ? "/" : pathname + search;
+        // 立旗：弹层（如「我的」）在点击登录的同一 tick 内关闭时，modal-history 会
+        // 程序化 history.back() 清哨兵，与排队中的整页跳转竞争并取消导航（点登录没反应）
+        getModalHistory().markNavigationPending();
         window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
     }, []);
 
@@ -233,6 +237,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         // 登出成功提示：经主站整页跳转回来后组件已重建，用 sessionStorage 跨导航传递；
         // 在 clearAll 之后写入，避免被登出清理一并抹掉
         try { sessionStorage.setItem(LOGOUT_NOTICE_KEY, "1"); } catch { /* ignore */ }
+        // 同 login：整页跳转前立旗，防止弹层关闭的哨兵回退取消导航
+        getModalHistory().markNavigationPending();
         window.location.href = ssoLogoutUrl || "/";
     }, [toast]);
 

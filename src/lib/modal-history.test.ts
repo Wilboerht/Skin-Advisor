@@ -205,6 +205,25 @@ describe("createModalHistory", () => {
     expect(f.guardCalls).toEqual([true, false]);
   });
 
+  it("整页跳转挂起：立旗后关闭不回退历史（防止 back() 取消排队中的 location 导航）", () => {
+    const f = createFakeEnv();
+    const h = createModalHistory(f.env);
+
+    h.open("a", vi.fn());
+    h.markNavigationPending(); // 模拟 login() 在关弹窗的同一 tick 发起整页跳转
+    h.close("a");
+    f.flush();
+
+    expect(f.backCount).toBe(0); // 不回退，让位给整页跳转
+    expect(f.guardCalls).toEqual([true, false]); // 屏蔽仍被恢复
+
+    // 下一轮会话不受影响（旗子在 open 时复位）
+    h.open("b", vi.fn());
+    h.close("b");
+    f.flush();
+    expect(f.backCount).toBe(1);
+  });
+
   it("程序化回退后 popstate 未到达：兜底定时器恢复屏蔽", () => {
     const f = createFakeEnv();
     const h = createModalHistory(f.env);

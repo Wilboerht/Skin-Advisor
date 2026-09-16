@@ -14,6 +14,10 @@
  *   由此产生的 popstate 需要吞掉，避免误关其它弹层/误判用户返回。
  * - **导航让位**：弹层打开期间发生真实页面导航（点报告链接等）时，
  *   当前条目已不是哨兵，直接放弃清理，不干扰 Next.js 路由。
+ * - **整页跳转让位（关键）**：关弹窗的同一 tick 内若紧随 `location.href` 整页跳转
+ *   （如 SSO 登录），程序化 `history.back()` 会抢在导航落地前执行并**取消排队中的跳转**
+ *   （表现为"点登录没反应"）。跳转发起前调用 `markNavigationPending()` 立旗，
+ *   哨兵清理让位——页面随即卸载，哨兵无需清理，模块状态随新页面重建。
  * - **View Transition 屏蔽（关键）**：next-view-transitions 对每次 popstate 都会启动
  *   `document.startViewTransition`，但它的过渡只在 pathname/hash 变化时才收尾；
  *   哨兵回退是"同 URL 出栈"，会导致过渡永不结束、旧快照盖住页面（表现为关闭弹层卡死）。
@@ -61,6 +65,8 @@ export function createModalHistory(env: ModalHistoryEnv) {
   let suppressedAt = 0;
   /** 兜底恢复 View Transition 屏蔽的取消函数 */
   let cancelGuardFallback: (() => void) | null = null;
+  /** 整页跳转挂起标记：login/logout 等 location.href 导航前立旗（见文件头说明） */
+  let navigationPending = false;
 
   const isOurSentinelCurrent = () => {
     const state = env.getState();
@@ -93,6 +99,8 @@ export function createModalHistory(env: ModalHistoryEnv) {
     stack.push(id);
     callbacks.set(id, onClose);
     cancelGuardRelease();
+    // 新一轮弹层会话开始：上一轮若有未完成的跳转标记，在此复位
+    navigationPending = false;
 
     if (pendingDrop) {
       // 同 tick 交接：取消哨兵清理，复用它（不再 push，历史栈零抖动）；屏蔽保持开启
@@ -119,6 +127,13 @@ export function createModalHistory(env: ModalHistoryEnv) {
       if (!pendingDrop) return; // 被同 tick 的新 open 取消
       pendingDrop = false;
       if (stack.length > 0) return;
+      if (navigationPending) {
+        // 整页跳转排队中（如 SSO 登录）：history.back() 会取消排队中的 location 导航，
+        // 必须让位。页面随即卸载，哨兵与模块状态随新页面重建，无需清理
+        sentinelActive = false;
+        setGuard(false);
+        return;
+      }
       if (!isOurSentinelCurrent()) {
         // 弹层打开期间发生了真实导航（如点报告链接），哨兵已不在当前条目：不做任何事
         sentinelActive = false;
@@ -163,7 +178,11 @@ export function createModalHistory(env: ModalHistoryEnv) {
     }
   };
 
-  return { open, close, handlePopState };
+  const markNavigationPending = () => {
+    navigationPending = true;
+  };
+
+  return { open, close, handlePopState, markNavigationPending };
 }
 
 /**
