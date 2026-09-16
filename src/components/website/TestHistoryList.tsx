@@ -200,7 +200,7 @@ export function TestHistoryList({
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1 || loading}
-            className="flex items-center gap-1.5 text-[12px] text-brand-charcoal/45 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 py-2 pr-2 text-[12px] text-brand-charcoal/45 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             上一页
@@ -213,7 +213,7 @@ export function TestHistoryList({
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages || loading}
-            className="flex items-center gap-1.5 text-[12px] text-brand-charcoal/45 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 py-2 pl-2 text-[12px] text-brand-charcoal/45 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             下一页
             <ChevronRight className="w-4 h-4" />

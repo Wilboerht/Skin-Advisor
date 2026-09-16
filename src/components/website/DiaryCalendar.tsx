@@ -194,10 +194,10 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
         {(["great", "good", "normal", "bad", "terrible"] as const).map((key) => (
           <span key={key} className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: STATE_META[key].color }} />
-            <span className="text-[10px] text-brand-charcoal/35 font-light">{STATE_META[key].label}</span>
+            <span className="text-[11px] text-brand-charcoal/35 font-light">{STATE_META[key].label}</span>
           </span>
         ))}
-        {loading && <span className="text-[10px] text-brand-charcoal/35">加载中…</span>}
+        {loading && <span className="text-[11px] text-brand-charcoal/35">加载中…</span>}
       </div>
     </div>
   );

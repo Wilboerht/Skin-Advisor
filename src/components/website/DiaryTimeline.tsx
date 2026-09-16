@@ -169,8 +169,9 @@ export function DiaryTimeline({
   return (
     <div>
       {!hasAnyEvent && (
-        <div className="rounded-2xl border border-dashed border-[#C9A86C]/40 bg-gradient-to-br from-[#FBF8F3] to-[var(--color-brand-cream)] py-10 px-6 text-center mb-6">
-          <p className="text-[13px] text-brand-charcoal/55 font-light mb-4">
+        /* 空态引导：无框居中（与左列"解锁引导"同一种样式语言，全站弹层一致） */
+        <div className="py-10 text-center mb-6">
+          <p className="text-[13px] text-brand-charcoal/55 font-light leading-[1.8] tracking-[0.06em] mb-4">
             完成一次测肤后，这里会自动生成你的护肤记录
           </p>
           <div className="flex items-center justify-center gap-3">
@@ -253,14 +254,14 @@ export function DiaryTimeline({
                           <button
                             type="button"
                             onClick={() => onCheckIn(null, todayStr)}
-                            className="shrink-0 min-h-[30px] px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
+                            className="shrink-0 min-h-9 px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                           >
                             记录今日状态
                           </button>
                         )}
                         <Link
                           href="/questions"
-                          className="shrink-0 min-h-[30px] inline-flex items-center px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
+                          className="shrink-0 min-h-9 inline-flex items-center px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
                         >
                           去测肤 →
                         </Link>
@@ -273,7 +274,7 @@ export function DiaryTimeline({
                         <button
                           type="button"
                           onClick={() => onCheckIn(manualDiaryEntry, todayStr)}
-                          className="inline-flex items-center min-h-[30px] px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
+                          className="inline-flex items-center min-h-9 px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                         >
                           {manualDiaryEntry ? "编辑今日记录 →" : "记录今日状态"}
                         </button>
@@ -313,14 +314,14 @@ export function DiaryTimeline({
                           className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE]"
                           style={{ backgroundColor: meta.color }}
                         />
-                        {/* 操作按钮：悬浮行尾，行内不占位（极简）；可写窗口内的历史日期同样可编辑 */}
-                        <div className="absolute right-0 -top-0.5 hidden group-hover:flex items-center gap-0.5">
+                        {/* 操作按钮：移动端常显（无 hover 可依赖），桌面端悬浮行尾显现；行内不占位（极简） */}
+                        <div className="absolute right-0 -top-0.5 flex items-center gap-0.5 lg:hidden lg:group-hover:flex">
                           {onCheckIn && (isToday || canBackfill(group.dateStr)) && (
                             <button
                               type="button"
                               onClick={() => onCheckIn(ev.entry, group.dateStr)}
                               aria-label={isToday ? "编辑今日记录" : "编辑记录"}
-                              className="w-7 h-7 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
                             >
                               <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
                             </button>
@@ -331,14 +332,14 @@ export function DiaryTimeline({
                                 type="button"
                                 disabled={deletingId === ev.entry.id}
                                 onClick={() => onDeleteEntry(ev.entry)}
-                                className="h-7 px-2.5 flex items-center rounded-full bg-[#D44C47]/10 text-[#D44C47] text-[11px] font-light tracking-[0.05em] disabled:opacity-50 cursor-pointer"
+                                className="h-8 px-3 flex items-center rounded-full bg-[#D44C47]/10 text-[#D44C47] text-[11px] font-light tracking-[0.05em] disabled:opacity-50 cursor-pointer"
                               >
                                 确认删除
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteId(null)}
-                                className="h-7 px-2.5 flex items-center rounded-full text-brand-charcoal/50 text-[11px] font-light hover:bg-brand-charcoal/[0.05] cursor-pointer"
+                                className="h-8 px-3 flex items-center rounded-full text-brand-charcoal/50 text-[11px] font-light hover:bg-brand-charcoal/[0.05] cursor-pointer"
                               >
                                 取消
                               </button>
@@ -348,7 +349,7 @@ export function DiaryTimeline({
                               type="button"
                               onClick={() => setConfirmDeleteId(ev.entry.id)}
                               aria-label="删除记录"
-                              className="w-7 h-7 flex items-center justify-center rounded-full text-brand-charcoal/30 hover:text-[#D44C47] hover:bg-[#D44C47]/[0.06] transition-colors cursor-pointer"
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/30 hover:text-[#D44C47] hover:bg-[#D44C47]/[0.06] transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
                             </button>
@@ -369,7 +370,7 @@ export function DiaryTimeline({
                               </span>
                             </div>
                             {ev.entry.note && (
-                              <p className="mt-1 text-[13px] text-[#3d2f25]/75 font-light leading-relaxed">
+                              <p className="mt-1 text-[13px] text-[#3d2f25]/75 font-light leading-[1.8] tracking-[0.06em]">
                                 {ev.entry.note}
                               </p>
                             )}
@@ -391,7 +392,7 @@ export function DiaryTimeline({
                               ))}
                             </div>
                             {ev.entry.note && (
-                              <p className="mt-1 text-[13px] text-[#3d2f25]/75 font-light leading-relaxed">
+                              <p className="mt-1 text-[13px] text-[#3d2f25]/75 font-light leading-[1.8] tracking-[0.06em]">
                                 {ev.entry.note}
                               </p>
                             )}
