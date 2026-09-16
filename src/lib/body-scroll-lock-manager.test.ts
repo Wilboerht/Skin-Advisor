@@ -24,6 +24,8 @@ function installDomStub(scrollY = 300): DomStub {
             setAttribute: (name: string) => stub.attrs.add(name),
             removeAttribute: (name: string) => stub.attrs.delete(name),
         },
+        // restoreScrollPosition 会临时改写 html 的 scrollBehavior
+        documentElement: { style: {} },
     };
     (globalThis as Record<string, unknown>).window = {
         scrollY,

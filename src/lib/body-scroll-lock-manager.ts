@@ -36,6 +36,19 @@ function removeFixedPositioning() {
     document.body.style.top = saved.top;
 }
 
+/**
+ * 恢复加锁前的滚动位置。全局 html 是 scroll-behavior: smooth（globals.css），
+ * 直接 window.scrollTo 会播放平滑滚动动画——解锁瞬间页面"慢悠悠滚回去"，
+ * 看起来就是模态框关闭卡顿。临时切 auto 立即跳转后还原。
+ */
+function restoreScrollPosition() {
+    const html = document.documentElement;
+    const prevBehavior = html.style.scrollBehavior;
+    html.style.scrollBehavior = "auto";
+    window.scrollTo(0, savedScrollY);
+    html.style.scrollBehavior = prevBehavior;
+}
+
 export function acquireLock(useIos: boolean) {
     if (lockCount === 0) {
         saved = {
@@ -73,7 +86,7 @@ export function releaseLock(useIos: boolean) {
         // body 永久残留 position: fixed / top: -Npx，整页冻结
         if (iosLockCount === 0) {
             removeFixedPositioning();
-            window.scrollTo(0, savedScrollY);
+            restoreScrollPosition();
         }
     }
 
@@ -89,7 +102,7 @@ export function releaseLock(useIos: boolean) {
         // 应用过 fixed 定位时，body 曾脱离文档流，需恢复加锁前的滚动位置，
         // 否则 iOS 解锁后页面会跳回顶部
         if (fixedApplied) {
-            window.scrollTo(0, savedScrollY);
+            restoreScrollPosition();
         }
         saved = null;
         fixedApplied = false;
