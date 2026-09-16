@@ -760,6 +760,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: isMobileInput ? 320 : 416, scoreThreshold: 0.3 }))
         .withFaceLandmarks();
 
+      // 稳定帧数要求：普通步骤需 5 帧，下颚（抬头）步骤容易误判需 7 帧。
+      // 进度分母与拍照帧数保持一致：进度环闭合（100%）的瞬间即拍照瞬间，
+      // 不再出现"环只走到 ~83% 就拍照、最后一段靠强制补满"的假进度
+      const requiredFrames = currentStepRef.current === 'chin' ? 7 : 5;
+      const progressFrames = requiredFrames;
+
       if (detection) {
         lastFaceDetectedRef.current = Date.now();
 
@@ -842,11 +848,6 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
             displayBox,
           });
         }
-
-        // 稳定帧数要求：普通步骤需 5 帧（~250ms），给用户"定住"的心理预期
-        // 下颚（抬头）步骤容易误判，需要更多稳定帧
-        const requiredFrames = currentStep === 'chin' ? 7 : 5;
-        const progressFrames = currentStep === 'chin' ? 8 : 6;
 
         // 核心拍照条件：姿势正确 + 大小基本合适 + 光线足够 + 睁眼 + 画面清晰
         //（光线不足/闭眼/模糊时仍可手动拍照）
@@ -947,11 +948,18 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           }
         }
       } else {
-        stableCountRef.current = 0;
+        // 人脸短暂丢失：与姿势错误一样轻微衰减而非立即清零，
+        // 避免单帧漏检导致进度环瞬间归零重启（长时间无脸会自然衰减到 0）；
+        // 同时同步 stabilityProgress 状态，不再残留旧进度值
+        stableCountRef.current = Math.max(0, stableCountRef.current - 1);
         faceBoxRef.current = null;
         // 无脸时清除质量提示，避免上一次检测的提示残留挂在屏幕上
         setQualityHint((prev) => (prev === null ? prev : null));
 
+        setStabilityProgress((prev) => {
+          const next = Math.round(Math.min(100, (stableCountRef.current / progressFrames) * 100));
+          return prev === next ? prev : next;
+        });
         setFaceStatus((prev) => (prev === "detecting" ? prev : "detecting"));
       }
     } catch (err) {

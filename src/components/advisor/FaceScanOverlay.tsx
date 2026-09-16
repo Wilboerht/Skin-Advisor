@@ -68,11 +68,17 @@ export function FaceScanOverlay({
                         />
                     )}
 
-                    {/* 椭圆框进度描边：随倒计时稳定度从 0 逐渐闭合到 100%（金色的"进度圈"）。
-                        ready 态保持完全闭合一圈，直到 success 绿环确认动画接手——用户能看到"完整闭合"瞬间。
-                        实现为 conic-gradient 环 + 前缘圆点；圆点为独立兄弟层（不被环的 mask 裁切） */}
-                    {(faceStatus === "found" || faceStatus === "ready") && stabilityProgress > 0 && stabilityProgress <= 100 && (
-                        <div className="absolute inset-0 pointer-events-none">
+                    {/* 椭圆框进度描边：随稳定进度从 0 闭合到 100%（金色进度环）。
+                        进度 > 0 即常驻显示：detecting（姿势抖动/短暂丢脸）时降低透明度而非卸载，
+                        配合稳定度的衰减式下降，避免环随状态切换闪烁消失/重现；
+                        进度分母与拍照帧数一致，环闭合瞬间即拍照瞬间，随后 success 绿环确认动画接手。
+                        实现为 conic-gradient 环 + 前缘圆点；圆点按椭圆参数方程定位（见 .scan-dot-head），
+                        作为独立兄弟层渲染（不被环的 mask 裁切）且永不脱轨 */}
+                    {stabilityProgress > 0 && stabilityProgress <= 100 && faceStatus !== "success" && (
+                        <div className={cn(
+                            "absolute inset-0 pointer-events-none transition-opacity duration-300",
+                            faceStatus === "detecting" && "opacity-50"
+                        )}>
                             {/* 静态光晕：一次性光栅化后走合成层，不随进度逐帧重绘 */}
                             <div
                                 aria-hidden="true"
@@ -85,16 +91,13 @@ export function FaceScanOverlay({
                                     "--scan-progress": `${Math.min(stabilityProgress, 100)}%`,
                                 } as React.CSSProperties}
                             />
-                            {/* 前缘圆点：随进度角绕椭圆边界旋转，模拟圆头笔端 */}
-                            <div
-                                className="absolute inset-0"
+                            {/* 前缘圆点：--scan-angle 与 --scan-progress 同源同步更新，模拟圆头笔端 */}
+                            <span
+                                className="scan-dot-head scan-progress-dot-head w-[6px] h-[6px] rounded-full bg-[#C9A86C] shadow-[0_0_8px_rgba(201,168,108,0.8)]"
                                 style={{
-                                    transform: `rotate(${Math.min(stabilityProgress, 100) * 3.6}deg)`,
-                                    transition: prefersReducedMotion ? "none" : "transform 250ms linear",
-                                }}
-                            >
-                                <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[6px] h-[6px] rounded-full bg-[#C9A86C] shadow-[0_0_8px_rgba(201,168,108,0.8)]" />
-                            </div>
+                                    "--scan-angle": `${Math.min(stabilityProgress, 100) * 3.6}deg`,
+                                } as React.CSSProperties}
+                            />
                         </div>
                     )}
 
@@ -107,7 +110,7 @@ export function FaceScanOverlay({
                             transition={{ duration: 0.3 }}
                         >
                             {/* 绿色圆环描边绘制动画：沿椭圆轨迹从 0 逐渐闭合到 100%（conic-gradient 环，与进度环同方案）；
-                                前缘圆点作为独立层与环同步旋转（0.5s / ease-in-out 与环相同）；
+                                前缘圆点按椭圆参数方程定位，由 scan-dot-orbit 关键帧驱动，与环同 duration/easing 同步；
                                 静态光晕一次性光栅化，不随动画逐帧重绘 */}
                             <div className="pointer-events-none absolute inset-0">
                                 <div
@@ -121,9 +124,7 @@ export function FaceScanOverlay({
                                         ...(prefersReducedMotion ? { "--scan-progress": "100%" } : {}),
                                     } as React.CSSProperties}
                                 />
-                                <div className="scan-success-dot absolute inset-0">
-                                    <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[6px] h-[6px] rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                                </div>
+                                <span className="scan-dot-head scan-success-dot-head w-[6px] h-[6px] rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                             </div>
 
                             {/* 中央成功提示 */}
@@ -149,7 +150,7 @@ export function FaceScanOverlay({
 
                 {/* 扫描激光：元素高度等于扫描轨道（top 10% → 90%），仅顶部 2px 线条可见；
                     用 transform（y 百分比相对自身高度）替代 top 动画，只走合成层，避免每帧 layout。
-                    仅在未找到脸/检测中播放：found 阶段让位给金色进度描边与倒计时，避免动效叠加 */}
+                    仅在未找到脸/检测中播放：found 阶段让位给金色进度描边，避免动效叠加 */}
                 <AnimatePresence>
                     {currentStep === "front" && (faceStatus === "none" || faceStatus === "detecting") && !prefersReducedMotion && (
                         <m.div
@@ -166,24 +167,9 @@ export function FaceScanOverlay({
 
             {/* 2. 顶部指引已移除，由父组件统一接管 */}
 
-
-            {/* 3. 中心倒计时数字 (仅在Found且未Ready时显示；进度视觉已由椭圆框描边承担) */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <AnimatePresence>
-                    {faceStatus === "found" && stabilityProgress > 0 && stabilityProgress < 100 && (
-                        <m.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 1.2, opacity: 0 }}
-                            className="relative z-10"
-                        >
-                            <span className="font-mono text-4xl font-bold text-white tracking-tighter drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                                {Math.max(1, Math.ceil((100 - stabilityProgress) / 25))}
-                            </span>
-                        </m.div>
-                    )}
-                </AnimatePresence>
-            </div>
+            {/* 3. 中心倒计时数字已移除：原数字由稳定度百分比换算（4,3,2,2,1 序列重复、
+                衰减时倒数回升、节奏随检测帧率漂移），并非真实倒计时；
+                进度反馈由椭圆框进度描边独立承担，同时减少 found 态动效堆叠 */}
 
         </div>
     );
