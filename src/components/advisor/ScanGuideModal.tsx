@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Sun, ScanEye, ChevronLeft } from "lucide-react";
+import { ArrowRight, Sparkles, Sun, ScanEye, ScanFace, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -98,8 +98,17 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                     开始面部扫描
                                 </h1>
 
+                                {/* 取景框示意：四角 + 人脸轮廓 */}
+                                <div className="relative mx-auto mt-6 mb-7 md:mt-8 md:mb-8 h-24 w-24 md:h-28 md:w-28" aria-hidden="true">
+                                    <span className="absolute left-0 top-0 h-5 w-5 rounded-tl-md border-l border-t border-brand-charcoal/25" />
+                                    <span className="absolute right-0 top-0 h-5 w-5 rounded-tr-md border-r border-t border-brand-charcoal/25" />
+                                    <span className="absolute bottom-0 left-0 h-5 w-5 rounded-bl-md border-b border-l border-brand-charcoal/25" />
+                                    <span className="absolute bottom-0 right-0 h-5 w-5 rounded-br-md border-b border-r border-brand-charcoal/25" />
+                                    <ScanFace className="absolute inset-0 m-auto h-14 w-14 md:h-16 md:w-16 text-brand-charcoal/45" strokeWidth={1} />
+                                </div>
+
                                 {/* 三提示：一行三词，无分组标题与说明 */}
-                                <div className="mt-7 md:mt-8 flex items-center justify-center gap-6 md:gap-10 text-[13px] text-brand-charcoal/70 font-light tracking-[0.06em]">
+                                <div className="flex items-center justify-center gap-6 md:gap-10 text-[13px] text-brand-charcoal/70 font-light tracking-[0.06em]">
                                     {guideItems.map((item, index) => {
                                         const Icon = item.icon;
                                         return (
