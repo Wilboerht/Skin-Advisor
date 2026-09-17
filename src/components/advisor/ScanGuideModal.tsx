@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Sun, ScanEye, ScanFace, ChevronLeft } from "lucide-react";
+import { ArrowRight, Sparkles, Sun, ScanEye, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -14,6 +14,15 @@ interface ScanGuideModalProps {
     onConfirm: (skinState: SkinStateValue) => void;
     onExit?: () => void;
 }
+
+/** 状态胶囊的短文案：完整文案（SKIN_STATE_LABELS）仍用于报告与 AI 提示词，这里只做界面简写 */
+const CHIP_LABELS: Record<SkinStateValue, string> = {
+    bare: "素颜",
+    sunscreen: "防晒",
+    washed: "刚洗脸",
+    light_makeup: "淡妆",
+    heavy_makeup: "浓妆",
+};
 
 export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProps) {
 
@@ -56,7 +65,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                     transition={{ duration: 0.4 }}
                     className="fixed inset-0 z-[320] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto overscroll-contain"
                 >
-                    {/* ---- App Bar / Header（原右侧"退出"与左侧"返回"行为相同，已移除避免语义重复） ---- */}
+                    {/* ---- App Bar / Header ---- */}
                     <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-center px-6 md:px-12 lg:px-20 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-brand-charcoal/5">
                         <button
                             onClick={handleClose}
@@ -76,68 +85,42 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                         />
                     </header>
 
-                    {/* Content: my-auto 保证内容少时垂直居中、内容多时从顶部自然滚动（避免 justify-center 裁切顶部） */}
+                    {/* Content */}
                     <div className="flex-1 flex flex-col items-center w-full px-4 md:px-8 pt-24 md:pt-28 pb-6">
                         <div className="w-full max-w-2xl flex flex-col items-center my-auto">
-                            {/* Header */}
                             <m.div
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.1, duration: 0.5 }}
+                                transition={{ delay: 0.1, duration: 0.45 }}
                                 className="flex flex-col items-center text-center"
                             >
                                 <h1 id="scan-guide-title" className="text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em]">
                                     开始面部扫描
                                 </h1>
-                                {/* 取景框示意：四角 + 人脸轮廓，替代原先无含义的大图标 */}
-                                <div className="relative mx-auto mt-6 mb-8 md:mt-8 md:mb-10 h-24 w-24 md:h-28 md:w-28" aria-hidden="true">
-                                    <span className="absolute left-0 top-0 h-5 w-5 rounded-tl-md border-l border-t border-brand-charcoal/25" />
-                                    <span className="absolute right-0 top-0 h-5 w-5 rounded-tr-md border-r border-t border-brand-charcoal/25" />
-                                    <span className="absolute bottom-0 left-0 h-5 w-5 rounded-bl-md border-b border-l border-brand-charcoal/25" />
-                                    <span className="absolute bottom-0 right-0 h-5 w-5 rounded-br-md border-b border-r border-brand-charcoal/25" />
-                                    <ScanFace className="absolute inset-0 m-auto h-14 w-14 md:h-16 md:w-16 text-brand-charcoal/45" strokeWidth={1} />
-                                </div>
-                            </m.div>
 
-                            {/* 拍摄准备（窄屏纵向行、桌面横排；每条补一行说明） */}
-                            <m.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2, duration: 0.5 }}
-                                className="w-full"
-                            >
-                                <p className="mb-4 text-center text-[12px] font-light tracking-[0.12em] text-brand-charcoal/55">
-                                    拍摄准备
-                                </p>
-                                <div className="flex items-center justify-center gap-6 md:gap-14">
+                                {/* 三提示：一行三词，无分组标题与说明 */}
+                                <div className="mt-7 md:mt-8 flex items-center justify-center gap-6 md:gap-10 text-[13px] text-brand-charcoal/70 font-light tracking-[0.06em]">
                                     {guideItems.map((item, index) => {
                                         const Icon = item.icon;
                                         return (
-                                            <div key={index} className="flex flex-col items-center gap-3">
-                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-charcoal/[0.05]">
-                                                    <Icon className="w-5 h-5 text-brand-charcoal/60" strokeWidth={1.25} />
-                                                </div>
-                                                <span className="text-sm text-brand-charcoal/85 font-normal tracking-[0.08em]">
-                                                    {item.title}
-                                                </span>
-                                            </div>
+                                            <span key={index} className="inline-flex items-center gap-1.5">
+                                                <Icon className="w-4 h-4 text-brand-charcoal/45" strokeWidth={1.5} />
+                                                {item.title}
+                                            </span>
                                         );
                                     })}
                                 </div>
                             </m.div>
 
-                            {/* 分组分隔 */}
-                            <div className="my-7 w-full border-t border-brand-charcoal/[0.08] md:my-9" />
-
-                            {/* 拍摄时肌肤状态（胶囊分段单选，默认纯素颜；影响分析准确度与报告提示） */}
+                            {/* 拍摄状态（胶囊分段单选，默认素颜；影响分析准确度与报告提示） */}
                             <m.div
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.25, duration: 0.5 }}
-                                className="w-full flex flex-col items-center"
+                                transition={{ delay: 0.18, duration: 0.45 }}
+                                className="mt-9 md:mt-10 w-full flex flex-col items-center"
                             >
-                                <p className="mb-3 text-center text-[13px] font-light tracking-[0.06em] text-brand-charcoal/70">
-                                    此刻镜头前的肌肤状态是？
+                                <p className="mb-3 text-center text-[12px] font-light tracking-[0.06em] text-brand-charcoal/60">
+                                    拍摄状态
                                 </p>
                                 <div
                                     role="radiogroup"
@@ -150,42 +133,35 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 >
                                     {SKIN_STATE_OPTIONS.map((option) => {
                                         const selected = skinState === option.value;
-                                        // "刚洗完脸（未护肤）"：主词 + 括号说明分层排版，避免按钮过长
-                                        const [mainText, subRaw] = option.label.split("（");
-                                        const subText = subRaw ? `（${subRaw}` : null;
                                         return (
                                             <button
                                                 key={option.value}
                                                 type="button"
                                                 role="radio"
                                                 aria-checked={selected}
+                                                aria-label={option.label}
                                                 onClick={() => setSkinState(option.value)}
-                                                className={`inline-flex min-h-[44px] items-center justify-center gap-1 rounded-full px-4 py-2 text-[12px] tracking-[0.04em] transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/25 ${
+                                                className={`inline-flex min-h-[44px] flex-1 items-center justify-center rounded-full px-3 text-[12px] tracking-[0.04em] transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/25 md:flex-none md:px-4 ${
                                                     selected
                                                         ? "bg-brand-charcoal/[0.08] font-medium text-brand-charcoal"
                                                         : "text-brand-charcoal/60 hover:text-brand-charcoal/85"
                                                 }`}
                                             >
-                                                <span>{mainText}</span>
-                                                {subText && (
-                                                    <span className={`text-[10px] font-light ${selected ? "text-brand-charcoal/60" : "text-brand-charcoal/45"}`}>
-                                                        {subText}
-                                                    </span>
-                                                )}
+                                                {CHIP_LABELS[option.value]}
                                             </button>
                                         );
                                     })}
                                 </div>
-                                <p className="mt-3 text-center text-[11px] font-light tracking-[0.04em] text-brand-charcoal/50">
-                                    照片仅用于本次分析，不会被保存
+                                <p className="mt-3 text-center text-[11px] font-light text-brand-charcoal/50">
+                                    照片不会被保存
                                 </p>
                             </m.div>
 
                             {/* Actions */}
                             <m.div
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.3, duration: 0.5 }}
+                                transition={{ delay: 0.26, duration: 0.45 }}
                                 className="w-full flex flex-col items-center mt-8 md:mt-10"
                             >
                                 <button
@@ -202,9 +178,9 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                         }
                                         onConfirm(skinState);
                                     }}
-                                    className="group inline-flex h-12 items-center justify-center gap-3 rounded-full bg-[var(--color-brand-cocoa)] px-10 sm:px-12 text-[14px] font-normal tracking-[0.08em] text-white cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-cocoa)]/40 focus-visible:ring-offset-2"
+                                    className="group inline-flex h-12 items-center justify-center gap-3 rounded-full bg-[var(--color-brand-cocoa)] px-10 sm:px-12 text-[14px] font-normal tracking-[0.08em] text-white cursor-pointer transition-colors duration-300 hover:bg-brand-cocoa-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-cocoa)]/40 focus-visible:ring-offset-2"
                                 >
-                                    <span>开始面部扫描 · 约 1 分钟</span>
+                                    <span>开始扫描</span>
                                     <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                                 </button>
                             </m.div>

@@ -144,6 +144,18 @@ export const DEFAULT_QUESTIONS: Question[] = [
         ],
     },
     {
+        id: "skincareLevel",
+        fieldName: "skincareLevel",
+        question: "您目前的护肤水平是？",
+        type: "single",
+        options: [
+            { value: "beginner", label: "全新小白", description: "刚开始接触护肤，不太了解成分和步骤" },
+            { value: "intermediate", label: "略有心得", description: "掌握基础流程，对部分成分有了解" },
+            { value: "advanced", label: "资深达人", description: "熟悉成分功效，能独立搭配护肤方案" },
+            { value: "expert", label: "行业专家", description: "从事美妆护肤相关行业，专业知识扎实" },
+        ],
+    },
+    {
         id: "skincareFrequency",
         fieldName: "skincareFrequency",
         question: "您的日常护肤习惯是？",
