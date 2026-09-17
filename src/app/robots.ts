@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/api/", "/test-background/", "/result", "/reports/", "/face-scan/", "/questions/"],
+        disallow: ["/admin/", "/api/", "/result", "/reports/", "/face-scan/", "/questions/"],
         crawlDelay: 1,
       },
       {

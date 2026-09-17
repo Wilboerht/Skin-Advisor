@@ -23,6 +23,8 @@ const eslintConfig = defineConfig([
     // Ignore generated/third-party assets
     "public/**/*.js",
     "public/**/*.mjs",
+    // 运维/一次性脚本（CommonJS + 运维工具，不参与应用构建与类型检查）
+    "scripts/**",
   ]),
 ]);
 
