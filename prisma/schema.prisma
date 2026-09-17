@@ -79,6 +79,8 @@ model AdvisorSession {
   @@index([expiresAt])           // 清理任务按过期时间过滤
   @@index([completedAt])         // 历史记录查询加速
   @@index([archivedAt])          // 归档任务过滤/历史接口排除归档行
+  @@index([userId, archivedAt, completedAt]) // 历史列表/趋势：userId + 排除归档 + 完成时间倒序
+  @@index([ip, completedAt])     // 懒认领：未归属会话按 IP + 完成时间扫描
 }
 
 
@@ -269,8 +271,8 @@ model Product {
   @@index([category])
   @@index([active, featured])
   @@index([active, category]) // 产品列表组合过滤
-  @@index([suitableSkinTypes], type: Gin)
-  @@index([benefits], type: Gin)
+  // 注：suitableSkinTypes/benefits 的 GIN 索引已移除——全站无 JSON 包含查询，
+  // 推荐逻辑为全表加载后在 JS 过滤，GIN 只带来写放大（见迁移 20260917120000_add_perf_indexes）
 }
 
 
@@ -337,6 +339,7 @@ model AIUsageLog {
   @@index([sessionId])
   @@index([userId])
   @@index([requestType, createdAt])
+  @@index([userId, createdAt, success]) // AI 预算检查：按用户统计窗口内成功调用
 }
 
 // ===== 肌智派送好礼 · 活动系统 =====

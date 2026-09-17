@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { AnimatePresence, motion as m } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { Activity, AlertCircle, AlertTriangle, Lightbulb, RotateCcw, X } from "lucide-react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
-import { DIMENSION_LABELS, DIMENSION_DESCRIPTIONS, DIMENSION_ORDER } from "@/lib/advisor-utils";
+import { DIMENSION_LABELS, DIMENSION_DESCRIPTIONS, DIMENSION_ORDER } from "@/lib/advisor-labels";
 import { computeLabAnalysis, type LabMetric } from "@/lib/analysis-lab";
 import { cn } from "@/lib/utils";
 
@@ -345,9 +345,11 @@ interface PosterSaveModalProps {
     /** 海报图片 URL（objectURL）；null 时不渲染 */
     imageUrl: string | null;
     onClose: () => void;
+    /** 用户点「已保存，关闭」（确认已保存）时回调，用于分享埋点；直接关闭（X/遮罩/Esc）不触发 */
+    onSaved?: () => void;
 }
 
-export function PosterSaveModal({ imageUrl, onClose }: PosterSaveModalProps) {
+export function PosterSaveModal({ imageUrl, onClose, onSaved }: PosterSaveModalProps) {
     const modalRef = useFocusTrap<HTMLDivElement>(imageUrl !== null);
 
     return (
@@ -398,7 +400,7 @@ export function PosterSaveModal({ imageUrl, onClose }: PosterSaveModalProps) {
                             />
                         </div>
                         <button
-                            onClick={onClose}
+                            onClick={() => { onSaved?.(); onClose(); }}
                             className="mt-4 inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-full border border-[var(--color-brand-cocoa)]/30 text-[var(--color-brand-cocoa)] text-[13px] tracking-[0.1em] font-medium hover:bg-[var(--color-brand-cocoa)]/5 transition-colors"
                         >
                             已保存，关闭

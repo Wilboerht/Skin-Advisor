@@ -42,10 +42,22 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
         const where: Prisma.UserWhereInput = {};
 
         if (search) {
-            where.OR = [
-                { email: containsInsensitive(search) },
-                { name: containsInsensitive(search) },
-            ];
+            // 手机号精确搜索走唯一索引（最常用，避免 ILIKE 全表扫）
+            if (/^1[3-9]\d{9}$/.test(search)) {
+                where.OR = [
+                    { phoneNumber: search },
+                    { email: containsInsensitive(search) },
+                    { name: containsInsensitive(search) },
+                ];
+            } else {
+                // 其余关键字保持子串匹配：Postgres 部署 pg_trgm 后由 GIN 索引加速
+                // （见迁移 20260917120000_add_perf_indexes），未安装时退化为原有全表扫描
+                where.OR = [
+                    { email: containsInsensitive(search) },
+                    { name: containsInsensitive(search) },
+                    { phoneNumber: containsInsensitive(search) },
+                ];
+            }
         }
 
         if (status !== "all") {

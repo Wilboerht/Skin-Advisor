@@ -406,9 +406,16 @@ export async function POST(request: NextRequest) {
         if (!isFreeRetryAllowed && effectiveSessionId) {
             const existingSession = await prisma.advisorSession.findUnique({
                 where: { sessionId: effectiveSessionId },
-                select: { completedAt: true, analysisResult: true }
+                select: { completedAt: true, analysisResult: true, userId: true, ip: true }
             });
             if (existingSession?.completedAt && existingSession?.analysisResult) {
+                // 归属校验：仅会话所有者可读取缓存结果（防止 IDOR 读他人完整报告）
+                const owned = user?.id
+                    ? existingSession.userId === user.id
+                    : existingSession.ip === hashIP(ip);
+                if (!owned) {
+                    return apiError(ErrorCode.NOT_FOUND, "报告不存在或无权访问", 404);
+                }
                 const cachedResult = existingSession.analysisResult as Record<string, unknown>;
                 if (process.env.NODE_ENV !== "production") console.log(`[analyze] Returning cached result for completed session ${effectiveSessionId}`);
                 return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
@@ -452,6 +459,13 @@ export async function POST(request: NextRequest) {
 
             // 再次检查是否已完成（可能刚刚完成）。免费重试需要重新跑 AI，不走缓存。
             if (!isFreeRetryAllowed && session?.completedAt && session?.analysisResult) {
+                // 归属校验（行锁内）：仅会话所有者可读取缓存结果
+                const owned = user?.id
+                    ? session.userId === user.id
+                    : session.ip === hashIP(ip);
+                if (!owned) {
+                    return { status: 'forbidden' as const };
+                }
                 return { status: 'completed' as const, result: session.analysisResult };
             }
 
@@ -523,6 +537,14 @@ export async function POST(request: NextRequest) {
 
             return { status: 'started' as const };
         });
+
+        if (lockResult.status === 'forbidden') {
+            // 竞态窗口内完成的会话不属于当前请求者：退还本次预占并返回 404（不暴露会话存在性）
+            if (reservedResult && !reservedResult.alreadyReserved) {
+                await rollbackUsage(request, effectiveSessionId);
+            }
+            return apiError(ErrorCode.NOT_FOUND, "报告不存在或无权访问", 404);
+        }
 
         if (lockResult.status === 'completed') {
             const cachedResult = lockResult.result as Record<string, unknown>;
@@ -681,7 +703,7 @@ export async function POST(request: NextRequest) {
                 // AI 调用进行中取消不回滚：API 可能已处理并计费
                 const isQueueOnlyCancel = err.message === "Request cancelled during queue wait.";
                 if (isQueueOnlyCancel) {
-                    if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
+                    if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
                         await rollbackUsage(request, effectiveSessionId);
                     }
                 }
@@ -690,7 +712,7 @@ export async function POST(request: NextRequest) {
             }
             if (err.message?.includes("[AIBudget]")) {
                 aiLogger.warn("AI budget exceeded, rejecting request", { error: err.message });
-                if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
+                if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
                     await rollbackUsage(request, effectiveSessionId);
                 }
                 await clearAnalysisStartedAt(effectiveSessionId);
@@ -701,7 +723,7 @@ export async function POST(request: NextRequest) {
             // 熔断器触发：直接返回 503，不走 fallback（fallback 会隐藏服务异常）
             if (err.message?.includes("[CircuitBreaker]")) {
                 aiLogger.warn("Circuit breaker open, rejecting request", { error: err.message });
-                if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
+                if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
                     await rollbackUsage(request, effectiveSessionId);
                 }
                 await clearAnalysisStartedAt(effectiveSessionId);

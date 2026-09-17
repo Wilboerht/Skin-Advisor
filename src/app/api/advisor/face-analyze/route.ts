@@ -20,6 +20,7 @@ import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { recordAIUsage } from "@/lib/ai-budget";
 import { hashIP } from "@/lib/privacy";
+import { isManagedUploadPath } from "@/lib/upload-paths";
 import prisma from "@/lib/prisma";
 import { aiLogger } from "@/lib/logger";
 
@@ -547,6 +548,12 @@ export async function POST(request: NextRequest) {
                 const deletionResults = await Promise.allSettled(
                     uploadedFaceUrls.map(async (photoUrl) => {
                         if (!photoUrl || photoUrl.startsWith("data:")) return;
+                        // 只允许删除服务端签发的上传对象（guest/<hash>/<date>/<uuid>.<ext>），
+                        // 防止把用户传入的任意 URL 当删除指令（历史漏洞：可删产品图/他人照片）
+                        if (!isManagedUploadPath(photoUrl)) {
+                            aiLogger.warn(`Cleanup skipped non-managed upload path: ${photoUrl}`);
+                            return;
+                        }
                         if (photoUrl.startsWith("/uploads/") || photoUrl.startsWith("uploads/")) {
                             const filePath = resolveLocalUploadPath(photoUrl);
                             if (!filePath) return;

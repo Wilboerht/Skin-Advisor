@@ -9,13 +9,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 import { getPublicOrigin } from "@/lib/sso-config";
+import { isSafeInternalPath } from "@/lib/url-utils";
 
 function getSafeRedirect(req: NextRequest, redirect: string | null): string {
     if (!redirect || redirect === "/") return "/";
     // standalone 部署下 req.url 是进程监听地址（如 http://0.0.0.0:3002），
     // 同源判定必须基于公网 origin
     const origin = getPublicOrigin() || new URL(req.url).origin;
-    if (redirect.startsWith("/") && !redirect.startsWith("//")) return redirect;
+    // 统一走 isSafeInternalPath：额外拒绝 "/\..." 这类 WHATWG 规范化绕过
+    if (isSafeInternalPath(redirect)) return redirect;
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL;
     try {

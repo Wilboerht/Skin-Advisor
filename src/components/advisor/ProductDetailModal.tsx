@@ -10,6 +10,7 @@ import type { ProductCardData } from "./ProductCard";
 import { getProductLinks } from "@/lib/affiliate-links";
 import { PlatformIcon } from "./PlatformIcon";
 import { lookupIngredient } from "@/lib/ingredient-glossary";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface ProductDetailModalProps {
     isOpen: boolean;
@@ -24,6 +25,8 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
+    // 焦点圈定：Tab 在弹窗内循环，关闭后焦点归还触发元素（Esc 由下方既有监听处理）
+    const modalRef = useFocusTrap<HTMLDivElement>(isOpen);
 
     // 合并主图 + 图库为完整图片列表
     const galleryImages = useMemo(() => {
@@ -121,6 +124,11 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
                     {/* Modal Card */}
                     <m.div
+                        ref={modalRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="product-detail-title"
+                        tabIndex={-1}
                         initial={{ opacity: 0, scale: 0.96, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.96, y: -12 }}
@@ -223,7 +231,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                             </div>
 
                             {/* Product Name */}
-                            <h2 className="mb-0.5 text-[24px] font-bold leading-snug text-[#3d2f25] lg:text-[28px]">
+                            <h2 id="product-detail-title" className="mb-0.5 text-[24px] font-bold leading-snug text-[#3d2f25] lg:text-[28px]">
                                 {product.name}
                             </h2>
 

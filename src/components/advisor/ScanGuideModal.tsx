@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Sun, ScanEye, ScanFace, LogOut, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,7 +36,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
     return (
         <AnimatePresence>
             {isOpen && (
-                <motion.div
+                <m.div
                     ref={containerRef}
                     role="dialog"
                     aria-modal="true"
@@ -81,7 +81,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                     <div className="flex-1 flex flex-col items-center justify-center w-full px-4 md:px-8 pt-24 md:pt-28">
                         <div className="w-full max-w-2xl flex flex-col items-center">
                             {/* Header */}
-                            <motion.div
+                            <m.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1, duration: 0.5 }}
@@ -94,10 +94,10 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 <div className="flex items-center justify-center mx-auto mb-8 md:mb-10">
                                     <ScanFace className="w-16 h-16 md:w-20 md:h-20 text-brand-charcoal/40" strokeWidth={1} />
                                 </div>
-                            </motion.div>
+                            </m.div>
 
                             {/* Checklist Content */}
-                            <motion.div
+                            <m.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2, duration: 0.5 }}
@@ -116,10 +116,10 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                         </div>
                                     );
                                 })}
-                            </motion.div>
+                            </m.div>
 
                             {/* 拍摄时肌肤状态（单选，默认纯素颜；影响分析准确度与报告提示） */}
-                            <motion.div
+                            <m.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.25, duration: 0.5 }}
@@ -153,10 +153,10 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                         );
                                     })}
                                 </div>
-                            </motion.div>
+                            </m.div>
 
                             {/* Actions */}
-                            <motion.div
+                            <m.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3, duration: 0.5 }}
@@ -181,7 +181,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                     <span>开始测肤，解锁完整报告</span>
                                     <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
                                 </button>
-                            </motion.div>
+                            </m.div>
                         </div>
                     </div>
 
@@ -197,7 +197,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                             </div>
                         </div>
                     </div>
-                </motion.div>
+                </m.div>
             )}
         </AnimatePresence>
     );

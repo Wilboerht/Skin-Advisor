@@ -29,11 +29,9 @@ export function OptionCard({
     role = "radio",
 }: OptionCardProps) {
     return (
-        <m.button
-            type="button"
-            onClick={onClick}
-            role={role}
-            aria-checked={isSelected}
+        // 容器用 div 承载语义内容（button 的 content model 不允许块级元素）；
+        // 整卡点击/焦点/ARIA 由覆盖层 button 承担（同 HomeClient 主卡范式）
+        <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -41,18 +39,22 @@ export function OptionCard({
                 delay: index * 0.05,
                 ease: [0.2, 0.8, 0.2, 1], // Power easing
             }}
-            whileHover={{ 
-                // Subtle hover: no lift, only color/shadow transition handled by Tailwind
-                transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } 
-            }}
-            whileTap={{ scale: 0.98 }}
             className={cn(
-                "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 flex items-center gap-3 sm:gap-4 backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-300 overflow-hidden touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7355]/50 focus-visible:ring-offset-1",
+                "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 flex items-center gap-3 sm:gap-4 backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-300 overflow-hidden touch-manipulation",
                 isSelected
                     ? "bg-[#F8F5EE] border-[#8B7355] shadow-[0_8px_30px_-8px_rgba(139,115,85,0.18)] ring-1 ring-[#8B7355]/10"
                     : "bg-transparent border-[#D4CFC5]/50 hover:border-[#8B7355]/30 hover:bg-[#F8F5EE]/30"
             )}
         >
+            <m.button
+                type="button"
+                onClick={onClick}
+                role={role}
+                aria-checked={isSelected}
+                aria-label={label}
+                whileTap={{ scale: 0.98 }}
+                className="absolute inset-0 z-10 rounded-lg md:rounded-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7355]/50 focus-visible:ring-offset-1"
+            />
             {/* Left accent bar - gradient, rounded, only visible when selected */}
             <div className={cn(
                 "absolute left-0 top-4 bottom-4 sm:top-5 sm:bottom-5 md:top-6 md:bottom-6 w-[2px] md:w-[3px] rounded-r-full transition-all duration-300",
@@ -111,6 +113,6 @@ export function OptionCard({
                 )}
             </m.div>
 
-        </m.button>
+        </m.div>
     );
 }

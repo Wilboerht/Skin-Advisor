@@ -104,6 +104,7 @@ import { DiaryModalProvider } from "@/components/website/DiaryModalContext";
 import { DiaryModalGate } from "@/components/website/DiaryModalGate";
 import { WebsiteLayoutClient } from "@/components/website/WebsiteLayoutClient";
 import { BottomDock } from "@/components/website/BottomDock";
+import { MotionConfigProvider } from "@/components/MotionConfigProvider";
 
 export default function RootLayout({
   children,
@@ -150,6 +151,7 @@ export default function RootLayout({
           >
             跳转到主内容
           </a>
+          <MotionConfigProvider>
           <ToastProvider>
             <UserProvider>
               <AuthModalProvider>
@@ -177,6 +179,7 @@ export default function RootLayout({
               </AuthModalProvider>
             </UserProvider>
           </ToastProvider>
+          </MotionConfigProvider>
         </body>
       </html>
     </ViewTransitions>

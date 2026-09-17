@@ -29,13 +29,19 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "产品不存在" }, { status: 404 });
         }
 
+        // 无会话反馈用固定哨兵值（Postgres 下 NULL 在唯一键中互不相等，
+        // 若 create 写 null 会导致同一产品每次提交都新增一行，upsert 形同虚设）
+        const NOSESSION = "_nosession_";
+        const normalizedSessionId =
+            typeof sessionId === "string" && sessionId.trim() ? sessionId.trim() : NOSESSION;
+
         // 使用 upsert 防止重复提交（同一用户对同一产品+session 只能评价一次）
         const feedback = await prisma.productFeedback.upsert({
             where: {
                 userId_productId_sessionId: {
                     userId: user.id,
                     productId,
-                    sessionId: sessionId || "_nosession_",
+                    sessionId: normalizedSessionId,
                 },
             },
             update: {
@@ -48,7 +54,7 @@ export async function POST(request: NextRequest) {
             create: {
                 userId: user.id,
                 productId,
-                sessionId: sessionId || null,
+                sessionId: normalizedSessionId,
                 rating,
                 skinFeel: skinFeel || null,
                 effect: effect || null,

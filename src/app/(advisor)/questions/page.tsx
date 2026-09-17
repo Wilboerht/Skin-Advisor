@@ -19,7 +19,6 @@ import { scheduleFaceModelPreload } from "@/lib/face-models";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useNavPush } from "@/hooks/use-nav-push";
-import { z } from "zod";
 
 const safeStorage = {
     get: (key: string) => {
@@ -32,30 +31,6 @@ const safeStorage = {
         try { localStorage.removeItem(key); } catch { /* ignore */ }
     },
 };
-
-const questionOptionSchema = z.object({
-    value: z.string(),
-    label: z.string(),
-    description: z.string().optional(),
-    icon: z.string().optional(),
-    emoji: z.string().optional(),
-});
-
-const questionSchema = z.object({
-    id: z.string(),
-    fieldName: z.string(),
-    question: z.string(),
-    type: z.enum(["single", "multiple"]),
-    options: z.array(questionOptionSchema).min(1),
-    subtext: z.string().optional(),
-    dependsOn: z.object({
-        field: z.string(),
-        value: z.union([z.string(), z.array(z.string())]),
-        operator: z.enum(["equals", "notEquals", "contains"]).optional(),
-    }).optional(),
-});
-
-const questionListSchema = z.array(questionSchema);
 
 export default function QuestionsPage() {
     const router = useRouter();
@@ -165,37 +140,11 @@ export default function QuestionsPage() {
         checkLimit();
     }, []);
 
-    // 从 API 获取问题列表（数据库优先，静态降级）
-
-    const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
-    const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
-
-    const fetchQuestions = useCallback(async () => {
-        setIsLoadingQuestions(true);
-        try {
-            const res = await fetch("/api/advisor/questions");
-            if (!res.ok) {
-                throw new Error(`API returned ${res.status}`);
-            }
-            const data: unknown = await res.json();
-            const parsed = questionListSchema.safeParse(data);
-            if (!parsed.success || parsed.data.length === 0) {
-                console.warn("Questions API returned invalid payload, using defaults:", parsed.error?.issues);
-                setAllQuestions(DEFAULT_QUESTIONS);
-                return;
-            }
-            setAllQuestions(parsed.data);
-        } catch (e) {
-            console.error("Failed to fetch questions from API, using defaults:", e);
-            setAllQuestions(DEFAULT_QUESTIONS);
-        } finally {
-            setIsLoadingQuestions(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchQuestions();
-    }, [fetchQuestions]);
+    // 问题列表：直接使用打包进 bundle 的静态配置。
+    // 原实现请求 /api/advisor/questions 再用 zod 校验（该接口返回的就是同一份 DEFAULT_QUESTIONS），
+    // 白付一次 RTT + ~62KB gzip 的 zod；如未来改为数据库驱动，应改为 RSC 下发或轻量校验。
+    const allQuestions: Question[] = DEFAULT_QUESTIONS;
+    const isLoadingQuestions = false;
 
     // 入口守卫：必须通过首页引导弹窗（同意隐私协议）后才能进入问卷
     // null = 尚未检查（避免首帧闪出性别选择页）

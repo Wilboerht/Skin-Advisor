@@ -8,10 +8,10 @@ import Image from "next/image";
  * 浅色低存在感：桌面端固定屏幕底部、备案居左/链接与版权居右，移动端左对齐自然折行（留在 Dock 上方）
  */
 export function HomepageFooter() {
-    const separator = <span aria-hidden="true" className="text-brand-charcoal/20">|</span>;
+    const separator = <span aria-hidden="true" className="text-brand-charcoal/40">|</span>;
 
     return (
-        <footer className="w-full flex flex-col items-start gap-2.5 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/25 md:flex-row md:items-center md:justify-between">
+        <footer className="w-full flex flex-col items-start gap-2.5 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/70 md:flex-row md:items-center md:justify-between">
             {/* 备案信息组 */}
             <div className="flex flex-wrap items-center justify-start gap-x-3 gap-y-1.5">
                 <Link

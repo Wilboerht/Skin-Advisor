@@ -1,6 +1,6 @@
 "use client";
 
-import { motion as m, AnimatePresence, useReducedMotion } from "framer-motion";
+import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useEffect, useState, useRef, useCallback, useSyncExternalStore } from "react";
 import { LogOut } from "lucide-react";
 import Image from "next/image";

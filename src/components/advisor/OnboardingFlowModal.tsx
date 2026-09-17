@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut, ChevronDown } from "lucide-react";
-import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { useToast } from "@/components/ui/Toast";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface OnboardingFlowProps {
     isOpen: boolean;
@@ -60,18 +61,12 @@ export function OnboardingFlowModal({
     const totalScreens = screens.length;
     const currentScreen = screens[activeIndex];
     const onCloseRef = useRef(onClose);
-    const modalRef = useRef<HTMLDivElement>(null);
+    // 焦点圈定：Tab 在弹层内循环、关闭后焦点归还触发元素（原实现只 focus 容器，Tab 会跑到背景页）
+    const modalRef = useFocusTrap<HTMLDivElement>(isOpen);
 
     useEffect(() => {
         onCloseRef.current = onClose;
     }, [onClose]);
-
-    // Focus the modal container when it opens for accessibility
-    useEffect(() => {
-        if (isOpen) {
-            modalRef.current?.focus();
-        }
-    }, [isOpen]);
 
     // Keyboard support: Escape to close (except on legal step)
     useEffect(() => {

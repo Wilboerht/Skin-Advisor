@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import { ChevronDown, Eye, HelpCircle, Sparkles, Stethoscope, Sun, Moon, HeartHandshake } from "lucide-react";
 import type { ConsultantReport, ConsultantIssue } from "@/lib/advisor-utils";
-import { DIMENSION_LABELS } from "@/lib/advisor-utils";
+import { DIMENSION_LABELS } from "@/lib/advisor-labels";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { cn } from "@/lib/utils";
 

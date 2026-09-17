@@ -255,6 +255,10 @@ export async function reserveUsage(
                 const today = startOfTodayShanghai();
                 const userId = user.id;
 
+                // 串行化同一用户的并发预占：事务级行锁（提交/回滚自动释放）。
+                // 原实现 count→createMany 之间无锁，不同 sessionId 并发可同时通过并突破终身/每日上限
+                await tx.$queryRaw`SELECT 1 FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
+
                 // 从数据库读取最新额度与消费金额，避免 JWT 缓存滞后
                 // 与 checkUsageLimit 同口径：仅按 TestRecord 计数（预占即落库），不叠加在途 session
                 const [dbUser, count, lifetimeCount] = await Promise.all([
@@ -301,7 +305,8 @@ export async function reserveUsage(
  * 回滚已预占的额度（用于 AI 服务不可用、图片验证失败等明确非用户原因的场景）
  *
  * 规则：
- * 1. 按 sessionId 精确冲销：仅当本 session 的 TestRecord 真实存在时才回滚
+ * 1. 按 sessionId + userId 精确冲销：仅删除"当前请求者本人"该 session 的预占记录，
+ *    防止知道他人 sessionId 的用户删除他人计数（归属校验）
  * 2. 天然幂等：重复调用时删除 0 行，不会重复扣减
  * 3. 游客不再预占额度（需登录），无 GuestUsage 回滚分支（该表已随游客测肤下线删除）
  */
@@ -309,12 +314,16 @@ export async function rollbackUsage(
     request: NextRequest,
     sessionId: string
 ): Promise<boolean> {
+    // 归属校验：只有登录用户存在预占；sessionId 无法单独作为删除凭证
+    const user = await getSessionUser(request);
+    if (!user) return false;
+
     try {
         await withDbRetry(async () => {
             await prisma.$transaction(async (tx) => {
-                // 按 sessionId 精确删除本次预占的 TestRecord（仅登录用户会创建）
+                // 按 sessionId + userId 精确删除本次预占的 TestRecord
                 await tx.testRecord.deleteMany({
-                    where: { sessionId }
+                    where: { sessionId, userId: user.id }
                 });
             });
         });

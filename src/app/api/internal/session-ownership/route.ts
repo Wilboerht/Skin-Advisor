@@ -1,31 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { authorizeInternalRequest } from "@/lib/internal-api";
 import { logger } from "@/lib/logger";
 
 /**
  * 内部接口：校验某 sessionId 是否属于指定手机号用户的可见测肤历史。
- * 仅供 NIHPLOD 商城服务端调用（x-internal-key 校验，复用 INTERNAL_API_KEY）。
+ * 仅供 NIHPLOD 商城服务端调用。
+ * 鉴权：优先 HMAC 签名（X-Internal-API-*），过渡期兼容旧版 x-internal-key。
  * 轻量 count 查询，不受 mp-skin 分页上限约束，任意历史深度均可校验。
  */
 
 const PHONE_RE = /^1[3-9]\d{9}$/;
 const SESSION_ID_RE = /^[0-9A-Za-z-]{8,128}$/;
 
-function safeCompare(a: string, b: string): boolean {
-    const bufA = Buffer.from(a);
-    const bufB = Buffer.from(b);
-    if (bufA.length !== bufB.length) return false;
-    return timingSafeEqual(bufA, bufB);
-}
-
 export async function GET(request: NextRequest) {
-    const internalKey = process.env.INTERNAL_API_KEY;
-    const providedKey = request.headers.get("x-internal-key") || "";
-
-    if (!internalKey || !providedKey || !safeCompare(internalKey, providedKey)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await authorizeInternalRequest(request, { legacy: "x-internal-key" });
+    if (!auth.ok) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: auth.status ?? 401 });
     }
 
     const phone = request.nextUrl.searchParams.get("phone") || "";

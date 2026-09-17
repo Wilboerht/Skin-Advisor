@@ -503,7 +503,7 @@ export default function HomeClient() {
                     开始完整肌肤检测
                   </h2>
                   {/* 三步流程预告：降低"点进去要干嘛"的不确定感（单行不折行；移动端收窄字号与间距防溢出） */}
-                  <div className="flex items-center gap-x-1.5 md:gap-x-2 whitespace-nowrap text-brand-charcoal/60 text-[11px] md:text-sm font-light tracking-[0.06em] mb-6 md:mb-8">
+                  <div className="flex items-center gap-x-1.5 md:gap-x-2 whitespace-nowrap text-brand-charcoal/70 text-[11px] md:text-sm font-light tracking-[0.06em] mb-6 md:mb-8">
                     <span className="flex items-center gap-1.5">
                       <ScanFace className="w-3.5 h-3.5" strokeWidth={1.5} />
                       问卷及面部扫描
@@ -557,14 +557,14 @@ export default function HomeClient() {
           <section className="flex flex-wrap items-center justify-center gap-3 px-6 mt-6 md:mt-8">
             <button
               onClick={openGiftModal}
-              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/[0.15] text-brand-charcoal/60 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-espresso/[0.35] hover:text-brand-charcoal cursor-pointer touch-manipulation"
+              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/[0.15] text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-espresso/[0.35] hover:text-brand-charcoal cursor-pointer touch-manipulation"
             >
               <Gift className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>测肤有礼 · 参与赢好礼</span>
             </button>
             <button
               onClick={handleOpenFaq}
-              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/[0.15] text-brand-charcoal/60 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-espresso/[0.35] hover:text-brand-charcoal cursor-pointer touch-manipulation"
+              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/[0.15] text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-espresso/[0.35] hover:text-brand-charcoal cursor-pointer touch-manipulation"
             >
               <CircleHelp className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>常见问题</span>

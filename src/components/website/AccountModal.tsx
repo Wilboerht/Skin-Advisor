@@ -33,7 +33,7 @@ const MEMBER_BADGES: Record<string, { label: string; className: string }> = {
   DIAMOND: { label: "钻石会员", className: "border-sky-400/70 text-sky-600" },
   ADVANCED: { label: "金卡会员", className: "border-[#C9A86C]/70 text-[#8B7355]" },
 };
-const REGULAR_BADGE = { label: "普通会员", className: "border-brand-charcoal/15 text-brand-charcoal/50" };
+const REGULAR_BADGE = { label: "普通会员", className: "border-brand-charcoal/15 text-brand-charcoal/65" };
 
 function getMemberBadge(level?: string | null) {
   return (level && MEMBER_BADGES[level]) || REGULAR_BADGE;
@@ -151,7 +151,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
               <button
                 onClick={onClose}
                 aria-label="关闭"
-                className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
+                className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
               >
                 <X size={16} strokeWidth={2.5} />
               </button>
@@ -170,7 +170,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                   {user.avatar ? (
                     <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-3xl font-medium text-[#8A8A8A]">
+                    <div className="w-full h-full flex items-center justify-center text-3xl font-medium text-[#6B5E50]">
                       {(user.name?.[0] || "?").toUpperCase()}
                     </div>
                   )}
@@ -197,9 +197,9 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
 
                 {/* 最新测肤派系：档案身份核心（有测肤记录时显示；图标与派系一一对应） */}
                 {latestPersonaType && (
-                  <span className="mb-2 inline-flex h-[22px] px-2 items-center gap-1 rounded-full border border-brand-charcoal/[0.1] bg-white/60 text-[11px] font-light tracking-[0.04em] text-brand-charcoal/55 whitespace-nowrap">
+                  <span className="mb-2 inline-flex h-[22px] px-2 items-center gap-1 rounded-full border border-brand-charcoal/[0.1] bg-white/60 text-[11px] font-light tracking-[0.04em] text-brand-charcoal/70 whitespace-nowrap">
                     {createElement(getFactionIcon(latestPersonaType.ipKey), {
-                      className: "w-3 h-3 text-brand-charcoal/45 shrink-0",
+                      className: "w-3 h-3 text-brand-charcoal/60 shrink-0",
                       strokeWidth: 1.5,
                     })}
                     我的肌智派形象 · {latestPersonaType.typeName}
@@ -208,7 +208,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
 
                 {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量；接口失败不渲染 */}
                 {testUsage && (
-                  <p className={`text-[12px] text-[#8A8A8A] font-light tracking-[0.05em] ${latestPersonaType ? "mb-4" : "mb-6"}`}>
+                  <p className={`text-[12px] text-[#6B5E50] font-light tracking-[0.05em] ${latestPersonaType ? "mb-4" : "mb-6"}`}>
                     {testUsage.unlimited
                       ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
                       : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
@@ -227,7 +227,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                     <NotebookPen className="w-4 h-4" />
                     护肤档案
                   </span>
-                  <ChevronRight className="w-4 h-4 text-brand-charcoal/30 transition-transform duration-300 group-hover:translate-x-0.5" />
+                  <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </button>
 
                 {/* 资料编辑统一到主站账号中心：整行卡片式入口，与弱操作「退出登录」拉开层级 */}
@@ -241,13 +241,13 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                     <Settings2 className="w-4 h-4" />
                     管理账号资料
                   </span>
-                  <ChevronRight className="w-4 h-4 text-brand-charcoal/30 transition-transform duration-300 group-hover:translate-x-0.5" />
+                  <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </a>
 
                 {/* 退出登录 */}
                 <button
                   onClick={handleLogout}
-                  className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors"
+                  className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#6B5E50] hover:text-[#1A1A1A] transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   退出登录

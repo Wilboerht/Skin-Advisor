@@ -10,8 +10,8 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import { useMounted } from "@/hooks/use-mounted";
-import type { SkinDimensionKey, SkinDimensions } from "@/lib/advisor-utils";
-import { DIMENSION_LABELS, DIMENSION_ORDER } from "@/lib/advisor-utils";
+import type { SkinDimensionKey, SkinDimensions } from "@/lib/advisor-labels";
+import { DIMENSION_LABELS, DIMENSION_ORDER } from "@/lib/advisor-labels";
 
 interface DimensionRadarChartProps {
     dimensions: SkinDimensions;

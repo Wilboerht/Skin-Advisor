@@ -200,7 +200,19 @@ export async function GET(request: NextRequest) {
             where: { lastPing: { lt: staleInstanceCutoff } },
         });
 
-        // ===== 8. 清理过期上传文件（保留 30 天，递归处理嵌套目录）=====
+        // ===== 8. 清理 RefreshToken（撤销超 7 天 / 过期超 7 天）=====
+        // 原表只增不减：每次 SSO 会话重建都会新增一行，注销也不撤销
+        const refreshTokenCutoff = new Date(now - 7 * 24 * 60 * 60 * 1000);
+        const deletedRefreshTokens = await prisma.refreshToken.deleteMany({
+            where: {
+                OR: [
+                    { revokedAt: { lt: refreshTokenCutoff } },
+                    { expiresAt: { lt: refreshTokenCutoff } },
+                ],
+            },
+        });
+
+        // ===== 9. 清理过期上传文件（保留 30 天，递归处理嵌套目录）=====
         // 旧实现只对根目录条目 unlink，guest/、advisor/ 等子目录会因 EISDIR 被吞掉永不清理
         let deletedFiles = 0;
         try {
@@ -245,6 +257,7 @@ export async function GET(request: NextRequest) {
                 aiLogs: deletedAiLogs.count,
                 auditLogs: deletedAuditLogs.count,
                 instances: deletedInstances.count,
+                refreshTokens: deletedRefreshTokens.count,
                 files: deletedFiles,
             },
         });

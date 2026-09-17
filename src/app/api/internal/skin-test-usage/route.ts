@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
 import { getSkinTestUsageSummary } from "@/lib/usage-limit";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { authorizeInternalRequest } from "@/lib/internal-api";
 import { logger } from "@/lib/logger";
 
 export const maxDuration = 15;
@@ -8,8 +9,9 @@ export const maxDuration = 15;
 /**
  * 内部接口：查询指定用户的测肤用量与会员配额（供主站会员面板调用）
  *
- * 鉴权：Authorization: Bearer <ADVISOR_INTERNAL_SECRET>（与 cron 的 CRON_SECRET 策略一致：
- * 配置了则强校验；未配置时 production 返回 500，dev 放行）。
+ * 鉴权：优先 HMAC 签名（X-Internal-API-*）；过渡期兼容旧版
+ * Authorization: Bearer <ADVISOR_INTERNAL_SECRET>。密钥未配置时生产返回 500，
+ * 开发环境仅放行本机请求。
  *
  * GET /api/internal/skin-test-usage?userId=<主站 sub>
  *
@@ -19,28 +21,20 @@ export const maxDuration = 15;
  *     "remaining": 27 }
  * 用户不存在（从未用过子站）：200 + level: null + totalUsed/todayUsed: 0 + 按 REGULAR 档配额。
  */
-
-function safeCompare(a: string, b: string): boolean {
-    const bufA = Buffer.from(a);
-    const bufB = Buffer.from(b);
-    if (bufA.length !== bufB.length) return false;
-    return timingSafeEqual(bufA, bufB);
-}
-
 export async function GET(request: NextRequest) {
-    // 鉴权策略与 cron data-cleanup 保持一致
-    const secret = process.env.ADVISOR_INTERNAL_SECRET;
-    if (secret) {
-        const authHeader = request.headers.get("authorization") || "";
-        const provided = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-        if (!provided || !safeCompare(secret, provided)) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-    } else if (process.env.NODE_ENV === "production") {
-        return NextResponse.json(
-            { error: "ADVISOR_INTERNAL_SECRET not configured" },
-            { status: 500 }
-        );
+    const auth = await authorizeInternalRequest(request, { legacy: "bearer-advisor-secret" });
+    if (!auth.ok) {
+        const message = auth.reason === "advisor_secret_not_configured"
+            ? "ADVISOR_INTERNAL_SECRET not configured"
+            : "Unauthorized";
+        return NextResponse.json({ error: message }, { status: auth.status ?? 401 });
+    }
+
+    // IP 级限流（原实现无限流，密钥泄漏后可被批量遍历 userId）
+    const ip = getClientIP(request);
+    const ipLimit = await rateLimit(`internal-skin-usage-ip-${ip}`, "default", { maxRequests: 120, windowMs: 60 * 1000 });
+    if (!ipLimit.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const userId = request.nextUrl.searchParams.get("userId") || "";

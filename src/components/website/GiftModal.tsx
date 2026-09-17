@@ -80,7 +80,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             <button
               onClick={onClose}
               aria-label="关闭"
-              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
+              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
             >
               <X size={16} strokeWidth={2.5} />
             </button>
@@ -161,7 +161,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
               </div>
 
               {/* 官方声明 */}
-              <p className="text-center text-[11px] leading-relaxed text-brand-charcoal/40 font-light tracking-[0.06em]">
+              <p className="text-center text-[11px] leading-relaxed text-brand-charcoal/55 font-light tracking-[0.06em]">
                 具体活动时间、奖品与规则以 NIHPLOD 官方媒体账号发布的实际活动内容为准
               </p>
             </div>

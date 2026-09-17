@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import Image from "next/image";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -18,7 +18,7 @@ export function ContactAdvisorModal({ isOpen, onClose }: ContactAdvisorModalProp
             {isOpen && (
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
                     {/* Backdrop with Blur */}
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -27,7 +27,7 @@ export function ContactAdvisorModal({ isOpen, onClose }: ContactAdvisorModalProp
                     />
 
                     {/* Modal Content */}
-                    <motion.div
+                    <m.div
                         ref={modalRef}
                         initial={{ opacity: 0, scale: 0.96, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -92,7 +92,7 @@ export function ContactAdvisorModal({ isOpen, onClose }: ContactAdvisorModalProp
                                 </p>
                             </div>
                         </div>
-                    </motion.div>
+                    </m.div>
                 </div>
             )}
         </AnimatePresence>

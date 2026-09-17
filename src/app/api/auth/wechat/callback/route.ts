@@ -22,6 +22,7 @@ import prisma from "@/lib/prisma";
 import { UserRole } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 import { getPublicOrigin } from "@/lib/sso-config";
+import { isSafeInternalPath } from "@/lib/url-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -35,8 +36,8 @@ function getSafeRedirect(req: NextRequest, redirect: string | null): string {
     // 同源判定必须基于公网 origin
     const origin = getPublicOrigin() || new URL(req.url).origin;
 
-    // 相对路径
-    if (redirect.startsWith("/") && !redirect.startsWith("//")) return redirect;
+    // 相对路径（统一走 isSafeInternalPath：额外拒绝 "/\..." 这类 WHATWG 规范化绕过）
+    if (isSafeInternalPath(redirect)) return redirect;
 
     // 绝对路径：必须匹配当前请求源或配置的子站域名
     try {

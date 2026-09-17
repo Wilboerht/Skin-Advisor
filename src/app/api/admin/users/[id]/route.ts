@@ -217,7 +217,13 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
             return apiError(ErrorCode.NOT_FOUND, "User not found", 404);
         }
 
-        await prisma.user.delete({ where: { id } });
+        await prisma.$transaction(async (tx) => {
+            // 隐私清理：注销即删除该用户的测肤会话（含过敏史/孕期等敏感问卷答案与分析结果）。
+            // AdvisorSession.user 为 onDelete: SetNull，不显式删除会留下最长 90 天的孤儿 PII 数据；
+            // 其余业务表（TestRecord/DiaryEntry/ProductFeedback/RefreshToken 等）依赖级联删除
+            await tx.advisorSession.deleteMany({ where: { userId: id } });
+            await tx.user.delete({ where: { id } });
+        });
 
         // Log admin action
         const clientInfo = getClientInfo(request);

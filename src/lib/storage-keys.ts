@@ -20,6 +20,8 @@ export const STORAGE_KEYS = {
     ADVISOR_LAST_SUMMARY: 'advisor_last_summary',
     // 测肤拍摄时肌肤状态（纯素颜/带妆等，扫脸引导弹窗选择）
     ADVISOR_SKIN_STATE: 'advisor_skin_state',
+    // 海报保存版式偏好（classic / xhs，多套模板记忆上次选择）
+    ADVISOR_POSTER_TEMPLATE: 'advisor_poster_template',
 
     // 免费重试
     ADVISOR_FREE_RETRY: 'advisor_free_retry',

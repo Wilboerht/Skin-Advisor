@@ -2,6 +2,7 @@
 
 import { forwardRef, useState, useEffect } from "react";
 import { Inria_Serif, Noto_Sans_SC } from "next/font/google";
+import type { PosterTemplate } from "./poster-templates";
 
 const inriaSerif = Inria_Serif({ weight: ["400", "700"], subsets: ["latin"] });
 const notoSansSC = Noto_Sans_SC({ weight: ["300", "400", "700"], preload: false });
@@ -29,6 +30,8 @@ function formatCertId(sessionId?: string): string | null {
 }
 
 interface SharePosterProps {
+  /** 版式配置：画布尺寸、素材与各字段坐标（见 poster-templates.ts） */
+  template: PosterTemplate;
   nickname: string;
   score?: number;
   percentile?: number;
@@ -38,8 +41,6 @@ interface SharePosterProps {
   persona?: string;
   summary?: string;
   avatar?: string | null;
-  posterTemplate?: string;
-  posterOverlay?: string;
   qrDataUrl?: string | null;
   /** 测肤日期（ISO），显示为 YYYY.MM.DD */
   certDate?: string;
@@ -49,27 +50,33 @@ interface SharePosterProps {
 
 export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   function SharePoster(
-    { nickname, score, percentile, skinTypeName, skinAge, waterOil, persona, summary, avatar, posterTemplate, posterOverlay, qrDataUrl, certDate, certId },
+    { template, nickname, score, percentile, skinTypeName, skinAge, waterOil, persona, summary, avatar, qrDataUrl, certDate, certId },
     ref
   ) {
     const [templateFailed, setTemplateFailed] = useState(false);
     const [overlayFailed, setOverlayFailed] = useState(false);
     const [avatarFailed, setAvatarFailed] = useState(false);
 
-    useEffect(() => { setTemplateFailed(false); }, [posterTemplate]);
-    useEffect(() => { setOverlayFailed(false); }, [posterOverlay]);
+    useEffect(() => { setTemplateFailed(false); }, [template.assets.template]);
+    useEffect(() => { setOverlayFailed(false); }, [template.assets.overlay]);
     useEffect(() => { setAvatarFailed(false); }, [avatar]);
+
+    const fields = template.fields;
 
     return (
       <div
         ref={ref}
-        className="relative w-[480px] h-[640px] overflow-hidden"
-        style={{ fontFamily: posterFontFamily }}
+        className="relative overflow-hidden"
+        style={{
+          width: template.canvas.width,
+          height: template.canvas.height,
+          fontFamily: posterFontFamily,
+        }}
       >
-        {/* 第一层：背景模板图 （1440x1922≈3:4，与 480x640 同比例，无需 object-fit） */}
-        {posterTemplate && !templateFailed ? (
+        {/* 第一层：背景模板图（比例与画布一致，铺满无需 object-fit） */}
+        {template.assets.template && !templateFailed ? (
           <img
-            src={posterTemplate}
+            src={template.assets.template}
             alt=""
             loading="eager"
             className="absolute inset-0 w-full h-full"
@@ -81,7 +88,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
         {/* 第二层：IP 形象 */}
         {avatar && !avatarFailed && (
-          <div className="absolute z-10 w-[40%]" style={{ top: "10%", left: "4%" }}>
+          <div className="absolute z-10" style={template.avatar.style}>
             <img
               src={avatar}
               alt=""
@@ -93,89 +100,90 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
         )}
 
         {/* 第三层：装饰叠加图 */}
-        {posterOverlay && !overlayFailed && (
+        {template.assets.overlay && !overlayFailed && (
           <img
-            src={posterOverlay}
+            src={template.assets.overlay}
             alt=""
             loading="eager"
             className="absolute z-20 pointer-events-none"
-            style={{
-              width: "85.5%",
-              height: "auto",
-              left: "50%",
-              top: "50%",
-              transform: "translate(-49%, -47.5%)",
-            }}
+            style={template.assets.overlayStyle}
             onError={() => setOverlayFailed(true)}
           />
         )}
 
-        {/* 第四层：所有文字字段 */}
+        {/* 第四层：所有文字字段（坐标全部来自模板配置） */}
         <div className="absolute inset-0 z-30 pointer-events-none">
-          <div className="absolute top-[43.2%] left-[40%] -translate-x-1/2">
-            <p className="text-xs font-light text-[#00263E] whitespace-nowrap">{nickname}</p>
-          </div>
+          <p className={`absolute ${fields.nickname.className}`} style={fields.nickname.style}>
+            {nickname}
+          </p>
 
           {skinAge !== undefined && (
-            <div className="absolute top-[49.5%] left-[40%] -translate-x-1/2">
-              <p className="text-xs font-light text-[#00263E] whitespace-nowrap">{Math.round(skinAge)}岁</p>
-            </div>
+            <p className={`absolute ${fields.skinAge.className}`} style={fields.skinAge.style}>
+              {Math.round(skinAge)}岁
+            </p>
           )}
 
           {waterOil !== undefined && (
-            <div className="absolute top-[55.8%] left-[40%] -translate-x-1/2">
-              <p className="text-xs font-light text-[#00263E] whitespace-nowrap">{Math.round(waterOil)}分</p>
-            </div>
+            <p className={`absolute ${fields.waterOil.className}`} style={fields.waterOil.style}>
+              {Math.round(waterOil)}分
+            </p>
           )}
 
           {skinTypeName && (
-            <div className="absolute top-[24.5%] right-[5%] text-right">
-              <p className="text-[34px] text-[#00263E] whitespace-nowrap">「{skinTypeName}」</p>
-            </div>
+            <p className={`absolute ${fields.skinTypeName.className}`} style={fields.skinTypeName.style}>
+              「{skinTypeName}」
+            </p>
           )}
 
-          <div className="absolute top-[46%] left-[61%] -translate-x-1/2">
-            {score !== undefined ? (
-              <p className="text-[66px] font-bold text-[#00263E] whitespace-nowrap">{Math.round(score)}<span className="text-sm font-bold">分</span></p>
-            ) : (
-              <p className="text-2xl font-bold text-[#00263E] whitespace-nowrap">问卷评估</p>
-            )}
-          </div>
+          {score !== undefined ? (
+            <p className={`absolute ${fields.score.className}`} style={fields.score.style}>
+              {Math.round(score)}<span className="text-sm font-bold">分</span>
+            </p>
+          ) : (
+            <p className="absolute text-2xl font-bold text-[#00263E] whitespace-nowrap" style={fields.score.style}>
+              问卷评估
+            </p>
+          )}
 
           {persona && (
-            <div className="absolute top-[34%] right-[10%] text-right max-w-[280px]">
-              <p className="text-[10px] font-light text-[#00263E] whitespace-nowrap leading-relaxed">{addCJKSpace(persona)}</p>
-            </div>
+            <p className={`absolute ${fields.persona.className}`} style={fields.persona.style}>
+              {addCJKSpace(persona)}
+            </p>
           )}
 
           {summary && (
-            <div className="absolute bottom-[25%] left-[13%] max-w-[160px]">
-              <p className="text-[8px] font-light text-[#00263E] leading-relaxed line-clamp-4">{addCJKSpace(summary)}</p>
-            </div>
+            <p className={`absolute ${fields.summary.className}`} style={fields.summary.style}>
+              {addCJKSpace(summary)}
+            </p>
           )}
 
-          {/* "超越全国 X%" 伪统计已下线：ResultClient 不再传入 percentile；保留条件渲染仅作兼容，
-              percentile 为 undefined 时不渲染该元素 */}
+          {/* "超越全国 X%" 伪统计已下线：ResultClient 不再传入 percentile；保留条件渲染仅作兼容 */}
           {percentile !== undefined && (
             <div className="absolute top-[47%] left-[78%] -translate-x-1/2">
               <p className="text-2xl font-bold text-[#00263E] whitespace-nowrap">{percentile}%</p>
             </div>
           )}
 
-          {qrDataUrl && (
-            <div className="absolute top-[71.9%] left-[72.7%] -translate-x-1/2">
-              <img src={qrDataUrl} alt="二维码" loading="eager" decoding="sync" className="w-20 h-20 rounded-lg" />
+          {/* 二维码：仅含二维码的模板（小红书版模板配置为 null，不渲染） */}
+          {qrDataUrl && template.qr && (
+            <div className="absolute z-30" style={template.qr.style}>
+              <img
+                src={qrDataUrl}
+                alt="二维码"
+                loading="eager"
+                decoding="sync"
+                className="rounded-lg"
+                style={{ width: template.qr.size, height: template.qr.size }}
+              />
             </div>
           )}
 
           {(certDate || certId) && (
-            <div className="absolute bottom-[4.5%] right-[5%] text-right">
-              <p className="text-[9px] font-light text-[#00263E]/70 whitespace-nowrap tracking-wide">
-                {certDate ? formatCertDate(certDate) : ""}
-                {certDate && certId ? " · " : ""}
-                {certId ? `No.${formatCertId(certId)}` : ""}
-              </p>
-            </div>
+            <p className={`absolute ${fields.cert.className}`} style={fields.cert.style}>
+              {certDate ? formatCertDate(certDate) : ""}
+              {certDate && certId ? " · " : ""}
+              {certId ? `No.${formatCertId(certId)}` : ""}
+            </p>
           )}
         </div>
       </div>

@@ -34,6 +34,9 @@ const PUBLIC_PATHS = [
     "/robots.txt",
     "/sitemap.xml",
     "/site.webmanifest",       // PWA manifest
+    "/llms.txt",               // AI 爬虫说明（robots 中对 GPTBot/CCBot 等 Allow，必须可匿名访问）
+    "/llms-full.txt",          // AI 爬虫全量说明
+    "/baidu_verify_codeva-NFjTjXquRp.html", // 百度站长 HTML 验证文件
     "/models/:path*",          // face-api 模型文件（静态资源）
       "/api/auth/callback",
       "/api/auth/login",

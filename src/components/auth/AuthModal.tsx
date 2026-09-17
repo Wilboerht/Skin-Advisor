@@ -257,7 +257,13 @@ export function AuthModal() {
                                 </div>
 
                                 {/* ====== SSO（login / register / forgot_password） ====== */}
-                                {isSsoView && ssoPanel}
+                                {isSsoView && (
+                                    <>
+                                        {/* 对话框可访问名称：SSO 视图无可见标题，用 sr-only 标题补齐 aria-labelledby 指向 */}
+                                        <h1 id="auth-modal-title-desktop" className="sr-only">登录或注册</h1>
+                                        {ssoPanel}
+                                    </>
+                                )}
 
                                 {/* ====== WECHAT BIND ====== */}
                                 {view === "wechat_bind" && (
@@ -401,7 +407,11 @@ export function AuthModal() {
 
                         {/* ====== SSO（login / register / forgot_password）：统一 LoginGuide 引导 ====== */}
                         {isSsoView && (
-                            <LoginGuide onNavigateLogin={closeAuthModal} />
+                            <>
+                                {/* 对话框可访问名称：SSO 视图无可见标题，用 sr-only 标题补齐 aria-labelledby 指向 */}
+                                <h2 id="auth-modal-title-mobile" className="sr-only">登录或注册</h2>
+                                <LoginGuide onNavigateLogin={closeAuthModal} />
+                            </>
                         )}
 
                         {/* ====== WECHAT BIND ====== */}

@@ -66,7 +66,7 @@ export function FaqModal({ isOpen, onClose }: FaqModalProps) {
             <button
               onClick={onClose}
               aria-label="关闭"
-              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
+              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
             >
               <X size={16} strokeWidth={2.5} />
             </button>
@@ -86,7 +86,7 @@ export function FaqModal({ isOpen, onClose }: FaqModalProps) {
                   <details key={i} className="group cursor-pointer">
                     <summary className="flex items-center justify-between gap-4 py-4 md:py-5 px-2 -mx-2 rounded-xl text-[14px] md:text-[15px] font-light text-[#1A1A1A] list-none marker:content-none hover:text-brand-charcoal active:bg-brand-charcoal/[0.04] transition-colors touch-manipulation select-none">
                       <span>{faq.question}</span>
-                      <span className="shrink-0 text-brand-charcoal/40 text-lg leading-none group-open:rotate-45 transition-transform duration-300 motion-reduce:transition-none">
+                      <span className="shrink-0 text-brand-charcoal/55 text-lg leading-none group-open:rotate-45 transition-transform duration-300 motion-reduce:transition-none">
                         +
                       </span>
                     </summary>

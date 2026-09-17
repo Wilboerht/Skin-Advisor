@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { motion as m, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "framer-motion";
 import { Gift, Loader2, Share2 } from "lucide-react";
 import Image from "next/image";
 import { getCharacterImage, getSkinTypeName, type IPMatchParams } from "@/lib/result-utils";

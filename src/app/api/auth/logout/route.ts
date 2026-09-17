@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createLogoutRouteHandler } from "@nihplod/sso-sdk/next";
-import { clearLocalSession } from "@/lib/auth";
+import { clearLocalSession, revokeLocalRefreshToken } from "@/lib/auth";
+import { AUTH_REFRESH_COOKIE_NAME } from "@/lib/auth-config";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
 import {
     USER_COOKIE_NAME,
@@ -105,6 +106,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const accessToken = req.cookies.get(ACCESS_TOKEN_COOKIE)?.value ?? null;
   if (accessToken) {
     revocations.push(revokeSsoToken(accessToken, "access_token"));
+  }
+  // 本地 refresh token 同步撤销（原实现只清 Cookie，DB 里哈希长期有效）
+  const localRefreshToken = req.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value ?? null;
+  if (localRefreshToken) {
+    revocations.push(revokeLocalRefreshToken(localRefreshToken));
   }
   if (revocations.length > 0) {
     // 撤销是尽力而为的清理（revokeSsoToken 内部已 catch），不阻断响应：

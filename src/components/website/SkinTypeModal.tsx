@@ -72,7 +72,7 @@ export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
             <button
               onClick={onClose}
               aria-label="关闭"
-              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/35 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
+              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
             >
               <X size={17} strokeWidth={1.5} />
             </button>
@@ -161,7 +161,7 @@ export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
                       {data.m7.formulaCore.split(/\s*[·・]\s*/).filter(Boolean).map((keyword, i) => (
                         <span
                           key={i}
-                          className="text-[11px] tracking-[0.12em] text-brand-charcoal/50 border border-brand-charcoal/12 rounded-full px-3 py-1 font-light"
+                          className="text-[11px] tracking-[0.12em] text-brand-charcoal/65 border border-brand-charcoal/12 rounded-full px-3 py-1 font-light"
                         >
                           {keyword}
                         </span>

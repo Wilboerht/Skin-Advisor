@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
 import type { PreviousTestSummary } from "@/lib/analysis-result";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
@@ -89,7 +89,7 @@ export default function ComparisonCard({ prev, score, skinAge, persona, at }: Co
     const conclusion = conclusions.join("；");
 
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05, duration: 0.45 }}
@@ -161,6 +161,6 @@ export default function ComparisonCard({ prev, score, skinAge, persona, at }: Co
             <p className="text-[13px] leading-relaxed text-[var(--color-brand-cocoa)] border-t border-dashed border-[var(--color-brand-espresso)]/10 pt-3">
                 {conclusion}
             </p>
-        </motion.div>
+        </m.div>
     );
 }

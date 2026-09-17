@@ -159,7 +159,7 @@ export function SkinTypesClient({ types }: SkinTypesClientProps) {
                 "inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12px] tracking-[0.04em] transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2",
                 active
                   ? "border border-[var(--color-brand-cocoa)]/[0.3] bg-[var(--color-brand-cocoa)]/[0.06] text-[var(--color-brand-cocoa)] font-medium"
-                  : "border border-transparent text-brand-charcoal/55 font-light hover:text-brand-charcoal/75 hover:bg-brand-charcoal/[0.03]"
+                  : "border border-transparent text-brand-charcoal/70 font-light hover:text-brand-charcoal/75 hover:bg-brand-charcoal/[0.03]"
               )}
             >
               <Icon aria-hidden="true" className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
@@ -201,19 +201,12 @@ export function SkinTypesClient({ types }: SkinTypesClientProps) {
               const hidden = abs >= 4;
 
               return (
-                <button
+                // 容器用 div 承载 h2/图文（button 的 content model 不允许块级元素）；
+                // 点击/焦点/ARIA 由覆盖层 button 承担
+                <div
                   key={type.route}
-                  type="button"
-                  onClick={() => {
-                    // 拖拽产生的 click 抑制一次，避免"拖完顺带翻卡/开弹窗"
-                    if (dragMovedRef.current) { dragMovedRef.current = false; return; }
-                    if (isCenter) setSelected(type);
-                    else setActiveIdx(i);
-                  }}
-                  aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
                   aria-hidden={hidden}
-                  tabIndex={isCenter ? 0 : -1}
-                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.12] bg-white p-4 md:p-5 text-left overflow-hidden hover:border-brand-espresso/[0.22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 motion-reduce:transition-none"
+                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.12] bg-white p-4 md:p-5 text-left overflow-hidden hover:border-brand-espresso/[0.22] motion-reduce:transition-none"
                   style={{
                     transform,
                     opacity,
@@ -229,6 +222,18 @@ export function SkinTypesClient({ types }: SkinTypesClientProps) {
                     willChange: hidden ? "auto" : "transform, opacity, filter",
                   }}
                 >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // 拖拽产生的 click 抑制一次，避免"拖完顺带翻卡/开弹窗"
+                      if (dragMovedRef.current) { dragMovedRef.current = false; return; }
+                      if (isCenter) setSelected(type);
+                      else setActiveIdx(i);
+                    }}
+                    aria-label={isCenter ? `${type.typeName}（查看详情）` : type.typeName}
+                    tabIndex={isCenter ? 0 : -1}
+                    className="absolute inset-0 z-20 rounded-2xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
+                  />
                   {/* 派系小印章：右下角内侧的规整小圆章（1px 描边 + 图标线稿），像证书角落的钢印；
                       位于白膜之下，侧卡失焦时随卡片一起变淡 */}
                   <span
@@ -276,9 +281,9 @@ export function SkinTypesClient({ types }: SkinTypesClientProps) {
                         查看完整解读
                         <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                       </div>
-                    </div>
                   </div>
-                </button>
+                </div>
+                </div>
               );
             })}
           </div>
@@ -289,7 +294,7 @@ export function SkinTypesClient({ types }: SkinTypesClientProps) {
           type="button"
           onClick={() => step(-1)}
           aria-label="上一个"
-          className="group hidden md:flex absolute -left-4 lg:-left-8 top-[105px] md:top-[180px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/45 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
+          className="group hidden md:flex absolute -left-4 lg:-left-8 top-[105px] md:top-[180px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/60 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-0.5" strokeWidth={1.5} />
         </button>
@@ -297,7 +302,7 @@ export function SkinTypesClient({ types }: SkinTypesClientProps) {
           type="button"
           onClick={() => step(1)}
           aria-label="下一个"
-          className="group hidden md:flex absolute -right-4 lg:-right-8 top-[105px] md:top-[180px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/45 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
+          className="group hidden md:flex absolute -right-4 lg:-right-8 top-[105px] md:top-[180px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/60 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
         >
           <ChevronRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={1.5} />
         </button>

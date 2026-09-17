@@ -5,15 +5,16 @@ import { writeFile, mkdir, realpath } from "fs/promises";
 import path from "path";
 import { enforceStorageLimits } from "@/lib/shared-upload-utils";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { getSessionUser } from "@/lib/sso-auth";
+import { isManagedUploadPath } from "@/lib/upload-paths";
 import { logger } from "@/lib/logger";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
 /**
  * PUT /api/local-upload
  * Local file upload handler (fallback for OSS)
- * 支持游客和登录用户上传，但保留频率限制与文件校验。
+ * 需登录：上传仅发生在扫脸/分析流程（这些流程本就要求登录）。
  */
 export async function PUT(request: NextRequest) {
     // Rate limiting per IP
@@ -26,11 +27,22 @@ export async function PUT(request: NextRequest) {
         return apiError(ErrorCode.RATE_LIMITED, "上传过于频繁，请稍后再试", 429);
     }
 
+    // 归属校验：未登录不允许写入磁盘（防止匿名内容污染/文件覆盖）
+    const user = await getSessionUser(request);
+    if (!user) {
+        return apiError(ErrorCode.UNAUTHORIZED, "请先登录后再上传", 401);
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const filePath = searchParams.get("path");
 
     if (!filePath) {
         return apiError(ErrorCode.VALIDATION_ERROR, "Missing path", 400);
+    }
+
+    // 严格路径白名单（先于文件系统解析，拒绝一切非签名生成规则的路径）
+    if (filePath.includes("\\") || !isManagedUploadPath(filePath)) {
+        return apiError(ErrorCode.VALIDATION_ERROR, "Invalid upload path", 400);
     }
 
     // Security: normalize and whitelist the resolved path
@@ -45,12 +57,6 @@ export async function PUT(request: NextRequest) {
     const fullPath = path.resolve(uploadRoot, requestedPath);
     if (!fullPath.startsWith(uploadRoot + path.sep) && fullPath !== uploadRoot) {
         return apiError(ErrorCode.FORBIDDEN, "Path traversal detected", 403);
-    }
-
-    // Validate extension
-    const ext = path.extname(requestedPath).toLowerCase();
-    if (!ALLOWED_EXTENSIONS.includes(ext)) {
-        return apiError(ErrorCode.VALIDATION_ERROR, "File type not allowed", 400);
     }
 
     try {

@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { ArrowUp, House, AlertCircle, Sparkles, X, ScanFace } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
-import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavPush } from "@/hooks/use-nav-push";
@@ -17,13 +18,17 @@ import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from "@/lib/storage-keys";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import type { SessionUser } from "@/lib/auth";
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
-import { toBlob } from "html-to-image";
-import { toDataURL } from "qrcode";
+import {
+    POSTER_TEMPLATES,
+    READY_POSTER_TEMPLATES,
+    DEFAULT_POSTER_TEMPLATE_ID,
+    isPosterTemplateId,
+    type PosterTemplate,
+    type PosterTemplateId,
+} from "@/components/advisor/poster/poster-templates";
 import ShareCardPage from "@/components/advisor/ShareCardPage";
-import ReportPage from "@/components/advisor/ReportPage";
 import UserBadge from "@/components/advisor/UserBadge";
 import { GenderMismatchModal, LabDataModal, PosterSaveModal } from "@/components/advisor/result-modals";
-import { ProductRecommendationSection } from "@/components/advisor/ProductRecommendationSection";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 import { skinTypes } from "@/lib/result-content";
@@ -31,6 +36,19 @@ import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
 import { buildFocusProblems, type LifestyleAnswers } from "@/lib/problem-solutions";
 import { SKIN_STATE_LABELS } from "@/lib/skin-state";
+import { useLazyOpen } from "@/hooks/use-lazy-open";
+
+// 首屏包体优化：完整报告 / 产品推荐 / 版式选择都只在"翻到报告页"或"点击保存"后才需要，
+// 改为动态加载；html-to-image / qrcode 在对应动作里 await import（见下方实现）。
+const ReportPage = dynamic(() => import("@/components/advisor/ReportPage"), { ssr: false });
+const ProductRecommendationSection = dynamic(
+    () => import("@/components/advisor/ProductRecommendationSection").then((mod) => mod.ProductRecommendationSection),
+    { ssr: false }
+);
+const PosterTemplatePicker = dynamic(
+    () => import("@/components/advisor/poster/PosterTemplatePicker").then((mod) => mod.PosterTemplatePicker),
+    { ssr: false }
+);
 
 // Re-export for backward compatibility with existing imports
 export { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -112,11 +130,11 @@ function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; onSwitc
 function ResultFooter() {
     return (
         <div className="text-center flex flex-col items-center gap-3">
-            <p className="text-[11px] font-light tracking-[0.15em] text-brand-charcoal/48" suppressHydrationWarning>
+            <p className="text-[11px] font-light tracking-[0.15em] text-brand-charcoal/65" suppressHydrationWarning>
                 © {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
             </p>
 
-            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
+            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
                 <a
                     href="https://beian.miit.gov.cn/"
                     target="_blank"
@@ -136,7 +154,7 @@ function ResultFooter() {
                     <span>沪公网安备31010702010178号</span>
                 </a>
             </div>
-            <p className="text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
+            <p className="text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
                 *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
             </p>
         </div>
@@ -228,22 +246,34 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // Session ID state - needed early for QR code generation
     const [sessionId, setSessionId] = useState<string | undefined>(id);
 
-    // Pre-generate QR code for poster (avoids race condition on save click)
-    useEffect(() => {
+    // 二维码生成（按需，动态加载 qrcode）：桌面进入即预生成，触屏设备延迟到点击保存时
+    const generateQrDataUrl = useCallback(async (): Promise<string | null> => {
         const siteBase = process.env.NEXT_PUBLIC_SITE_URL || "https://advisor.nihplod.cn";
         const qrUrl = sessionId
             ? `${siteBase}/?ref=poster_${sessionId}`
             : `${siteBase}/?gift=1`;
-        toDataURL(
-            qrUrl,
-            { width: 80, margin: 1, color: { dark: "#00263E", light: "#0000" } }
-        )
-            .then((url) => setQrDataUrl(url))
-            .catch(() => {
-                console.warn("QR code generation failed, poster will not include QR code");
-                setQrDataUrl(null);
-            });
+        try {
+            const { toDataURL } = await import("qrcode");
+            return await toDataURL(
+                qrUrl,
+                { width: 80, margin: 1, color: { dark: "#00263E", light: "#0000" } }
+            );
+        } catch {
+            console.warn("QR code generation failed, poster will not include QR code");
+            return null;
+        }
     }, [sessionId]);
+
+    // 桌面端预生成；触屏设备跳过（海报本身也不预生成，避免白下载 qrcode 依赖）
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.matchMedia("(hover: none)").matches) return;
+        let cancelled = false;
+        (async () => {
+            const url = await generateQrDataUrl();
+            if (!cancelled) setQrDataUrl(url);
+        })();
+        return () => { cancelled = true; };
+    }, [generateQrDataUrl]);
 
     // Refs for latest auth state to avoid adding them to effect dependency arrays
     const userRef = useRef(serverUser ?? user);
@@ -361,13 +391,31 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 微信内嵌浏览器无法可靠触发下载，生成后改用「长按保存」引导弹窗
     const [savedPosterForSave, setSavedPosterForSave] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-    const [preloadedPosterBlob, setPreloadedPosterBlob] = useState<Blob | null>(null);
+    // 海报版式（多套模板）：默认经典版，记忆用户上次选择；素材未就绪的模板不参与
+    const [posterTemplateId, setPosterTemplateId] = useState<PosterTemplateId>(DEFAULT_POSTER_TEMPLATE_ID);
+    const [showPosterPicker, setShowPosterPicker] = useState(false);
+    const posterTemplate = POSTER_TEMPLATES[posterTemplateId];
+    // 预生成海报缓存：按模板区分，切换模板不误用另一套的成品
+    const [preloadedPoster, setPreloadedPoster] = useState<{ templateId: PosterTemplateId; blob: Blob } | null>(null);
+    // 隐藏海报 DOM 延迟挂载：桌面预生成或用户点击保存时再挂载，
+    // 避免中文字体分片与 ~600KB 海报素材抢占首屏带宽
+    const [posterMounted, setPosterMounted] = useState(false);
+    // 版式选择弹层懒挂载：多模板时才可能打开，打开过保持挂载以保留退场动画
+    const shouldRenderPosterPicker = useLazyOpen(showPosterPicker);
     const [dismissValidationWarning, setDismissValidationWarning] = useState(false);
     // SSR 水合安全：初始值固定 false，挂载后再从 sessionStorage 同步（同 ackedSessionId）
     useEffect(() => {
         try { setDismissValidationWarning(sessionStorage.getItem('advisor_dismiss_validation') === 'true'); } catch { /* ignore */ }
     }, []);
     const posterRef = useRef<HTMLDivElement>(null);
+
+    // 恢复上次选择的保存版式（仅接受仍处于就绪状态的模板）
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEYS.ADVISOR_POSTER_TEMPLATE);
+            if (isPosterTemplateId(saved) && POSTER_TEMPLATES[saved].ready) setPosterTemplateId(saved);
+        } catch { /* ignore */ }
+    }, []);
 
     // "超越全国 X% 用户"百分位是固定公式伪统计，v2 报告与分享海报均已下线，不再计算
 
@@ -556,6 +604,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 页面进入后后台预加载海报素材
     useEffect(() => {
         if (!result) return;
+        // 触屏设备跳过：预生成本就不在移动端执行（toBlob 冻结主线程），
+        // 预载模板/叠加图/角色图（约 650KB）只会白耗流量；点击保存时现场加载即可
+        if (window.matchMedia("(hover: none)").matches) return;
 
         const avatarUrl = getCharacterImage({
             // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派（与封面页一致）
@@ -566,21 +617,21 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             gender: socialGender,
         });
 
-        preloadImage("/images/poster-template.webp?v=5");
-        preloadImage("/images/poster-overlay.webp");
+        preloadImage(posterTemplate.assets.template);
+        preloadImage(posterTemplate.assets.overlay);
         preloadImage(avatarUrl);
-    }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender]);
+    }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender, posterTemplate]);
 
     // 海报内容数据源（昵称/派系头像/面部分析等）变化时使预生成缓存失效，触发重新生成，
     // 避免晚到的数据（昵称兜底同步、localStorage 答案异步恢复）无法进入已缓存的 blob
     useEffect(() => {
-        setPreloadedPosterBlob(null);
+        setPreloadedPoster(null);
     }, [result, qrDataUrl, socialGender, userNickname, faceAnalysis, ipBudget, ipSkincareFrequency, sessionId]);
 
     // 后台预生成海报 blob：素材和二维码就绪后延迟执行，点击保存时直接使用
-    // 性别就绪后才生成，避免把默认女版头像烘焙进海报缓存
+    // 性别就绪后才生成，避免把默认女版头像烘焙进海报缓存；缓存按模板区分
     useEffect(() => {
-        if (!result || !qrDataUrl || preloadedPosterBlob || !socialGender) return;
+        if (!result || !qrDataUrl || preloadedPoster?.templateId === posterTemplateId || !socialGender) return;
         // 触屏设备（手机/平板）跳过预生成：toBlob(pixelRatio:2) 会冻结主线程数百 ms，
         // iOS 低端机甚至可能被杀进程，改为用户点击保存时再现场生成
         if (window.matchMedia("(hover: none)").matches) return;
@@ -588,12 +639,15 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         let cancelled = false;
         const timer = setTimeout(async () => {
             try {
+                // 延迟挂载隐藏海报（此时才触发素材/字体加载），等两帧确保 DOM 就绪
+                setPosterMounted(true);
+                await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
                 // 海报 DOM 尚未挂载（加载态/分析中等早期分支渲染中）时跳过本次预生成，
                 // 后续数据变化会重新触发；用户点击保存时也有现场生成兜底
                 if (!posterRef.current) return;
                 // 先等海报内图片加载完成，避免生成空白 blob
                 await waitForImages(posterRef.current);
-                const blob = await generatePosterBlob();
+                const blob = await generatePosterBlob(posterTemplate);
                 if (cancelled) return;
 
                 // 不缓存异常小或空白的 blob
@@ -602,7 +656,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     return;
                 }
 
-                setPreloadedPosterBlob(blob);
+                setPreloadedPoster({ templateId: posterTemplateId, blob });
             } catch (error) {
                 console.error("预生成海报失败:", error);
             }
@@ -612,7 +666,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [result, qrDataUrl, preloadedPosterBlob, socialGender, userNickname, faceAnalysis, ipBudget, ipSkincareFrequency, sessionId]);
+    }, [result, qrDataUrl, preloadedPoster, socialGender, userNickname, faceAnalysis, ipBudget, ipSkincareFrequency, sessionId, posterTemplateId, posterTemplate]);
 
     const handleMismatchRetry = () => {
         // Clear previous answers to force a fresh start
@@ -869,7 +923,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     }
 
-    async function generatePosterBlob(): Promise<Blob> {
+    async function generatePosterBlob(template: PosterTemplate): Promise<Blob> {
         if (!posterRef.current) throw new Error("posterRef 未就绪");
 
         const rect = posterRef.current.getBoundingClientRect();
@@ -880,8 +934,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         await document.fonts.ready;
         await waitForImages(posterRef.current);
 
+        // 动态加载：html-to-image 仅保存海报时需要，不进首屏包
+        const { toBlob } = await import("html-to-image");
         const blob = await toBlob(posterRef.current, {
-            pixelRatio: 2,
+            pixelRatio: template.pixelRatio,
             cacheBust: false,
             // 覆盖可能被继承的定位/透明/变换，避免离屏容器导致截图异常
             style: {
@@ -958,25 +1014,41 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         });
     }
 
-    const handleSavePoster = async () => {
+    const handleSavePoster = async (templateId: PosterTemplateId) => {
         if (isGeneratingPoster) return;
+        const template = POSTER_TEMPLATES[templateId];
         try {
             setIsGeneratingPoster(true);
             setPosterError(null);
 
-            // 优先使用后台预生成的 blob，没有则现场生成
-            let blob = preloadedPosterBlob;
+            // 切换到目标版式 / 首次挂载：隐藏海报随之渲染，等两帧确保 React 提交完成后再截图
+            const needsMount = !posterMounted;
+            if (templateId !== posterTemplateId) setPosterTemplateId(templateId);
+            if (needsMount) setPosterMounted(true);
+            if (needsMount || templateId !== posterTemplateId) {
+                await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+            }
+
+            // 触屏设备不在进页时预生成二维码：保存时现算（该模板需要二维码才生成）
+            if (!qrDataUrl && template.qr) {
+                const url = await generateQrDataUrl();
+                setQrDataUrl(url);
+                await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+            }
+
+            // 优先使用该模板的后台预生成 blob，没有则现场生成
+            let blob = preloadedPoster?.templateId === templateId ? preloadedPoster.blob : null;
             if (!blob) {
                 // 现场生成（toBlob pixelRatio:2）在低端机上可能耗时数秒，提前给用户预期，避免误以为卡死
                 toast.info("正在生成高清海报，可能需要几秒钟…", 4000);
-                blob = await generatePosterBlob();
+                blob = await generatePosterBlob(template);
             }
 
             // 校验是否空白，若是则丢弃缓存并现场重试一次
             if (!blob || (await isBlobBlank(blob))) {
                 if (blob) console.warn("预生成海报为空白，尝试现场重新生成");
-                setPreloadedPosterBlob(null);
-                blob = await generatePosterBlob();
+                setPreloadedPoster(null);
+                blob = await generatePosterBlob(template);
             }
 
             if (!blob || (await isBlobBlank(blob))) {
@@ -990,12 +1062,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1);
             if (isWeChatMobile) {
                 setSavedPosterForSave(URL.createObjectURL(blob));
-                if (!isMock) trackResultShare("image");
+                // 埋点不在生成时上报：等用户在长按保存弹窗里点「已保存，关闭」再计入（见下方 onSaved）
                 return;
             }
 
             const safeName = sanitizeFilename(userNickname || "用户");
-            await triggerDownload(blob, `${safeName}的肌智派证书.png`);
+            await triggerDownload(blob, `${safeName}的肌智派证书${template.filenameSuffix}.png`);
+            // 埋点口径：下载/原生分享动作已触发（生成成功但用户未保存不计入）
             if (!isMock) trackResultShare("image");
         } catch (error) {
             console.error("海报生成失败:", error);
@@ -1003,6 +1076,23 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         } finally {
             setIsGeneratingPoster(false);
         }
+    };
+
+    // 「保存测肤证书」入口：多套模板时先选版式，只有一套时直接保存
+    const handleRequestSavePoster = () => {
+        if (READY_POSTER_TEMPLATES.length > 1) {
+            setShowPosterPicker(true);
+            return;
+        }
+        void handleSavePoster(posterTemplateId);
+    };
+
+    // 用户在版式选择弹层中点选：记忆选择并按该版式保存
+    const handlePickPosterTemplate = (id: PosterTemplateId) => {
+        setShowPosterPicker(false);
+        setPosterTemplateId(id);
+        try { localStorage.setItem(STORAGE_KEYS.ADVISOR_POSTER_TEMPLATE, id); } catch { /* ignore */ }
+        void handleSavePoster(id);
     };
 
     const closePosterSaveModal = () => {
@@ -1248,7 +1338,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">未授权访问</h3>
-                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">请从首页开始皮肤测评，完成问卷后即可查看您的分析报告。</p>
+                            <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em]">请从首页开始皮肤测评，完成问卷后即可查看您的分析报告。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
@@ -1277,7 +1367,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">登录后查看报告</h3>
-                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">测肤报告与您的账户绑定，请登录后查看属于您的分析结果。</p>
+                            <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em]">测肤报告与您的账户绑定，请登录后查看属于您的分析结果。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
@@ -1316,7 +1406,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">
                                 {isRequireLogin ? "测肤需登录后使用" : isQuotaError ? "今日测试次数已用完" : "分析遇到了一些问题"}
                             </h3>
-                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
+                            <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em]">
                                 {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
                             </p>
                         </div>
@@ -1365,7 +1455,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">报告暂时无法加载</h3>
-                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">请重新开始一次肌肤检测，获取您的专属分析报告。</p>
+                            <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em]">请重新开始一次肌肤检测，获取您的专属分析报告。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
@@ -1471,7 +1561,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             skincareFrequency={ipSkincareFrequency}
                                             gender={socialGender}
                                             summary={result?.analysis?.summary}
-                                            onDownloadPoster={handleSavePoster}
+                                            onDownloadPoster={handleRequestSavePoster}
                                             isPosterLoading={isGeneratingPoster}
                                             certDate={certDate}
                                             certId={sessionId}
@@ -1616,47 +1706,60 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             {posterError}
                         </div>
                     )}
-                    <div
-                        aria-hidden="true"
-                        style={{
-                            position: "fixed",
-                            top: "-9999px",
-                            left: "-9999px",
-                            width: 480,
-                            height: 640,
-                            pointerEvents: "none",
-                            zIndex: -1,
-                        }}
-                    >
-                        <SharePoster
-                            ref={posterRef}
-                            nickname={userNickname || "用户"}
-                            score={faceAnalysis?.overallScore ?? undefined}
-                            waterOil={faceAnalysis?.dimensions?.waterOil?.score}
-                            skinTypeName={personaLabel}
-                            skinAge={result?.skinProfile?.skinAge}
-                            avatar={socialGender ? getCharacterImage({
-                                // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派（与封面页一致）
-                                score: faceAnalysis?.overallScore ?? 80,
-                                skinType: result?.skinProfile?.type || 'combination',
-                                budget: ipBudget,
-                                skincareFrequency: ipSkincareFrequency,
-                                gender: socialGender,
-                            }) : ""}
-                            posterTemplate="/images/poster-template.webp?v=5"
-                            posterOverlay="/images/poster-overlay.webp"
-                            qrDataUrl={qrDataUrl}
-                            persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
-                            summary={result?.analysis?.summary}
-                            certDate={certDate}
-                            certId={sessionId}
-                        />
-                    </div>
+                    {posterMounted && (
+                        <div
+                            aria-hidden="true"
+                            style={{
+                                position: "fixed",
+                                top: "-9999px",
+                                left: "-9999px",
+                                width: posterTemplate.canvas.width,
+                                height: posterTemplate.canvas.height,
+                                pointerEvents: "none",
+                                zIndex: -1,
+                            }}
+                        >
+                            <SharePoster
+                                ref={posterRef}
+                                template={posterTemplate}
+                                nickname={userNickname || "用户"}
+                                score={faceAnalysis?.overallScore ?? undefined}
+                                waterOil={faceAnalysis?.dimensions?.waterOil?.score}
+                                skinTypeName={personaLabel}
+                                skinAge={result?.skinProfile?.skinAge}
+                                avatar={socialGender ? getCharacterImage({
+                                    // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派（与封面页一致）
+                                    score: faceAnalysis?.overallScore ?? 80,
+                                    skinType: result?.skinProfile?.type || 'combination',
+                                    budget: ipBudget,
+                                    skincareFrequency: ipSkincareFrequency,
+                                    gender: socialGender,
+                                }) : ""}
+                                qrDataUrl={qrDataUrl}
+                                persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
+                                summary={result?.analysis?.summary}
+                                certDate={certDate}
+                                certId={sessionId}
+                            />
+                        </div>
+                    )}
 
-                    {/* 微信内嵌浏览器海报保存兜底：长按图片保存引导 */}
+                    {/* 保存版式选择（存在 2 套及以上已就绪模板时才会被打开） */}
+                    {shouldRenderPosterPicker && (
+                        <PosterTemplatePicker
+                            isOpen={showPosterPicker}
+                            templates={READY_POSTER_TEMPLATES}
+                            selectedId={posterTemplateId}
+                            onSelect={handlePickPosterTemplate}
+                            onClose={() => setShowPosterPicker(false)}
+                        />
+                    )}
+
+                    {/* 微信内嵌浏览器海报保存兜底：长按图片保存引导；点「已保存，关闭」才计分享埋点 */}
                     <PosterSaveModal
                         imageUrl={savedPosterForSave}
                         onClose={closePosterSaveModal}
+                        onSaved={() => { if (!isMock) trackResultShare("image"); }}
                     />
                 </div>)}
         </>

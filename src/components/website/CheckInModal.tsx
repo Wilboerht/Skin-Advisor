@@ -152,7 +152,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
             <button
               onClick={onClose}
               aria-label="关闭"
-              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/35 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
+              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
             >
               <X size={17} strokeWidth={1.5} />
             </button>
@@ -184,12 +184,12 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                         selected ? "" : "hover:bg-brand-charcoal/[0.03]"
                       }`}
                     >
-                      <span style={{ color: selected ? meta.color : "#8A8A8A" }}>
+                      <span style={{ color: selected ? meta.color : "#6B5E50" }}>
                         <Icon className="w-6 h-6" strokeWidth={1.5} />
                       </span>
                       <span
                         className="text-[11px] font-light"
-                        style={{ color: selected ? meta.color : "#8A8A8A" }}
+                        style={{ color: selected ? meta.color : "#6B5E50" }}
                       >
                         {meta.label}
                       </span>
@@ -205,7 +205,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                   { caption: "情境因素", list: SITUATION_TAGS },
                 ].map((group) => (
                   <div key={group.caption}>
-                    <p className="text-[11px] text-brand-charcoal/45 font-light mb-1.5 tracking-[0.08em]">
+                    <p className="text-[11px] text-brand-charcoal/60 font-light mb-1.5 tracking-[0.08em]">
                       {group.caption}
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -220,7 +220,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                             className={`px-3 py-1.5 rounded-full text-[12px] font-light border transition-colors cursor-pointer ${
                               selected
                                 ? "border-[var(--color-brand-cocoa)]/50 text-[var(--color-brand-cocoa)] bg-[var(--color-brand-cocoa)]/[0.06]"
-                                : "border-brand-espresso/[0.12] text-brand-charcoal/55 hover:border-brand-espresso/30"
+                                : "border-brand-espresso/[0.12] text-brand-charcoal/70 hover:border-brand-espresso/30"
                             }`}
                           >
                             {tag}
@@ -238,7 +238,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                 onChange={(e) => setNote(e.target.value.slice(0, 200))}
                 rows={3}
                 placeholder="今天用了什么、肌肤有什么变化…（选填）"
-                className="w-full mb-6 px-4 py-3 text-[13px] font-light text-[#1A1A1A] bg-white/60 border border-brand-espresso/[0.12] rounded-2xl resize-none focus:outline-none focus:border-[var(--color-brand-cocoa)]/50 placeholder:text-brand-charcoal/35"
+                className="w-full mb-6 px-4 py-3 text-[13px] font-light text-[#1A1A1A] bg-white/60 border border-brand-espresso/[0.12] rounded-2xl resize-none focus:outline-none focus:border-[var(--color-brand-cocoa)]/50 placeholder:text-brand-charcoal/55"
               />
 
               <button

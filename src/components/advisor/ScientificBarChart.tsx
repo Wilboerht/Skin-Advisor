@@ -13,8 +13,8 @@ import {
     YAxis,
 } from "recharts";
 import type { LabelProps } from "recharts";
-import type { SkinDimensions, SkinDimensionKey } from "@/lib/advisor-utils";
-import { DIMENSION_LABELS, DIMENSION_ORDER } from "@/lib/advisor-utils";
+import type { SkinDimensions, SkinDimensionKey } from "@/lib/advisor-labels";
+import { DIMENSION_LABELS, DIMENSION_ORDER } from "@/lib/advisor-labels";
 
 interface ScientificBarChartProps {
     dimensions: SkinDimensions;

@@ -492,7 +492,7 @@ export function DiaryModal() {
                 <button
                   onClick={closeDiaryModal}
                   aria-label="关闭"
-                  className="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/35 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
+                  className="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
                 >
                   <X size={17} strokeWidth={1.5} />
                 </button>
@@ -517,11 +517,11 @@ export function DiaryModal() {
                           type="button"
                           onClick={() => setHistoryView(false)}
                           aria-label="返回护肤档案"
-                          className="w-8 h-8 -ml-1 flex items-center justify-center rounded-full text-brand-charcoal/35 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
+                          className="w-8 h-8 -ml-1 flex items-center justify-center rounded-full text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
                         >
                           <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
                         </button>
-                        <span className="text-[12px] text-brand-charcoal/45 font-light tracking-[0.05em]">
+                        <span className="text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em]">
                           返回护肤档案
                         </span>
                       </div>
@@ -564,7 +564,7 @@ export function DiaryModal() {
                                   className={`relative px-2 h-8 text-[12px] transition-colors cursor-pointer ${
                                     trendRange === r
                                       ? "text-brand-charcoal font-medium"
-                                      : "text-brand-charcoal/45 hover:text-brand-charcoal"
+                                      : "text-brand-charcoal/60 hover:text-brand-charcoal"
                                   }`}
                                 >
                                   近 {r} 天
@@ -601,7 +601,7 @@ export function DiaryModal() {
                             <TrendChart trends={rangeTrends} />
                           ) : (
                             <div className="py-6 text-center">
-                              <p className="text-[13px] text-brand-charcoal/45 font-light">
+                              <p className="text-[13px] text-brand-charcoal/60 font-light">
                                 近 {trendRange} 天内测肤不足 2 次，暂无趋势可看
                               </p>
                             </div>
@@ -627,17 +627,17 @@ export function DiaryModal() {
                       ) : recentCheckInCount >= 2 ? (
                         <div>
                           <CheckInTrend entries={entries} todayStr={todayStr} />
-                          <p className="mt-3 text-[11px] text-brand-charcoal/45 font-light text-center">
+                          <p className="mt-3 text-[11px] text-brand-charcoal/60 font-light text-center">
                             完成两次不同日期的测肤后，可叠加查看测肤评分趋势
                           </p>
                         </div>
                       ) : (
                         /* 解锁引导：极简居中（无框），CTA 按钮承载行动感 */
                         <div className="py-6 text-center">
-                          <p className="text-[13px] text-brand-charcoal/55 font-light leading-[1.8] tracking-[0.06em] mb-2">
+                          <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em] mb-2">
                             完成两次不同日期的测肤后解锁肌肤变化
                           </p>
-                          <p className="text-[13px] text-brand-charcoal/45 font-light leading-[1.8] tracking-[0.06em] mb-4">
+                          <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] mb-4">
                             定期测肤，看见肌肤的真实变化
                           </p>
                           <Link
@@ -656,9 +656,9 @@ export function DiaryModal() {
                           <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                             <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
                               {summary.currentStreak}
-                              <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/50">天</span>
+                              <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">天</span>
                             </p>
-                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/50 font-light">
+                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
                               <Flame className="w-3 h-3 text-[#D9730D]" strokeWidth={1.8} />
                               连续打卡
                             </p>
@@ -666,20 +666,20 @@ export function DiaryModal() {
                           <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                             <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
                               {summary.totalCheckins}
-                              <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/50">次</span>
+                              <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">次</span>
                             </p>
-                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/50 font-light">
-                              <CalendarCheck className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
+                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
+                              <CalendarCheck className="w-3 h-3 text-brand-charcoal/65" strokeWidth={1.8} />
                               累计打卡
                             </p>
                           </div>
                           <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                             <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
                               {summary.testCount}
-                              <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/50">次</span>
+                              <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">次</span>
                             </p>
-                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/50 font-light">
-                              <ScanFace className="w-3 h-3 text-brand-charcoal/50" strokeWidth={1.8} />
+                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
+                              <ScanFace className="w-3 h-3 text-brand-charcoal/65" strokeWidth={1.8} />
                               已测肤
                             </p>
                           </div>
@@ -687,9 +687,9 @@ export function DiaryModal() {
                             <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                               <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
                                 {summary.longestStreak}
-                                <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/50">天</span>
+                                <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">天</span>
                               </p>
-                              <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/50 font-light">
+                              <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
                                 <Trophy className="w-3 h-3 text-[#C9A86C]" strokeWidth={1.8} />
                                 最长连续
                               </p>
@@ -720,7 +720,7 @@ export function DiaryModal() {
                               className={`relative px-2.5 h-8 text-[12px] transition-colors cursor-pointer ${
                                 calendarView === v.key
                                   ? "text-brand-charcoal font-medium"
-                                  : "text-brand-charcoal/45 hover:text-brand-charcoal"
+                                  : "text-brand-charcoal/60 hover:text-brand-charcoal"
                               }`}
                             >
                               {v.label}

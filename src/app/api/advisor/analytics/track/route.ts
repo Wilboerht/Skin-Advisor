@@ -6,12 +6,42 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
 import { logger } from "@/lib/logger";
+
+/** interactions 追加上限：达到后丢弃新事件，防止单行 JSON 无限膨胀 */
+const INTERACTIONS_MAX_ENTRIES = 500;
+
+/**
+ * 原子追加一条 interaction 到 AdvisorSession.interactions。
+ *
+ * 原实现"findUnique 读出数组 → push → 整列 upsert"在并发事件下会互相覆盖丢数据；
+ * 改为数据库侧 jsonb `||` 原子追加。会话不存在时补建（与旧行为一致，createMany 幂等）。
+ */
+async function appendInteraction(sessionId: string, entry: Record<string, unknown>): Promise<void> {
+    const payload = JSON.stringify([entry]);
+    const affected = await prisma.$executeRaw`
+        UPDATE "AdvisorSession"
+        SET "interactions" = COALESCE("interactions", '[]'::jsonb) || ${payload}::jsonb
+        WHERE "sessionId" = ${sessionId}
+          AND jsonb_array_length(COALESCE("interactions", '[]'::jsonb)) < ${INTERACTIONS_MAX_ENTRIES}
+    `;
+    if (affected === 0) {
+        // 会话不存在（事件先于 session_start 到达）或已达长度上限：补建/丢弃
+        const created = await prisma.advisorSession.createMany({
+            data: [{ sessionId, interactions: [entry] as unknown as Prisma.InputJsonValue }],
+            skipDuplicates: true,
+        });
+        if (created.count === 0) {
+            logger.warn("[analytics] interaction dropped (cap reached)", { sessionId });
+        }
+    }
+}
 
 // 事件类型定义
 const EventSchema = z.object({
@@ -112,9 +142,29 @@ export async function POST(request: NextRequest) {
         const clientInfo = getClientInfo(request);
         const now = new Date();
 
+        // 归属守卫：已归属他人的会话不允许写入任何事件，否则可污染/劫持他人数据。
+        // session_start 例外（它负责"绑定归属"，在下面单独做条件校验）。
+        if (event !== "session_start") {
+            const owner = await prisma.advisorSession.findUnique({
+                where: { sessionId },
+                select: { userId: true },
+            });
+            if (owner?.userId && owner.userId !== user.id) {
+                return NextResponse.json({ success: true });
+            }
+        }
+
         // 根据事件类型更新会话记录
         switch (event) {
             case "session_start": {
+                // 绑定归属前先确认会话未被他人占用（原实现无条件改写 userId，可被用来劫持他人会话）
+                const existingOwner = await prisma.advisorSession.findUnique({
+                    where: { sessionId },
+                    select: { userId: true },
+                });
+                if (existingOwner?.userId && existingOwner.userId !== user.id) {
+                    return NextResponse.json({ success: true });
+                }
                 // 创建或更新会话，登录用户的 session 写入 userId
                 await prisma.advisorSession.upsert({
                     where: { sessionId },
@@ -226,20 +276,7 @@ export async function POST(request: NextRequest) {
                 const step = typeof data?.step === "string" ? data.step : null;
                 if (!step) break;
                 const mode = typeof data?.mode === "string" ? data.mode : "auto";
-                const existing = await prisma.advisorSession.findUnique({
-                    where: { sessionId },
-                    select: { interactions: true },
-                });
-                const history = Array.isArray(existing?.interactions) ? existing.interactions : [];
-                const next = [
-                    ...history,
-                    { type: "face_scan_step", step, mode, at: now.toISOString() },
-                ];
-                await prisma.advisorSession.upsert({
-                    where: { sessionId },
-                    create: { sessionId, interactions: next },
-                    update: { interactions: next },
-                });
+                await appendInteraction(sessionId, { type: "face_scan_step", step, mode, at: now.toISOString() });
                 break;
             }
 
@@ -324,25 +361,12 @@ export async function POST(request: NextRequest) {
                 // 供"封面→报告转化率 + 首测/派系变化 cohort"统计）
                 const page = typeof data?.page === "string" ? data.page : null;
                 if (!page) break;
-                const existing = await prisma.advisorSession.findUnique({
-                    where: { sessionId },
-                    select: { interactions: true },
-                });
-                const history = Array.isArray(existing?.interactions) ? existing.interactions : [];
-                const next = [
-                    ...history,
-                    {
-                        type: "result_flip",
-                        page,
-                        firstTest: data?.firstTest === true,
-                        personaChanged: data?.personaChanged === true,
-                        at: now.toISOString(),
-                    },
-                ];
-                await prisma.advisorSession.upsert({
-                    where: { sessionId },
-                    create: { sessionId, interactions: next },
-                    update: { interactions: next },
+                await appendInteraction(sessionId, {
+                    type: "result_flip",
+                    page,
+                    firstTest: data?.firstTest === true,
+                    personaChanged: data?.personaChanged === true,
+                    at: now.toISOString(),
                 });
                 break;
             }

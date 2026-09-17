@@ -171,7 +171,7 @@ export function DiaryTimeline({
       {!hasAnyEvent && (
         /* 空态引导：无框居中（与左列"解锁引导"同一种样式语言，全站弹层一致） */
         <div className="py-10 text-center mb-6">
-          <p className="text-[13px] text-brand-charcoal/55 font-light leading-[1.8] tracking-[0.06em] mb-4">
+          <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em] mb-4">
             完成一次测肤后，这里会自动生成你的护肤记录
           </p>
           <div className="flex items-center justify-center gap-3">
@@ -226,7 +226,7 @@ export function DiaryTimeline({
           <div key={group.dateStr}>
             {monthDivider && (
               <div className="mb-4 mt-3 first:mt-0">
-                <span className="text-[12px] tracking-[0.2em] text-brand-charcoal/35">
+                <span className="text-[12px] tracking-[0.2em] text-brand-charcoal/55">
                   {monthDivider}
                 </span>
               </div>
@@ -247,7 +247,7 @@ export function DiaryTimeline({
                     <div className="relative">
                       <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
                       <div className="flex items-center gap-3">
-                        <span className="flex-1 text-[13px] text-brand-charcoal/45 font-light">
+                        <span className="flex-1 text-[13px] text-brand-charcoal/60 font-light">
                           今天还没有记录
                         </span>
                         {onCheckIn && (
@@ -294,7 +294,7 @@ export function DiaryTimeline({
                       <button
                         type="button"
                         onClick={() => onCheckIn(manualDiaryEntry, group.dateStr)}
-                        className="text-left text-[12px] text-brand-charcoal/40 font-light hover:text-brand-charcoal transition-colors cursor-pointer"
+                        className="text-left text-[12px] text-brand-charcoal/55 font-light hover:text-brand-charcoal transition-colors cursor-pointer"
                       >
                         {manualDiaryEntry ? "编辑记录 →" : "补打卡 →"}
                       </button>
@@ -321,7 +321,7 @@ export function DiaryTimeline({
                               type="button"
                               onClick={() => onCheckIn(ev.entry, group.dateStr)}
                               aria-label={isToday ? "编辑今日记录" : "编辑记录"}
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
                             >
                               <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
                             </button>
@@ -339,7 +339,7 @@ export function DiaryTimeline({
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteId(null)}
-                                className="h-8 px-3 flex items-center rounded-full text-brand-charcoal/50 text-[11px] font-light hover:bg-brand-charcoal/[0.05] cursor-pointer"
+                                className="h-8 px-3 flex items-center rounded-full text-brand-charcoal/65 text-[11px] font-light hover:bg-brand-charcoal/[0.05] cursor-pointer"
                               >
                                 取消
                               </button>
@@ -349,7 +349,7 @@ export function DiaryTimeline({
                               type="button"
                               onClick={() => setConfirmDeleteId(ev.entry.id)}
                               aria-label="删除记录"
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/30 hover:text-[#D44C47] hover:bg-[#D44C47]/[0.06] transition-colors cursor-pointer"
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/65 hover:text-[#D44C47] hover:bg-[#D44C47]/[0.06] transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
                             </button>
@@ -364,7 +364,7 @@ export function DiaryTimeline({
                                 <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
                                 {meta.label}
                               </span>
-                              <span className="inline-flex items-center gap-0.5 text-[11px] text-brand-charcoal/40 group-hover:text-brand-charcoal transition-colors">
+                              <span className="inline-flex items-center gap-0.5 text-[11px] text-brand-charcoal/55 group-hover:text-brand-charcoal transition-colors">
                                 查看报告
                                 <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                               </span>
@@ -385,7 +385,7 @@ export function DiaryTimeline({
                               {ev.entry.tags?.map((tag) => (
                                 <span
                                   key={tag}
-                                  className="text-[11px] text-brand-charcoal/45"
+                                  className="text-[11px] text-brand-charcoal/60"
                                 >
                                   {tag}
                                 </span>
@@ -398,7 +398,7 @@ export function DiaryTimeline({
                             )}
                             {/* 同日冲突提示：手动打卡与测肤评分同屏时，补一句客观评分帮助对照 */}
                             {!auto && maxDayScore != null && (
-                              <p className="mt-1 text-[11px] text-brand-charcoal/35 font-light">
+                              <p className="mt-1 text-[11px] text-brand-charcoal/55 font-light">
                                 同日测肤 {maxDayScore} 分
                               </p>
                             )}
@@ -421,12 +421,12 @@ export function DiaryTimeline({
                       >
                         <span className="text-[12px] font-medium text-brand-charcoal">完成测肤</span>
                         {skinType && (
-                          <span className="text-[12px] text-brand-charcoal/50 font-light truncate">{skinType}</span>
+                          <span className="text-[12px] text-brand-charcoal/65 font-light truncate">{skinType}</span>
                         )}
                         {score != null && score > 0 && (
                           <span className="text-[12px] text-brand-charcoal/60 font-light shrink-0">{score} 分</span>
                         )}
-                        <ChevronRight className="w-3 h-3 shrink-0 text-brand-charcoal/25 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
+                        <ChevronRight className="w-3 h-3 shrink-0 text-brand-charcoal/50 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
                       </Link>
                     </div>
                   );

@@ -1,30 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
 import prisma from "@/lib/prisma";
 import { extractReportSummary } from "@/lib/internal-report";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { authorizeInternalRequest } from "@/lib/internal-api";
 import { logger } from "@/lib/logger";
 
 const SESSION_ID_RE = /^[0-9A-Za-z-]{8,128}$/;
 
-function safeCompare(a: string, b: string): boolean {
-    const bufA = Buffer.from(a);
-    const bufB = Buffer.from(b);
-    if (bufA.length !== bufB.length) return false;
-    return timingSafeEqual(bufA, bufB);
-}
-
 /**
  * 内部接口：按 sessionId 返回测肤报告摘要。
- * 仅供企业微信 AI 客服服务调用（x-internal-key 校验），
+ * 仅供企业微信 AI 客服服务调用。
+ * 鉴权：优先 HMAC 签名，过渡期兼容旧版 x-internal-key；
  * 返回字段最小化，不包含人脸图片等敏感数据。
  */
 export async function GET(request: NextRequest) {
-    const internalKey = process.env.INTERNAL_API_KEY;
-    const providedKey = request.headers.get("x-internal-key") || "";
-
-    if (!internalKey || !providedKey || !safeCompare(internalKey, providedKey)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await authorizeInternalRequest(request, { legacy: "x-internal-key" });
+    if (!auth.ok) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: auth.status ?? 401 });
     }
 
     const sessionId = request.nextUrl.searchParams.get("sessionId") || "";

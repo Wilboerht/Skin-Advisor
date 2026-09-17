@@ -152,3 +152,19 @@ export function clearLocalSession(response: NextResponse): void {
     response.cookies.delete(AUTH_REFRESH_COOKIE_NAME);
     response.cookies.delete(CSRF_COOKIE_NAME);
 }
+
+/**
+ * 撤销本地 refresh token（登出时调用）：按哈希标记 revokedAt。
+ * 表保留记录供审计，由 data-cleanup 定时清除过期/已撤销数据。
+ */
+export async function revokeLocalRefreshToken(token: string): Promise<void> {
+    try {
+        await prisma.refreshToken.updateMany({
+            where: { token: hashToken(token), revokedAt: null },
+            data: { revokedAt: new Date() },
+        });
+    } catch (err) {
+        // 尽力而为：撤销失败不阻断登出（Cookie 已清除，token 最长 30 天自然过期）
+        logger.warn("[auth] Failed to revoke local refresh token", { error: String(err) });
+    }
+}

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -127,26 +127,27 @@ function ToastContainer({
             aria-live="polite"
             className="fixed right-0 left-0 bottom-[calc(1rem+env(safe-area-inset-bottom,16px))] md:right-6 md:left-auto md:top-6 md:bottom-auto z-[100100] flex flex-col items-center md:items-end gap-2 px-4 md:px-0"
         >
+            <LazyMotion features={domAnimation}>
             <AnimatePresence>
                 {toasts.map((t) => {
                     const Icon = IconComponent[t.type];
                     return (
-                    <motion.div
+                    <m.div
                         key={t.id}
                         role={t.type === "error" ? "alert" : undefined}
                         initial={reducedMotion ? false : { opacity: 0, y: 8, x: 0 }}
                         animate={reducedMotion ? {} : { opacity: 1, y: 0, x: 0 }}
                         exit={reducedMotion ? {} : { opacity: 0, y: 8, transition: { duration: 0.15 } }}
-                        layout
                         onClick={() => removeToast(t.id)}
                         className="flex items-center gap-2.5 rounded-2xl bg-white/90 backdrop-blur-xl px-4 py-2.5 text-[13px] leading-snug text-[#1A1A1A] cursor-pointer select-none shadow-[0_2px_16px_-2px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] w-full md:w-auto"
                     >
                         <Icon className={`h-4 w-4 shrink-0 ${iconColor[t.type]}`} strokeWidth={2} />
                         <span className="font-normal tracking-wide">{t.message}</span>
-                    </motion.div>
+                    </m.div>
                     );
                 })}
             </AnimatePresence>
+            </LazyMotion>
         </div>
     );
 }

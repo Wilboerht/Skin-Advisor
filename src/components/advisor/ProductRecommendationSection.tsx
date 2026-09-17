@@ -5,7 +5,7 @@ import { m } from "framer-motion";
 import { ProductCard, ProductCardData } from "./ProductCard";
 import { ProductDetailModal } from "./ProductDetailModal";
 import { cn } from "@/lib/utils";
-import { DIMENSION_LABELS } from "@/lib/advisor-utils";
+import { DIMENSION_LABELS } from "@/lib/advisor-labels";
 
 interface ProductRecommendationSectionProps {
     products: ProductCardData[];
