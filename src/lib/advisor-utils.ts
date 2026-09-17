@@ -185,7 +185,11 @@ export interface QuestionnaireAnswers {
     allergies?: string | string[];
     budget?: string;
     skincareFrequency?: string;
+    skincareLevel?: string;
+    pregnancy?: string;
     pregnancyStatus?: string;
+    medicalBeauty?: string;
+    menstrualCycle?: string;
     medicationHistory?: string;
     sleepQuality?: string;
     stressLevel?: string;

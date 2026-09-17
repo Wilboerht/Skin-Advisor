@@ -319,6 +319,8 @@ export default function QuestionsPage() {
                 // 本地性别只会在用户显式确认过性别时写入（预选不落存储），
                 // 因此存在即说明"之前用过"→ 显示历史记录文案
                 setGenderSource("previous");
+                // 与手动选择/资料预选路径一致：恢复性别也启动面部模型空闲预载
+                scheduleFaceModelPreload();
                 // Ensure gender is in answers so dependsOn logic works
                 initialAnswers = { ...initialAnswers, gender: savedGender };
             }
@@ -424,12 +426,25 @@ export default function QuestionsPage() {
         scheduleFaceModelPreload();
     };
 
+    // 男性不展示孕期/生理周期题（getFilteredQuestions），选定男性时同步清除这两题的
+    // 残留答案（如上次女性测肤留下的恢复进度），避免隐藏答案随提交发出
+    const applyGenderToAnswers = (prev: Record<string, unknown>, g: "female" | "male") => {
+        const nextAnswers: Record<string, unknown> = { ...prev, gender: g };
+        if (g === "male") {
+            delete nextAnswers.pregnancy;
+            delete nextAnswers.menstrualCycle;
+        }
+        return nextAnswers;
+    };
+
     const handleGenderSelect = (selectedGender: "female" | "male") => {
         setGender(selectedGender);
-        setAnswers(prev => ({ ...prev, gender: selectedGender }));
+        setAnswers(prev => applyGenderToAnswers(prev, selectedGender));
         safeStorage.set(STORAGE_KEYS.ADVISOR_GENDER, selectedGender);
         setGenderSource(null);
         setGenderConfirmed(true);
+        // 用户改选了与资料默认值不同的项：纠偏已完成，第一题顶部不再显示"测肤对象"切换入口
+        if (genderFromProfile && gender && selectedGender !== gender) setGenderFromProfile(false);
         // 面部识别模型改为空闲时预加载：face-api/TF.js 的解析编译是主线程长任务，
         // 同步启动会卡住紧随其后的"上一题"/"退出"点击（交互优先于预加载）
         scheduleFaceModelPreload();
@@ -477,7 +492,7 @@ export default function QuestionsPage() {
     const handleGenderSwitch = () => {
         const next = gender === "female" ? "male" : "female";
         setGender(next);
-        setAnswers(prev => ({ ...prev, gender: next }));
+        setAnswers(prev => applyGenderToAnswers(prev, next));
         safeStorage.set(STORAGE_KEYS.ADVISOR_GENDER, next);
         // 已经手动切换过：再回到性别页时不再显示"根据账号信息"的来源文案
         setGenderSource(null);
@@ -597,8 +612,8 @@ export default function QuestionsPage() {
     }
 
     const handleNext = () => { // 仅用于多选或最后一题手动点击
-        // 验证
-        if (!gender || !currentQuestion) return;
+        // 验证（genderConfirmed：性别页上 Enter 键也会走到这里，预选未确认时不允许跳题/提交）
+        if (!gender || !genderConfirmed || !currentQuestion) return;
 
         const val = answers[currentQuestion.fieldName];
         if (!val || (Array.isArray(val) && val.length === 0)) {

@@ -685,6 +685,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_STEP);
+        // 问卷性别正是本次不匹配的根源：一并清除，避免重试时又被"之前的测肤记录"预选回错误性别
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER);
         // 一并清除拍摄时肌肤状态，避免上一次的状态（如"带妆"）透传给免费重试的新分析
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_SKIN_STATE);
 

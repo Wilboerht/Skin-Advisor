@@ -639,7 +639,7 @@ export async function POST(request: NextRequest) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             allergies: (answers as any).allergies,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            pregnancyStatus: (answers as any).pregnancyStatus,
+            pregnancyStatus: (answers as any).pregnancy ?? (answers as any).pregnancyStatus,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             medicationHistory: (answers as any).medicationHistory,
             isLoggedIn: !!user,
