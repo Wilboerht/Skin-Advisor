@@ -20,17 +20,11 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
     const [skinState, setSkinState] = useState<SkinStateValue>(DEFAULT_SKIN_STATE);
     const isMakeup = isMakeupState(skinState);
 
-    // 拍摄准备：带妆时"保持素颜"的提示与实际状态矛盾，改为"如实记录状态"，并各补一句可执行说明
+    // 拍摄准备：带妆时"保持素颜"的提示与实际状态矛盾，改为"如实记录状态"
     const guideItems = [
-        {
-            icon: Sparkles,
-            title: isMakeup ? "记录状态" : "保持素颜",
-            desc: isMakeup
-                ? "带妆会影响纹理与泛红判断，分析会按实际情况校准"
-                : "不化妆、不涂护肤品；已涂防晒或带妆请如实选择下方状态",
-        },
-        { icon: Sun, title: "光线充足", desc: "面向窗边自然光，避免背光与顶光" },
-        { icon: ScanEye, title: "对准镜头", desc: "面部完整落在取景框内，不要出框" },
+        { icon: Sparkles, title: isMakeup ? "记录状态" : "保持素颜" },
+        { icon: Sun, title: "光线充足" },
+        { icon: ScanEye, title: "对准镜头" },
     ];
 
     const handleClose = () => {
@@ -115,22 +109,17 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 <p className="mb-4 text-center text-[12px] font-light tracking-[0.12em] text-brand-charcoal/55">
                                     拍摄准备
                                 </p>
-                                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-center md:gap-12">
+                                <div className="flex items-center justify-center gap-6 md:gap-14">
                                     {guideItems.map((item, index) => {
                                         const Icon = item.icon;
                                         return (
-                                            <div key={index} className="flex items-start gap-3 md:w-[210px] md:flex-col md:items-center md:gap-3">
-                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-charcoal/[0.05] md:h-12 md:w-12">
+                                            <div key={index} className="flex flex-col items-center gap-3">
+                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-charcoal/[0.05]">
                                                     <Icon className="w-5 h-5 text-brand-charcoal/60" strokeWidth={1.25} />
                                                 </div>
-                                                <div className="min-w-0 text-left md:text-center">
-                                                    <p className="text-sm font-normal text-brand-charcoal/85 tracking-[0.06em]">
-                                                        {item.title}
-                                                    </p>
-                                                    <p className="mt-0.5 text-[12px] font-light leading-relaxed text-brand-charcoal/55">
-                                                        {item.desc}
-                                                    </p>
-                                                </div>
+                                                <span className="text-sm text-brand-charcoal/85 font-normal tracking-[0.08em]">
+                                                    {item.title}
+                                                </span>
                                             </div>
                                         );
                                     })}
