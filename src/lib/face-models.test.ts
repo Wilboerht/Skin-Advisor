@@ -108,9 +108,8 @@ describe("createFaceModelStore", () => {
   });
 
   it("看门狗超时：挂起的加载按失败处理，状态进入可重试的 failed", async () => {
-    const api = makeFakeApi();
     // 模块 import 挂起（永不 resolve），模拟弱网"不死不活"
-    const store = createFaceModelStore(() => new Promise<typeof api>(() => {}), { loadTimeoutMs: 20 });
+    const store = createFaceModelStore(() => new Promise<FaceApiLike>(() => {}), { loadTimeoutMs: 20 });
 
     await expect(store.load()).rejects.toThrow(/timeout/);
     expect(store.getStatus()).toBe("failed");
