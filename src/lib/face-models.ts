@@ -32,8 +32,26 @@ export interface FaceApiLike {
   };
 }
 
+/**
+ * 加载看门狗：模型请求挂起（弱网下"不失败也不成功"）时按超时失败处理，
+ * 转入 failed → 可重试/手动降级轨道，而不是永远停在 loading。
+ * 超时后后台加载仍在继续：若最终成功，api 已就绪，下一次 load() 会直接短路为 ready。
+ */
+function withLoadTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`face-model load timeout (${ms}ms)`)), ms);
+    p.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (err) => { clearTimeout(timer); reject(err); }
+    );
+  });
+}
+
 /** 可注入 loader 的工厂：生产用动态 import，单测注入假模块（node 环境不碰 tfjs） */
-export function createFaceModelStore<T extends FaceApiLike>(loadModule: () => Promise<T>) {
+export function createFaceModelStore<T extends FaceApiLike>(
+  loadModule: () => Promise<T>,
+  { loadTimeoutMs = 25000 }: { loadTimeoutMs?: number } = {}
+) {
   let api: T | null = null;
   let inflight: Promise<T> | null = null;
   let status: FaceModelStatus = "idle";
@@ -47,15 +65,23 @@ export function createFaceModelStore<T extends FaceApiLike>(loadModule: () => Pr
     !!mod && mod.nets.tinyFaceDetector.isLoaded && mod.nets.faceLandmark68Net.isLoaded;
 
   const load = (): Promise<T> => {
-    // 已就绪直接短路（HMR / 组件重挂载后由模块单例的 isLoaded 还原，不重复下载）
-    if (isReady(api)) return Promise.resolve(api);
+    // 已就绪直接短路（HMR / 组件重挂载后由模块单例的 isLoaded 还原，不重复下载）。
+    // 同步推进 status 并通知订阅者：看门狗超时后后台加载若最终成功，
+    // 这里要把 UI 从 failed 拉回 ready，否则用户会卡在降级态
+    if (isReady(api)) {
+      if (status !== "ready") {
+        status = "ready";
+        emit();
+      }
+      return Promise.resolve(api);
+    }
     // 单飞：并发调用共享同一次加载
     if (inflight) return inflight;
 
     status = "loading";
     emit();
 
-    inflight = (async () => {
+    inflight = withLoadTimeout((async () => {
       const mod = api ?? (await loadModule());
       api = mod;
       // 只补缺失的 net：部分失败重试时不重复加载已就绪的那份
@@ -68,7 +94,7 @@ export function createFaceModelStore<T extends FaceApiLike>(loadModule: () => Pr
           : mod.nets.faceLandmark68Net.loadFromUri(FACE_MODEL_URI),
       ]);
       return mod;
-    })()
+    })(), loadTimeoutMs)
       .then((mod) => {
         inflight = null;
         status = "ready";

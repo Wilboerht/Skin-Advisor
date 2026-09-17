@@ -106,4 +106,43 @@ describe("createFaceModelStore", () => {
     expect(store.getStatus()).toBe("failed");
     expect(store.getApi()).toBe(api); // 模块引用可复用，但状态必须仍是 failed
   });
+
+  it("看门狗超时：挂起的加载按失败处理，状态进入可重试的 failed", async () => {
+    const api = makeFakeApi();
+    // 模块 import 挂起（永不 resolve），模拟弱网"不死不活"
+    const store = createFaceModelStore(() => new Promise<typeof api>(() => {}), { loadTimeoutMs: 20 });
+
+    await expect(store.load()).rejects.toThrow(/timeout/);
+    expect(store.getStatus()).toBe("failed");
+  });
+
+  it("超时后后台加载最终成功：再次 load 短路并把状态从 failed 拉回 ready", async () => {
+    let gateOpen = false;
+    const net: FaceModelNet = {
+      get isLoaded() {
+        return gateOpen;
+      },
+      loadFromUri() {
+        return new Promise<void>((resolve) => {
+          const iv = setInterval(() => {
+            if (gateOpen) {
+              clearInterval(iv);
+              resolve();
+            }
+          }, 5);
+        });
+      },
+    };
+    const api = { nets: { tinyFaceDetector: net, faceLandmark68Net: net } };
+    const store = createFaceModelStore(async () => api, { loadTimeoutMs: 20 });
+
+    await expect(store.load()).rejects.toThrow(/timeout/);
+    expect(store.getStatus()).toBe("failed");
+
+    gateOpen = true; // 后台加载最终成功
+    await new Promise((r) => setTimeout(r, 30)); // 等挂起的 loadFromUri 完成
+
+    await store.load();
+    expect(store.getStatus()).toBe("ready");
+  });
 });

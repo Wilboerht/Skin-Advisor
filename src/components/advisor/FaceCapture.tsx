@@ -268,6 +268,38 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     void loadFaceModels().catch(() => { /* 失败保持降级态，可再次重试 */ });
   };
 
+  // 自动重试：失败后退避重试（最多 2 次：2s / 6s），成功则自动检测无缝恢复，用户无感知；
+  // 离线时不做无谓重试，等 online 事件触发。手动"重试自动检测"按钮始终可用、不受次数限制
+  const autoRetryCountRef = useRef(0);
+  useEffect(() => {
+    if (faceModelStatus === "ready") {
+      autoRetryCountRef.current = 0;
+      return;
+    }
+    if (faceModelStatus !== "failed") return;
+    if (autoRetryCountRef.current >= 2) return;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+
+    const delay = autoRetryCountRef.current === 0 ? 2000 : 6000;
+    const timer = setTimeout(() => {
+      autoRetryCountRef.current += 1;
+      void loadFaceModels().catch(() => { /* 保持降级态，由下一次 effect 决定是否再试 */ });
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [faceModelStatus, loadFaceModels]);
+
+  // 网络恢复时自动再试一轮（重置退避计数）；失败仍保持手动降级态
+  useEffect(() => {
+    const onOnline = () => {
+      if (faceModels.getStatus() === "failed") {
+        autoRetryCountRef.current = 0;
+        void loadFaceModels().catch(() => { /* 保持降级态 */ });
+      }
+    };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [loadFaceModels]);
+
   // 挂载时初始化“最近检测到面部的时间”为当前时间（避免 render 期间调用 Date.now）
   useEffect(() => {
     lastFaceDetectedRef.current = Date.now();
