@@ -592,6 +592,15 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         [loading, result, faceAnalysis, isGenderMismatch, ackedSessionId, sessionId, isHistoricalReport, snapshotGender]
     );
 
+    // 性别不一致提示上报：复用 result_view 事件 + data.genderMismatch（后端记入 interactions），
+    // 无需新增事件类型；每会话仅记一次（弹窗按 sessionId ack，本身也只会弹一次）
+    const hasTrackedGenderMismatch = useRef(false);
+    useEffect(() => {
+        if (isMock || !showGenderMismatchModal || hasTrackedGenderMismatch.current) return;
+        hasTrackedGenderMismatch.current = true;
+        trackResultView({ genderMismatch: true });
+    }, [isMock, showGenderMismatchModal, trackResultView]);
+
     // SSR 水合安全：初始值固定 false，挂载后再从 localStorage 同步（同 ackedSessionId）
     const [hasUsedFreeRetry, setHasUsedFreeRetry] = useState(false);
     useEffect(() => {

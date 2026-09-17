@@ -37,14 +37,19 @@ export default function QuestionsPage() {
     // 预取首页与扫脸页路由，避免顶部栏按钮冷导航"点了没反应"；isNavigating 提供即时反馈
     const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/face-scan"]);
     const toast = useToast();
-    // 登录用户的官网资料性别：作为问卷性别默认值，跳过独立性别选择页
+    // 登录用户的官网资料性别：作为性别页预选项（仍需用户点击确认，不再静默跳过）
     const { user, isInitialized: isUserInitialized } = useUser();
     const [gender, setGender] = useState<"female" | "male" | null>(null);
+    // 预选性别来源：previous=之前的测肤记录（本地存储）/ profile=个人账号信息 / null=无预选
+    const [genderSource, setGenderSource] = useState<"previous" | "profile" | null>(null);
+    // 用户是否已在性别页确认（含直接点卡片）。未确认时始终停留在性别页：
+    // 预选只是高亮 + 分情况文案，必须由用户显式点击才进入问卷
+    const [genderConfirmed, setGenderConfirmed] = useState(false);
     // 性别来自官网资料默认值（而非用户手动选择/本地恢复）时，
     // 第一题顶部显示"测肤对象"切换入口——代家人测肤场景的纠偏通道
     const [genderFromProfile, setGenderFromProfile] = useState(false);
     // 资料性别默认值是否已决策（套用/不套用）。未决时性别页位置渲染加载态，
-    // 避免"先闪出 GenderSelection 再被默认值跳走"
+    // 避免先闪出"无预选"标题再切换为"个人账号信息"文案
     const [profileGenderResolved, setProfileGenderResolved] = useState(false);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -52,6 +57,8 @@ export default function QuestionsPage() {
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const { trackQuestionnaireStart, trackQuestionnaireComplete } = useAdvisorAnalytics();
     const hasTrackedStart = useRef(false);
+    // 是否从本地恢复了真实进度（答案/性别）。恢复的用户点击确认不算"新开始"，避免重复上报
+    const resumedProgressRef = useRef(false);
 
     // 追踪答题质量
     const sessionStartTime = useRef(0);
@@ -254,7 +261,7 @@ export default function QuestionsPage() {
 
     // 进入性别选择页时重置内部滚动容器到顶部（修复移动端从首页弹窗进入后未置顶的问题）
     useEffect(() => {
-        if (gender === null) {
+        if (!genderConfirmed) {
             const html = document.documentElement;
             const originalScrollBehavior = html?.style?.scrollBehavior ?? "";
 
@@ -287,7 +294,7 @@ export default function QuestionsPage() {
                 if (html) html.style.scrollBehavior = originalScrollBehavior;
             };
         }
-    }, [gender, aiConfigured]);
+    }, [genderConfirmed, aiConfigured]);
 
     // 恢复之前的状态（刷新或直接导航时，只要存在有效进度且同意隐私协议就恢复）
     const resumeSavedProgress = useCallback(() => {
@@ -299,6 +306,7 @@ export default function QuestionsPage() {
         const savedStep = safeStorage.get(STORAGE_KEYS.ADVISOR_STEP);
 
         if (!savedAnswers && !savedGender) return;
+        resumedProgressRef.current = true;
 
         try {
             let initialAnswers: Record<string, unknown> = {};
@@ -308,6 +316,9 @@ export default function QuestionsPage() {
 
             if (savedGender === "female" || savedGender === "male") {
                 setGender(savedGender);
+                // 本地性别只会在用户显式确认过性别时写入（预选不落存储），
+                // 因此存在即说明"之前用过"→ 显示历史记录文案
+                setGenderSource("previous");
                 // Ensure gender is in answers so dependsOn logic works
                 initialAnswers = { ...initialAnswers, gender: savedGender };
             }
@@ -349,10 +360,11 @@ export default function QuestionsPage() {
         if (Object.keys(answers).length > 0) {
             safeStorage.set(STORAGE_KEYS.ADVISOR_ANSWERS, JSON.stringify(answers));
         }
-        if (gender) {
+        // 只有确认过性别才开始记步骤：预选（资料/历史）未确认时离开不应留下"已开始"的痕迹
+        if (gender && genderConfirmed) {
             safeStorage.set(STORAGE_KEYS.ADVISOR_STEP, String(currentStepIndex));
         }
-    }, [answers, currentStepIndex, gender]);
+    }, [answers, currentStepIndex, gender, genderConfirmed]);
 
     // 用 ref 持有最新 flushAnswers，避免卸载/页面隐藏 effect 因 answers 变化而频繁重注册
     const flushRef = useRef(flushAnswers);
@@ -400,15 +412,29 @@ export default function QuestionsPage() {
         };
     }, []);
 
+    // 预选性别（资料/历史记录）：只落内存状态与模型空闲预载——不写本地存储、不写 answers、
+    // 不确认、不计问卷开始。用户未确认就离开时不能留下任何"已选过"的痕迹（否则下次会被
+    // 当成"之前的测肤记录"，还会遮蔽官网资料来源）；落库统一由用户显式确认的
+    // handleGenderSelect 完成
+    const applyPresetGender = (preset: "female" | "male", source: "previous" | "profile") => {
+        setGender(preset);
+        setGenderSource(source);
+        // 面部识别模型改为空闲时预加载：face-api/TF.js 的解析编译是主线程长任务，
+        // 同步启动会卡住紧随其后的"上一题"/"退出"点击（交互优先于预加载）
+        scheduleFaceModelPreload();
+    };
+
     const handleGenderSelect = (selectedGender: "female" | "male") => {
         setGender(selectedGender);
         setAnswers(prev => ({ ...prev, gender: selectedGender }));
         safeStorage.set(STORAGE_KEYS.ADVISOR_GENDER, selectedGender);
+        setGenderSource(null);
+        setGenderConfirmed(true);
         // 面部识别模型改为空闲时预加载：face-api/TF.js 的解析编译是主线程长任务，
         // 同步启动会卡住紧随其后的"上一题"/"退出"点击（交互优先于预加载）
         scheduleFaceModelPreload();
-        // 追踪问卷开始（从选择性别开始算）
-        if (!hasTrackedStart.current) {
+        // 追踪问卷开始（从确认性别开始算）；恢复进度的用户不算新开始，避免重复上报
+        if (!hasTrackedStart.current && !resumedProgressRef.current) {
             trackQuestionnaireStart();
             hasTrackedStart.current = true;
             // 记录开始时间
@@ -416,10 +442,18 @@ export default function QuestionsPage() {
         }
     };
 
-    // 官网资料性别作为问卷默认值：会话就绪【且入口守卫全部通过】后才套用。
-    // 守卫（AI 配置检查 / 测肤次数预检 / 排队提示）全部渲染在 !gender 分支里——
-    // 若不待守卫通过就套用性别，次数用完或服务异常的用户会被直接放进问卷，
-    // 白答一遍到提交时才被拒（预检的设计初衷正是避免这个）。
+    // 性别页标题分情况：首次选择 / 有历史测肤记录 / 官网账号已有性别信息。
+    // 来源类标题结尾用冒号，答案由卡片的初始选中态承载（用户仍可切换后确认）
+    const genderTitle = genderSource === "previous"
+        ? "根据您之前的测肤记录，您的性别为："
+        : genderSource === "profile"
+            ? "根据您的个人账号信息，您的性别为："
+            : "开始之前，请选择您的性别";
+
+    // 官网资料性别作为问卷默认值：会话就绪【且入口守卫全部通过】后才预选。
+    // 守卫（AI 配置检查 / 测肤次数预检 / 排队提示）全部渲染在 !genderConfirmed 分支里——
+    // 若不待守卫通过就预选，次数用完或服务异常的用户会在性别页点击后才被拒，
+    // 白走一遍（预检的设计初衷正是避免这个）。
     // 本地已有 ADVISOR_GENDER 时以本机选择为准（用户上次可能特意为家人测过）。
     useEffect(() => {
         if (profileGenderResolved || !isUserInitialized) return;
@@ -430,13 +464,12 @@ export default function QuestionsPage() {
             setProfileGenderResolved(true);
             return;
         }
-        // 守卫未通过：return 且不设 resolved——提示界面照常渲染在 !gender 分支；
+        // 守卫未通过：return 且不设 resolved——提示界面照常渲染在 !genderConfirmed 分支；
         // 排队提示被用户点掉（queueDismissed）或服务恢复后本 effect 会重新评估
         if (aiConfigured !== true || limitExceeded || (queueBusy && !queueDismissed)) return;
         setProfileGenderResolved(true);
         setGenderFromProfile(true);
-        handleGenderSelect(profileGender);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        applyPresetGender(profileGender, "profile");
     }, [profileGenderResolved, isUserInitialized, user?.gender, gender, aiConfigured, limitExceeded, queueBusy, queueDismissed]);
 
     // 第一题顶部的"测肤对象"一键切换：仅在采用资料默认值时提供，
@@ -446,6 +479,8 @@ export default function QuestionsPage() {
         setGender(next);
         setAnswers(prev => ({ ...prev, gender: next }));
         safeStorage.set(STORAGE_KEYS.ADVISOR_GENDER, next);
+        // 已经手动切换过：再回到性别页时不再显示"根据账号信息"的来源文案
+        setGenderSource(null);
     };
 
     // 调度自动切题：回调里通过 answersRef 校验该题答案未被改动（闭包捕获的是旧 state，必须读 ref），
@@ -518,9 +553,8 @@ export default function QuestionsPage() {
             startStepIndex.current = currentStepIndex - 1;
             sessionStartTime.current = Date.now();
         } else {
-            // 如果在第一题点击返回，回到性别选择
-            setGender(null);
-            safeStorage.remove(STORAGE_KEYS.ADVISOR_GENDER);
+            // 在第一题点返回：回到性别选择页（保留预选与来源文案，用户可确认或切换）
+            setGenderConfirmed(false);
         }
     };
 
@@ -606,7 +640,7 @@ export default function QuestionsPage() {
 
 
     // 入口守卫：未同意隐私协议时显示友好提示
-    // 必须在 !gender 分支之前——新用户 gender 必为 null，放后面守卫永远不生效
+    // 必须在性别页分支之前——新用户 gender 必为 null，放后面守卫永远不生效
     if (accessDenied === null) {
         // 守卫检查（localStorage）尚未完成，先渲染加载态避免闪出性别选择页
         return (
@@ -630,9 +664,9 @@ export default function QuestionsPage() {
         );
     }
 
-    // 如果没有选择性别，显示性别选择
-    // 会话初始化期间（/api/auth/me 未返回）先渲染加载态：登录用户资料里若已填性别，
-    // 会直接跳过性别选择页——不做这道门会对他们闪一下选择页
+    // 性别未确认时始终显示性别选择页：预选（资料/历史记录）只是高亮与分情况文案
+    // 会话初始化期间（/api/auth/me 未返回）且无本地性别记录时先渲染加载态：
+    // 避免先闪出"无预选"标题再切换为"个人账号信息"文案
     if (!gender && !isUserInitialized) {
         return (
             <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9]">
@@ -641,7 +675,7 @@ export default function QuestionsPage() {
         );
     }
 
-    if (!gender) {
+    if (!genderConfirmed) {
         return (
             <AnimatePresence mode="wait">
                 <m.div
@@ -776,7 +810,7 @@ export default function QuestionsPage() {
                                     正在检查服务状态...
                                 </div>
                             ) : (
-                                <GenderSelection onSelect={handleGenderSelect} selectedGender={gender} />
+                                <GenderSelection onSelect={handleGenderSelect} selectedGender={gender} title={genderTitle} />
                             )}
                         </div>
                     </div>
@@ -841,15 +875,12 @@ export default function QuestionsPage() {
             <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 z-20 shrink-0">
                 <button
                     onClick={handleBack}
-                    className={cn(
-                        "absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95",
-                        (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none" : "opacity-100"
-                    )}
-                    aria-label={!gender ? "回首页" : "上一题"}
+                    className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
+                    aria-label="上一题"
                 >
                     <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
                     <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">
-                        {!gender ? "回首页" : "上一题"}
+                        上一题
                     </span>
                 </button>
 

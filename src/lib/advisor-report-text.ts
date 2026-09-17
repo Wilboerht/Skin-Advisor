@@ -99,6 +99,13 @@ const SKINCARE_FREQ_LABELS: Record<string, string> = {
     advanced: "精细护理（多步骤）",
 };
 
+const SKINCARE_LEVEL_LABELS: Record<string, string> = {
+    beginner: "全新小白",
+    intermediate: "略有心得",
+    advanced: "资深达人",
+    expert: "行业专家",
+};
+
 const BUDGET_LABELS: Record<string, string> = {
     budget: "追求性价比（单品500元以内）",
     mid: "中等预算（单品500-1000元）",
@@ -175,6 +182,7 @@ export interface QuestionnaireProfile {
     dietaryHabits?: string;
     sunExposure?: string;
     skincareFrequency?: string;
+    skincareLevel?: string;
     budget?: string;
 }
 
@@ -219,6 +227,7 @@ export function extractQuestionnaireProfile(
         dietaryHabits: mapLabel(answers.dietaryHabits, DIET_LABELS),
         sunExposure: mapLabel(answers.sunExposure, SUN_LABELS),
         skincareFrequency: mapLabel(answers.skincareFrequency, SKINCARE_FREQ_LABELS),
+        skincareLevel: mapLabel(answers.skincareLevel, SKINCARE_LEVEL_LABELS),
         budget: mapLabel(answers.budget, BUDGET_LABELS),
     };
 
@@ -257,7 +266,7 @@ export function getIssueList(
 /**
  * 生成可复制的顾问报告摘要文本。
  * 每行一个字段，避免长段落，方便 AI 顾问按字段解析。
- * 只包含用户问卷主动填写的信息：昵称/性别/年龄段/关注问题/医美经历/护肤习惯，
+ * 只包含用户问卷主动填写的信息：昵称/性别/年龄段/关注问题/医美经历/护肤水平/护肤习惯，
  * 不带评分、肤质、过敏史等系统分析结果。
  */
 export function buildAdvisorReportText({
@@ -284,6 +293,9 @@ export function buildAdvisorReportText({
     }
     if (profile.medicalBeauty && profile.medicalBeauty !== "无") {
         lines.push(`医美经历（近3月）：${profile.medicalBeauty}`);
+    }
+    if (profile.skincareLevel) {
+        lines.push(`护肤水平：${profile.skincareLevel}`);
     }
     if (profile.skincareFrequency) {
         lines.push(`护肤习惯：${profile.skincareFrequency}`);

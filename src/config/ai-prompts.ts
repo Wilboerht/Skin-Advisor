@@ -163,7 +163,22 @@ const waterMap: Record<string, string> = { low: "偏少（<4杯/天）", medium:
 const exerciseMap: Record<string, string> = { low: "较少（几乎不运动）", medium: "适中（每周1-3次）", high: "充足（每周>3次）" };
 const dietMap: Record<string, string> = { balanced: "均衡饮食", highSugar: "偏甜/高糖", highOil: "偏油/高脂", spicy: "偏好辛辣" };
 const sunMap: Record<string, string> = { low: "较少户外活动", medium: "日常通勤暴露", high: "经常户外暴晒" };
-const freqMap: Record<string, string> = { basic: "简单护理（洁面+保湿）", moderate: "中等护理（精华+防晒）", advanced: "精细护理（多步骤）" };
+const freqMap: Record<string, string> = {
+    daily: "每天精细护肤（早晚全套流程）",
+    regular: "经常护肤（偶尔简略）",
+    occasional: "偶尔护肤（步骤简单）",
+    rarely: "几乎不护肤（仅基础清洁）",
+    // 兼容历史会话中的旧版取值
+    basic: "简单护理（洁面+保湿）",
+    moderate: "中等护理（精华+防晒）",
+    advanced: "精细护理（多步骤）"
+};
+const levelMap: Record<string, string> = {
+    beginner: "全新小白（刚开始接触护肤，不太了解成分和步骤）",
+    intermediate: "略有心得（掌握基础流程，对部分成分有了解）",
+    advanced: "资深达人（熟悉成分功效，能独立搭配护肤方案）",
+    expert: "行业专家（从事美妆护肤相关行业，专业知识扎实）"
+};
 const budgetMap: Record<string, string> = { budget: "经济实惠（追求性价比，单品500元以内）", mid: "中等预算（兼顾成分与价格，单品500-1000元）", premium: "品质优先（追求卓越功效，单品1000-2000元）", luxury: "不设上限（顶级奢华体验，单品2000元以上）" };
 
 // 过敏史选项 key → 中文展示文本（questions.ts 的选项值是英文 key，
@@ -303,6 +318,7 @@ export function buildConsultantPrompt(params: {
   dietaryHabits?: string;
   sunExposure?: string;
   skincareFrequency?: string;
+  skincareLevel?: string;
   allergies?: string | string[];
   pregnancyStatus?: string;
   medicationHistory?: string;
@@ -345,6 +361,7 @@ export function buildConsultantPrompt(params: {
   const dietText = dietMap[params.dietaryHabits || ""] || "未知";
   const sunText = sunMap[params.sunExposure || ""] || "未知";
   const freqText = freqMap[params.skincareFrequency || ""] || "未知";
+  const levelText = levelMap[params.skincareLevel || ""] || "未知";
   const budgetText = budgetMap[params.budget || ""] || "未知";
 
   // 维度证据：分数 + AI 视觉判读详情（details 是"为什么是这个分"的关键素材）
@@ -409,6 +426,7 @@ ${params.pregnancyStatus === "yes" ? `- ⚠️ 孕期：是（在此基础上额
 - 饮食习惯：${dietText}
 - 日晒程度：${sunText}
 - 当前护肤流程：${freqText}
+- 护肤水平：${levelText}（据此调整解释深度：小白少堆成分术语、多讲用法；达人/专家可直接讨论成分与配方逻辑）
 - 护肤预算：${budgetText}
 ${params.skinState && SKIN_STATE_LABELS[params.skinState] ? `- 拍摄时肌肤状态：${SKIN_STATE_LABELS[params.skinState]}` : ""}
 ${params.medicationHistory && params.medicationHistory !== "none" ? `- 用药史：${wrapUserData("medicationHistory", sanitizePromptInput(params.medicationHistory))}（可能影响皮肤状态）` : ""}

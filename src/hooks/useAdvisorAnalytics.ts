@@ -184,9 +184,9 @@ export function useAdvisorAnalytics() {
     sendTrackEvent("analysis_complete", { source });
   }, []);
 
-  // 追踪结果查看；meta 用于 cohort 分析（是否首测/派系变化）
+  // 追踪结果查看；meta 用于 cohort 分析（是否首测/派系变化/性别不一致提示）
   const trackResultView = useCallback(
-    (meta?: { firstTest?: boolean; personaChanged?: boolean }) => {
+    (meta?: { firstTest?: boolean; personaChanged?: boolean; genderMismatch?: boolean }) => {
       sendTrackEvent("result_view", meta && Object.keys(meta).length ? meta : undefined);
     },
     []

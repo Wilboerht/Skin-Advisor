@@ -321,6 +321,16 @@ export async function POST(request: NextRequest) {
             }
 
             case "result_view": {
+                // 性别不一致提示（问卷性别 vs 扫脸高置信度判定）：复用 result_view 事件，
+                // 额外记入 interactions 供统计；resultViewedAt 照常更新（该事件可能先于
+                // 基础 result_view 到达——前端弹窗效果声明在前，先收到的是这一条）
+                if (data?.genderMismatch === true) {
+                    await appendInteraction(sessionId, {
+                        type: "result_view",
+                        genderMismatch: true,
+                        at: now.toISOString(),
+                    });
+                }
                 // result_view 不应设置 completedAt：查看报告≠完成分析。
                 // 只有真正完成分析流程才标记 completedAt（由 analyze API 设置）。
                 await prisma.advisorSession.upsert({

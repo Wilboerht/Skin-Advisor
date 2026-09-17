@@ -635,6 +635,8 @@ export async function POST(request: NextRequest) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             skincareFrequency: (answers as any).skincareFrequency,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            skincareLevel: (answers as any).skincareLevel,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             allergies: (answers as any).allergies,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             pregnancyStatus: (answers as any).pregnancyStatus,
