@@ -554,23 +554,20 @@ export function DiaryModal() {
                         </h3>
                         <div className="flex items-center gap-3">
                           {aggregatedTrends && (
-                            <div className="flex items-center">
+                            <div className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1" role="group" aria-label="趋势时间范围">
                               {([7, 30] as const).map((r) => (
                                 <button
                                   key={r}
                                   type="button"
                                   onClick={() => switchTrendRange(r)}
                                   aria-pressed={trendRange === r}
-                                  className={`relative px-2 h-8 text-[12px] transition-colors cursor-pointer ${
+                                  className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
                                     trendRange === r
-                                      ? "text-brand-charcoal font-medium"
+                                      ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
                                       : "text-brand-charcoal/60 hover:text-brand-charcoal"
                                   }`}
                                 >
                                   近 {r} 天
-                                  {trendRange === r && (
-                                    <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 h-[2px] w-4 rounded-full bg-[var(--color-brand-cocoa)]" />
-                                  )}
                                 </button>
                               ))}
                             </div>
@@ -614,11 +611,11 @@ export function DiaryModal() {
                             </div>
                           )}
                           {/* 全部记录入口：图表板块收尾，居中 */}
-                          <div className="mt-5 flex justify-center">
+                          <div className="mt-6 flex justify-center">
                             <button
                               type="button"
                               onClick={() => setHistoryView(true)}
-                              className="shrink-0 h-9 inline-flex items-center px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
+                              className="shrink-0 h-9 inline-flex items-center px-4 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                             >
                               全部测肤记录 →
                             </button>
@@ -627,7 +624,7 @@ export function DiaryModal() {
                       ) : recentCheckInCount >= 2 ? (
                         <div>
                           <CheckInTrend entries={entries} todayStr={todayStr} />
-                          <p className="mt-3 text-[11px] text-brand-charcoal/60 font-light text-center">
+                          <p className="mt-4 text-[11px] text-brand-charcoal/60 font-light text-center">
                             完成两次不同日期的测肤后，可叠加查看测肤评分趋势
                           </p>
                         </div>
@@ -642,7 +639,7 @@ export function DiaryModal() {
                           </p>
                           <Link
                             href="/questions"
-                            className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium tracking-[0.05em] transition-colors hover:bg-[#4a3a2c]"
+                            className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium tracking-[0.05em] transition-colors hover:bg-brand-cocoa-dark"
                           >
                             去测肤 →
                           </Link>
@@ -652,14 +649,14 @@ export function DiaryModal() {
                       {/* 里程碑统计：数据概览，与趋势图同属左列；独立于趋势分支（仅有打卡无趋势时仍展示）。
                           列数跟随实际项数（最长连续为 0 时不占列），避免 3 项摊在 4 列里偏左 */}
                       {summary && (summary.totalCheckins > 0 || summary.testCount > 0) && (
-                        <div className={`grid ${summary.longestStreak > 0 ? "grid-cols-4" : "grid-cols-3"} mt-5 pt-4 border-t border-brand-espresso/[0.06]`}>
+                        <div className={`grid ${summary.longestStreak > 0 ? "grid-cols-4" : "grid-cols-3"} mt-6 pt-4 border-t border-brand-espresso/[0.06]`}>
                           <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                             <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
                               {summary.currentStreak}
                               <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">天</span>
                             </p>
                             <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
-                              <Flame className="w-3 h-3 text-[#D9730D]" strokeWidth={1.8} />
+                              <Flame className="w-3 h-3 text-brand-ember" strokeWidth={1.8} />
                               连续打卡
                             </p>
                           </div>
@@ -690,7 +687,7 @@ export function DiaryModal() {
                                 <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">天</span>
                               </p>
                               <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
-                                <Trophy className="w-3 h-3 text-[#C9A86C]" strokeWidth={1.8} />
+                                <Trophy className="w-3 h-3 text-brand-gold" strokeWidth={1.8} />
                                 最长连续
                               </p>
                             </div>
@@ -706,8 +703,8 @@ export function DiaryModal() {
                           <NotebookPen className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />
                           护肤历程
                         </h3>
-                        {/* 视图切换：极简文字 tab，选中深色 + 底部短横线 */}
-                        <div className="flex items-center">
+                        {/* 视图切换：胶囊分段（与全站 tabs 规范一致） */}
+                        <div className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1" role="group" aria-label="历程视图切换">
                           {([
                             { key: false, label: "时间线" },
                             { key: true, label: "日历" },
@@ -717,16 +714,13 @@ export function DiaryModal() {
                               type="button"
                               onClick={() => setCalendarView(v.key)}
                               aria-pressed={calendarView === v.key}
-                              className={`relative px-2.5 h-8 text-[12px] transition-colors cursor-pointer ${
+                              className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
                                 calendarView === v.key
-                                  ? "text-brand-charcoal font-medium"
+                                  ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
                                   : "text-brand-charcoal/60 hover:text-brand-charcoal"
                               }`}
                             >
                               {v.label}
-                              {calendarView === v.key && (
-                                <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 h-[2px] w-4 rounded-full bg-[var(--color-brand-cocoa)]" />
-                              )}
                             </button>
                           ))}
                         </div>
@@ -753,14 +747,14 @@ export function DiaryModal() {
                       ) : (
                         <>
                         {testsError && (
-                          <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-[#C9A86C]/30 bg-[#C9A86C]/[0.06] px-4 py-3">
+                          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] px-4 py-3">
                             <span className="text-[13px] text-brand-charcoal/70 font-light">
                               测肤记录加载失败，可能是网络波动或登录状态过期
                             </span>
                             <button
                               type="button"
                               onClick={() => loadTests(true)}
-                              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-light hover:bg-[#4a3a2c] transition-colors"
+                              className="shrink-0 inline-flex items-center gap-1.5 h-9 px-5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium hover:bg-brand-cocoa-dark transition-colors"
                             >
                               <RefreshCw className="w-3 h-3" strokeWidth={1.8} />
                               重试
@@ -768,14 +762,14 @@ export function DiaryModal() {
                           </div>
                         )}
                         {entriesError ? (
-                          <div className="flex items-center justify-between gap-3 rounded-xl border border-[#C9A86C]/30 bg-[#C9A86C]/[0.06] px-4 py-3">
+                          <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] px-4 py-3">
                             <span className="text-[13px] text-brand-charcoal/70 font-light">
                               护肤记录加载失败，可能是网络波动或登录状态过期
                             </span>
                             <button
                               type="button"
                               onClick={retryEntries}
-                              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-light hover:bg-[#4a3a2c] transition-colors"
+                              className="shrink-0 inline-flex items-center gap-1.5 h-9 px-5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium hover:bg-brand-cocoa-dark transition-colors"
                             >
                               <RefreshCw className="w-3 h-3" strokeWidth={1.8} />
                               重试

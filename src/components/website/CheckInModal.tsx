@@ -152,7 +152,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
             <button
               onClick={onClose}
               aria-label="关闭"
-              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
+              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
             >
               <X size={17} strokeWidth={1.5} />
             </button>
@@ -238,14 +238,14 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                 onChange={(e) => setNote(e.target.value.slice(0, 200))}
                 rows={3}
                 placeholder="今天用了什么、肌肤有什么变化…（选填）"
-                className="w-full mb-6 px-4 py-3 text-[13px] font-light text-[#1A1A1A] bg-white/60 border border-brand-espresso/[0.12] rounded-2xl resize-none focus:outline-none focus:border-[var(--color-brand-cocoa)]/50 placeholder:text-brand-charcoal/55"
+                className="w-full mb-6 px-4 py-3 text-[13px] font-light text-[var(--color-text-primary)] bg-white/60 border border-brand-espresso/[0.12] rounded-2xl resize-none focus:outline-none focus:border-[var(--color-brand-cocoa)]/50 placeholder:text-brand-charcoal/60"
               />
 
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[13px] tracking-[0.12em] font-light cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c] disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] tracking-[0.12em] font-medium cursor-pointer transition-colors duration-300 hover:bg-brand-cocoa-dark disabled:opacity-50"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {existing ? "保存修改" : "完成打卡"}

@@ -35,11 +35,11 @@ export interface DiaryEntry {
 }
 
 export const STATE_META: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = {
-  great: { label: "很好", color: "#4C8055", icon: Laugh },
-  good: { label: "不错", color: "#7A9A5B", icon: Smile },
-  normal: { label: "一般", color: "#C9A86C", icon: Meh },
-  bad: { label: "较差", color: "#D9730D", icon: Frown },
-  terrible: { label: "很差", color: "#D44C47", icon: Angry },
+  great: { label: "很好", color: "var(--color-state-great)", icon: Laugh },
+  good: { label: "不错", color: "var(--color-state-good)", icon: Smile },
+  normal: { label: "一般", color: "var(--color-brand-gold)", icon: Meh },
+  bad: { label: "较差", color: "var(--color-brand-ember)", icon: Frown },
+  terrible: { label: "很差", color: "var(--color-brand-danger)", icon: Angry },
 };
 
 const RECENT_GROUPS = 3;
@@ -179,14 +179,14 @@ export function DiaryTimeline({
               <button
                 type="button"
                 onClick={() => onCheckIn(null, todayStr)}
-                className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] tracking-[0.08em] font-medium transition-colors hover:bg-[#4a3a2c] cursor-pointer"
+                className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] tracking-[0.08em] font-medium transition-colors hover:bg-brand-cocoa-dark cursor-pointer"
               >
                 今日打卡
               </button>
             )}
             <Link
               href="/questions"
-              className="inline-flex items-center justify-center px-5 h-9 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] tracking-[0.08em] font-light transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
+              className="inline-flex items-center justify-center h-9 px-4 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
             >
               去测肤 →
             </Link>
@@ -332,7 +332,7 @@ export function DiaryTimeline({
                                 type="button"
                                 disabled={deletingId === ev.entry.id}
                                 onClick={() => onDeleteEntry(ev.entry)}
-                                className="h-8 px-3 flex items-center rounded-full bg-[#D44C47]/10 text-[#D44C47] text-[11px] font-light tracking-[0.05em] disabled:opacity-50 cursor-pointer"
+                                className="h-8 px-3 flex items-center rounded-full bg-brand-danger/10 text-brand-danger text-[11px] font-light tracking-[0.05em] disabled:opacity-50 cursor-pointer"
                               >
                                 确认删除
                               </button>
@@ -349,7 +349,7 @@ export function DiaryTimeline({
                               type="button"
                               onClick={() => setConfirmDeleteId(ev.entry.id)}
                               aria-label="删除记录"
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/65 hover:text-[#D44C47] hover:bg-[#D44C47]/[0.06] transition-colors cursor-pointer"
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/65 hover:text-brand-danger hover:bg-brand-danger/[0.06] transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
                             </button>
@@ -370,7 +370,7 @@ export function DiaryTimeline({
                               </span>
                             </div>
                             {ev.entry.note && (
-                              <p className="mt-1 text-[13px] text-[#3d2f25]/75 font-light leading-[1.8] tracking-[0.06em]">
+                              <p className="mt-1 text-[13px] text-brand-espresso/75 font-light leading-[1.8] tracking-[0.06em]">
                                 {ev.entry.note}
                               </p>
                             )}
@@ -392,7 +392,7 @@ export function DiaryTimeline({
                               ))}
                             </div>
                             {ev.entry.note && (
-                              <p className="mt-1 text-[13px] text-[#3d2f25]/75 font-light leading-[1.8] tracking-[0.06em]">
+                              <p className="mt-1 text-[13px] text-brand-espresso/75 font-light leading-[1.8] tracking-[0.06em]">
                                 {ev.entry.note}
                               </p>
                             )}
@@ -426,7 +426,7 @@ export function DiaryTimeline({
                         {score != null && score > 0 && (
                           <span className="text-[12px] text-brand-charcoal/60 font-light shrink-0">{score} 分</span>
                         )}
-                        <ChevronRight className="w-3 h-3 shrink-0 text-brand-charcoal/50 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
+                        <ChevronRight className="w-3 h-3 shrink-0 text-brand-charcoal/55 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
                       </Link>
                     </div>
                   );

@@ -63,19 +63,19 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
           onClick={() => shiftMonth(-1)}
           aria-label="上个月"
           disabled={loading}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/45 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-wait"
+          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-wait"
         >
           <ChevronLeft className="w-4 h-4" strokeWidth={2} />
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-[14px] font-medium text-brand-charcoal tracking-[0.08em]">
+          <span className="text-[15px] font-medium text-brand-charcoal tracking-[0.08em]">
             {y} 年 {m} 月
           </span>
           {!isCurrentMonth && (
             <button
               type="button"
               onClick={() => onMonthChange(currentMonth)}
-              className="text-[11px] text-brand-charcoal/45 font-light tracking-[0.04em] hover:text-brand-charcoal transition-colors cursor-pointer rounded-full px-2 py-0.5 hover:bg-brand-charcoal/[0.04]"
+              className="text-[11px] text-brand-charcoal/60 font-light tracking-[0.04em] hover:text-brand-charcoal transition-colors cursor-pointer rounded-full px-2 py-0.5 hover:bg-brand-charcoal/[0.04]"
             >
               回到今日
             </button>
@@ -86,7 +86,7 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
           onClick={() => shiftMonth(1)}
           aria-label="下个月"
           disabled={loading}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/45 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-wait"
+          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-wait"
         >
           <ChevronRight className="w-4 h-4" strokeWidth={2} />
         </button>
@@ -95,7 +95,7 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
       {/* 星期表头 */}
       <div className="grid grid-cols-7 mb-1.5">
         {WEEKDAYS.map((w) => (
-          <span key={w} className="text-center text-[11px] text-brand-charcoal/45 font-light">
+          <span key={w} className="text-center text-[11px] text-brand-charcoal/60 font-light">
             {w}
           </span>
         ))}
@@ -124,7 +124,7 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
 
           const cell = (
             <div
-              className={`group/cell relative aspect-square rounded-[5px] flex items-center justify-center text-[11px] font-light transition-colors ${
+              className={`group/cell relative aspect-square rounded-lg flex items-center justify-center text-[11px] font-light transition-colors ${
                 isToday ? "ring-1 ring-inset ring-brand-charcoal/30" : ""
               } ${
                 entry
@@ -132,10 +132,10 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
                     ? "hover:ring-1 hover:ring-inset hover:ring-brand-charcoal/40"
                     : ""
                   : clickable
-                    ? "text-brand-charcoal/50 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/75"
+                    ? "text-brand-charcoal/60 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/75"
                     : isWeekend
-                      ? "text-brand-charcoal/18"
-                      : "text-brand-charcoal/28"
+                      ? "text-brand-charcoal/55"
+                      : "text-brand-charcoal/55"
               }`}
               style={entry && meta ? { backgroundColor: `${meta.color}1F`, color: meta.color } : undefined}
               title={
@@ -159,12 +159,12 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
                     {fmtShort(dateStr)} · {meta.label}
                   </p>
                   {entry.tags && entry.tags.length > 0 && (
-                    <p className="mt-0.5 text-[10px] text-brand-charcoal/50 font-light">
+                    <p className="mt-0.5 text-[11px] text-brand-charcoal/60 font-light">
                       {entry.tags.join(" · ")}
                     </p>
                   )}
                   {entry.note && (
-                    <p className="mt-0.5 text-[10px] text-brand-charcoal/55 font-light leading-relaxed line-clamp-2">
+                    <p className="mt-0.5 text-[11px] text-brand-charcoal/55 font-light leading-relaxed line-clamp-2">
                       {entry.note}
                     </p>
                   )}
@@ -194,10 +194,10 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
         {(["great", "good", "normal", "bad", "terrible"] as const).map((key) => (
           <span key={key} className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: STATE_META[key].color }} />
-            <span className="text-[11px] text-brand-charcoal/35 font-light">{STATE_META[key].label}</span>
+            <span className="text-[11px] text-brand-charcoal/55 font-light">{STATE_META[key].label}</span>
           </span>
         ))}
-        {loading && <span className="text-[11px] text-brand-charcoal/35">加载中…</span>}
+        {loading && <span className="text-[11px] text-brand-charcoal/55">加载中…</span>}
       </div>
     </div>
   );

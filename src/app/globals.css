@@ -52,6 +52,12 @@
   --color-brand-cocoa: #5c4937;
   --color-brand-taupe: #8c7a6b;
   --color-brand-cream: #F5F2ED;
+  /* 语义色（护肤档案 / 时间线 / 打卡共用） */
+  --color-brand-cocoa-dark: #4a3a2c; /* 可可实心按钮 hover */
+  --color-brand-danger: #D44C47;     /* 负向状态（很差 / 删除） */
+  --color-brand-ember: #D9730D;      /* 打卡连续天数火焰 */
+  --color-state-great: #4C8055;      /* 肌肤状态：很好 */
+  --color-state-good: #7A9A5B;       /* 肌肤状态：不错 */
   --color-text-primary: #1A1A1A;
   --color-text-secondary: #00263E;
   --color-white: #ffffff;
@@ -545,7 +551,7 @@
   font-size: 11px;
 }
 .checkin-chart-date {
-  font-size: 10px;
+  font-size: 11px;
 }
 
 @media (max-width: 640px) {

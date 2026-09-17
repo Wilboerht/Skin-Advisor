@@ -64,10 +64,10 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
   return (
     <div>
       <div className="flex items-end justify-between mb-2.5">
-        <p className="text-[12px] tracking-[0.15em] text-brand-charcoal/45 font-light">
+        <p className="text-[12px] tracking-[0.15em] text-brand-charcoal/60 font-light">
           近 30 天打卡状态
         </p>
-        <p className="text-[12px] text-brand-charcoal/40 font-light">
+        <p className="text-[12px] text-brand-charcoal/55 font-light">
           已打卡 {checkedCount} 天
         </p>
       </div>
@@ -107,7 +107,7 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
                   width={bw}
                   height={4}
                   rx={2}
-                  fill="#5c4937"
+                  fill="var(--color-brand-cocoa)"
                   fillOpacity={0.07}
                 />
               )}
@@ -115,17 +115,17 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
           );
         })}
 
-        <text x={PAD_L} y={H - 4} fill="#8c7a6b" className="checkin-chart-date">
+        <text x={PAD_L} y={H - 4} fill="var(--color-brand-taupe)" className="checkin-chart-date">
           {firstLabel}
         </text>
-        <text x={W - PAD_R} y={H - 4} textAnchor="end" fill="#8c7a6b" className="checkin-chart-date">
+        <text x={W - PAD_R} y={H - 4} textAnchor="end" fill="var(--color-brand-taupe)" className="checkin-chart-date">
           {lastLabel}
         </text>
       </svg>
 
       {/* 图例：5 色点 + 两端语义词（中间档位由颜色深浅自然表达），未打卡以灰点示意 */}
       <div className="flex items-center justify-center gap-1.5 mt-2">
-        <span className="text-[11px] text-brand-charcoal/40 font-light mr-0.5">很好</span>
+        <span className="text-[11px] text-brand-charcoal/55 font-light mr-0.5">很好</span>
         {(["great", "good", "normal", "bad", "terrible"] as const).map((key) => (
           <span
             key={key}
@@ -133,10 +133,10 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
             style={{ backgroundColor: STATE_META[key].color }}
           />
         ))}
-        <span className="text-[11px] text-brand-charcoal/40 font-light ml-0.5">很差</span>
+        <span className="text-[11px] text-brand-charcoal/55 font-light ml-0.5">很差</span>
         <span className="w-px h-3 bg-brand-espresso/[0.1] mx-1.5" />
         <span className="w-2 h-2 rounded-full bg-brand-charcoal/10" />
-        <span className="text-[11px] text-brand-charcoal/40 font-light">未打卡</span>
+        <span className="text-[11px] text-brand-charcoal/55 font-light">未打卡</span>
       </div>
     </div>
   );

@@ -96,8 +96,8 @@ export function TestHistoryList({
     <div>
       {title && (
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base md:text-lg font-medium text-brand-charcoal">{title}</h2>
-          {total > 0 && <span className="text-[12px] text-brand-charcoal/45">共 {total} 条</span>}
+          <h3 className="text-[15px] font-medium text-brand-charcoal">{title}</h3>
+          {total > 0 && <span className="text-[12px] text-brand-charcoal/60">共 {total} 条</span>}
         </div>
       )}
 
@@ -113,7 +113,7 @@ export function TestHistoryList({
         </div>
       ) : error ? (
         <div className="h-48 flex flex-col items-center justify-center gap-4">
-          <p className="text-[13px] text-brand-charcoal/45">测肤记录加载失败，请检查网络后重试</p>
+          <p className="text-[13px] text-brand-charcoal/60">测肤记录加载失败，请检查网络后重试</p>
           <button
             type="button"
             onClick={fetchHistory}
@@ -124,9 +124,9 @@ export function TestHistoryList({
         </div>
       ) : history.length === 0 ? (
         <div className="text-center py-14 md:py-20">
-          <Clock className="w-7 h-7 mx-auto mb-3 text-brand-charcoal/25" strokeWidth={1.5} />
+          <Clock className="w-7 h-7 mx-auto mb-3 text-brand-charcoal/40" strokeWidth={1.5} />
           <h3 className="text-[15px] font-medium text-brand-charcoal mb-1.5">暂无测肤记录</h3>
-          <p className="text-[13px] text-brand-charcoal/45 mb-5">开始第一次 AI 皮肤分析</p>
+          <p className="text-[13px] text-brand-charcoal/60 mb-5">开始第一次 AI 皮肤分析</p>
           <Link
             href="/questions"
             className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[var(--color-brand-cocoa)] border border-brand-espresso/20 hover:border-brand-espresso/50 hover:bg-brand-espresso/[0.04] transition-all duration-300"
@@ -158,9 +158,9 @@ export function TestHistoryList({
             const scoreTone =
               typeof score === "number" && score > 0
                 ? score >= 80
-                  ? "text-[#4C8055]"
+                  ? "text-state-great"
                   : score < 60
-                    ? "text-[#D44C47]"
+                    ? "text-brand-danger"
                     : "text-brand-charcoal"
                 : "text-brand-charcoal";
 
@@ -178,7 +178,7 @@ export function TestHistoryList({
                   href={`/reports/${session.sessionId}?skipCover=1`}
                   className="group flex items-center gap-3 pl-1 py-2.5 rounded-md hover:bg-brand-charcoal/[0.03] transition-colors"
                 >
-                  <span className="shrink-0 w-12 text-[12px] text-brand-charcoal/40 font-light tabular-nums">
+                  <span className="shrink-0 w-12 text-[12px] text-brand-charcoal/60 font-light tabular-nums">
                     {time}
                   </span>
                   <span className="flex-1 min-w-0 truncate text-[13px] text-brand-charcoal/85">
@@ -187,7 +187,7 @@ export function TestHistoryList({
                   <span className={`shrink-0 text-[13px] font-medium tabular-nums ${scoreTone}`}>
                     {score != null && score > 0 ? `${score} 分` : "—"}
                   </span>
-                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/25 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/40 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
                 </Link>
               </div>
             );
@@ -200,20 +200,20 @@ export function TestHistoryList({
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1 || loading}
-            className="flex items-center gap-1.5 py-2 pr-2 text-[12px] text-brand-charcoal/45 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 py-2 pr-2 text-[12px] text-brand-charcoal/60 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             上一页
           </button>
 
-          <span className="text-[12px] text-brand-charcoal/45">
+          <span className="text-[12px] text-brand-charcoal/60">
             {page} / {totalPages}
           </span>
 
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages || loading}
-            className="flex items-center gap-1.5 py-2 pl-2 text-[12px] text-brand-charcoal/45 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 py-2 pl-2 text-[12px] text-brand-charcoal/60 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             下一页
             <ChevronRight className="w-4 h-4" />

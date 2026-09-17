@@ -262,7 +262,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
             {/* Footer: privacy reassurance */}
             <div className="absolute bottom-10 text-center px-6">
                 <p className="text-[11px] text-brand-charcoal/35 font-light tracking-[0.06em] leading-relaxed">
-                    您的面部数据仅用于本次分析，不会被存储或分享
+                    您的面部图像数据仅用于本次分析，不会被存储或展示给第三方。
                 </p>
             </div>
 

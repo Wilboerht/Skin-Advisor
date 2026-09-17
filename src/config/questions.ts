@@ -30,7 +30,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
     {
         id: "skinType",
         fieldName: "skinType",
-        question: "您的肤质属于哪一种？",
+        question: "您的肌肤类型更偏向哪一种？",
         type: "single",
         options: [
             { value: "dry", label: "干性 (紧绷、脱皮)", description: "洗脸后感觉紧绷，易脱皮" },
@@ -44,7 +44,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
     {
         id: "primaryConcern",
         fieldName: "primaryConcern",
-        question: "您最想改善的肌肤问题是？",
+        question: "您最关注的肌肤问题是哪些？",
         subtext: "可多选（最多 3 项），完成后点击下一步",
         type: "multiple",
         options: [
