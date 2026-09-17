@@ -7,7 +7,8 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
-import { DIMENSION_LABELS, DIMENSION_DESCRIPTIONS, DIMENSION_ORDER } from "@/lib/advisor-labels";
+import { DIMENSION_LABELS, DIMENSION_DESCRIPTIONS, DIMENSION_ORDER, type SkinDimensionKey } from "@/lib/advisor-labels";
+import { isMakeupState } from "@/lib/skin-state";
 import { computeLabAnalysis, type LabMetric } from "@/lib/analysis-lab";
 import { cn } from "@/lib/utils";
 
@@ -15,11 +16,17 @@ import { cn } from "@/lib/utils";
 const ScientificBarChart = dynamic(() => import("@/components/advisor/ScientificBarChart").then((mod) => mod.ScientificBarChart), { ssr: false });
 
 // 手机端：十维分析表单（替代 ScientificBarChart）
-function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { score?: number } | undefined> }) {
+function MobileDimensionForm({ dimensions, lowConfidenceKeys }: { dimensions: Record<string, { score?: number } | undefined>; lowConfidenceKeys?: string[] }) {
     const order = DIMENSION_ORDER;
+    const lowSet = new Set(lowConfidenceKeys ?? []);
 
     return (
         <div className="sm:hidden mb-5">
+            {lowSet.size > 0 && (
+                <p className="mb-3 text-[11px] leading-relaxed text-[#8c7a6b]">
+                    带妆拍摄：标注「置信度低」的维度仅供参考
+                </p>
+            )}
             {order.map((key) => {
                 const item = dimensions[key];
                 const score = item?.score;
@@ -27,7 +34,12 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
                 return (
                     <div key={key} className="py-3 border-b border-[#E8E2D9] last:border-0">
                         <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[13px] text-[#4A4A4A]">{DIMENSION_LABELS[key]}</span>
+                            <span className="text-[13px] text-[#4A4A4A]">
+                                {DIMENSION_LABELS[key]}
+                                {lowSet.has(key) && (
+                                    <span className="ml-1.5 text-[10px] text-[#8c7a6b]">置信度低</span>
+                                )}
+                            </span>
                             <span className="text-[13px] font-medium text-[#1A1A1A]">{score === undefined ? '-' : `${score} 分`}</span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-[#E8E2D9] overflow-hidden">
@@ -226,10 +238,16 @@ interface LabDataModalProps {
     open: boolean;
     onClose: () => void;
     faceAnalysis: FaceAnalysisResult | null;
+    /** 拍摄时肌肤状态：带妆时色斑/肤色/敏感度维度标注低置信度 */
+    skinState?: string | null;
 }
 
-export function LabDataModal({ open, onClose, faceAnalysis }: LabDataModalProps) {
+/** 带妆拍摄时置信度降低的维度（与 buildSkinStateVisionNote 的口径一致） */
+const MAKEUP_LOW_CONFIDENCE_KEYS: SkinDimensionKey[] = ["spots", "skinTone", "sensitivity"];
+
+export function LabDataModal({ open, onClose, faceAnalysis, skinState }: LabDataModalProps) {
     const labModalRef = useFocusTrap<HTMLDivElement>(open);
+    const lowConfidenceKeys = isMakeupState(skinState) ? MAKEUP_LOW_CONFIDENCE_KEYS : undefined;
 
     return (
         <AnimatePresence>
@@ -285,9 +303,10 @@ export function LabDataModal({ open, onClose, faceAnalysis }: LabDataModalProps)
                                         <div className="hidden sm:block mb-2">
                                             <ScientificBarChart
                                                 dimensions={faceAnalysis.dimensions}
+                                                lowConfidenceKeys={lowConfidenceKeys}
                                             />
                                         </div>
-                                        <MobileDimensionForm dimensions={faceAnalysis.dimensions} />
+                                        <MobileDimensionForm dimensions={faceAnalysis.dimensions} lowConfidenceKeys={lowConfidenceKeys} />
                                     </>
                                 )}
 

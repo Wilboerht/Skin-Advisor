@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useRef, useMemo, Suspense } from "rea
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { ArrowUp, House, AlertCircle, Sparkles, X, ScanFace } from "lucide-react";
+import { ArrowUp, House, AlertCircle, Sparkles, X, ScanFace, Info } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -35,7 +35,7 @@ import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
 import { buildFocusProblems, type LifestyleAnswers } from "@/lib/problem-solutions";
-import { SKIN_STATE_LABELS } from "@/lib/skin-state";
+import { SKIN_STATE_LABELS, isMakeupState } from "@/lib/skin-state";
 import { useLazyOpen } from "@/hooks/use-lazy-open";
 
 // 首屏包体优化：完整报告 / 产品推荐 / 版式选择都只在"翻到报告页"或"点击保存"后才需要，
@@ -568,6 +568,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         try { setStoredSkinState(localStorage.getItem(STORAGE_KEYS.ADVISOR_SKIN_STATE) || null); } catch { /* ignore */ }
     }, []);
     const skinStateValue = result?.skinState ?? storedSkinState;
+    // 带妆拍摄提示：不依赖 AI 是否按提示词写入"仅供参考"，报告顶部固定展示
+    const isMakeupCapture = isMakeupState(skinStateValue);
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
@@ -1594,6 +1596,18 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 {/* 游客测肤已下线：原「注册保存报告」横幅已移除（游客无法产生新报告，登录态未就绪时的闪现也是误伤） */}
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
 
+                                {/* 带妆拍摄提示条：固定兜底，不依赖 AI 是否在正文写入"仅供参考" */}
+                                {isMakeupCapture && (
+                                    <div className="w-full bg-[#FFF9F0] border-b border-amber-200/50 relative z-10">
+                                        <div className="max-w-[1440px] mx-auto px-4 py-2.5 flex items-start gap-2">
+                                            <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" strokeWidth={2} />
+                                            <p className="text-[12px] sm:text-[13px] leading-relaxed text-amber-900">
+                                                本次为带妆拍摄，色斑、泛红、肤色类结论仅供参考；如需更准确的判断，建议素颜自然光下复测。
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Validation Warning Banner */}
                                 {faceAnalysis?.validation && !faceAnalysis.validation.isValid && !dismissValidationWarning && (
                                     <div className="w-full bg-red-50 border-b border-red-100 relative z-10">
@@ -1699,6 +1713,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         open={showLabData}
                         onClose={() => setShowLabData(false)}
                         faceAnalysis={faceAnalysis}
+                        skinState={skinStateValue}
                     />
 
                     {posterError && (

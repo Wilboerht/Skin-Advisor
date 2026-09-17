@@ -11,6 +11,7 @@ import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import type { ComprehensiveResult, PreviousTestSummary } from "@/lib/analysis-result";
 import type { FocusProblemData } from "@/lib/problem-solutions";
 import { cn } from "@/lib/utils";
+import { isMakeupState } from "@/lib/skin-state";
 
 interface ReportPageProps {
     result: ComprehensiveResult;
@@ -42,6 +43,8 @@ export default function ReportPage({
 
     // 顾问叙事报告（v2）：consultantReport 存在时启用新渲染，旧报告/fallback 报告走原有板块
     const isV2Report = result.reportVersion === 2 && !!result.consultantReport;
+    // 带妆拍摄：色斑/肤色/敏感度维度置信度降低（提示用户，并供 Lab 图表标注）
+    const isMakeupCapture = isMakeupState(result.skinState);
 
     return (
         <div className="flex flex-col gap-6 lg:gap-8">
@@ -69,6 +72,11 @@ export default function ReportPage({
                             <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                 十维数据总览 <span className="text-xs lg:text-base">（Dimension Overview）</span>
                             </h4>
+                            {isMakeupCapture && (
+                                <p className="mb-3 -mt-1 text-[11px] lg:text-[12px] text-[var(--color-brand-taupe)] leading-relaxed">
+                                    带妆拍摄：色斑 / 肤色均衡度 / 敏感度三个维度置信度降低，结论仅供参考
+                                </p>
+                            )}
                             <DimensionRadarChart dimensions={faceAnalysis.dimensions} />
                         </div>
                     )}

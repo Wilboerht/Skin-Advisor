@@ -20,6 +20,8 @@ interface ScientificBarChartProps {
     dimensions: SkinDimensions;
     activeDimension?: string | null;
     onDimensionSelect?: (key: SkinDimensionKey) => void;
+    /** 低置信度维度（如带妆拍摄时的色斑/肤色/敏感度）：标签加 * 并在图上方注明 */
+    lowConfidenceKeys?: SkinDimensionKey[];
 }
 
 const getScoreColor = (score: number) => {
@@ -28,7 +30,7 @@ const getScoreColor = (score: number) => {
     return "#ef4444"; // Red
 };
 
-export function ScientificBarChart({ dimensions, activeDimension, onDimensionSelect }: ScientificBarChartProps) {
+export function ScientificBarChart({ dimensions, activeDimension, onDimensionSelect, lowConfidenceKeys }: ScientificBarChartProps) {
     const mounted = useMounted();
     const [initialLoad, setInitialLoad] = useState(true);
     useEffect(() => {
@@ -36,6 +38,11 @@ export function ScientificBarChart({ dimensions, activeDimension, onDimensionSel
         const timer = setTimeout(() => setInitialLoad(false), 1100);
         return () => clearTimeout(timer);
     }, []);
+
+    const lowConfidenceLabels = useMemo(
+        () => new Set((lowConfidenceKeys ?? []).map((key) => DIMENSION_LABELS[key]).filter(Boolean)),
+        [lowConfidenceKeys]
+    );
 
     const chartData = useMemo(() => DIMENSION_ORDER.map(key => ({
         dimension: DIMENSION_LABELS[key],
@@ -49,7 +56,13 @@ export function ScientificBarChart({ dimensions, activeDimension, onDimensionSel
     }
 
     return (
-        <div className="w-full relative mb-6" style={{ height: "480px" }}>
+        <div className="w-full mb-6">
+            {lowConfidenceLabels.size > 0 && (
+                <p className="mb-2 text-[11px] leading-relaxed text-[#8c7a6b]">
+                    * 带妆拍摄：标注 * 的维度（色斑 / 肤色均衡度 / 敏感度）置信度降低，仅供参考
+                </p>
+            )}
+            <div className="w-full relative" style={{ height: "480px" }}>
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                     data={chartData}
@@ -73,7 +86,8 @@ export function ScientificBarChart({ dimensions, activeDimension, onDimensionSel
                         tick={{ fontSize: 13, fill: '#8c7a6b' }}
                         axisLine={false}
                         tickLine={false}
-                        width={70}
+                        width={86}
+                        tickFormatter={(value: string) => (lowConfidenceLabels.has(value) ? `${value} *` : value)}
                     />
                     <Bar
                         dataKey="score"
@@ -131,8 +145,9 @@ export function ScientificBarChart({ dimensions, activeDimension, onDimensionSel
                 </BarChart>
             </ResponsiveContainer>
 
-            {/* Severity indicator bar — positioned outside SVG, aligned via margins */}
-            <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, paddingLeft: 125, paddingRight: 55 }}>
+            {/* Severity indicator bar — positioned outside SVG, aligned via margins
+                （paddingLeft = YAxis margin 55 + width 86，随刻度标签宽度同步） */}
+            <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, paddingLeft: 141, paddingRight: 55 }}>
                 {/* Scale ticks：按真实百分比定位，与渐变条分段及 ReferenceLine 对齐 */}
                 <div className="relative h-4 text-[11px] text-[#787774] mb-1">
                     <span className="absolute left-0">0</span>
@@ -154,6 +169,7 @@ export function ScientificBarChart({ dimensions, activeDimension, onDimensionSel
                     <span className="absolute left-[80%] -translate-x-1/2 text-[11px] font-medium text-[#787774]">中度</span>
                     <span className="absolute right-0 text-[11px] font-medium text-[#787774]">良好</span>
                 </div>
+            </div>
             </div>
         </div>
     );

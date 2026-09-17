@@ -899,7 +899,7 @@ export async function POST(request: NextRequest) {
             // 避免客户端 localStorage 为空时报告昵称退化为"您"
             nickname: nickname || user?.name || "护肤达人", // Include user nickname for sharing
             analyzedAt: new Date().toISOString(), // 证书/报告展示用（随结果持久化，游客流程也可用）
-            skinState: finalFaceAnalysis && typeof skinState === "string" ? skinState : undefined, // 拍摄时肌肤状态（仅面部扫描流程有意义）
+            skinState: typeof skinState === "string" ? skinState : undefined, // 拍摄时肌肤状态（引导页确认后随请求上传；扫脸失败也保留用户声明，历史报告可追溯）
             // 顾问叙事报告标记与数据（v2）；fallback 路径显式置 null，
             // 保证免费重试合并旧结果时（下方 mergedResult 展开）覆盖残留的 v2 报告，
             // 避免前端 isV2Report 误判、用旧叙事渲染本次降级结果
