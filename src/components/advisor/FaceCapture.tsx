@@ -244,9 +244,10 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
   useEffect(() => { isAllCapturedRef.current = isAllCaptured; }, [isAllCaptured]);
 
-  // 15 秒慢加载降级：仅驱动 UI（手动拍照入口），不写回全局状态
+  // 15 秒慢加载降级：从等待开始（idle 排队/loading 在途）就计时，覆盖"预载还在 idle 队列"
+  // 的空窗期；仅驱动 UI（手动拍照入口），不写回全局状态
   useEffect(() => {
-    if (faceModelStatus !== "loading") {
+    if (faceModelStatus === "ready" || faceModelStatus === "failed") {
       setSlowModelLoad(false);
       return;
     }
@@ -1618,6 +1619,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     }
 
     const interval = setInterval(() => {
+      // 后台标签页 rAF 检测已暂停，lastFaceDetectedRef 会自然过期；
+      // 后台不计"无脸时长"，避免切后台较久回来后手动按钮已莫名弹出
+      if (document.hidden) return;
       if (Date.now() - lastFaceDetectedRef.current >= NO_FACE_MANUAL_BUTTON_DELAY_MS) {
         setShowManualButton(true);
       }
