@@ -179,6 +179,12 @@ const levelMap: Record<string, string> = {
     advanced: "资深达人（熟悉成分功效，能独立搭配护肤方案）",
     expert: "行业专家（从事美妆护肤相关行业，专业知识扎实）"
 };
+// 生理周期阶段 → 护肤策略提示（questions.ts 选项值是英文 key，且 AI 需要的不只是标签还有处理方式）
+const menstrualCycleMap: Record<string, string> = {
+    menstrual: "经期中（第1-7天）——肌肤敏感期，屏障脆弱易暗沉，方案以温和保湿修护为主，避免高浓度酸类/视黄醇等刺激性成分",
+    follicular: "滤泡期（经后一周）——肌肤状态较佳、耐受度高，适合安排功效型精细护理（美白、抗老、刷酸等可此时进行）",
+    luteal: "黄体期（经前一周）——油脂分泌增加、易爆痘闭口，注意温和清洁控油、疏通毛孔，避免厚重闷痘的质地"
+};
 const budgetMap: Record<string, string> = { budget: "经济实惠（追求性价比，单品500元以内）", mid: "中等预算（兼顾成分与价格，单品500-1000元）", premium: "品质优先（追求卓越功效，单品1000-2000元）", luxury: "不设上限（顶级奢华体验，单品2000元以上）" };
 
 // 过敏史选项 key → 中文展示文本（questions.ts 的选项值是英文 key，
@@ -321,6 +327,7 @@ export function buildConsultantPrompt(params: {
   skincareLevel?: string;
   allergies?: string | string[];
   pregnancyStatus?: string;
+  menstrualCycle?: string;
   medicationHistory?: string;
   faceAnalysis?: Partial<FaceAnalysisResult>;
   products?: unknown[];
@@ -416,6 +423,7 @@ ${params.personaContent.formulaSuggestions?.length ? `- 公式要点：${params.
 - 关注问题：${params.concerns?.join(", ") || "无"}
 ${params.allergies ? `- 过敏史：${wrapUserData("allergies", sanitizePromptInput(formatAllergies(params.allergies)))}` : ""}
 ${params.pregnancyStatus === "yes" ? `- ⚠️ 孕期：是（在此基础上额外排除孕期禁忌成分，见下方规则）` : params.pregnancyStatus === "unknown" ? "- 孕期状态：不确定（按孕期标准谨慎推荐）" : ""}
+${params.menstrualCycle && menstrualCycleMap[params.menstrualCycle] ? `- 生理周期：${menstrualCycleMap[params.menstrualCycle]}` : ""}
 
 生活状态（间接诱因分析的素材）：
 - 医美经历(近3月)：${medicalText}
