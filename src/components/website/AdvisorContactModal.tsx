@@ -155,7 +155,7 @@ export function AdvisorContactModal({ isOpen, onClose }: AdvisorContactModalProp
                     </div>
 
                     <p className="mt-5 text-[11px] text-brand-charcoal/45 font-light leading-relaxed tracking-[0.04em]">
-                      添加后可发送测肤报告截图，顾问将结合档案为您解读
+                      专属于您的护肤管家，陪伴您的护肤旅程
                     </p>
                   </div>
                 ) : (
