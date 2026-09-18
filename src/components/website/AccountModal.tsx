@@ -106,10 +106,21 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
     return () => { cancelled = true; };
   }, [isOpen, user]);
 
-  const handleLogout = async () => {
+  // 退出确认框状态：global = 勾选「同时退出所有 NIHPLOD 平台」
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [logoutGlobal, setLogoutGlobal] = useState(false);
+
+  const handleLogout = () => {
+    setLogoutGlobal(false);
+    setShowLogoutConfirm(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    const global = logoutGlobal;
+    setShowLogoutConfirm(false);
     onClose();
     // logout 内部已完成整页跳转，无需再处理路由
-    await logout();
+    await logout({ global });
   };
 
   // 派系信息派生：ipKey → 类型数据（未知 key 时整体不渲染该行）
@@ -254,6 +265,66 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 </button>
                   </>
                 )}
+              </div>
+            </m.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 退出登录确认框：默认仅退出本站，勾选后同时退出所有 NIHPLOD 平台（global） */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="logout-confirm-title"
+            className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4"
+          >
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogoutConfirm(false)}
+              className="absolute inset-0 bg-slate-900/50 backdrop-blur-md"
+            />
+            <m.div
+              initial={{ opacity: 0, scale: 0.96, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 10 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative z-10 w-full max-w-xs bg-[#FDFBF7] rounded-[24px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 id="logout-confirm-title" className="text-base font-semibold text-[#1A1A1A] mb-2">
+                退出登录
+              </h3>
+              <p className="text-[13px] font-light text-[#6B5E50] leading-relaxed mb-4">
+                默认仅退出本站；勾选后将同时退出主站及所有 NIHPLOD 平台。
+              </p>
+              <label className="flex items-center gap-2 mb-6 cursor-pointer select-none text-[13px] text-[#5E5E5E] tracking-[0.03em]">
+                <input
+                  type="checkbox"
+                  checked={logoutGlobal}
+                  onChange={(e) => setLogoutGlobal(e.target.checked)}
+                  className="w-4 h-4 accent-[#3D4430]"
+                />
+                同时退出所有 NIHPLOD 平台
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/5 text-[13px] tracking-[0.05em] text-brand-charcoal/70 hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogoutConfirm}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-[#3D4430] text-white text-[13px] tracking-[0.05em] hover:bg-[#3D4430]/90 transition-colors cursor-pointer"
+                >
+                  退出本站
+                </button>
               </div>
             </m.div>
           </div>

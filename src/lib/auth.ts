@@ -101,6 +101,10 @@ export async function signLocalSession(
     try {
         const csrfToken = generateCsrfToken();
 
+        // Access token 30 分钟（原 2h）：配合主站 backchannel logout——本地 JWT
+        // 无状态无法即时撤销，缩短 TTL 把远程登出/撤销授权后的失效窗口压到 ≤30min；
+        // 过期后由 session-init / fetchWithCsrf 凭 SSO 会话静默重建，用户无感知。
+        // refresh token（30d）不变。
         const accessToken = await signToken({
             sub: user.id,
             email: user.email ?? null,
@@ -110,7 +114,7 @@ export async function signLocalSession(
             tokenVersion: user.tokenVersion,
             dailyTestLimit: user.dailyTestLimit ?? null,
             csrf: csrfToken,
-        }, "2h");
+        }, "30m");
 
         const refreshToken = await signRefreshToken({
             sub: user.id,
@@ -167,4 +171,17 @@ export async function revokeLocalRefreshToken(token: string): Promise<void> {
         // 尽力而为：撤销失败不阻断登出（Cookie 已清除，token 最长 30 天自然过期）
         logger.warn("[auth] Failed to revoke local refresh token", { error: String(err) });
     }
+}
+
+/**
+ * 撤销某用户的全部本地 refresh token（backchannel logout 接收端调用）：
+ * 主站全局登出/撤销授权时，本地各设备签发的 refresh token 需一并失效。
+ * 返回撤销条数；失败抛错由调用方记录并让主站重投。
+ */
+export async function revokeAllLocalRefreshTokens(userId: string): Promise<number> {
+    const result = await prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+    });
+    return result.count;
 }

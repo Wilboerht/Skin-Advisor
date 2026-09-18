@@ -33,7 +33,9 @@ interface AuthContextType {
     login: (credentials?: { email?: string; phone?: string; password?: string }) => Promise<void>;
     loginWithCode: (credentials: { phone: string; code: string }) => Promise<void>;
     register: (userData?: { email?: string; phone?: string; password?: string; name?: string; code?: string }) => Promise<void>;
-    logout: () => Promise<void>;
+    // 分层退出：默认仅退出本站（local）；传 { global: true } 同时退出所有
+    // NIHPLOD 平台（服务端返回 ssoLogoutUrl，整页跳转主站 end-session）
+    logout: (options?: { global?: boolean }) => Promise<void>;
     refresh: () => Promise<void>;
 }
 
@@ -190,16 +192,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const register = useCallback(async (_userData?: { email?: string; phone?: string; password?: string; name?: string; code?: string }) => login(), [login]);
 
-    const logout = useCallback(async () => {
+    const logout = useCallback(async (options?: { global?: boolean }) => {
         // 先作废在途 loadUser（其响应可能携带登出前的旧会话），再走服务端登出
         sessionGenRef.current += 1;
         setIsLoggingOut(true);
 
         // POST-only + 同源校验；服务端会清除 SSO Cookie、撤销 refresh_token 并清本地会话
         // 必须确认成功：失败时 Cookie 仍在，若照常跳首页，下一次 /api/auth/me 会把会话复活
+        // scope=global 时服务端返回 ssoLogoutUrl（主站 end-session），local 时仅 { ok: true }
         let ssoLogoutUrl: string | null = null;
         try {
-            const res = await fetch("/api/auth/logout", { method: "POST" });
+            const res = await fetch("/api/auth/logout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ scope: options?.global ? "global" : "local" }),
+            });
             if (!res.ok) {
                 toast.error("退出未成功，请稍后再试");
                 setIsLoggingOut(false);
@@ -232,8 +239,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
             }
         } catch { /* ignore */ }
         setUser(null);
-        // 单点登出：整页跳转到主站登出流程（顶层导航携带主站 Cookie，/logout 确认页
-        // 能真正清除主站 SSO 会话），完成后经 post_logout_redirect_uri 回到子站首页
+        // global：整页跳转到主站登出流程（顶层导航携带主站 Cookie，/logout 确认页
+        // 能真正清除主站 SSO 会话），完成后经 post_logout_redirect_uri 回到子站首页；
+        // local：直接回本站首页
         // 登出成功提示：经主站整页跳转回来后组件已重建，用 sessionStorage 跨导航传递；
         // 在 clearAll 之后写入，避免被登出清理一并抹掉
         try { sessionStorage.setItem(LOGOUT_NOTICE_KEY, "1"); } catch { /* ignore */ }

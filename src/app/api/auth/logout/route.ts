@@ -24,7 +24,9 @@ const handler = createLogoutRouteHandler({
   ssoBaseUrl: process.env.NEXT_PUBLIC_SSO_BASE_URL!,
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   postLogoutRedirectUri: process.env.NEXT_PUBLIC_BASE_URL || "https://advisor.nihplod.cn",
-  redirectToSso: true,
+  // 分层退出：默认仅退出本站（local）；global 由请求体 scope 字段经下方翻译为
+  // SDK 的 global=1 表单字段触发（redirectToSso 已弃用，勿再使用）
+  defaultScope: "local",
   // 服务器间调用（discovery/revoke）的内网地址；未配置时走公网（SDK 默认行为）
   serverBaseUrl: process.env.SSO_SERVER_BASE_URL || undefined,
   // 本地 HTTP 开发模式：必须与 middleware/callback/login 保持一致
@@ -80,6 +82,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  // 退出范围：自家前端以 JSON 提交 { scope: "local" | "global" }（默认 local）。
+  // SDK handler 读的是 form-urlencoded 的 global 字段，这里把 scope 翻译成
+  // 对应的表单体后构造新请求交给 SDK（无 JSON body / 解析失败一律按 local）
+  let scope: "local" | "global" = "local";
+  try {
+    const body = (await req.clone().json()) as { scope?: unknown };
+    if (body?.scope === "global") scope = "global";
+  } catch { /* 无 JSON body：按默认 local */ }
+  const sdkRequest = new NextRequest(req.url, {
+    method: "POST",
+    headers: req.headers,
+    body: scope === "global" ? "global=1" : "",
+  });
+
   // 登出与静默轮换的竞态防护：
   // UserProvider 的定时/visibilitychange 刷新会在后台触发 /api/auth/me 的
   // refresh_token 轮换。若轮换与登出并发，轮换响应携带的新 token Set-Cookie
@@ -89,7 +105,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const refreshToken = req.cookies.get(REFRESH_TOKEN_COOKIE)?.value ?? null;
   const rotated = refreshToken ? await awaitInflightRotation(refreshToken) : null;
 
-  const response = await handler(req);
+  const response = await handler(sdkRequest);
   // 不论 SSO 登出是否成功，始终清除本地 JWT + CSRF Cookie
   clearLocalSession(response);
 
@@ -124,11 +140,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   response.cookies.set(USER_COOKIE_NAME, "", { ...USER_ACCESS_COOKIE_OPTIONS, maxAge: 0 });
   response.cookies.set(USER_REFRESH_COOKIE_NAME, "", { ...USER_REFRESH_COOKIE_OPTIONS, maxAge: 0 });
 
-  // SDK 成功时返回的是 302（RP-Initiated Logout 指向主站 end-session）。
-  // 前端以 fetch 调用时该跨域跳转不会真正执行主站登出（主站 /logout 是交互确认页，
-  // fetch 不执行页面 JS；且 credentials: same-origin 下跨域 Cookie 不发送/不落地）。
-  // 改为 200 JSON 把目标 URL 交给前端做整页跳转，同时保留所有清 Cookie 头
-  const ssoLogoutUrl = response.headers.get("location");
+  // SDK 的 global 分支返回 307（RP-Initiated Logout 指向主站 end-session），
+  // local 分支返回 307 回本站首页。
+  // 前端以 fetch 调用时跨域跳转不会真正执行主站登出（主站 /logout 是交互确认页，
+  // fetch 不执行页面 JS；且 credentials: same-origin 下跨域 Cookie 不发送/不落地），
+  // 因此两种分支都改写为 200 JSON 并保留所有清 Cookie 头：
+  // - global：{ ssoLogoutUrl }，前端整页跳转主站 end-session
+  // - local：{ ok: true }，前端跳回本站首页即可
+  const ssoLogoutUrl = scope === "global" ? response.headers.get("location") : null;
   if (ssoLogoutUrl) {
     const json = NextResponse.json({ success: true, ssoLogoutUrl });
     for (const h of response.headers.getSetCookie?.() ?? []) {
@@ -137,5 +156,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return json;
   }
 
-  return response;
+  const localJson = NextResponse.json({ ok: true });
+  for (const h of response.headers.getSetCookie?.() ?? []) {
+    localJson.headers.append("Set-Cookie", h);
+  }
+  return localJson;
 }

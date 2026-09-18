@@ -38,7 +38,7 @@ export function getJwtIssuer(): string {
 }
 
 /**
- * 签发 Access Token（短期，默认 15 分钟；本地会话签发处传入 2h）
+ * 签发 Access Token（短期，默认 15 分钟；本地会话签发处传入 30m）
  */
 export async function signToken(payload: Record<string, unknown>, expiresIn: string | number = "15m"): Promise<string> {
     const token = new SignJWT({ ...payload, type: "access" })
@@ -110,7 +110,11 @@ export async function verifyRefreshToken(token: string): Promise<JWTPayload | nu
 }
 
 /**
- * Access Token Cookie 配置（2 小时，与 SSO access token 对齐）
+ * Access Token Cookie 配置（30 分钟）
+ *
+ * 原为 2h 与 SSO access token 对齐；缩短为 30 分钟以配合 backchannel logout：
+ * 本地 JWT 无状态无法即时撤销，TTL 决定主站全局登出/撤销授权后的最长失效窗口。
+ * 过期后由 session-init 静默重建（SSO 会话仍有效时），refresh token（30d）不变。
  */
 export function accessCookieOptions(secure: boolean = true) {
     return {
@@ -118,7 +122,7 @@ export function accessCookieOptions(secure: boolean = true) {
         secure,
         sameSite: "strict" as const,
         path: "/",
-        maxAge: 2 * 60 * 60,
+        maxAge: 30 * 60,
     };
 }
 
