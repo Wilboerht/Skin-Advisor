@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, ChevronRight, Loader2, X, ScanFace, Sparkles, FileText, Gift, CircleHelp } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -553,8 +554,15 @@ export default function HomeClient() {
 
             {/* 老用户快捷入口已移除：最近测肤分数展示不再于首页渲染 */}
 
-            {/* 次级入口：测肤有礼活动 + 常见问题（描边胶囊，同一视觉层级；与主卡平级，间距按 8px 节奏） */}
+            {/* 次级入口：了解肌智派 + 测肤有礼活动 + 常见问题（描边胶囊，同一视觉层级；与主卡平级，间距按 8px 节奏） */}
           <section className="flex flex-wrap items-center justify-center gap-3 px-6 mt-6 md:mt-8">
+            <Link
+              href="/skin-types"
+              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/[0.15] text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-espresso/[0.35] hover:text-brand-charcoal cursor-pointer touch-manipulation"
+            >
+              <Sparkles className="w-3.5 h-3.5" strokeWidth={1.5} />
+              <span>了解肌智派</span>
+            </Link>
             <button
               onClick={openGiftModal}
               className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/[0.15] text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-espresso/[0.35] hover:text-brand-charcoal cursor-pointer touch-manipulation"

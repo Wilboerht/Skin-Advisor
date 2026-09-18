@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { advisorStorage } from '@/lib/advisor-storage';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
 import { getModalHistory } from '@/lib/modal-history';
+import { SESSION_EXPIRED_EVENT } from '@/lib/fetch-client';
 import { useToast } from '@/components/ui/Toast';
 
 // --- Types ---
@@ -174,6 +175,33 @@ export function UserProvider({ children }: { children: ReactNode }) {
             url.searchParams.delete("state");
             window.history.replaceState(null, "", url.pathname + url.search + url.hash);
         }
+    }, [toast]);
+
+    // 会话终结监听：任一接口最终 401（含本地会话重建失败）时立即清态并引导重新登录。
+    // 典型场景：他处全局退出（backchannel 已撤销本地 refresh token）后，
+    // 本站已打开的页面在用户下次操作时立即感知，而不是等本地 JWT 自然过期。
+    // 门禁：仅"当前处于登录态"时反应——游客的公开接口 401（如未登录调 /api/auth/me）不打扰。
+    const userRef = useRef<User | null>(null);
+    useEffect(() => {
+        userRef.current = user;
+    }, [user]);
+
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            if (!userRef.current) return;
+            userRef.current = null;
+            // 作废在途 loadUser，防止旧会话响应落地"复活"用户态
+            sessionGenRef.current += 1;
+            setUser(null);
+            toast.error("登录已过期，请重新登录");
+            // 走 SSO 登录流程：若仅本地会话失效会静默重登；全局退出则落到主站登录页
+            const { pathname, search } = window.location;
+            if (pathname === "/login" || pathname === "/register") return;
+            getModalHistory().markNavigationPending();
+            window.location.href = `/api/auth/login?return_to=${encodeURIComponent(pathname + search)}`;
+        };
+        window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+        return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
     }, [toast]);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -18,6 +18,14 @@ import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf-client";
 const DEFAULT_TIMEOUT_MS = 30_000;
 const UPLOAD_TIMEOUT_MS = 60_000; // 上传大图片需要更长时间
 
+/**
+ * 会话终结事件：请求最终 401（含本地会话重建失败）时广播。
+ * 由 UserProvider 统一监听并执行"清态 + 跳登录"，本库保持 UI 无关。
+ * 典型场景：他处全局退出（backchannel 撤销了本地 refresh token）后，
+ * 本站已打开的页面在用户下次操作时立即感知，而不是等 token 自然过期。
+ */
+export const SESSION_EXPIRED_EVENT = "skinadvisor:session-expired";
+
 function getCookie(name: string): string | null {
     if (typeof document === "undefined") return null;
     const match = document.cookie.match(new RegExp("(?:^|;\\s*)" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^;]*)"));
@@ -110,6 +118,11 @@ export async function fetchWithCsrf(
                 if (rebuilt) {
                     return fetchWithCsrf(input, init, { ...options, _sessionRebuilt: true });
                 }
+            }
+            // 最终 401（游客接口除外，由 UserProvider 按登录态门禁过滤）：
+            // 广播会话终结事件，让打开的页面立即清态跳登录
+            if (res.status === 401 && typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
             }
             return res;
         } catch (e) {

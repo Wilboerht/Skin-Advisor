@@ -321,9 +321,9 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 <button
                   type="button"
                   onClick={handleLogoutConfirm}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-[#3D4430] text-white text-[13px] tracking-[0.05em] hover:bg-[#3D4430]/90 transition-colors cursor-pointer"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-[13px] tracking-[0.05em] hover:bg-red-700 transition-colors cursor-pointer"
                 >
-                  退出本站
+                  {logoutGlobal ? "退出所有平台" : "退出本站"}
                 </button>
               </div>
             </m.div>
