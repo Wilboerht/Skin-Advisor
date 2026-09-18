@@ -5,6 +5,7 @@ import {
   toInsecureCookieName,
 } from "@nihplod/sso-sdk/next";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
+import { isPublicPath } from "@/lib/public-paths";
 
 const ssoCallback = createCallbackRouteHandler({
   clientId: process.env.NEXT_PUBLIC_SSO_CLIENT_ID!,
@@ -39,13 +40,17 @@ export async function GET(req: NextRequest) {
   const siteOrigin = getPublicOrigin() || new URL(req.url).origin;
 
   // 用户在授权页取消/拒绝：SDK 会吐裸 JSON 错误页，这里改为跳回发起登录的页面
-  //（return_to 由 /api/auth/login 在发起时写入 Cookie）
+  //（return_to 由 /api/auth/login 或 SSO middleware 在发起时写入 Cookie）
   if (req.nextUrl.searchParams.has("error")) {
     const returnCookieName = SSO_INSECURE_LOCAL_DEV
       ? toInsecureCookieName(DEFAULT_RETURN_COOKIE_NAME)
       : DEFAULT_RETURN_COOKIE_NAME;
     const returnTo = sanitizeReturnTo(req.cookies.get(returnCookieName)?.value ?? null);
-    return NextResponse.redirect(new URL(returnTo, siteOrigin));
+    // 死循环防护：return_to 指向需登录页面（如 /reports/[id]）时，回跳会因未登录
+    // 被 middleware 再次送去 SSO 授权页，用户点"返回"形成无限循环——改回首页
+    const returnPath = new URL(returnTo, siteOrigin).pathname;
+    const safeTarget = isPublicPath(returnPath) ? returnTo : "/";
+    return NextResponse.redirect(new URL(safeTarget, siteOrigin));
   }
 
   const response = await ssoCallback(req);

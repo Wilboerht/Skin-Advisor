@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/Toast";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { normalizeAnalysisResult, type ComprehensiveResult, type PreviousTestSummary } from "@/lib/analysis-result";
 import { getCharacterImage } from "@/lib/result-utils";
+import { isMobileDevice, isWeChatBrowser } from "@/lib/share-device";
 import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from "@/lib/storage-keys";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import type { SessionUser } from "@/lib/auth";
@@ -388,8 +389,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const [showLabData, setShowLabData] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
-    // 微信内嵌浏览器无法可靠触发下载，生成后改用「长按保存」引导弹窗
+    // 微信内嵌浏览器无法可靠触发下载，生成后改用「长按/右键保存」引导弹窗
     const [savedPosterForSave, setSavedPosterForSave] = useState<string | null>(null);
+    // 保存弹窗形态：微信移动端=长按保存；微信桌面端=右键另存
+    const [posterSaveIsDesktop, setPosterSaveIsDesktop] = useState(false);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     // 海报版式（多套模板）：默认经典版，记忆用户上次选择；素材未就绪的模板不参与
     const [posterTemplateId, setPosterTemplateId] = useState<PosterTemplateId>(DEFAULT_POSTER_TEMPLATE_ID);
@@ -907,8 +910,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         const blobUrl = URL.createObjectURL(blob);
         const file = new File([blob], filename, { type: "image/png" });
 
-        // 仅在移动设备上尝试系统原生分享；PC 端 navigator.share 打开面板后通常无法真正保存文件
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
+        // 仅在移动设备上尝试系统原生分享；PC 端（含触屏 Windows 笔记本）navigator.share 打开面板后通常无法真正保存文件
+        const isMobile = isMobileDevice(navigator.userAgent, navigator.maxTouchPoints);
         const canShareFiles = typeof navigator.share === "function" &&
             typeof navigator.canShare === "function" &&
             navigator.canShare({ files: [file] });
@@ -922,8 +925,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 URL.revokeObjectURL(blobUrl);
                 return;
             } catch (err) {
-                // 用户取消分享或浏览器不支持文件分享，继续走下载兜底
-                console.log("navigator.share failed or cancelled", err);
+                // 用户主动取消系统分享：视为放弃保存，不再触发下载兜底，避免"点了取消反而下载"
+                const cancelled = typeof err === "object" && err !== null && (err as { name?: unknown }).name === "AbortError";
+                if (cancelled) {
+                    URL.revokeObjectURL(blobUrl);
+                    return;
+                }
+                console.log("navigator.share failed, fallback to download", err);
             }
         }
 
@@ -1068,14 +1076,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 throw new Error("海报生成结果为空");
             }
 
-            // 微信移动端内置浏览器：<a download> 与 navigator.share(files) 均不可靠，
-            // 改为展示海报图片，引导用户长按保存到相册
-            const isWeChatMobile = typeof navigator !== "undefined" &&
-                /MicroMessenger/i.test(navigator.userAgent) &&
-                (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1);
-            if (isWeChatMobile) {
+            // 微信内置浏览器（移动端与桌面端）：<a download> 与 navigator.share(files) 均不可靠，
+            // 改为展示海报图片保存：移动端引导长按、桌面端引导右键另存
+            if (typeof navigator !== "undefined" && isWeChatBrowser(navigator.userAgent)) {
+                setPosterSaveIsDesktop(!isMobileDevice(navigator.userAgent, navigator.maxTouchPoints));
                 setSavedPosterForSave(URL.createObjectURL(blob));
-                // 埋点不在生成时上报：等用户在长按保存弹窗里点「已保存，关闭」再计入（见下方 onSaved）
+                // 埋点不在生成时上报：等用户在保存弹窗里点「已保存，关闭」再计入（见下方 onSaved）
                 return;
             }
 
@@ -1119,6 +1125,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     useEffect(() => () => {
         if (savedPosterForSaveRef.current) URL.revokeObjectURL(savedPosterForSaveRef.current);
     }, []);
+
+    // 海报错误提示自动消失（6s），避免旧错误常驻遮挡；用户也可点关闭按钮立即清除
+    useEffect(() => {
+        if (!posterError) return;
+        const timer = setTimeout(() => setPosterError(null), 6000);
+        return () => clearTimeout(timer);
+    }, [posterError]);
 
     // --- Auto-Claim Session ---
     // Automatically link guest-initiated session to user account once logged in
@@ -1728,8 +1741,19 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     />
 
                     {posterError && (
-                        <div className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg">
-                            {posterError}
+                        <div
+                            role="alert"
+                            className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg"
+                        >
+                            <span>{posterError}</span>
+                            <button
+                                type="button"
+                                onClick={() => setPosterError(null)}
+                                aria-label="关闭提示"
+                                className="shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+                            >
+                                <X className="w-3.5 h-3.5" strokeWidth={2} />
+                            </button>
                         </div>
                     )}
                     {posterMounted && (
@@ -1781,9 +1805,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         />
                     )}
 
-                    {/* 微信内嵌浏览器海报保存兜底：长按图片保存引导；点「已保存，关闭」才计分享埋点 */}
+                    {/* 微信内嵌浏览器海报保存兜底：移动端长按 / 桌面端右键另存；点「已保存，关闭」才计分享埋点 */}
                     <PosterSaveModal
                         imageUrl={savedPosterForSave}
+                        variant={posterSaveIsDesktop ? "desktop" : "mobile"}
                         onClose={closePosterSaveModal}
                         onSaved={() => { if (!isMock) trackResultShare("image"); }}
                     />

@@ -358,18 +358,21 @@ export function LabDataModal({ open, onClose, faceAnalysis, skinState }: LabData
     );
 }
 
-/* ------------------------- 微信内嵌浏览器海报长按保存弹窗 ------------------------- */
+/* ------------------------- 微信内嵌浏览器海报保存弹窗 ------------------------- */
 
 interface PosterSaveModalProps {
     /** 海报图片 URL（objectURL）；null 时不渲染 */
     imageUrl: string | null;
+    /** mobile=微信内长按保存；desktop=微信桌面端右键另存（<a download> 在微信内不可靠） */
+    variant?: "mobile" | "desktop";
     onClose: () => void;
     /** 用户点「已保存，关闭」（确认已保存）时回调，用于分享埋点；直接关闭（X/遮罩/Esc）不触发 */
     onSaved?: () => void;
 }
 
-export function PosterSaveModal({ imageUrl, onClose, onSaved }: PosterSaveModalProps) {
+export function PosterSaveModal({ imageUrl, variant = "mobile", onClose, onSaved }: PosterSaveModalProps) {
     const modalRef = useFocusTrap<HTMLDivElement>(imageUrl !== null);
+    const isDesktop = variant === "desktop";
 
     return (
         <AnimatePresence>
@@ -404,9 +407,13 @@ export function PosterSaveModal({ imageUrl, onClose, onSaved }: PosterSaveModalP
                             }
                         }}
                     >
-                        <p className="text-[15px] font-medium text-[var(--color-brand-espresso)] mb-1">长按图片保存证书</p>
+                        <p className="text-[15px] font-medium text-[var(--color-brand-espresso)] mb-1">
+                            {isDesktop ? "右键保存测肤证书" : "长按图片保存证书"}
+                        </p>
                         <p className="text-[12px] text-[var(--color-brand-taupe)] mb-4">
-                            微信内长按下方图片，选择「保存图片」即可存入相册
+                            {isDesktop
+                                ? "微信内右键点击下方图片，选择「图片另存为」即可保存到电脑"
+                                : "微信内长按下方图片，选择「保存图片」即可存入相册"}
                         </p>
                         <div className="mx-auto w-full max-w-[300px] rounded-xl overflow-hidden border border-black/5 bg-[var(--color-brand-cream)]">
                             <Image
