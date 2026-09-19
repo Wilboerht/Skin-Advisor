@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
-import { AccountModal } from "@/components/website/AccountModal";
+import { useLazyOpen } from "@/hooks/use-lazy-open";
+
+// 账户弹层懒加载：只有点自己的头像才需要——结果页首屏包体优化（AccountModal 内含三个 tab 与上传逻辑）
+const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
 
 /**
  * UserBadge — 结果页顶部栏用户身份区：头像 + 用户名（极简）。
@@ -15,6 +19,7 @@ export default function UserBadge() {
   const { openAuthModal } = useAuthModal();
   // 登录态点击打开账户弹层（AccountModal，替代原 /profile 页；该页已重定向到首页）
   const [showAccount, setShowAccount] = useState(false);
+  const shouldRenderAccount = useLazyOpen(showAccount);
   const [avatarFailed, setAvatarFailed] = useState(false);
   // 用户/头像变化时重置失败标记（避免换账号后沿用上一个头像的失败态）
   useEffect(() => { setAvatarFailed(false); }, [user?.avatar]);
@@ -76,7 +81,9 @@ export default function UserBadge() {
         </span>
       </button>
 
-      <AccountModal isOpen={showAccount} onClose={() => setShowAccount(false)} />
+      {shouldRenderAccount && (
+        <AccountModal isOpen={showAccount} onClose={() => setShowAccount(false)} />
+      )}
     </>
   );
 }

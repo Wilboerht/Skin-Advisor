@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 import { computeStreak, isDiaryDateInRange, parseClientDate, cappedCheckinStreak, streakEndingAt, checkinPointsForStreak, isAutoDiaryEntry } from "@/lib/diary-utils";
-import { grantCheckinPoints } from "@/lib/diary-points";
+import { grantCheckinPoints, backfillRecentCheckinPoints } from "@/lib/diary-points";
 
 const DEFAULT_PAGE_SIZE = 30;
 const MAX_PAGE_SIZE = 50;
@@ -228,6 +228,13 @@ export async function POST(request: NextRequest) {
                 points = { granted: result.granted, streak };
             }
         }
+
+        // 漏发自愈（fire-and-forget）：最近窗口内手动打卡日的积分补发——
+        // 官网瞬断导致某日漏发后，用户后续任意一次打卡/编辑都会自动补偿；
+        // 账本 userId+reference 幂等，重复发放无副作用，不阻断响应
+        void backfillRecentCheckinPoints(user.id, date.toISOString().slice(0, 10)).catch((err) =>
+            logger.warn("[DiaryPoints] 补发补偿失败", { userId: user.id, error: String(err) })
+        );
 
         return NextResponse.json({ success: true, data: entry, ...(points ? { points } : {}) });
     } catch (error) {

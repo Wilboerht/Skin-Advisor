@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { Loader2, X } from "lucide-react";
-import { fetchWithCsrf } from "@/lib/fetch-client";
+import { fetchWithCsrf, POINTS_CHANGED_EVENT } from "@/lib/fetch-client";
 import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
@@ -25,6 +25,8 @@ interface CheckInModalProps {
   dateStr?: string;
   /** 保存成功后回调（父级刷新日记列表） */
   onSaved: () => void;
+  /** 保存时 401（登录过期）：由父级统一走"关弹层 + 登录引导" */
+  onAuthExpired?: () => void;
 }
 
 /**
@@ -32,7 +34,7 @@ interface CheckInModalProps {
  * 选择肌肤状态 + 情境标签 + 可选备注；支持补打卡（指定过去日期）；
  * 容器/动效与 AccountModal 等全站模态框对齐。
  */
-export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: CheckInModalProps) {
+export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAuthExpired }: CheckInModalProps) {
   const toast = useToast();
   const [skinState, setSkinState] = useState<string>("good");
   const [tags, setTags] = useState<string[]>([]);
@@ -91,13 +93,26 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
           note: note.trim() || undefined,
         }),
       });
-      if (!res.ok) throw new Error("保存未成功");
+      if (!res.ok) {
+        // 401：登录已过期，交由父级走登录引导（先关档案弹层再开 AuthModal）
+        if (res.status === 401) {
+          onAuthExpired?.();
+          return;
+        }
+        // 其余错误透出服务端文案（如"请求过于频繁"/"日期超出可记录范围"），避免一律吞成"保存未成功"
+        const errData = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(errData?.error || "保存未成功");
+      }
       // 打卡积分（仅首次手动打卡返回）：连续第 1/2/3+ 天 +1/+2/+3 分
       const resData = (await res.json().catch(() => null)) as {
         points?: { granted?: number };
       } | null;
       const granted = resData?.points?.granted ?? 0;
       const pointsSuffix = granted > 0 ? `，+${granted} 积分` : "";
+      // 余额联动：打卡实际到账时广播，账户面板「我的」收到后静默刷新积分余额
+      if (granted > 0 && typeof window !== "undefined") {
+        window.dispatchEvent(new Event(POINTS_CHANGED_EVENT));
+      }
       const submitLabel = new Date(`${submitDate}T00:00:00.000Z`).toLocaleDateString("zh-CN", {
         month: "numeric",
         day: "numeric",
@@ -112,7 +127,11 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
       onClose();
     } catch (err) {
       console.error("Diary check-in error:", err);
-      toast.error("保存未成功，请稍后再试");
+      const msg =
+        err instanceof Error && err.message && err.message !== "保存未成功"
+          ? err.message
+          : "保存未成功，请稍后再试";
+      toast.error(msg);
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -250,6 +269,13 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {existing ? "保存修改" : "完成打卡"}
               </button>
+
+              {/* 积分规则说明：新建打卡展示规则，编辑态说明不重复发放，避免用户困惑 */}
+              <p className="mt-3 text-center text-[11px] font-light tracking-[0.04em] text-brand-charcoal/55">
+                {existing
+                  ? "编辑已有记录不重复发放积分"
+                  : "手动打卡得积分：连续第 1 / 2 / 3+ 天分别 +1 / +2 / +3 分"}
+              </p>
             </div>
           </m.div>
         </div>

@@ -314,7 +314,8 @@ export function DiaryTimeline({
                           className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE]"
                           style={{ backgroundColor: meta.color }}
                         />
-                        {/* 操作按钮：移动端常显（无 hover 可依赖），桌面端悬浮行尾显现；行内不占位（极简） */}
+                        {/* 操作按钮：移动端常显（无 hover 可依赖），桌面端悬浮行尾显现；行内不占位（极简）。
+                            编辑限写入窗口内（补录语义）；删除不受窗口限制（含历史数据，隐私诉求），与 DELETE 接口口径一致 */}
                         <div className="absolute right-0 -top-0.5 flex items-center gap-0.5 lg:hidden lg:group-hover:flex">
                           {onCheckIn && (isToday || canBackfill(group.dateStr)) && (
                             <button

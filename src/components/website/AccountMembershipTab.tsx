@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Crown, RefreshCw, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronDown, Crown, RefreshCw, Sparkles } from "lucide-react";
 import { getMemberBadge } from "@/components/website/member-badges";
 
 /** GET /api/account/membership 响应结构（BFF 契约） */
@@ -47,12 +47,17 @@ function progressPercent(progress: number) {
 
 /**
  * 「会员」tab：当前等级卡 + 升级进度 + 全档权益列表。
- * 由 AccountModal 在 tab 首次激活时才挂载，挂载即拉取（不预取）。
+ * 由 AccountModal 在 tab 首次激活时才挂载（不预取）；中心视图保持挂载，
+ * root ⇄ center 往返不会重复拉取，重新打开弹层时才重新挂载刷新。
  */
-export function AccountMembershipTab() {
+export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () => void }) {
   const [data, setData] = useState<MembershipData | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
+  // 会话过期（BFF 401）：与业务错误区分，给登录引导而非「重试」
+  const [sessionExpired, setSessionExpired] = useState(false);
+  // 权益列表折叠：默认仅当前等级展开，其余收起（记录用户的手动覆盖）
+  const [expandedOverrides, setExpandedOverrides] = useState<Record<string, boolean>>({});
 
   // 卸载守卫：切账号/关闭面板时，晚到的响应不再 setState（与 AccountMyTab 的 cancelled 标记同义）
   const mountedRef = useRef(true);
@@ -61,20 +66,38 @@ export function AccountMembershipTab() {
     return () => { mountedRef.current = false; };
   }, []);
 
-  const load = () => {
+  // 请求进行中：重试按钮防连点（并发去重）
+  const inFlightRef = useRef(false);
+
+  const load = useCallback(() => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setLoading(true);
     setError(false);
     fetch("/api/account/membership")
       .then((r) => {
+        if (r.status === 401) throw new Error("unauthorized");
         if (!r.ok) throw new Error(`membership ${r.status}`);
         return r.json();
       })
-      .then((d) => { if (mountedRef.current) setData(d as MembershipData); })
-      .catch(() => { if (mountedRef.current) setError(true); })
-      .finally(() => { if (mountedRef.current) setLoading(false); });
-  };
+      .then((d) => {
+        if (!mountedRef.current) return;
+        setData(d as MembershipData);
+        setError(false);
+        setSessionExpired(false);
+      })
+      .catch((err: unknown) => {
+        if (!mountedRef.current) return;
+        if (err instanceof Error && err.message === "unauthorized") setSessionExpired(true);
+        else setError(true);
+      })
+      .finally(() => {
+        inFlightRef.current = false;
+        if (mountedRef.current) setLoading(false);
+      });
+  }, []);
 
-  useEffect(load, []);
+  useEffect(() => { load(); }, [load]);
 
   if (loading) {
     // 骨架屏：等级卡 + 进度条 + 权益行
@@ -89,18 +112,30 @@ export function AccountMembershipTab() {
     );
   }
 
-  if (error || !data) {
+  if (error || sessionExpired || !data) {
     return (
       <div className="w-full flex flex-col items-center py-10">
-        <p className="text-[13px] text-[#6B5E50] mb-4">会员信息加载失败</p>
-        <button
-          type="button"
-          onClick={load}
-          className="inline-flex items-center gap-1.5 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-brand-charcoal border border-brand-charcoal/20 hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          重试
-        </button>
+        <p className="text-[13px] text-[#6B5E50] mb-4">
+          {sessionExpired ? "登录状态已过期，请重新登录后查看会员信息" : "会员信息加载失败"}
+        </p>
+        {sessionExpired ? (
+          <button
+            type="button"
+            onClick={onRequestLogin}
+            className="inline-flex items-center gap-1.5 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-white bg-[var(--color-brand-cocoa)] hover:bg-[#4a3a2c] transition-colors cursor-pointer"
+          >
+            重新登录
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => load()}
+            className="inline-flex items-center gap-1.5 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-brand-charcoal border border-brand-charcoal/20 hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            重试
+          </button>
+        )}
       </div>
     );
   }
@@ -158,6 +193,9 @@ export function AccountMembershipTab() {
         {data.allLevels.map((lv) => {
           const lvBadge = getMemberBadge(lv.level);
           const isCurrent = lv.level === data.membershipLevel;
+          // 默认展开当前等级；用户手动开合后以覆盖值为准
+          const expanded = expandedOverrides[lv.level] ?? isCurrent;
+          const panelId = `membership-benefits-${lv.level}`;
           return (
             <section
               key={lv.level}
@@ -167,31 +205,46 @@ export function AccountMembershipTab() {
                   : "border-brand-charcoal/[0.08] bg-white/70"
               }`}
             >
-              <div className="flex items-center justify-between mb-2.5">
+              <button
+                type="button"
+                onClick={() =>
+                  setExpandedOverrides((prev) => ({ ...prev, [lv.level]: !expanded }))
+                }
+                aria-expanded={expanded}
+                aria-controls={panelId}
+                className="w-full flex items-center justify-between gap-3 text-left cursor-pointer"
+              >
                 <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${lv.colorClass ?? lvBadge.className}`}>
                   {lv.name}
                 </span>
-                <span className="text-[11px] font-light text-brand-charcoal/45">
-                  {lv.maxSpent != null
-                    ? `消费 ${formatYuan(lv.minSpent)} - ${formatYuan(lv.maxSpent)}`
-                    : lv.minSpent > 0
-                      ? `消费满 ${formatYuan(lv.minSpent)}`
-                      : "注册即享"}
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="text-[11px] font-light text-brand-charcoal/45 truncate">
+                    {lv.maxSpent != null
+                      ? `消费 ${formatYuan(lv.minSpent)} - ${formatYuan(lv.maxSpent)}`
+                      : lv.minSpent > 0
+                        ? `消费满 ${formatYuan(lv.minSpent)}`
+                        : "注册即享"}
+                  </span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 shrink-0 text-brand-charcoal/40 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+                  />
                 </span>
-              </div>
-              <ul className="flex flex-col gap-2">
-                {lv.benefits.map((b, i) => (
-                  <li key={`${b.title}-${i}`} className="flex items-start gap-2.5">
-                    <span className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full bg-brand-charcoal/[0.05] text-[13px] leading-none">
-                      {b.icon}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[12px] text-[#1A1A1A] tracking-[0.03em]">{b.title}</p>
-                      <p className="text-[11px] font-light text-brand-charcoal/50 leading-relaxed">{b.desc}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              </button>
+              {expanded && (
+                <ul id={panelId} className="mt-2.5 flex flex-col gap-2">
+                  {lv.benefits.map((b, i) => (
+                    <li key={`${b.title}-${i}`} className="flex items-start gap-2.5">
+                      <span className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full bg-brand-charcoal/[0.05] text-[13px] leading-none">
+                        {b.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[12px] text-[#1A1A1A] tracking-[0.03em]">{b.title}</p>
+                        <p className="text-[11px] font-light text-brand-charcoal/50 leading-relaxed">{b.desc}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
           );
         })}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
@@ -16,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useModalBackClose } from "@/hooks/use-modal-back-close";
@@ -27,11 +29,28 @@ import { TrendChart, type TrendsData } from "@/components/website/TrendChart";
 import { CheckInTrend } from "@/components/website/CheckInTrend";
 import { CheckInModal } from "@/components/website/CheckInModal";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
-import { AccountModal } from "@/components/website/AccountModal";
 import { useToast } from "@/components/ui/Toast";
-import { fetchWithCsrf } from "@/lib/fetch-client";
+import { fetchWithCsrf, fetchWithTimeout } from "@/lib/fetch-client";
 import { localDateStr } from "@/lib/local-date";
 import { parseClientDate, isAutoDiaryEntry } from "@/lib/diary-utils";
+
+// 未登录分支才需要账户弹层：动态加载，避免登录用户打开档案时连带下载其整串子组件
+const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
+
+/** 登录状态过期（GET 401）：与网络错误区分，统一走登录引导而非"重试" */
+class AuthExpiredError extends Error {
+  constructor() {
+    super("unauthorized");
+    this.name = "AuthExpiredError";
+  }
+}
+
+/** 档案域读请求：8s 超时（防挂起）+ 401 语义化 */
+async function diaryFetch(input: string, init?: RequestInit): Promise<Response> {
+  const res = await fetchWithTimeout(input, init);
+  if (res.status === 401) throw new AuthExpiredError();
+  return res;
+}
 
 const TESTS_PAGE_SIZE = 50;
 const ENTRIES_PAGE_SIZE = 30;
@@ -53,7 +72,8 @@ function fetchWithShortCache(url: string, scope: string): Promise<unknown> {
   const key = `${scope}:${url}`;
   const hit = shortCache.get(key);
   if (hit && Date.now() - hit.ts < SHORT_CACHE_TTL_MS) return hit.promise;
-  const promise = fetch(url).then((res) => {
+  const promise = fetchWithTimeout(url).then((res) => {
+    if (res.status === 401) throw new AuthExpiredError();
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json() as Promise<unknown>;
   });
@@ -89,9 +109,16 @@ export function DiaryModal() {
   const userId = user?.id;
   const toast = useToast();
   const pathname = usePathname();
+  const { openAuthModal } = useAuthModal();
 
   // 移动端返回键/返回手势：先关档案弹层（再按返回才离开页面）
   useModalBackClose(isOpen, closeDiaryModal);
+
+  // 登录过期引导：先关档案弹层再开 AuthModal（AuthModal 层级低于 --z-modal，叠加会被遮挡）
+  const requestLogin = useCallback(() => {
+    closeDiaryModal();
+    openAuthModal("login");
+  }, [closeDiaryModal, openAuthModal]);
 
   // 路由变化（如点击时间线/测肤记录跳转 /reports/:id、去测肤等）时自动关闭面板：
   // 弹层是 context 状态，客户端导航不会卸载组件，不处理会盖在新页面上
@@ -116,6 +143,9 @@ export function DiaryModal() {
   const [summary, setSummary] = useState<DiarySummary | null>(null);
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [trendsLoaded, setTrendsLoaded] = useState(false);
+  // 趋势加载失败：与"测肤不足 2 次"区分，失败展示错误条 + 重试，而不是解锁引导
+  const [trendsError, setTrendsError] = useState(false);
+  const [trendsRefreshKey, setTrendsRefreshKey] = useState(0);
   const [tests, setTests] = useState<HistorySession[]>([]);
   const [testsLoaded, setTestsLoaded] = useState(false);
   // 测肤列表加载失败标记：区分"查询失败"与"真的没有记录"，避免 401/网络抖动显示成空白态
@@ -134,11 +164,18 @@ export function DiaryModal() {
   const [calendarMonth, setCalendarMonth] = useState(() => localDateStr(new Date()).slice(0, 7));
   const [calendarEntries, setCalendarEntries] = useState<DiaryEntry[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarError, setCalendarError] = useState(false);
   const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
   // 全部记录翻页位置保留
   const [lastHistoryPage, setLastHistoryPage] = useState(1);
   // 删除中条目 id
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // 登录状态过期（GET 401）：顶部提示条 + 重新登录引导
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  // 请求时序守卫：打开/切号/重开时自增；所有异步回调写回 state 前比对，
+  // 防止旧账号/旧请求的晚到响应串入当前界面（bootstrap/趋势/日历由 effect cancelled 覆盖）
+  const requestSeqRef = useRef(0);
 
   // 打卡弹层：existing 为 null 表示新建；dateStr 为目标日历日（补打卡为过去日期）
   const [checkIn, setCheckIn] = useState<{ open: boolean; existing: DiaryEntry | null; dateStr: string | null }>({
@@ -221,14 +258,16 @@ export function DiaryModal() {
 
   // 聚合首屏直传（不走缓存）：打卡/删除/重试等需要立即回源的路径
   const fetchBootstrap = useCallback(async (limit: number) => {
-    const res = await fetch(`/api/user/diary?bootstrap=1&limit=${limit}`);
+    const res = await diaryFetch(`/api/user/diary?bootstrap=1&limit=${limit}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   }, []);
 
   // 测肤记录首屏加载：带 60s 短缓存（重复开关弹层不重复请求）；
-  // 失败置 testsError（区别于"无记录"），重试时先作废缓存强制回源
+  // 失败置 testsError（区别于"无记录"），重试时先作废缓存强制回源；
+  // seq 守卫：账号切换/重开后晚到的旧响应不再写回
   const loadTests = useCallback(async (bustCache = false) => {
+    const seq = requestSeqRef.current;
     if (bustCache) bustShortCache();
     setTestsError(false);
     try {
@@ -236,49 +275,59 @@ export function DiaryModal() {
         history?: HistorySession[];
         pagination?: { total?: number };
       };
+      if (seq !== requestSeqRef.current) return;
       const history: HistorySession[] = data.history ?? [];
       setTests(history);
       testsCursorRef.current = history.length > 0 ? history[history.length - 1].completedAt : null;
       loadedTestIdsRef.current = new Set(history.map((t) => t.sessionId));
       setTestsTotal(data.pagination?.total ?? 0);
     } catch (e) {
+      if (seq !== requestSeqRef.current) return;
       console.error("Test history fetch error:", e);
-      setTestsError(true);
+      if (e instanceof AuthExpiredError) setSessionExpired(true);
+      else setTestsError(true);
     } finally {
-      setTestsLoaded(true);
+      if (seq === requestSeqRef.current) setTestsLoaded(true);
     }
   }, [userId]);
 
   // 打卡保存/删除后刷新：聚合首屏直传回源（条目 + 里程碑统计一次返回），
   // 带回已加载过的条目数量（不多拉一页）+ 折叠回"近 30 天"（refreshKey 自增触发时间线收起）
   const refreshEntries = useCallback(() => {
+    const seq = requestSeqRef.current;
     const limit = Math.max(ENTRIES_PAGE_SIZE, entries.length);
     fetchBootstrap(limit)
       .then((data) => {
+        if (seq !== requestSeqRef.current) return;
         applyBootstrap(data);
         setEntriesLoaded(true);
         setDiaryRefreshKey((k) => k + 1);
       })
       .catch((e) => {
+        if (seq !== requestSeqRef.current) return;
         console.error("Diary fetch error:", e);
         setEntriesLoaded(true);
+        // 刷新失败要明确告知：打卡/删除刚提示成功，列表却没更新会让用户以为丢记录
+        toast.error(e instanceof AuthExpiredError ? "登录状态已过期，请重新登录" : "列表刷新失败，请稍后再试");
       });
     // 日历视图同步刷新
     setCalendarRefreshKey((k) => k + 1);
     // 数据变更后作废短缓存，保证趋势/测肤列表/聚合首屏下次打开拉取新数据
     bustShortCache();
-  }, [entries.length, fetchBootstrap, applyBootstrap]);
+  }, [entries.length, fetchBootstrap, applyBootstrap, toast]);
 
   // 时间线"加载更早"：游标分页追加更早的日记（before = 当前最旧一条的日历日），
   // 分页期间新增打卡不会像 offset 分页那样漂移；append 时按 id 去重兜底
   const loadMoreEntries = useCallback(async () => {
+    const seq = requestSeqRef.current;
     const cursor = entriesCursorRef.current;
     if (entriesLoadingMore || !cursor) return;
     setEntriesLoadingMore(true);
     try {
-      const res = await fetch(`/api/user/diary?limit=${ENTRIES_PAGE_SIZE}&before=${cursor}`);
+      const res = await diaryFetch(`/api/user/diary?limit=${ENTRIES_PAGE_SIZE}&before=${cursor}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (seq !== requestSeqRef.current) return;
       const list: DiaryEntry[] = data.data ?? [];
       setEntries((prev) => {
         const seen = new Set(prev.map((e) => e.id));
@@ -287,10 +336,12 @@ export function DiaryModal() {
       setEntriesHasMore(data.pagination?.hasMore ?? false);
       if (list.length > 0) entriesCursorRef.current = list[list.length - 1].date.slice(0, 10);
     } catch (e) {
+      if (seq !== requestSeqRef.current) return;
       console.error("Load more entries error:", e);
-      toast.error("加载失败，请稍后再试");
+      if (e instanceof AuthExpiredError) setSessionExpired(true);
+      else toast.error("加载失败，请稍后再试");
     } finally {
-      setEntriesLoadingMore(false);
+      if (seq === requestSeqRef.current) setEntriesLoadingMore(false);
     }
   }, [entriesLoadingMore, toast]);
 
@@ -299,14 +350,18 @@ export function DiaryModal() {
     setEntriesError(false);
     setEntriesLoaded(false);
     entriesCursorRef.current = null;
+    const seq = requestSeqRef.current;
     fetchBootstrap(ENTRIES_PAGE_SIZE)
       .then((data) => {
+        if (seq !== requestSeqRef.current) return;
         applyBootstrap(data);
         setEntriesLoaded(true);
       })
       .catch((e) => {
+        if (seq !== requestSeqRef.current) return;
         console.error("Diary fetch error:", e);
-        setEntriesError(true);
+        if (e instanceof AuthExpiredError) setSessionExpired(true);
+        else setEntriesError(true);
         setEntriesLoaded(true);
       });
   }, [fetchBootstrap, applyBootstrap]);
@@ -316,11 +371,14 @@ export function DiaryModal() {
   useEffect(() => {
     if (!isOpen || !userId) return;
     let cancelled = false;
+    // 时序守卫自增：切号/重开时作废所有在途请求的写回（配合各回调里的 seq 比对）
+    requestSeqRef.current += 1;
 
     setEntries([]);
     setEntriesLoaded(false);
     setEntriesError(false);
     setEntriesHasMore(false);
+    setEntriesLoadingMore(false);
     entriesCursorRef.current = null;
     // 每次打开刷新"今天"快照：跨午夜后重开弹层，今日打卡/日历描边等口径保持正确
     setTodayStr(localDateStr(new Date()));
@@ -331,13 +389,21 @@ export function DiaryModal() {
     setTestsLoaded(false);
     setTestsError(false);
     setTestsExhausted(false);
+    setTestsTotal(0);
+    setTestsLoadingMore(false);
     loadedTestIdsRef.current = new Set();
     setHistoryView(false);
     testsCursorRef.current = null;
     setCalendarView(false);
     setCalendarEntries([]);
+    setCalendarError(false);
+    // 日历月份回到本月：避免上次停留在历史月份，重开切到日历时困惑
+    setCalendarMonth(localDateStr(new Date()).slice(0, 7));
     setLastHistoryPage(1);
     setDeletingId(null);
+    setSessionExpired(false);
+    // 打卡弹层状态一并复位：极端情况下（如弹层内跳转导致档案被关）重开不会残留上次的打卡抽屉
+    setCheckIn({ open: false, existing: null, dateStr: null });
 
     // 聚合首屏（条目 + 里程碑统计一次请求）始终直传回源：测肤完成会在服务端自动生成
     // 当日日记条目，若走 60s 短缓存，测肤后立刻重开弹层会看不到刚生成的记录；
@@ -351,12 +417,26 @@ export function DiaryModal() {
       .catch((e) => {
         if (cancelled) return;
         console.error("Diary fetch error:", e);
-        // 区分"加载失败"与"无记录"：失败时展示错误条 + 重试，而非空态引导
-        setEntriesError(true);
+        // 区分"加载失败"与"无记录"：失败时展示错误条 + 重试，而非空态引导；401 走登录引导
+        if (e instanceof AuthExpiredError) setSessionExpired(true);
+        else setEntriesError(true);
         setEntriesLoaded(true);
       });
 
-    // 趋势首屏带 60s 短缓存，重复开关弹层不重复请求
+    loadTests();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, userId, fetchBootstrap, applyBootstrap, loadTests]);
+
+  // 趋势加载独立成 effect（带 60s 短缓存，重复开关弹层不重复请求）：
+  // 失败可单独重试，不牵连条目/测肤列表；错误态与"测肤不足 2 次"的解锁引导区分开
+  useEffect(() => {
+    if (!isOpen || !userId) return;
+    let cancelled = false;
+    setTrendsError(false);
+    setTrendsLoaded(false);
     fetchWithShortCache("/api/user/skin-trends", userId)
       .then((raw) => {
         if (cancelled) return;
@@ -367,22 +447,27 @@ export function DiaryModal() {
       .catch((e) => {
         if (cancelled) return;
         console.error("Trends fetch error:", e);
+        if (e instanceof AuthExpiredError) setSessionExpired(true);
+        else setTrendsError(true);
         setTrendsLoaded(true);
       });
-
-    loadTests();
-
     return () => {
       cancelled = true;
     };
-  }, [isOpen, userId, fetchBootstrap, applyBootstrap, loadTests]);
+  }, [isOpen, userId, trendsRefreshKey]);
+
+  const retryTrends = useCallback(() => {
+    bustShortCache();
+    setTrendsRefreshKey((k) => k + 1);
+  }, []);
 
   // 日历热力图：切换视图/月份时按需拉取该月条目；打卡保存/删除后随 refreshKey 重拉
   useEffect(() => {
     if (!isOpen || !userId || !calendarView) return;
     let cancelled = false;
     setCalendarLoading(true);
-    fetch(`/api/user/diary?month=${calendarMonth}`)
+    setCalendarError(false);
+    diaryFetch(`/api/user/diary?month=${calendarMonth}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
         if (cancelled) return;
@@ -391,6 +476,8 @@ export function DiaryModal() {
       .catch((e) => {
         if (cancelled) return;
         console.error("Calendar month fetch error:", e);
+        if (e instanceof AuthExpiredError) setSessionExpired(true);
+        else setCalendarError(true);
       })
       .finally(() => {
         if (!cancelled) setCalendarLoading(false);
@@ -403,6 +490,7 @@ export function DiaryModal() {
   // 时间线「加载更早」：游标分页追加更早的测肤记录（before = 当前最旧一条的完成时间），
   // 分页期间新增测肤不会像 offset 页码推导那样漂移；sessionId 去重兜底，无新增时置 exhausted
   const loadMoreTests = useCallback(async () => {
+    const seq = requestSeqRef.current;
     const cursor = testsCursorRef.current;
     if (testsLoadingMore) return;
     // 游标为空说明首屏为空（或数据不一致：total>0 但首页无记录）——无法定位"更早"，直接封底避免死按钮
@@ -412,9 +500,10 @@ export function DiaryModal() {
     }
     setTestsLoadingMore(true);
     try {
-      const res = await fetch(`/api/advisor/history?limit=${TESTS_PAGE_SIZE}&lite=1&before=${encodeURIComponent(cursor)}`);
+      const res = await diaryFetch(`/api/advisor/history?limit=${TESTS_PAGE_SIZE}&lite=1&before=${encodeURIComponent(cursor)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (seq !== requestSeqRef.current) return;
       const more: HistorySession[] = data.history ?? [];
       const unique = more.filter((t) => !loadedTestIdsRef.current.has(t.sessionId));
       unique.forEach((t) => loadedTestIdsRef.current.add(t.sessionId));
@@ -423,26 +512,31 @@ export function DiaryModal() {
       setTestsTotal(data.pagination?.total ?? 0);
       if (unique.length === 0) setTestsExhausted(true);
     } catch (e) {
+      if (seq !== requestSeqRef.current) return;
       console.error("Load more tests error:", e);
+      if (e instanceof AuthExpiredError) setSessionExpired(true);
     } finally {
-      setTestsLoadingMore(false);
+      if (seq === requestSeqRef.current) setTestsLoadingMore(false);
     }
   }, [testsLoadingMore]);
 
   // 删除日记条目（含历史日期）；删除后刷新列表/统计/日历
   const handleDeleteEntry = useCallback(async (entry: DiaryEntry) => {
     if (deletingId) return;
+    const seq = requestSeqRef.current;
     setDeletingId(entry.id);
     try {
       const res = await fetchWithCsrf(`/api/user/diary?date=${entry.date.slice(0, 10)}`, { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (seq !== requestSeqRef.current) return;
       toast.success("记录已删除");
       refreshEntries();
     } catch (e) {
+      if (seq !== requestSeqRef.current) return;
       console.error("Diary delete error:", e);
       toast.error("删除未成功，请稍后再试");
     } finally {
-      setDeletingId(null);
+      if (seq === requestSeqRef.current) setDeletingId(null);
     }
   }, [deletingId, refreshEntries, toast]);
 
@@ -503,6 +597,23 @@ export function DiaryModal() {
                 ref={scrollRef}
                 className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-5 sm:px-6 md:px-8 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
               >
+                {/* 登录过期：GET 401 的统一提示（与各接口的错误条区分，指向重新登录） */}
+                {sessionExpired && (
+                  <div
+                    role="alert"
+                    className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-900"
+                  >
+                    <span>登录状态已过期，请重新登录后查看护肤档案</span>
+                    <button
+                      type="button"
+                      onClick={requestLogin}
+                      className="shrink-0 h-7 px-3 rounded-full border border-amber-300 bg-white/70 text-[12px] hover:bg-white transition-colors cursor-pointer"
+                    >
+                      重新登录
+                    </button>
+                  </div>
+                )}
+
                 <AnimatePresence mode="wait" initial={false}>
                   {historyView ? (
                     <m.div
@@ -589,6 +700,20 @@ export function DiaryModal() {
                           </div>
                           {/* 图表骨架 */}
                           <div className="h-40 rounded-xl bg-brand-charcoal/[0.04]" />
+                        </div>
+                      ) : trendsError ? (
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] px-4 py-3">
+                          <span className="text-[13px] text-brand-charcoal/70 font-light">
+                            肌肤变化加载失败，可能是网络波动或登录状态过期
+                          </span>
+                          <button
+                            type="button"
+                            onClick={retryTrends}
+                            className="shrink-0 inline-flex items-center gap-1.5 h-9 px-5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium hover:bg-brand-cocoa-dark transition-colors cursor-pointer"
+                          >
+                            <RefreshCw className="w-3 h-3" strokeWidth={1.8} />
+                            重试
+                          </button>
                         </div>
                       ) : aggregatedTrends ? (
                         <div>
@@ -727,23 +852,40 @@ export function DiaryModal() {
                       </div>
 
                       {calendarView ? (
-                        <DiaryCalendar
-                          entries={calendarEntries}
-                          month={calendarMonth}
-                          todayStr={todayStr}
-                          onMonthChange={setCalendarMonth}
-                          onBackfill={(dateStr) => setCheckIn({ open: true, existing: null, dateStr })}
-                          onSelectEntry={(entry) => {
-                            // 测肤自动条目对用户不算手动打卡：点按走"接管"语义（existing=null 新建覆盖）；
-                            // 手动打卡条目带入旧值编辑（与时间线的入口语义一致）
-                            setCheckIn({
-                              open: true,
-                              existing: isAutoDiaryEntry(entry) ? null : entry,
-                              dateStr: entry.date.slice(0, 10),
-                            });
-                          }}
-                          loading={calendarLoading}
-                        />
+                        <>
+                          {calendarError && (
+                            <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] px-4 py-3">
+                              <span className="text-[13px] text-brand-charcoal/70 font-light">
+                                日历加载失败，可能是网络波动
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setCalendarRefreshKey((k) => k + 1)}
+                                className="shrink-0 inline-flex items-center gap-1.5 h-9 px-5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium hover:bg-brand-cocoa-dark transition-colors cursor-pointer"
+                              >
+                                <RefreshCw className="w-3 h-3" strokeWidth={1.8} />
+                                重试
+                              </button>
+                            </div>
+                          )}
+                          <DiaryCalendar
+                            entries={calendarEntries}
+                            month={calendarMonth}
+                            todayStr={todayStr}
+                            onMonthChange={setCalendarMonth}
+                            onBackfill={(dateStr) => setCheckIn({ open: true, existing: null, dateStr })}
+                            onSelectEntry={(entry) => {
+                              // 测肤自动条目对用户不算手动打卡：点按走"接管"语义（existing=null 新建覆盖）；
+                              // 手动打卡条目带入旧值编辑（与时间线的入口语义一致）
+                              setCheckIn({
+                                open: true,
+                                existing: isAutoDiaryEntry(entry) ? null : entry,
+                                dateStr: entry.date.slice(0, 10),
+                              });
+                            }}
+                            loading={calendarLoading}
+                          />
+                        </>
                       ) : (
                         <>
                         {testsError && (
@@ -810,6 +952,7 @@ export function DiaryModal() {
               dateStr={checkIn.dateStr ?? undefined}
               onClose={() => setCheckIn((s) => ({ ...s, open: false }))}
               onSaved={refreshEntries}
+              onAuthExpired={requestLogin}
             />
           </div>
         )}

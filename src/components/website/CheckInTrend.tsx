@@ -31,12 +31,12 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
 
   // 以 todayStr 快照（本地日历日的 UTC 零点）为基准向前推 30 天，保持纯渲染
   const base = parseClientDate(todayStr);
+  // todayStr 非法时无法构建窗口（正常路径不会发生，防御性返回避免 days[0] 取空崩溃）
+  if (!base) return null;
   const days: { dateStr: string; entry?: DiaryEntry }[] = [];
-  if (base) {
-    for (let i = TREND_DAYS - 1; i >= 0; i--) {
-      const dateStr = new Date(base.getTime() - i * 86_400_000).toISOString().slice(0, 10);
-      days.push({ dateStr, entry: dayMap.get(dateStr) });
-    }
+  for (let i = TREND_DAYS - 1; i >= 0; i--) {
+    const dateStr = new Date(base.getTime() - i * 86_400_000).toISOString().slice(0, 10);
+    days.push({ dateStr, entry: dayMap.get(dateStr) });
   }
 
   const checkedCount = days.filter((d) => d.entry).length;

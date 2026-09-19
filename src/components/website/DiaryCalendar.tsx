@@ -85,8 +85,8 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
           type="button"
           onClick={() => shiftMonth(1)}
           aria-label="下个月"
-          disabled={loading}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-wait"
+          disabled={loading || isCurrentMonth}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ChevronRight className="w-4 h-4" strokeWidth={2} />
         </button>
@@ -111,7 +111,8 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
           const entry = entryByDay.get(dateStr);
           const meta = entry ? STATE_META[entry.skinState] ?? STATE_META.normal : null;
           const isToday = dateStr === todayStr;
-          const clickable = !entry && canBackfill(dateStr);
+          // 今天无记录也可点（打卡）；过去日期仅在写入窗口内可点（补打卡）
+          const clickable = !entry && (isToday || canBackfill(dateStr));
           // 写入窗口内的已记录日期可点按查看/编辑（移动端无 hover，这是详情的唯一入口）
           const editable = !!entry && !!onSelectEntry && inWriteWindow(dateStr);
           // 列位置（0=周一）：周末日号淡化；hover 浮层的边缘对齐
@@ -134,7 +135,7 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
                   : clickable
                     ? "text-brand-charcoal/60 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/75"
                     : isWeekend
-                      ? "text-brand-charcoal/55"
+                      ? "text-brand-charcoal/40"
                       : "text-brand-charcoal/55"
               }`}
               style={entry && meta ? { backgroundColor: `${meta.color}1F`, color: meta.color } : undefined}
@@ -178,7 +179,13 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
               key={dateStr}
               type="button"
               onClick={() => (entry && editable ? onSelectEntry(entry) : onBackfill(dateStr))}
-              aria-label={entry ? `${fmtShort(dateStr)} 查看/编辑记录` : undefined}
+              aria-label={
+                entry
+                  ? `${fmtShort(dateStr)} 查看/编辑记录`
+                  : isToday
+                    ? "今日打卡"
+                    : `${fmtShort(dateStr)} 补打卡`
+              }
               className="cursor-pointer block"
             >
               {cell}

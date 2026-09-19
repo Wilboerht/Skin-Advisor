@@ -17,9 +17,12 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { getMemberBadge } from "@/components/website/member-badges";
-import { fetchWithCsrf } from "@/lib/fetch-client";
+import { fetchWithCsrf, POINTS_CHANGED_EVENT } from "@/lib/fetch-client";
 import { uploadImage } from "@/lib/upload-client";
 import type { User } from "@/components/auth/UserProvider";
+
+// 主站 origin（安全中心等站外链接）：取值口径与 AccountMallTab 一致，本地/预发可随环境变量切换
+const SSO_BASE_URL = (process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn").replace(/\/+$/, "");
 
 /** GET /api/account/profile 响应（birthday 不在契约内，兼容返回则展示） */
 interface AccountProfile {
@@ -39,13 +42,15 @@ function maskPhone(phone?: string | null) {
 
 interface AccountMyTabProps {
   user: User;
+  /** 会话过期时的登录引导：由 AccountModal 统一处理（先关弹层再开 AuthModal，避免层级/焦点冲突） */
+  onRequestLogin: () => void;
 }
 
 /**
  * 「会员中心 → 我的」tab：资料可编辑（头像/昵称/生日/性别走 BFF /api/account/profile），
  * 积分余额、安全中心链接。身份摘要/测肤派系与用量在面板根视图展示。
  */
-export function AccountMyTab({ user }: AccountMyTabProps) {
+export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
   const { refresh } = useAuth();
   const toast = useToast();
 
@@ -53,6 +58,10 @@ export function AccountMyTab({ user }: AccountMyTabProps) {
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   // 保存进行态（防重复提交）：avatar / nickname / birthday / gender
   const [saving, setSaving] = useState<string | null>(null);
+  // 保存互斥锁用 ref：state 闭包在连续事件里可能读到旧值，ref 才是可靠锁
+  const savingRef = useRef(false);
+  // 会话过期（BFF 返回 401）：本地 user 态未同步时的兜底引导
+  const [sessionExpired, setSessionExpired] = useState(false);
   // 生日一次性锁定：403 birthday_locked 后禁用输入
   const [birthdayLocked, setBirthdayLocked] = useState(false);
 
@@ -71,8 +80,15 @@ export function AccountMyTab({ user }: AccountMyTabProps) {
     setProfile(null);
     setPoints(null);
     setBirthdayLocked(false);
+    setSessionExpired(false);
     fetch("/api/account/profile")
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => {
+        if (r.status === 401) {
+          if (!cancelled) setSessionExpired(true);
+          return null;
+        }
+        return r.ok ? r.json() : null;
+      })
       .then((data) => {
         if (!cancelled && data) setProfile(data as AccountProfile);
       })
@@ -88,19 +104,37 @@ export function AccountMyTab({ user }: AccountMyTabProps) {
     // 账号切换（user.id 变化）时重新拉取，避免展示上一账号的残留数据
   }, [user?.id]);
 
-  /** PATCH /api/account/profile：403 视为生日锁定；成功后刷新会话用户态 */
-  const patchProfile = async (
-    body: { nickname?: string; avatar?: string; birthday?: string; gender?: "male" | "female" | null },
-    field: string
+  // 打卡实际到账积分后（POINTS_CHANGED_EVENT）静默刷新余额，保持与主站账本一致；
+  // 刷新失败保留旧值（不把余额行闪成不可用）
+  useEffect(() => {
+    const onPointsChanged = () => {
+      fetch("/api/account/points")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => setPoints(typeof data?.available === "number" ? data.available : null))
+        .catch(() => { /* 保留旧值 */ });
+    };
+    window.addEventListener(POINTS_CHANGED_EVENT, onPointsChanged);
+    return () => window.removeEventListener(POINTS_CHANGED_EVENT, onPointsChanged);
+  }, [user?.id]);
+
+  /**
+   * PATCH /api/account/profile 的请求本体（不含互斥锁）：403 视为生日锁定；成功后刷新会话用户态。
+   * 调用方负责持锁与 saving 态展示。
+   */
+  const requestProfilePatch = async (
+    body: { nickname?: string; avatar?: string; birthday?: string; gender?: "male" | "female" | null }
   ): Promise<boolean> => {
-    if (saving) return false;
-    setSaving(field);
     try {
       const res = await fetchWithCsrf("/api/account/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      if (res.status === 401) {
+        setSessionExpired(true);
+        toast.error("登录状态已过期，请重新登录");
+        return false;
+      }
       if (res.status === 403 && body.birthday !== undefined) {
         // 仅生日锁定才禁用输入框；CSRF 拦截/权限不足/scope 配置缺失等其他 403 不误锁
         const errData = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -125,7 +159,21 @@ export function AccountMyTab({ user }: AccountMyTabProps) {
     } catch {
       toast.error("网络异常，保存未成功");
       return false;
+    }
+  };
+
+  /** 带互斥锁的保存入口（ref 锁：state 闭包在连续事件里可能读到旧值） */
+  const patchProfile = async (
+    body: { nickname?: string; avatar?: string; birthday?: string; gender?: "male" | "female" | null },
+    field: string
+  ): Promise<boolean> => {
+    if (savingRef.current) return false;
+    savingRef.current = true;
+    setSaving(field);
+    try {
+      return await requestProfilePatch(body);
     } finally {
+      savingRef.current = false;
       setSaving(null);
     }
   };
@@ -133,14 +181,17 @@ export function AccountMyTab({ user }: AccountMyTabProps) {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file || saving) return;
+    if (!file || savingRef.current) return;
+    // 上传与 PATCH 同一把锁、同一个 saving 态：避免上传完成到 PATCH 之间出现空窗
+    savingRef.current = true;
     setSaving("avatar");
     try {
       const url = await uploadImage(file, file.name || "avatar.jpg");
-      setSaving(null);
-      await patchProfile({ avatar: url }, "avatar");
+      await requestProfilePatch({ avatar: url });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "头像上传未成功，请稍后再试");
+    } finally {
+      savingRef.current = false;
       setSaving(null);
     }
   };
@@ -167,6 +218,8 @@ export function AccountMyTab({ user }: AccountMyTabProps) {
   const displayName = profile?.nickname ?? user.name ?? "朋友";
   const displayAvatar = profile?.avatar ?? user.avatar;
   const displayPhone = profile?.phone ?? maskPhone(user.phone);
+  // 积分接口必须要有手机号才可能返回数据（无手机号时后端直接降级），据此决定是否展示骨架
+  const hasPhone = Boolean(profile?.phone || user.phone);
   const badge = getMemberBadge(profile?.membershipLevel ?? user.membershipLevel);
   const todayStr = new Date().toISOString().slice(0, 10);
   const birthdayValue = profile?.birthday ? profile.birthday.slice(0, 10) : "";
@@ -174,6 +227,23 @@ export function AccountMyTab({ user }: AccountMyTabProps) {
 
   return (
     <div className="w-full flex flex-col items-center">
+      {/* 会话过期（BFF 401）：本地 user 态未同步时的兜底引导 */}
+      {sessionExpired && (
+        <div
+          role="alert"
+          className="w-full mb-4 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-900"
+        >
+          <span>登录状态已过期，资料信息可能不是最新</span>
+          <button
+            type="button"
+            onClick={onRequestLogin}
+            className="shrink-0 h-7 px-3 rounded-full border border-amber-300 bg-white/70 text-[12px] hover:bg-white transition-colors cursor-pointer"
+          >
+            重新登录
+          </button>
+        </div>
+      )}
+
       {/* 头像：点击更换（上传 OSS 后 PATCH 主站资料） */}
       <button
         type="button"
@@ -259,8 +329,8 @@ export function AccountMyTab({ user }: AccountMyTabProps) {
         <span>{displayPhone}</span>
       </div>
 
-      {/* 积分余额：加载中骨架占位（避免下方内容跳动）；主站返回 available 为 null 时隐藏 */}
-      {points === undefined ? (
+      {/* 积分余额：无手机号时接口必降级（不显示会闪一下的骨架）；有手机号时保留骨架，避免下方内容跳动 */}
+      {hasPhone && points === undefined ? (
         <div aria-hidden="true" className="h-5 w-28 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-4" />
       ) : typeof points === "number" ? (
         <div className="flex items-center gap-1.5 text-[13px] text-[#8B7355] mb-4">
@@ -327,7 +397,7 @@ export function AccountMyTab({ user }: AccountMyTabProps) {
 
       {/* 安全中心：主站账号中心（设备与授权管理），新窗口打开 */}
       <a
-        href="https://nihplod.cn/account"
+        href={`${SSO_BASE_URL}/account`}
         target="_blank"
         rel="noopener noreferrer"
         className="group w-full flex items-center justify-between px-4 py-3 mb-6 rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 text-[13px] tracking-[0.05em] text-[#5E5E5E] hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors"

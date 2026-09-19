@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Component, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, Crown, Gift, User, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useModalBackClose } from "@/hooks/use-modal-back-close";
@@ -13,6 +14,37 @@ import { AccountRootView } from "@/components/website/AccountRootView";
 import { AccountMyTab } from "@/components/website/AccountMyTab";
 import { AccountMembershipTab } from "@/components/website/AccountMembershipTab";
 import { AccountMallTab } from "@/components/website/AccountMallTab";
+
+/** 弹层内容错误边界：单个 tab 渲染异常只降级本区域，不波及整页（结果页/弹层外壳仍可用） */
+class AccountPanelErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error("[AccountModal] panel render error:", error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full flex flex-col items-center py-10">
+          <p className="text-[13px] text-[#6B5E50] mb-4">内容出错了，请重试</p>
+          <button
+            type="button"
+            onClick={() => this.setState({ hasError: false })}
+            className="inline-flex items-center h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-brand-charcoal border border-brand-charcoal/20 hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
+          >
+            重试
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -27,20 +59,37 @@ const ACCOUNT_TABS: { key: AccountTab; label: string }[] = [
   { key: "mall", label: "积分商城" },
 ];
 
+/** 移动端底部 Tab 栏图标（与主站用户中心的底部导航形态对齐） */
+const TAB_ICONS: Record<AccountTab, typeof User> = {
+  my: User,
+  membership: Crown,
+  mall: Gift,
+};
+
+/** 移动端断点与 Tailwind sm（640px）一致：<640 用底部 Tab 栏，≥640 用顶部胶囊 tab */
+const MOBILE_QUERY = "(max-width: 639px)";
+
 /**
  * AccountModal — 用户面板弹层（替代原 /profile 独立页），两级视图：
  * 根视图（最早样式）：身份展示 +「护肤档案」「会员中心」两个入口 + 退出登录；
  * 会员中心视图：「我的 / 会员 / 积分商城」三个 tab（我的=资料可编辑走 BFF、
  * 会员=等级权益 /api/account/membership、积分商城=官网 embed iframe），
- * 根视图 ⇄ 会员中心 淡入淡出切换，会员中心内返回键/Escape 先回根视图。
+ * 根视图 ⇄ 会员中心保持挂载淡入切换（中心视图首次进入后不卸载），返回键/Escape 先回根视图。
  * 未登录：登录引导视图，点击按钮走 SSO 统一登录。
  * 容器/动效/关闭按钮与 GiftModal 等全站模态框对齐。
  */
 export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const { user, logout } = useAuth();
+  const { openAuthModal } = useAuthModal();
 
   // 两级视图：root = 根视图（简洁入口），center = 会员中心（三个 tab）
   const [view, setView] = useState<"root" | "center">("root");
+  // 中心视图首次进入后保持挂载（仅用 hidden 切换）：root ⇄ center 往返、切 tab 不再重载
+  // iframe/会员数据/折叠状态；账号切换时重置卸载，避免残留上一账号内容
+  const [centerVisited, setCenterVisited] = useState(false);
+  useEffect(() => {
+    if (view === "center") setCenterVisited(true);
+  }, [view]);
 
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
@@ -57,18 +106,44 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
     if (!isOpen) {
       setView("root");
       setActiveTab("my");
+      // 关闭时复位：下次打开先进入根视图，中心视图内容保持懒挂载（不在隐藏态提前拉取/加载 iframe）
+      setCenterVisited(false);
     }
   }, [isOpen]);
   useEffect(() => {
     setView("root");
     setActiveTab("my");
     setVisitedTabs(["my"]);
+    setCenterVisited(false);
   }, [user?.id]);
 
   const activateTab = (tab: AccountTab) => {
     setActiveTab(tab);
     setVisitedTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]));
   };
+
+  // WAI-ARIA tabs 键盘模式：左右方向键在 tab 间移动并聚焦（Home/End 可选，暂不启用）
+  const handleTabListKeyDown = (e: KeyboardEvent) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const idx = ACCOUNT_TABS.findIndex((t) => t.key === activeTab);
+    const step = e.key === "ArrowRight" ? 1 : -1;
+    const next = ACCOUNT_TABS[(idx + step + ACCOUNT_TABS.length) % ACCOUNT_TABS.length];
+    activateTab(next.key);
+    document.getElementById(`account-tab-${next.key}`)?.focus();
+  };
+
+  // 移动端形态：底部 Tab 栏（桌面端为顶部胶囊 tab）；用 matchMedia 条件渲染保证按钮 id 唯一
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(MOBILE_QUERY).matches : false
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   // 遮罩防误触：记录打开时刻，打开后 350ms 内忽略遮罩点击关闭——
   // 入口双击的第二下会穿透到遮罩上，若不设保护会"打开即被关闭"
@@ -102,6 +177,13 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
     setShowLogoutConfirm(true);
   };
 
+  // 会话过期的登录引导：先关账户弹层再开 AuthModal——AuthModal 层级（100002/100003）低于弹层层
+  // （--z-modal = 100100），叠加会被遮挡；且两个 focus trap 同时激活会导致 Escape 双触发
+  const requestLogin = () => {
+    onClose();
+    openAuthModal("login");
+  };
+
   const handleLogoutConfirm = async () => {
     const global = logoutGlobal;
     setShowLogoutConfirm(false);
@@ -111,6 +193,10 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   };
 
   if (!mounted) return null;
+
+  // 会员中心视图使用固定壳高（移动端近全屏抽屉 / 桌面端 640px 卡片，内容区独立滚动），
+  // 避免切换 tab 时弹层高度随内容跳变；根视图/登录引导保持内容自适应
+  const shellFixed = !!user && view === "center";
 
   return createPortal(
     <LazyMotion features={domAnimation}>
@@ -139,7 +225,11 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full sm:max-w-sm bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden"
+              className={`relative z-10 w-full sm:max-w-2xl bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col ${
+                shellFixed
+                  ? "h-[calc(100dvh_-_max(4rem,env(safe-area-inset-top)_+_0.75rem))] sm:h-[min(640px,85dvh)]"
+                  : "max-h-[85vh] sm:max-h-[80vh]"
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* 关闭按钮 */}
@@ -162,7 +252,14 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 </button>
               )}
 
-              <div className="max-h-[85vh] sm:max-h-[80vh] overflow-y-auto px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8 flex flex-col items-center">
+              <div
+                data-account-scroll
+                className={`flex-1 min-h-0 overflow-y-auto px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 flex flex-col items-center ${
+                  shellFixed && isMobile
+                    ? "pb-6"
+                    : "pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8"
+                }`}
+              >
                 <h2 id="account-modal-title" className="sr-only">
                   我的账户
                 </h2>
@@ -170,77 +267,132 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 {!user ? (
                   <LoginGuide onNavigateLogin={onClose} />
                 ) : (
-                  <AnimatePresence mode="wait" initial={false}>
-                    {view === "root" ? (
-                      <m.div
-                        key="root"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.18 }}
-                        className="w-full flex flex-col items-center"
-                      >
-                        <AccountRootView
-                          user={user}
-                          onClose={onClose}
-                          onOpenCenter={() => setView("center")}
-                          onRequestLogout={handleLogout}
-                        />
-                      </m.div>
-                    ) : (
-                      <m.div
-                        key="center"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.18 }}
-                        className="w-full flex flex-col items-center"
-                      >
-                        {/* tab 栏：胶囊分段（与全站 tabs 规范一致） */}
-                        <div
-                          role="tablist"
-                          aria-label="会员中心"
-                          className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1 mb-6"
-                        >
-                          {ACCOUNT_TABS.map((t) => (
-                            <button
-                              key={t.key}
-                              type="button"
-                              role="tab"
-                              aria-selected={activeTab === t.key}
-                              onClick={() => activateTab(t.key)}
-                              className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
-                                activeTab === t.key
-                                  ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
-                                  : "text-brand-charcoal/60 hover:text-brand-charcoal"
-                              }`}
-                            >
-                              {t.label}
-                            </button>
-                          ))}
-                        </div>
+                  <AccountPanelErrorBoundary>
+                    {/* 根视图：轻量入口，常驻挂载（从中心返回时数据即时呈现） */}
+                    <m.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={view === "root" ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
+                      transition={{ duration: 0.18 }}
+                      className={`w-full sm:max-w-md sm:mx-auto flex flex-col items-center ${view === "root" ? "" : "hidden"}`}
+                    >
+                      <AccountRootView
+                        user={user}
+                        onClose={onClose}
+                        onOpenCenter={() => setView("center")}
+                        onRequestLogout={handleLogout}
+                      />
+                    </m.div>
 
-                        {/* tab 面板：首次激活才挂载，之后保持挂载仅隐藏 */}
+                    {/* 会员中心视图：首次进入后保持挂载（仅隐藏），iframe/会员数据/折叠状态不重载 */}
+                    {centerVisited && (
+                      <m.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={view === "center" ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                        transition={{ duration: 0.18 }}
+                        className={`w-full flex flex-col items-center ${view === "center" ? "" : "hidden"}`}
+                      >
+                        {/* 桌面端胶囊 tab：吸顶（负外边距抵消滚动容器上内边距，不透明背景盖住滚过的内容） */}
+                        {!isMobile && (
+                          <div className="sticky top-0 z-10 w-full -mx-6 md:-mx-8 px-6 md:px-8 -mt-[calc(3rem+env(safe-area-inset-top,0px))] sm:-mt-10 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-3 bg-[#FDFBF7] flex justify-center mb-3">
+                            <div
+                              role="tablist"
+                              aria-label="会员中心"
+                              onKeyDown={handleTabListKeyDown}
+                              className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1"
+                            >
+                              {ACCOUNT_TABS.map((t) => (
+                                <button
+                                  key={t.key}
+                                  type="button"
+                                  role="tab"
+                                  id={`account-tab-${t.key}`}
+                                  aria-controls={`account-tabpanel-${t.key}`}
+                                  aria-selected={activeTab === t.key}
+                                  tabIndex={activeTab === t.key ? 0 : -1}
+                                  onClick={() => activateTab(t.key)}
+                                  className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
+                                    activeTab === t.key
+                                      ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
+                                      : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                                  }`}
+                                >
+                                  {t.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* tab 面板：首次激活才挂载，之后保持挂载仅隐藏；aria-labelledby 随端切换指向可见 tab */}
                         {visitedTabs.includes("my") && (
-                          <div role="tabpanel" hidden={activeTab !== "my"} className="w-full flex flex-col items-center">
-                            <AccountMyTab user={user} />
+                          <div
+                            role="tabpanel"
+                            id="account-tabpanel-my"
+                            aria-labelledby={isMobile ? "account-tab-mobile-my" : "account-tab-my"}
+                            hidden={activeTab !== "my"}
+                            className="w-full flex flex-col items-center"
+                          >
+                            <AccountMyTab user={user} onRequestLogin={requestLogin} />
                           </div>
                         )}
                         {visitedTabs.includes("membership") && (
-                          <div role="tabpanel" hidden={activeTab !== "membership"} className="w-full">
-                            <AccountMembershipTab />
+                          <div
+                            role="tabpanel"
+                            id="account-tabpanel-membership"
+                            aria-labelledby={isMobile ? "account-tab-mobile-membership" : "account-tab-membership"}
+                            hidden={activeTab !== "membership"}
+                            className="w-full"
+                          >
+                            <AccountMembershipTab onRequestLogin={requestLogin} />
                           </div>
                         )}
                         {visitedTabs.includes("mall") && (
-                          <div role="tabpanel" hidden={activeTab !== "mall"} className="w-full">
+                          <div
+                            role="tabpanel"
+                            id="account-tabpanel-mall"
+                            aria-labelledby={isMobile ? "account-tab-mobile-mall" : "account-tab-mall"}
+                            hidden={activeTab !== "mall"}
+                            className="w-full"
+                          >
                             <AccountMallTab onClose={onClose} />
                           </div>
                         )}
                       </m.div>
                     )}
-                  </AnimatePresence>
+                  </AccountPanelErrorBoundary>
                 )}
               </div>
+
+              {/* 移动端底部 Tab 栏（会员中心视图）：拇指可达，safe-area 适配 */}
+              {shellFixed && isMobile && (
+                <nav
+                  aria-label="会员中心导航"
+                  className="shrink-0 border-t border-brand-espresso/[0.08] bg-[#FDFBF7] px-3 pt-1.5"
+                  style={{ paddingBottom: "calc(0.375rem + env(safe-area-inset-bottom, 0px))" }}
+                >
+                  <div className="grid grid-cols-3">
+                    {ACCOUNT_TABS.map((t) => {
+                      const Icon = TAB_ICONS[t.key];
+                      const active = activeTab === t.key;
+                      return (
+                        <button
+                          key={t.key}
+                          type="button"
+                          id={`account-tab-mobile-${t.key}`}
+                          onClick={() => activateTab(t.key)}
+                          aria-current={active ? "page" : undefined}
+                          className={`flex flex-col items-center justify-center gap-1 rounded-xl py-1.5 transition-colors cursor-pointer ${
+                            active ? "text-brand-espresso" : "text-brand-charcoal/45 hover:text-brand-charcoal"
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" strokeWidth={active ? 2 : 1.5} />
+                          <span className="text-[10px] leading-none">{t.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </nav>
+              )}
             </m.div>
 
             {/* 退出登录确认框：默认仅退出本站，勾选后同时退出所有 NIHPLOD 平台（global）。

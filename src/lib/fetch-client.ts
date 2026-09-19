@@ -26,6 +26,12 @@ const UPLOAD_TIMEOUT_MS = 60_000; // 上传大图片需要更长时间
  */
 export const SESSION_EXPIRED_EVENT = "skinadvisor:session-expired";
 
+/**
+ * 积分变动事件：打卡发放积分后广播，供展示积分余额的组件（如账户面板「我的」）
+ * 静默刷新，保证与主站账本一致，无需重开面板。
+ */
+export const POINTS_CHANGED_EVENT = "skinadvisor:points-changed";
+
 function getCookie(name: string): string | null {
     if (typeof document === "undefined") return null;
     const match = document.cookie.match(new RegExp("(?:^|;\\s*)" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^;]*)"));
@@ -34,6 +40,18 @@ function getCookie(name: string): string | null {
 
 export function getCsrfToken(): string | null {
     return getCookie(CSRF_COOKIE_NAME);
+}
+
+/**
+ * 带超时的普通 fetch（GET 等读请求用；写操作请用 fetchWithCsrf——它额外处理 CSRF 与会话重建）。
+ * 默认 8 秒中止，避免弱网/挂起连接让页面骨架或加载态永久停留。
+ */
+export function fetchWithTimeout(
+    input: RequestInfo | URL,
+    init: RequestInit = {},
+    timeoutMs = 8000
+): Promise<Response> {
+    return fetch(input, { ...init, signal: init.signal ?? AbortSignal.timeout(timeoutMs) });
 }
 
 /**
