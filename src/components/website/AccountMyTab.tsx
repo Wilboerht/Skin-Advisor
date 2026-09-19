@@ -89,6 +89,12 @@ export function AccountMyTab({ user, onClose, onRequestLogout }: AccountMyTabPro
 
   useEffect(() => {
     let cancelled = false;
+    // 账号切换时先清空旧数据，避免重取期间展示上一账号的内容
+    setProfile(null);
+    setPoints(null);
+    setTestUsage(null);
+    setLatestPersona(null);
+    setBirthdayLocked(false);
     fetch("/api/account/profile")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -119,7 +125,8 @@ export function AccountMyTab({ user, onClose, onRequestLogout }: AccountMyTabPro
       })
       .catch(() => { /* 静默失败 */ });
     return () => { cancelled = true; };
-  }, []);
+    // 账号切换（user.id 变化）时重新拉取，避免展示上一账号的残留数据
+  }, [user?.id]);
 
   /** PATCH /api/account/profile：403 视为生日锁定；成功后刷新会话用户态 */
   const patchProfile = async (
@@ -135,8 +142,14 @@ export function AccountMyTab({ user, onClose, onRequestLogout }: AccountMyTabPro
         body: JSON.stringify(body),
       });
       if (res.status === 403 && body.birthday !== undefined) {
-        setBirthdayLocked(true);
-        toast.warning("生日已设置过，如需修改请联系客服");
+        // 仅生日锁定才禁用输入框；CSRF 拦截/权限不足/scope 配置缺失等其他 403 不误锁
+        const errData = (await res.json().catch(() => null)) as { error?: string } | null;
+        if (errData?.error === "birthday_locked") {
+          setBirthdayLocked(true);
+          toast.warning("生日已设置过，如需修改请联系客服");
+          return false;
+        }
+        toast.error("保存未成功，请稍后再试");
         return false;
       }
       if (!res.ok) {

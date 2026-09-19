@@ -22,7 +22,7 @@ const ssoMiddleware = createSsoMiddleware({
   clientSecret: process.env.SSO_CLIENT_SECRET,
   ssoBaseUrl: process.env.NEXT_PUBLIC_SSO_BASE_URL!,
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
-  scopes: process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile",
+  scopes: process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile phone membership birthday profile:write",
     publicPaths: PUBLIC_PATHS,
     // 本地 HTTP 开发模式：与 callback/logout/login 保持一致（生产被 SDK 强制忽略）
     insecureLocalDev: SSO_INSECURE_LOCAL_DEV,

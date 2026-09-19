@@ -70,6 +70,9 @@ export function AccountMallTab({ onClose }: AccountMallTabProps) {
         src={`${SSO_BASE_URL}/account/embed?tab=mall`}
         title="积分商城"
         onLoad={() => setLoaded(true)}
+        // 纵深防御：限制嵌入页能力（同源+脚本为商城交互必需，表单用于兑换提交，
+        // 弹窗用于商城内"去官网"类链接；不允许顶层导航/弹模态）
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         className={`w-full h-full rounded-2xl border border-brand-charcoal/[0.08] bg-white transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
       />
     </div>

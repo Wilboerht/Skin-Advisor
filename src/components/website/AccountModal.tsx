@@ -38,20 +38,21 @@ const ACCOUNT_TABS: { key: AccountTab; label: string }[] = [
 export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const { user, logout } = useAuth();
 
-  const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
   // 移动端返回键/返回手势：先关账户弹层（再按返回才离开页面）
   useModalBackClose(isOpen, onClose);
 
-  // tab 状态：关闭弹层后复位到「我的」，已激活过的 tab 保持挂载（避免商城 iframe 反复加载）
+  // tab 状态：关闭弹层后复位到「我的」，但已激活过的 tab 保持挂载（避免商城 iframe
+  // 与会员数据每次重开都重新加载）；账号切换时全部重置，防止展示上一账号的残留数据
   const [activeTab, setActiveTab] = useState<AccountTab>("my");
   const [visitedTabs, setVisitedTabs] = useState<AccountTab[]>(["my"]);
   useEffect(() => {
-    if (!isOpen) {
-      setActiveTab("my");
-      setVisitedTabs(["my"]);
-    }
+    if (!isOpen) setActiveTab("my");
   }, [isOpen]);
+  useEffect(() => {
+    setActiveTab("my");
+    setVisitedTabs(["my"]);
+  }, [user?.id]);
 
   const activateTab = (tab: AccountTab) => {
     setActiveTab(tab);
@@ -78,6 +79,12 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   // 退出确认框状态：global = 勾选「同时退出所有 NIHPLOD 平台」
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [logoutGlobal, setLogoutGlobal] = useState(false);
+
+  // Escape 分层：确认框打开时优先关确认框，再次按下才关主弹层
+  const modalRef = useFocusTrap<HTMLDivElement>(
+    isOpen,
+    showLogoutConfirm ? () => setShowLogoutConfirm(false) : onClose
+  );
 
   const handleLogout = () => {
     setLogoutGlobal(false);
@@ -186,12 +193,10 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 )}
               </div>
             </m.div>
-          </div>
-        )}
-      </AnimatePresence>
 
-      {/* 退出登录确认框：默认仅退出本站，勾选后同时退出所有 NIHPLOD 平台（global） */}
-      <AnimatePresence>
+            {/* 退出登录确认框：默认仅退出本站，勾选后同时退出所有 NIHPLOD 平台（global）。
+                渲染在 focus-trap 容器内（fixed 定位不受嵌套影响），键盘焦点可达 */}
+            <AnimatePresence>
         {showLogoutConfirm && (
           <div
             role="alertdialog"
@@ -246,6 +251,9 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 </button>
               </div>
             </m.div>
+          </div>
+        )}
+            </AnimatePresence>
           </div>
         )}
       </AnimatePresence>

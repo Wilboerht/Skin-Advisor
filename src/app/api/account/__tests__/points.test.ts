@@ -62,7 +62,10 @@ describe("GET /api/account/points", () => {
     });
 
     it("签名头使用 advisor/GET/balance 路径，query 携带手机号", async () => {
-        mocks.fetch.mockResolvedValue(jsonResponse(200, { available: 120, redeemRate: 100, membershipLevel: "GOLD" }));
+        mocks.fetch.mockResolvedValue(jsonResponse(200, {
+            success: true,
+            data: { available: 120, redeemRate: 100, membershipLevel: "GOLD" },
+        }));
         const res = await GET(fakeReq());
         expect(res.status).toBe(200);
 
@@ -74,13 +77,16 @@ describe("GET /api/account/points", () => {
         expect(init.headers["X-Internal-API-Key"]).toBe("k");
     });
 
-    it("正常返回 available/redeemRate/membershipLevel", async () => {
+    it("正常返回 available/redeemRate/membershipLevel（按官网 {success,data} 结构解包）", async () => {
         mocks.fetch.mockResolvedValue(jsonResponse(200, {
-            available: 120,
-            frozen: 30,
-            nextReleaseAt: "2025-01-01",
-            redeemRate: 100,
-            membershipLevel: "GOLD",
+            success: true,
+            data: {
+                available: 120,
+                frozen: 30,
+                nextReleaseAt: "2025-01-01",
+                redeemRate: 100,
+                membershipLevel: "GOLD",
+            },
         }));
         const res = await GET(fakeReq());
         expect(res.status).toBe(200);
