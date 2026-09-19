@@ -102,7 +102,7 @@ function PageEdgeArrow({
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: enterX }}
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, x: [enterX, 0, nudgeX, 0] }}
             transition={reduceMotion ? { duration: 0 } : { duration: 1.5, delay: 0.5, times: [0, 0.3, 0.65, 1], ease: "easeInOut" }}
-            className={`group fixed top-1/2 -mt-[22px] z-40 hidden lg:pointer-fine:flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#E8E2D9] ${isRight ? "right-5 xl:right-8" : "left-5 xl:left-8"}`}
+            className={`group fixed top-1/2 -mt-[22px] z-40 hidden lg:pointer-fine:flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#E8E2D9] ${isRight ? "right-20" : "left-20"}`}
         >
             <span
                 className={`inline-flex h-11 items-center rounded-full border border-brand-espresso/15 bg-[#F5F2ED]/85 backdrop-blur-sm shadow-[0_6px_20px_rgba(61,47,37,0.10)] transition-colors group-hover:border-brand-espresso/30 group-hover:bg-[#F5F2ED] ${isRight ? "" : "flex-row-reverse"}`}
