@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useRef, useMemo, Suspense } from "rea
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { ArrowUp, House, AlertCircle, Sparkles, X, ScanFace, Info } from "lucide-react";
+import { ArrowUp, House, AlertCircle, Sparkles, X, ScanFace, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -78,6 +78,50 @@ function preloadImage(url: string | undefined): void {
     if (!url) return;
     const img = new globalThis.Image();
     img.src = url;
+}
+
+/** 两页版式的侧边翻页箭头：只在可悬停的 lg+ 设备浮出（触屏/小屏继续用页面内按钮，避免纯图标丢失语义） */
+function PageEdgeArrow({
+    side,
+    label,
+    onClick,
+}: {
+    side: "left" | "right";
+    label: string;
+    onClick: () => void;
+}) {
+    const reduceMotion = useReducedMotion();
+    const isRight = side === "right";
+    const enterX = isRight ? 16 : -16;
+    const nudgeX = isRight ? 5 : -5;
+    return (
+        <m.button
+            type="button"
+            onClick={onClick}
+            aria-label={label}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: enterX }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, x: [enterX, 0, nudgeX, 0] }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 1.5, delay: 0.5, times: [0, 0.3, 0.65, 1], ease: "easeInOut" }}
+            className={`group fixed top-1/2 -mt-[22px] z-40 hidden lg:pointer-fine:flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#E8E2D9] ${isRight ? "right-5 xl:right-8" : "left-5 xl:left-8"}`}
+        >
+            <span
+                className={`inline-flex h-11 items-center rounded-full border border-brand-espresso/15 bg-[#F5F2ED]/85 backdrop-blur-sm shadow-[0_6px_20px_rgba(61,47,37,0.10)] transition-colors group-hover:border-brand-espresso/30 group-hover:bg-[#F5F2ED] ${isRight ? "" : "flex-row-reverse"}`}
+            >
+                <span
+                    className={`max-w-0 overflow-hidden whitespace-nowrap text-[13px] font-light tracking-[0.08em] text-brand-espresso/85 opacity-0 transition-all duration-300 ease-out group-hover:max-w-[200px] group-hover:opacity-100 group-focus-visible:max-w-[200px] group-focus-visible:opacity-100 ${isRight ? "group-hover:pl-4 group-focus-visible:pl-4" : "group-hover:pr-4 group-focus-visible:pr-4"}`}
+                >
+                    {label}
+                </span>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+                    {isRight ? (
+                        <ChevronRight className="h-5 w-5 text-brand-espresso/70 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={1.5} />
+                    ) : (
+                        <ChevronLeft className="h-5 w-5 text-brand-espresso/70 transition-transform duration-300 group-hover:-translate-x-0.5" strokeWidth={1.5} />
+                    )}
+                </span>
+            </span>
+        </m.button>
+    );
 }
 
 async function waitForImages(container: HTMLElement): Promise<void> {
@@ -428,6 +472,25 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         })();
         return () => { cancelled = true; };
     }, [isMock, userId]);
+    // 综合评分百分位（后端真实聚合）：仅评分可用时请求，失败/样本不足则不展示副标
+    const [scorePercentile, setScorePercentile] = useState<number | null>(null);
+    const overallScore = faceAnalysis?.overallScore;
+    useEffect(() => {
+        if (isMock || typeof overallScore !== "number") return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`/api/advisor/score-percentile?score=${Math.round(overallScore)}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (cancelled) return;
+                setScorePercentile(typeof data.percentile === "number" ? data.percentile : null);
+            } catch {
+                // 静默降级：不展示百分比副标
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [isMock, overallScore]);
     const [dismissValidationWarning, setDismissValidationWarning] = useState(false);
     // SSR 水合安全：初始值固定 false，挂载后再从 sessionStorage 同步（同 ackedSessionId）
     useEffect(() => {
@@ -443,7 +506,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         } catch { /* ignore */ }
     }, []);
 
-    // "超越全国 X% 用户"百分位是固定公式伪统计，v2 报告与分享海报均已下线，不再计算
+    // 原"超越全国 X% 用户"固定公式伪统计已下线（v2 报告与分享海报不再使用）；
+    // 封面证书卡改为展示 /api/advisor/score-percentile 的真实聚合百分位（见 scorePercentile）
 
     // 重点问题关注：暗沉/黑头/痘痘等具体问题（维度分数 <70 或 AI 症状检测），按严重程度排序
     const focusProblems = useMemo(
@@ -1605,6 +1669,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         <ShareCardPage
                                             nickname={userNickname}
                                             score={faceAnalysis?.overallScore ?? undefined}
+                                            percentile={scorePercentile}
                                             skinType={result?.skinProfile?.type || 'combination'}
                                             budget={ipBudget}
                                             skincareFrequency={ipSkincareFrequency}
@@ -1627,6 +1692,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 <div className="w-full max-w-[900px] mx-auto px-6 md:px-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
                                     <ResultFooter />
                                 </div>
+
+                                {/* PC 侧边翻页箭头（可悬停 lg+）：查看完整报告，替代操作区的实心按钮 */}
+                                <PageEdgeArrow side="right" label="查看完整报告" onClick={handleFlipToReport} />
                             </m.div>
                         )}
 
@@ -1732,6 +1800,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         <ResultFooter />
                                     </footer>
                                 </div>
+
+                                {/* PC 侧边返回箭头（可悬停 lg+）：闭环回到证书面 */}
+                                <PageEdgeArrow side="left" label="返回证书" onClick={handleOpenCover} />
                             </m.div>
                         )}
                     </AnimatePresence>

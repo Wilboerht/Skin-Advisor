@@ -10,6 +10,8 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 interface ShareCardPageProps {
     nickname: string;
     score?: number;
+    /** 综合评分百分位（后端真实聚合）；null/undefined 时不展示"超过 X% 用户"副标 */
+    percentile?: number | null;
     skinType: string;
     budget?: string;
     skincareFrequency?: string;
@@ -66,6 +68,7 @@ interface GiftConfettiPiece {
 export default function ShareCardPage({
     nickname,
     score,
+    percentile = null,
     skinType,
     budget,
     skincareFrequency,
@@ -214,7 +217,7 @@ export default function ShareCardPage({
                             {isReturning ? "欢迎回来，您的测肤报告已更新" : "恭喜完成首次测肤，您的报告已生成"}
                         </m.h2>
 
-                        {/* 派系宣告：引语与派系名以 6px 组内间距紧贴，与相邻区块的 16/24px 形成邻近性对比 */}
+                        {/* 派系宣告：引语与派系名以 6px 组内间距紧贴；派系名右侧为综合评分印章（金边双环呼应证书烫金） */}
                         <div className="flex flex-col gap-1.5">
                             <m.p
                                 {...stagger(0.26)}
@@ -222,12 +225,32 @@ export default function ShareCardPage({
                             >
                                 根据检测结果，您的肌智派系为
                             </m.p>
-                            <m.h3
-                                {...stagger(0.3)}
-                                className="text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.12em]"
-                            >
-                                {skinTypeName}
-                            </m.h3>
+                            <div className="flex items-end gap-4 lg:gap-5">
+                                <m.h3
+                                    {...stagger(0.3)}
+                                    className="text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.12em]"
+                                >
+                                    {skinTypeName}
+                                </m.h3>
+                                {score !== undefined && (
+                                    <m.div {...stagger(0.34)} className="relative flex shrink-0 flex-col items-center pb-0.5">
+                                        <div className="relative flex h-16 w-16 lg:h-[76px] lg:w-[76px] items-center justify-center rounded-full border border-brand-gold/55">
+                                            <div aria-hidden="true" className="absolute inset-[3px] rounded-full border border-dashed border-brand-gold/30" />
+                                            <div className="flex flex-col items-center leading-none">
+                                                <span className="font-serif text-[22px] lg:text-[26px] font-light text-brand-espresso tabular-nums">
+                                                    {Math.round(score)}
+                                                </span>
+                                                <span className="mt-1 text-[9px] tracking-[0.08em] text-brand-espresso/55">综合评分</span>
+                                            </div>
+                                        </div>
+                                        {percentile !== null && (
+                                            <p className="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap text-[10px] font-light leading-none tracking-[0.02em] text-brand-espresso/50">
+                                                超过 {percentile}% 的用户
+                                            </p>
+                                        )}
+                                    </m.div>
+                                )}
+                            </div>
                         </div>
 
                         {/* 摘要：适读字号 + 三行截断，行高独立于区块间距 */}
@@ -273,7 +296,7 @@ export default function ShareCardPage({
                 {onOpenReport && (
                     <button
                         onClick={onOpenReport}
-                        className="group inline-flex w-full sm:w-auto sm:min-w-[224px] items-center justify-center gap-2 h-11 px-8 rounded-full border border-brand-cocoa/25 bg-brand-cocoa/[0.07] text-brand-cocoa text-[14px] font-medium tracking-[0.08em] transition-colors duration-200 hover:border-brand-cocoa/40 hover:bg-brand-cocoa/[0.12] active:bg-brand-cocoa/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] cursor-pointer"
+                        className="group inline-flex w-full sm:w-auto sm:min-w-[224px] items-center justify-center gap-2 h-11 px-8 rounded-full border border-brand-cocoa/25 bg-brand-cocoa/[0.07] text-brand-cocoa text-[14px] font-medium tracking-[0.08em] transition-colors duration-200 hover:border-brand-cocoa/40 hover:bg-brand-cocoa/[0.12] active:bg-brand-cocoa/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] lg:pointer-fine:hidden cursor-pointer"
                     >
                         查看完整报告
                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
