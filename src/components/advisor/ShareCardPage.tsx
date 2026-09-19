@@ -217,40 +217,41 @@ export default function ShareCardPage({
                             {isReturning ? "欢迎回来，您的测肤报告已更新" : "恭喜完成首次测肤，您的报告已生成"}
                         </m.h2>
 
-                        {/* 派系宣告：引语与派系名以 6px 组内间距紧贴；派系名右侧为综合评分印章（金边双环呼应证书烫金） */}
-                        <div className="flex flex-col gap-1.5">
-                            <m.p
-                                {...stagger(0.26)}
-                                className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em]"
-                            >
-                                根据检测结果，您的肌智派系为
-                            </m.p>
-                            <div className="flex items-start gap-4 lg:gap-5">
+                        {/* 派系宣告：左侧「引语 + 派系名」两行；右侧徽章占满两行高度（顶部=引语顶、底部=派系名底）
+                            徽章高度 = 引语行高(12×1.5=18 / 13×1.5=19.5) + gap-1.5(6) + 派系名(40/48) = 64 / 73.5 */}
+                        <div className={`flex items-start justify-between gap-4 lg:gap-5 ${percentile !== null ? "pb-4" : ""}`}>
+                            <div className="flex flex-col gap-1.5">
+                                <m.p
+                                    {...stagger(0.26)}
+                                    className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em]"
+                                >
+                                    根据检测结果，您的肌智派系为
+                                </m.p>
                                 <m.h3
                                     {...stagger(0.3)}
                                     className="text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.12em]"
                                 >
                                     {skinTypeName}
                                 </m.h3>
-                                {score !== undefined && (
-                                    <m.div {...stagger(0.34)} className="flex shrink-0 flex-col items-center">
-                                        <div className="relative flex h-16 w-16 lg:h-[76px] lg:w-[76px] items-center justify-center rounded-full border border-brand-gold/55">
-                                            <div aria-hidden="true" className="absolute inset-[3px] rounded-full border border-dashed border-brand-gold/30" />
-                                            <div className="flex flex-col items-center leading-none">
-                                                <span className="font-serif text-[22px] lg:text-[26px] font-light text-brand-espresso tabular-nums">
-                                                    {Math.round(score)}
-                                                </span>
-                                                <span className="mt-1 text-[9px] tracking-[0.08em] text-brand-espresso/55">综合评分</span>
-                                            </div>
-                                        </div>
-                                        {percentile !== null && (
-                                            <p className="mt-1.5 whitespace-nowrap text-[10px] font-light leading-none tracking-[0.02em] text-brand-espresso/50">
-                                                超过 {percentile}% 的用户
-                                            </p>
-                                        )}
-                                    </m.div>
-                                )}
                             </div>
+                            {score !== undefined && (
+                                <m.div {...stagger(0.34)} className="relative flex shrink-0">
+                                    <div className="relative flex h-16 w-16 lg:h-[73.5px] lg:w-[73.5px] flex-col items-center justify-center rounded-full border border-brand-gold/55">
+                                        <div aria-hidden="true" className="absolute inset-[3px] rounded-full border border-dashed border-brand-gold/30" />
+                                        <div className="flex flex-col items-center leading-none">
+                                            <span className="font-serif text-[22px] lg:text-[26px] font-light text-brand-espresso tabular-nums">
+                                                {Math.round(score)}
+                                            </span>
+                                            <span className="mt-1 text-[9px] tracking-[0.08em] text-brand-espresso/55">综合评分</span>
+                                        </div>
+                                    </div>
+                                    {percentile !== null && (
+                                        <p className="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 whitespace-nowrap text-[10px] font-light leading-none tracking-[0.02em] text-brand-espresso/50">
+                                            超过 {percentile}% 的用户
+                                        </p>
+                                    )}
+                                </m.div>
+                            )}
                         </div>
 
                         {/* 摘要：适读字号 + 三行截断，行高独立于区块间距 */}
