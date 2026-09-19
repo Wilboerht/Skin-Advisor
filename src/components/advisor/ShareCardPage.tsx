@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
 import { Gift, Loader2, Share2 } from "lucide-react";
 import Image from "next/image";
@@ -45,6 +45,21 @@ function formatCertId(sessionId?: string): string | null {
     return last6.length >= 4 ? last6.toUpperCase() : null;
 }
 
+/** 抽奖按钮悬浮彩带：品牌色系的碎纸片 */
+const GIFT_CONFETTI_COLORS = ["#C9A86C", "#D4B77A", "#B8975B", "#D9730D", "#7A9FD4", "#7A9A5B"];
+
+interface GiftConfettiPiece {
+    id: number;
+    x: number;
+    y: number;
+    rotate: number;
+    width: number;
+    height: number;
+    color: string;
+    delay: number;
+    duration: number;
+}
+
 export default function ShareCardPage({
     nickname,
     score,
@@ -71,6 +86,39 @@ export default function ShareCardPage({
 
     const [characterImgSrc, setCharacterImgSrc] = useState(characterImage);
     const [characterImgFailed, setCharacterImgFailed] = useState(false);
+
+    // 抽奖按钮悬浮彩带：一次性爆发，动画期间不重复触发
+    const [giftConfetti, setGiftConfetti] = useState<GiftConfettiPiece[]>([]);
+    const giftConfettiTimer = useRef<number | null>(null);
+    const giftConfettiSeq = useRef(0);
+
+    const fireGiftConfetti = useCallback(() => {
+        if (reduceMotion || giftConfettiTimer.current !== null) return;
+        const pieces = Array.from({ length: 14 }, (_, i) => {
+            const angle = ((-140 + Math.random() * 100) * Math.PI) / 180;
+            const distance = 26 + Math.random() * 26;
+            return {
+                id: ++giftConfettiSeq.current,
+                x: Math.cos(angle) * distance,
+                y: Math.sin(angle) * distance,
+                rotate: (Math.random() - 0.5) * 320,
+                width: 2 + Math.round(Math.random() * 2),
+                height: 6 + Math.round(Math.random() * 4),
+                color: GIFT_CONFETTI_COLORS[i % GIFT_CONFETTI_COLORS.length],
+                delay: Math.random() * 0.08,
+                duration: 0.6 + Math.random() * 0.3,
+            };
+        });
+        setGiftConfetti(pieces);
+        giftConfettiTimer.current = window.setTimeout(() => {
+            setGiftConfetti([]);
+            giftConfettiTimer.current = null;
+        }, 1000);
+    }, [reduceMotion]);
+
+    useEffect(() => () => {
+        if (giftConfettiTimer.current !== null) window.clearTimeout(giftConfettiTimer.current);
+    }, []);
 
     useEffect(() => {
         setCharacterImgSrc(characterImage);
@@ -158,18 +206,18 @@ export default function ShareCardPage({
                             {isReturning ? "欢迎回来，您的测肤报告已更新" : "恭喜完成首次测肤，您的报告已生成"}
                         </m.h2>
 
-                        {/* 派系宣告：引语与派系名紧贴成组，结果即主角 */}
+                        {/* 派系宣告：引语与派系名紧贴成组，结果即主角（无「」包裹，靠字号与字距立住气场） */}
                         <m.p
                             {...stagger(0.26)}
-                            className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em] mb-1.5 lg:mb-2"
+                            className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em] mb-2 lg:mb-2.5"
                         >
                             根据检测结果，您的肌智派系为
                         </m.p>
                         <m.h3
                             {...stagger(0.3)}
-                            className="text-balance text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.04em] mb-4 lg:mb-5"
+                            className="text-[42px] lg:text-[52px] font-serif font-light text-brand-espresso leading-none tracking-[0.12em] mb-4 lg:mb-5"
                         >
-                            「{skinTypeName}」
+                            {skinTypeName}
                         </m.h3>
 
                         {/* 摘要：适读字号 + 宽松行高，三行截断 */}
@@ -236,8 +284,29 @@ export default function ShareCardPage({
                     {onGift && (
                         <button
                             onClick={onGift}
-                            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 px-4 rounded-full border border-brand-gold/40 text-[13px] text-brand-bronze font-light tracking-[0.04em] transition-colors hover:border-brand-gold/70 hover:bg-brand-gold/[0.08] active:opacity-70 cursor-pointer"
+                            onMouseEnter={fireGiftConfetti}
+                            onFocus={fireGiftConfetti}
+                            className="relative inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 px-4 rounded-full border border-brand-gold/40 text-[13px] text-brand-bronze font-light tracking-[0.04em] transition-colors hover:border-brand-gold/70 hover:bg-brand-gold/[0.08] active:opacity-70 cursor-pointer"
                         >
+                            {/* 悬浮彩带：从按钮中心向上扇形迸发，指针事件穿透不影响点击 */}
+                            <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2">
+                                {giftConfetti.map((piece) => (
+                                    <m.span
+                                        key={piece.id}
+                                        initial={{ x: 0, y: 0, opacity: 0, rotate: 0, scale: 0.4 }}
+                                        animate={{ x: piece.x, y: piece.y, opacity: [0, 1, 1, 0], rotate: piece.rotate, scale: 1 }}
+                                        transition={{ duration: piece.duration, delay: piece.delay, ease: "easeOut" }}
+                                        className="absolute rounded-[1px]"
+                                        style={{
+                                            width: piece.width,
+                                            height: piece.height,
+                                            marginLeft: -piece.width / 2,
+                                            marginTop: -piece.height / 2,
+                                            backgroundColor: piece.color,
+                                        }}
+                                    />
+                                ))}
+                            </span>
                             <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
                             肌智派送好礼 · 参与抽奖
                         </button>
