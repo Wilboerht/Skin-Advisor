@@ -411,8 +411,8 @@ export default function HomeClient() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center"
           >
-            <Loader2 className="w-10 h-10 text-[var(--color-brand-cocoa)] animate-spin mb-6" />
-            <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">即将进入 AI 问卷...</p>
+            <Loader2 className="w-10 h-10 text-[var(--color-brand-charcoal)] animate-spin mb-6" />
+            <p className="text-brand-charcoal/70 text-[15px] font-medium tracking-wide">即将进入 AI 问卷...</p>
           </m.div>
         )}
       </AnimatePresence>
@@ -472,9 +472,9 @@ export default function HomeClient() {
                       />
                     </m.div>
 
-                    {/* Title（矮屏降一档字号，保证一屏放下） */}
-                    <h1 className="text-[40px] sm:text-[48px] max-[360px]:text-[34px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] [@media(min-width:768px)_and_(min-height:761px)]:text-[58px] [@media(min-width:768px)_and_(max-height:760px)]:text-[48px]">
-                      肌智派<sup className="text-[0.5em] align-super font-sans">™</sup>在线测肤
+                    {/* Title（一屏适配字号集中在 globals 的 .home-hero-title，改档只动一处） */}
+                    <h1 className="home-hero-title font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em]">
+                      肌智派<sup aria-hidden="true" className="text-[0.5em] align-super font-sans">™</sup>在线测肤
                     </h1>
 
                     {/* 卖点与 CTA 已迁入下方主视觉卡 */}
@@ -482,12 +482,13 @@ export default function HomeClient() {
                 </div>
           </section>
 
-          {/* 主视觉卡：浅色设计，藏青只留给标题与按钮；整卡可点击，触发 handleStart 流程（隐私同意 → 问卷）
+          {/* 主视觉卡：浅色设计，主色统一为藏青（标题/按钮/描边/阴影），品牌金只作活动入口点缀；
+              整卡可点击，触发 handleStart 流程（隐私同意 → 问卷）
               卡片本体不可交互，点击由覆盖层按钮承担——button 的 content model 不允许嵌入 h2，
               覆盖层方案保住标题语义（读屏可正常按标题导航，按钮名单独用 aria-label） */}
           <section className="w-full px-6 md:px-12 mt-8 md:mt-10">
             <div
-              className={`group relative w-full max-w-3xl mx-auto text-left bg-white border border-brand-espresso/[0.08] rounded-3xl transition-colors duration-300 hover:border-brand-espresso/[0.2] ${
+              className={`group relative w-full max-w-3xl mx-auto text-left bg-white border border-brand-charcoal/[0.08] rounded-3xl shadow-[0_2px_6px_rgba(0,38,62,0.04),0_16px_40px_-20px_rgba(0,38,62,0.18)] transition-[border-color,box-shadow] duration-300 hover:border-brand-charcoal/[0.2] hover:shadow-[0_2px_8px_rgba(0,38,62,0.06),0_20px_48px_-20px_rgba(0,38,62,0.24)] ${
                 isLoading || isNavigating ? "opacity-60" : ""
               }`}
             >
@@ -499,7 +500,7 @@ export default function HomeClient() {
                 className="absolute inset-0 z-10 rounded-3xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 disabled:cursor-not-allowed"
               />
               <div className="flex flex-col md:flex-row md:items-center">
-                <div className="flex-1 p-6 [@media(min-width:768px)_and_(min-height:761px)]:p-10 [@media(min-width:768px)_and_(max-height:760px)]:p-7">
+                <div className="home-hero-card-pad flex-1">
                   <h2 className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4">
                     开始完整肌肤检测
                   </h2>
@@ -520,7 +521,7 @@ export default function HomeClient() {
                       专属报告
                     </span>
                   </div>
-                  <span className="inline-flex items-center gap-2 h-11 px-7 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 group-hover:bg-[#4a3a2c]">
+                  <span className="inline-flex items-center gap-2 h-11 px-7 rounded-full bg-[var(--color-brand-charcoal)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 group-hover:bg-[var(--color-brand-charcoal)]/90">
                     {isLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -536,7 +537,7 @@ export default function HomeClient() {
                 </div>
                 {/* 礼盒图：底部与卡片底边对齐，探出卡片顶部与右侧，呼应"测肤有礼"活动；
                     纯装饰（活动语义在下方"测肤有礼"胶囊），故 alt 留空 */}
-                <div className="shrink-0 self-end -mt-6 md:-mt-14 -mr-4 md:-mr-14 [@media(max-height:700px)]:hidden">
+                <div className="home-hero-gift shrink-0 self-end -mt-6 md:-mt-14 -mr-4 md:-mr-14">
                   <Image
                     src="/images/gift-box-hero.webp"
                     alt=""
@@ -544,7 +545,7 @@ export default function HomeClient() {
                     width={1200}
                     height={900}
                     sizes="(min-width: 768px) 420px, 256px"
-                    className="w-64 md:w-[420px] h-auto object-contain mx-auto drop-shadow-[0_8px_16px_rgba(61,47,37,0.12)]"
+                    className="w-64 md:w-[420px] h-auto object-contain mx-auto drop-shadow-[0_8px_16px_rgba(0,38,62,0.10)]"
                     priority
                   />
                 </div>
@@ -558,21 +559,22 @@ export default function HomeClient() {
           <section className="flex flex-wrap items-center justify-center gap-3 px-6 mt-6 md:mt-8">
             <Link
               href="/skin-types"
-              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/[0.15] text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-espresso/[0.35] hover:text-brand-charcoal cursor-pointer touch-manipulation"
+              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-charcoal/15 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-charcoal/35 hover:text-brand-charcoal cursor-pointer touch-manipulation"
             >
               <Sparkles className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>了解肌智派</span>
             </Link>
+            {/* 活动入口：用品牌金轻强调，与其余两个中性胶囊区分 */}
             <button
               onClick={openGiftModal}
-              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/[0.15] text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-espresso/[0.35] hover:text-brand-charcoal cursor-pointer touch-manipulation"
+              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-gold/45 text-brand-bronze text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-gold/75 hover:bg-brand-gold/[0.07] cursor-pointer touch-manipulation"
             >
               <Gift className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>测肤有礼 · 参与赢好礼</span>
             </button>
             <button
               onClick={handleOpenFaq}
-              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-espresso/[0.15] text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-espresso/[0.35] hover:text-brand-charcoal cursor-pointer touch-manipulation"
+              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-charcoal/15 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-charcoal/35 hover:text-brand-charcoal cursor-pointer touch-manipulation"
             >
               <CircleHelp className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>常见问题</span>
@@ -664,11 +666,11 @@ export default function HomeClient() {
               className="relative z-10 w-full max-w-[420px] bg-[#FDFBF7] rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
-              {/* Close Button */}
+              {/* Close Button：与全站弹层规范一致（移动端 44px 触达） */}
               <button
                 onClick={() => setShowLimitModal(false)}
                 aria-label="关闭"
-                className="absolute top-6 right-6 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
               >
                 <X size={16} strokeWidth={2.5} />
               </button>
@@ -689,10 +691,10 @@ export default function HomeClient() {
               {/* Content */}
               <div className="px-10 pb-10 pt-2 flex flex-col items-center gap-6">
                 <div className="text-center space-y-2">
-                  <h2 id="limit-modal-title" className="text-base font-bold" style={{ color: '#5c4937' }}>
+                  <h2 id="limit-modal-title" className="text-base font-semibold text-brand-charcoal">
                     {testLimitInfo?.quotaPeriod === 'lifetime' ? '免费测肤次数已用完' : '今日测试次数已用完'}
                   </h2>
-                  <p className="text-sm leading-relaxed" style={{ color: '#5c4937', opacity: 0.8 }}>
+                  <p className="text-sm leading-relaxed text-brand-charcoal/75">
                     {(() => {
                       const info = testLimitInfo;
                       const dailyLimit = info?.dailyLimit ?? 10;
@@ -728,14 +730,14 @@ export default function HomeClient() {
                         setShowLimitModal(false);
                         openAuthModal('login');
                       }}
-                      className="flex w-full items-center justify-center gap-2 rounded-full bg-[#5c4937] py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95 hover:bg-[#4a3a2c]"
+                      className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-brand-charcoal)] py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95 hover:bg-[var(--color-brand-charcoal)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 cursor-pointer"
                     >
                       登录 / 注册
                     </button>
                   )}
                   <button
                     onClick={() => setShowLimitModal(false)}
-                    className="flex w-full items-center justify-center gap-2 rounded-full border border-[#5c4937]/10 bg-white py-3 text-sm font-medium text-[#5c4937] transition-colors hover:bg-[#5c4937]/5 active:scale-95"
+                    className="flex w-full items-center justify-center gap-2 rounded-full border border-brand-charcoal/15 bg-white py-3 text-sm font-medium text-brand-charcoal transition-colors hover:bg-brand-charcoal/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 cursor-pointer"
                   >
                     我知道了
                   </button>
