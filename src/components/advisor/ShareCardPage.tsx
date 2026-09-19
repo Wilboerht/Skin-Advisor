@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
-import { Gift, Loader2, Share2 } from "lucide-react";
+import { ArrowRight, Gift, ImageDown, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { getCharacterImage, getSkinTypeName, type IPMatchParams } from "@/lib/result-utils";
 
@@ -267,20 +267,22 @@ export default function ShareCardPage({
                     {onOpenReport && (
                         <button
                             onClick={onOpenReport}
-                            className="inline-flex w-full sm:w-auto items-center justify-center h-10 px-6 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-light tracking-[0.06em] transition-colors hover:bg-[#4a3a2c] active:opacity-70 cursor-pointer"
+                            className="group inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 px-6 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-light tracking-[0.06em] transition-colors hover:bg-[#4a3a2c] active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] cursor-pointer"
                         >
                             查看完整报告
+                            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
                         </button>
                     )}
                     <button
                         onClick={onDownloadPoster}
                         disabled={isPosterLoading}
-                        className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 min-w-[10.5em] px-4 rounded-full border border-brand-espresso/12 text-[13px] text-brand-charcoal/70 font-light tracking-[0.04em] transition-colors hover:border-brand-espresso/25 hover:bg-brand-espresso/[0.03] hover:text-brand-charcoal active:opacity-70 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        aria-busy={isPosterLoading}
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 min-w-[10.5em] px-4 rounded-full border border-brand-espresso/12 text-[13px] text-brand-charcoal/70 font-light tracking-[0.04em] transition-colors hover:border-brand-espresso/25 hover:bg-brand-espresso/[0.03] hover:text-brand-charcoal active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                         {isPosterLoading ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2} />
                         ) : (
-                            <Share2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                            <ImageDown className="w-3.5 h-3.5" strokeWidth={1.75} />
                         )}
                         {isPosterLoading ? "生成中..." : "保存测肤证书"}
                     </button>
@@ -289,7 +291,7 @@ export default function ShareCardPage({
                             onClick={onGift}
                             onMouseEnter={fireGiftConfetti}
                             onFocus={fireGiftConfetti}
-                            className="relative inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 px-4 rounded-full border border-brand-gold/40 text-[13px] text-brand-bronze font-light tracking-[0.04em] transition-colors hover:border-brand-gold/70 hover:bg-brand-gold/[0.08] active:opacity-70 cursor-pointer"
+                            className="group relative inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 px-4 rounded-full border border-brand-gold/40 text-[13px] text-brand-bronze font-light tracking-[0.04em] transition-colors hover:border-brand-gold/70 hover:bg-brand-gold/[0.08] active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] cursor-pointer"
                         >
                             {/* 悬浮彩带：从按钮中心向上扇形迸发，指针事件穿透不影响点击 */}
                             <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2">
@@ -310,7 +312,7 @@ export default function ShareCardPage({
                                     />
                                 ))}
                             </span>
-                            <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
+                            <Gift className="w-3.5 h-3.5 transition-transform group-hover:-rotate-6 group-hover:scale-110" strokeWidth={1.75} />
                             肌智派送好礼 · 参与抽奖
                         </button>
                     )}
