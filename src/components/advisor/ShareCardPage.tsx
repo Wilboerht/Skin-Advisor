@@ -189,38 +189,41 @@ export default function ShareCardPage({
 
                 {/* 文字区 */}
                 <div className="relative z-10 w-full px-6 pt-6 pb-12 lg:p-10 lg:pr-[36%]">
-                    <div className="flex flex-col justify-center">
+                    {/* 间距系统：区块间统一 24/32px（gap-6 lg:gap-8），组内统一 8px（gap-2），全部落在 8px 网格上 */}
+                    <div className="flex flex-col justify-center gap-6 lg:gap-8">
                         {/* 分享版标签：弱化处理，不抢派系名焦点 */}
                         <m.div
                             {...stagger(0.1)}
-                            className="relative z-10 mb-5 lg:mb-6 inline-flex h-[24px] px-2.5 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/12 bg-transparent text-[11px] font-medium text-[var(--color-brand-charcoal)]/60 tracking-[0.12em] whitespace-nowrap self-start"
+                            className="relative z-10 inline-flex h-[24px] px-2.5 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/12 bg-transparent text-[11px] font-medium text-[var(--color-brand-charcoal)]/60 tracking-[0.12em] whitespace-nowrap self-start"
                         >
                             肌智派证书
                         </m.div>
 
-                        {/* 归属标题：独立成段，与派系宣告之间留出呼吸 */}
+                        {/* 归属标题：同行区块，间距交给父层 gap */}
                         <m.h2
                             {...stagger(0.18)}
-                            className="text-balance text-[15px] lg:text-[18px] font-medium text-brand-espresso/80 leading-snug tracking-[0.01em] mb-6 lg:mb-8"
+                            className="text-balance text-[15px] lg:text-[18px] font-medium text-brand-espresso/80 leading-snug tracking-[0.01em]"
                         >
                             {isReturning ? "欢迎回来，您的测肤报告已更新" : "恭喜完成首次测肤，您的报告已生成"}
                         </m.h2>
 
-                        {/* 派系宣告：引语与派系名紧贴成组，结果即主角（无「」包裹，靠字号与字距立住气场） */}
-                        <m.p
-                            {...stagger(0.26)}
-                            className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em] mb-1.5 lg:mb-2"
-                        >
-                            根据检测结果，您的肌智派系为
-                        </m.p>
-                        <m.h3
-                            {...stagger(0.3)}
-                            className="text-[44px] lg:text-[56px] font-serif font-light text-brand-espresso leading-none tracking-[0.14em] mb-6 lg:mb-8"
-                        >
-                            {skinTypeName}
-                        </m.h3>
+                        {/* 派系宣告：引语与派系名以 8px 组内间距紧贴，与相邻区块的 24/32px 形成邻近性对比 */}
+                        <div className="flex flex-col gap-2">
+                            <m.p
+                                {...stagger(0.26)}
+                                className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em]"
+                            >
+                                根据检测结果，您的肌智派系为
+                            </m.p>
+                            <m.h3
+                                {...stagger(0.3)}
+                                className="text-[44px] lg:text-[56px] font-serif font-light text-brand-espresso leading-none tracking-[0.14em]"
+                            >
+                                {skinTypeName}
+                            </m.h3>
+                        </div>
 
-                        {/* 摘要：适读字号 + 宽松行高，三行截断 */}
+                        {/* 摘要：适读字号 + 三行截断，行高独立于区块间距 */}
                         <m.p
                             {...stagger(0.4)}
                             className="text-[13px] lg:text-[14px] leading-[1.7] lg:leading-[1.75] text-[var(--color-brand-cocoa)]/65 max-w-full lg:max-w-[430px] line-clamp-3"
