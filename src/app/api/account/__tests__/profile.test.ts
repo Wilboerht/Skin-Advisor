@@ -62,7 +62,7 @@ describe("GET /api/account/profile", () => {
         expect(res.status).toBe(401);
     });
 
-    it("返回本地副本资料，手机号打码", async () => {
+    it("返回本地副本资料，手机号打码；生日回源官网 userinfo", async () => {
         mocks.findUnique.mockResolvedValue({
             name: "小红",
             avatarUrl: "https://nihplod.cn/uploads/a.png",
@@ -70,6 +70,7 @@ describe("GET /api/account/profile", () => {
             phoneNumber: "13812341234",
             membershipLevel: "GOLD",
         });
+        mocks.fetch.mockResolvedValue(jsonResponse(200, { sub: "u1", birthday: "1995-06-01" }));
         const res = await GET(fakeReq());
         expect(res.status).toBe(200);
         await expect(res.json()).resolves.toEqual({
@@ -78,11 +79,32 @@ describe("GET /api/account/profile", () => {
             gender: "female",
             phone: "138****1234",
             membershipLevel: "GOLD",
+            birthday: "1995-06-01",
         });
+        const [url, init] = mocks.fetch.mock.calls[0];
+        expect(String(url)).toContain("/api/oauth/userinfo");
+        expect(init.headers.Authorization).toBe("Bearer at-1");
+    });
+
+    it("官网 userinfo 不可达时 birthday 降级为 null，不影响其他字段", async () => {
+        mocks.findUnique.mockResolvedValue({
+            name: "小红",
+            avatarUrl: null,
+            gender: null,
+            phoneNumber: "13812341234",
+            membershipLevel: null,
+        });
+        mocks.fetch.mockRejectedValue(new Error("fetch failed"));
+        const res = await GET(fakeReq());
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.birthday).toBeNull();
+        expect(body.nickname).toBe("小红");
     });
 
     it("本地无记录时返回全 null 字段", async () => {
         mocks.findUnique.mockResolvedValue(null);
+        mocks.fetch.mockResolvedValue(jsonResponse(200, { sub: "u1" }));
         const res = await GET(fakeReq());
         expect(res.status).toBe(200);
         await expect(res.json()).resolves.toEqual({
@@ -91,6 +113,7 @@ describe("GET /api/account/profile", () => {
             gender: null,
             phone: null,
             membershipLevel: null,
+            birthday: null,
         });
     });
 });

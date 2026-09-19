@@ -8,7 +8,8 @@ import { logger } from "@/lib/logger";
 const OFFICIAL_USERINFO_TIMEOUT_MS = 8000;
 
 // GET: 读本地 DB 用户副本返回资料（phone 打码展示）。
-// 本地副本由 SSO 登录 / /api/auth/me 回源同步维护，此处不再回源官网。
+// birthday 本地 DB 无字段，回源官网 userinfo 获取（需 token 含 birthday scope）；
+// 官网不可达或 scope 未授权时降级为 null，不影响其他字段。
 export async function GET(req: NextRequest) {
     const user = await getSessionUser(req);
     if (!user) {
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
             where: { id: user.id },
             select: { name: true, avatarUrl: true, gender: true, phoneNumber: true, membershipLevel: true },
         });
+        const birthday = await fetchBirthdayFromOfficial(req);
 
         return NextResponse.json({
             nickname: local?.name ?? null,
@@ -27,10 +29,28 @@ export async function GET(req: NextRequest) {
             gender: local?.gender ?? null,
             phone: maskPhone(local?.phoneNumber),
             membershipLevel: local?.membershipLevel ?? null,
+            birthday,
         });
     } catch (err) {
         logger.error("[account/profile] GET error:", err);
         return NextResponse.json({ error: "internal_error", message: "服务暂时不可用，请稍后再试" }, { status: 500 });
+    }
+}
+
+/** 回源官网 userinfo 取生日；任何失败都降级为 null（不阻断资料主流程） */
+async function fetchBirthdayFromOfficial(req: NextRequest): Promise<string | null> {
+    const token = await resolveOfficialAccessToken(req);
+    if (!token) return null;
+    try {
+        const res = await fetch(`${OFFICIAL_BASE_URL}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: AbortSignal.timeout(OFFICIAL_USERINFO_TIMEOUT_MS),
+        });
+        if (!res.ok) return null;
+        const data = (await res.json().catch(() => null)) as { birthday?: string | null } | null;
+        return typeof data?.birthday === "string" ? data.birthday : null;
+    } catch {
+        return null;
     }
 }
 
