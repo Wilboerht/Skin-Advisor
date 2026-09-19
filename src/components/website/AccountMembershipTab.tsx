@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Crown, RefreshCw, Sparkles } from "lucide-react";
 import { getMemberBadge } from "@/components/website/member-badges";
 
@@ -54,6 +54,13 @@ export function AccountMembershipTab() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // 卸载守卫：切账号/关闭面板时，晚到的响应不再 setState（与 AccountMyTab 的 cancelled 标记同义）
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
   const load = () => {
     setLoading(true);
     setError(false);
@@ -62,9 +69,9 @@ export function AccountMembershipTab() {
         if (!r.ok) throw new Error(`membership ${r.status}`);
         return r.json();
       })
-      .then((d) => setData(d as MembershipData))
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+      .then((d) => { if (mountedRef.current) setData(d as MembershipData); })
+      .catch(() => { if (mountedRef.current) setError(true); })
+      .finally(() => { if (mountedRef.current) setLoading(false); });
   };
 
   useEffect(load, []);

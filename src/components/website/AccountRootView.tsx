@@ -43,26 +43,31 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout }
   // 测肤用量 / 最新测肤派系（接口失败静默不展示）；账号切换时重新拉取
   const [testUsage, setTestUsage] = useState<TestUsage | null>(null);
   const [latestPersona, setLatestPersona] = useState<string | null>(null);
+  // 两个静默接口都结束（含失败）才收起骨架，避免"加载完才出现"导致下方内容跳动
+  const [metaLoaded, setMetaLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setTestUsage(null);
     setLatestPersona(null);
-    fetch("/api/advisor/test-limit")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!cancelled && data?.usage) setTestUsage(data.usage as TestUsage);
-      })
-      .catch(() => { /* 静默失败 */ });
-    fetch("/api/advisor/history?page=1&limit=1&lite=1")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled) return;
-        const latest = (data?.history as HistorySession[] | undefined)?.[0];
-        const persona = (latest?.analysisResult as { persona?: string } | undefined)?.persona;
-        setLatestPersona(persona ?? null);
-      })
-      .catch(() => { /* 静默失败 */ });
+    setMetaLoaded(false);
+    Promise.allSettled([
+      fetch("/api/advisor/test-limit")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (!cancelled && data?.usage) setTestUsage(data.usage as TestUsage);
+        }),
+      fetch("/api/advisor/history?page=1&limit=1&lite=1")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (cancelled) return;
+          const latest = (data?.history as HistorySession[] | undefined)?.[0];
+          const persona = (latest?.analysisResult as { persona?: string } | undefined)?.persona;
+          setLatestPersona(persona ?? null);
+        }),
+    ]).then(() => {
+      if (!cancelled) setMetaLoaded(true);
+    });
     return () => { cancelled = true; };
   }, [user.id]);
 
@@ -96,24 +101,33 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout }
         <span>{maskPhone(user.phone)}</span>
       </div>
 
-      {/* 最新测肤派系 */}
-      {latestPersonaType && (
-        <span className="mb-2 inline-flex h-[22px] px-2 items-center gap-1 rounded-full border border-brand-charcoal/[0.1] bg-white/60 text-[11px] font-light tracking-[0.04em] text-brand-charcoal/70 whitespace-nowrap">
-          {createElement(getFactionIcon(latestPersonaType.ipKey), {
-            className: "w-3 h-3 text-brand-charcoal/60 shrink-0",
-            strokeWidth: 1.5,
-          })}
-          我的肌智派形象 · {latestPersonaType.typeName}
-        </span>
-      )}
+      {/* 最新测肤派系 + 测肤用量：加载中骨架占位，避免下方内容跳动 */}
+      {!metaLoaded ? (
+        <>
+          <div aria-hidden="true" className="h-[22px] w-36 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-2" />
+          <div aria-hidden="true" className="h-5 w-40 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-4" />
+        </>
+      ) : (
+        <>
+          {latestPersonaType && (
+            <span className="mb-2 inline-flex h-[22px] px-2 items-center gap-1 rounded-full border border-brand-charcoal/[0.1] bg-white/60 text-[11px] font-light tracking-[0.04em] text-brand-charcoal/70 whitespace-nowrap">
+              {createElement(getFactionIcon(latestPersonaType.ipKey), {
+                className: "w-3 h-3 text-brand-charcoal/60 shrink-0",
+                strokeWidth: 1.5,
+              })}
+              我的肌智派形象 · {latestPersonaType.typeName}
+            </span>
+          )}
 
-      {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量 */}
-      {testUsage && (
-        <p className="text-[12px] text-[#6B5E50] font-light tracking-[0.05em] mb-4">
-          {testUsage.unlimited
-            ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
-            : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
-        </p>
+          {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量 */}
+          {testUsage && (
+            <p className="text-[12px] text-[#6B5E50] font-light tracking-[0.05em] mb-4">
+              {testUsage.unlimited
+                ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
+                : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
+            </p>
+          )}
+        </>
       )}
 
       {/* 护肤档案入口：打开全局护肤档案弹层 */}

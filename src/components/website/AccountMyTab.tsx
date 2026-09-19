@@ -259,13 +259,15 @@ export function AccountMyTab({ user }: AccountMyTabProps) {
         <span>{displayPhone}</span>
       </div>
 
-      {/* 积分余额：主站返回 available 为 null 时隐藏 */}
-      {typeof points === "number" && (
+      {/* 积分余额：加载中骨架占位（避免下方内容跳动）；主站返回 available 为 null 时隐藏 */}
+      {points === undefined ? (
+        <div aria-hidden="true" className="h-5 w-28 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-4" />
+      ) : typeof points === "number" ? (
         <div className="flex items-center gap-1.5 text-[13px] text-[#8B7355] mb-4">
           <Coins className="w-3.5 h-3.5" />
           <span>积分余额 {points}</span>
         </div>
-      )}
+      ) : null}
 
       {/* 资料编辑：生日（一次性，锁定后需客服）+ 性别（三态） */}
       <div className="w-full rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 mb-3 divide-y divide-brand-charcoal/[0.06]">
