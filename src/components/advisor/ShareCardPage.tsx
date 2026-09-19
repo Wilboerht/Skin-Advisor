@@ -254,10 +254,10 @@ export default function ShareCardPage({
                             )}
                         </div>
 
-                        {/* 摘要：适读字号 + 三行截断，行高独立于区块间距 */}
+                        {/* 摘要：右缘与徽章右缘对齐（桌面端同样内缩 24px），行高独立于区块间距 */}
                         <m.p
                             {...stagger(0.4)}
-                            className="text-[13px] lg:text-[14px] leading-[1.7] lg:leading-[1.75] text-[var(--color-brand-cocoa)]/65 max-w-full lg:max-w-[430px] line-clamp-3"
+                            className="text-[13px] lg:text-[14px] leading-[1.7] lg:leading-[1.75] text-[var(--color-brand-cocoa)]/65 lg:pr-6 line-clamp-3"
                         >
                             {summary || "详细分析见下方报告。"}
                         </m.p>

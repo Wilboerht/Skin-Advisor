@@ -102,21 +102,21 @@ function PageEdgeArrow({
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: enterX }}
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, x: [enterX, 0, nudgeX, 0] }}
             transition={reduceMotion ? { duration: 0 } : { duration: 1.5, delay: 0.5, times: [0, 0.3, 0.65, 1], ease: "easeInOut" }}
-            className={`group fixed top-1/2 -mt-[22px] z-40 hidden lg:pointer-fine:flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#E8E2D9] ${isRight ? "right-20" : "left-20"}`}
+            className={`group fixed top-1/2 -mt-6 z-40 hidden lg:pointer-fine:flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#E8E2D9] ${isRight ? "right-20" : "left-20"}`}
         >
             <span
-                className={`inline-flex h-11 items-center rounded-full border border-brand-espresso/15 bg-[#F5F2ED]/85 backdrop-blur-sm shadow-[0_6px_20px_rgba(61,47,37,0.10)] transition-colors group-hover:border-brand-espresso/30 group-hover:bg-[#F5F2ED] ${isRight ? "" : "flex-row-reverse"}`}
+                className={`inline-flex h-12 items-center rounded-full border border-brand-espresso/25 bg-[#F5F2ED]/90 backdrop-blur-sm shadow-[0_8px_24px_rgba(61,47,37,0.16)] transition-colors group-hover:border-brand-espresso/45 group-hover:bg-[#F5F2ED] ${isRight ? "" : "flex-row-reverse"}`}
             >
                 <span
                     className={`max-w-0 overflow-hidden whitespace-nowrap text-[13px] font-light tracking-[0.08em] text-brand-espresso/85 opacity-0 transition-all duration-300 ease-out group-hover:max-w-[200px] group-hover:opacity-100 group-focus-visible:max-w-[200px] group-focus-visible:opacity-100 ${isRight ? "group-hover:pl-4 group-focus-visible:pl-4" : "group-hover:pr-4 group-focus-visible:pr-4"}`}
                 >
                     {label}
                 </span>
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center">
                     {isRight ? (
-                        <ChevronRight className="h-5 w-5 text-brand-espresso/70 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={1.5} />
+                        <ChevronRight className="h-6 w-6 text-brand-espresso/90 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.25} />
                     ) : (
-                        <ChevronLeft className="h-5 w-5 text-brand-espresso/70 transition-transform duration-300 group-hover:-translate-x-0.5" strokeWidth={1.5} />
+                        <ChevronLeft className="h-6 w-6 text-brand-espresso/90 transition-transform duration-300 group-hover:-translate-x-0.5" strokeWidth={2.25} />
                     )}
                 </span>
             </span>
