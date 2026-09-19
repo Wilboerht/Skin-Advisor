@@ -181,15 +181,15 @@ export default function ShareCardPage({
                         </m.p>
                     </div>
 
-                    {/* Desktop: Character IP Image（底部与文字区对齐，顶部可略超出卡片上缘） */}
+                    {/* Desktop: Character IP Image（高度随卡片自适应，底部与文字区对齐，顶部略超出卡片上缘） */}
                     {characterReady && !characterImgFailed && (
-                        <div className="hidden lg:block absolute right-0 bottom-10 z-10 pointer-events-none">
+                        <div className="hidden lg:block absolute right-3 -top-6 bottom-10 z-10 pointer-events-none">
                             <Image
                                 src={characterImgSrc}
                                 alt={skinTypeName}
-                                width={360}
-                                height={360}
-                                className="w-[340px] h-[340px] object-contain object-right drop-shadow-[0_10px_24px_rgba(0,0,0,0.15)]"
+                                width={190}
+                                height={254}
+                                className="h-full w-auto object-contain object-right drop-shadow-[0_10px_24px_rgba(0,0,0,0.15)]"
                                 priority
                                 onError={handleCharacterImageError}
                             />
@@ -200,11 +200,11 @@ export default function ShareCardPage({
 
             {/* 证书卡外操作区：极简——单一实心主按钮 + 纯文字次级入口，弱化一切装饰 */}
             <m.div {...stagger(0.42)} className="flex flex-col items-center gap-3 mt-6">
-                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+                <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
                     {onOpenReport && (
                         <button
                             onClick={onOpenReport}
-                            className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-light tracking-[0.06em] transition-colors hover:bg-[#4a3a2c] cursor-pointer"
+                            className="inline-flex w-full sm:w-auto items-center justify-center h-10 px-6 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-light tracking-[0.06em] transition-colors hover:bg-[#4a3a2c] active:opacity-70 cursor-pointer"
                         >
                             查看完整报告
                         </button>
@@ -212,7 +212,7 @@ export default function ShareCardPage({
                     <button
                         onClick={onDownloadPoster}
                         disabled={isPosterLoading}
-                        className="inline-flex items-center gap-1.5 h-10 px-1 text-[13px] text-brand-charcoal/55 font-light tracking-[0.04em] transition-colors hover:text-brand-charcoal disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 min-w-[10.5em] px-4 rounded-full border border-brand-espresso/12 text-[13px] text-brand-charcoal/70 font-light tracking-[0.04em] transition-colors hover:border-brand-espresso/25 hover:bg-brand-espresso/[0.03] hover:text-brand-charcoal active:opacity-70 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                         {isPosterLoading ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2} />
@@ -221,16 +221,16 @@ export default function ShareCardPage({
                         )}
                         {isPosterLoading ? "生成中..." : "保存测肤证书"}
                     </button>
+                    {onGift && (
+                        <button
+                            onClick={onGift}
+                            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 px-4 rounded-full border border-brand-gold/40 text-[13px] text-brand-bronze font-light tracking-[0.04em] transition-colors hover:border-brand-gold/70 hover:bg-brand-gold/[0.08] active:opacity-70 cursor-pointer"
+                        >
+                            <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
+                            肌智派送好礼 · 参与抽奖
+                        </button>
+                    )}
                 </div>
-                {onGift && (
-                    <button
-                        onClick={onGift}
-                        className="inline-flex items-center gap-1.5 px-1 py-0.5 text-[12px] text-brand-charcoal/50 font-light tracking-[0.04em] transition-colors hover:text-brand-charcoal cursor-pointer"
-                    >
-                        <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
-                        肌智派送好礼 · 参与抽奖
-                    </button>
-                )}
 
                 {/* 证书落款：日期 · 编号 */}
                 {(dateText || idText) && (
