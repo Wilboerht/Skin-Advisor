@@ -261,18 +261,18 @@ export default function ShareCardPage({
                 )}
             </m.div>
 
-            {/* 证书卡外操作区：极简——单一实心主按钮 + 纯文字次级入口，弱化一切装饰 */}
+            {/* 证书卡外操作区：主 CTA 独占一行（实心大按钮），次级操作一行（描边胶囊），弱化一切装饰 */}
             <m.div {...stagger(0.42)} className="flex flex-col items-center gap-3 mt-6">
+                {onOpenReport && (
+                    <button
+                        onClick={onOpenReport}
+                        className="group inline-flex w-full sm:w-auto sm:min-w-[224px] items-center justify-center gap-2 h-11 px-8 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[14px] font-normal tracking-[0.08em] shadow-[0_6px_18px_rgba(92,73,55,0.22)] transition-all duration-200 hover:bg-[#4a3a2c] hover:shadow-[0_8px_22px_rgba(92,73,55,0.3)] hover:-translate-y-px active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] cursor-pointer"
+                    >
+                        查看完整报告
+                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
+                    </button>
+                )}
                 <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
-                    {onOpenReport && (
-                        <button
-                            onClick={onOpenReport}
-                            className="group inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 px-6 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-light tracking-[0.06em] transition-colors hover:bg-[#4a3a2c] active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] cursor-pointer"
-                        >
-                            查看完整报告
-                            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
-                        </button>
-                    )}
                     <button
                         onClick={onDownloadPoster}
                         disabled={isPosterLoading}
