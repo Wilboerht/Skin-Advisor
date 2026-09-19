@@ -140,7 +140,7 @@ export default function ShareCardPage({
                 />
 
                 {/* 文字区 */}
-                <div className="relative z-10 w-full p-6 lg:p-10 lg:pr-[36%]">
+                <div className="relative z-10 w-full px-6 pt-6 pb-12 lg:p-10 lg:pr-[36%]">
                     <div className="flex flex-col justify-center">
                         {/* 分享版标签：弱化处理，不抢派系名焦点 */}
                         <m.div
@@ -150,40 +150,47 @@ export default function ShareCardPage({
                             肌智派证书
                         </m.div>
 
-                        {/* 归属标题：层级低于派系名，中等字重、紧凑行高 */}
+                        {/* 归属标题：独立成段，与派系宣告之间留出呼吸 */}
                         <m.h2
                             {...stagger(0.18)}
-                            className="text-balance text-[16px] lg:text-[19px] font-medium text-brand-espresso leading-snug tracking-[0.01em] mb-2 lg:mb-2.5"
+                            className="text-balance text-[15px] lg:text-[18px] font-medium text-brand-espresso/80 leading-snug tracking-[0.01em] mb-4 lg:mb-5"
                         >
                             {isReturning ? "欢迎回来，您的测肤报告已更新" : "恭喜完成首次测肤，您的报告已生成"}
                         </m.h2>
 
-                        {/* 派系名巨大化：结果即主角 */}
+                        {/* 派系宣告：引语与派系名紧贴成组，结果即主角 */}
                         <m.p
                             {...stagger(0.26)}
-                            className="text-[13px] text-brand-espresso/50 font-light tracking-[0.06em] mb-1.5"
+                            className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em] mb-1.5 lg:mb-2"
                         >
                             根据检测结果，您的肌智派系为
                         </m.p>
                         <m.h3
                             {...stagger(0.3)}
-                            className="text-balance text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.04em] mb-3 lg:mb-4"
+                            className="text-balance text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.04em] mb-4 lg:mb-5"
                         >
                             「{skinTypeName}」
                         </m.h3>
 
-                        {/* 摘要：适读字号 + 1.7 行高，移动端三行/桌面两行截断 */}
+                        {/* 金色短分隔：把"点评"与派系宣告区隔开 */}
+                        <m.div
+                            {...stagger(0.34)}
+                            aria-hidden="true"
+                            className="w-8 h-px bg-brand-gold/50 mb-3 lg:mb-4"
+                        />
+
+                        {/* 摘要：适读字号 + 宽松行高，移动端三行/桌面两行截断 */}
                         <m.p
-                            {...stagger(0.36)}
-                            className="text-[13px] leading-[1.7] text-[var(--color-brand-cocoa)]/60 max-w-full lg:max-w-[400px] line-clamp-3 lg:line-clamp-2"
+                            {...stagger(0.4)}
+                            className="text-[13px] lg:text-[14px] leading-[1.75] lg:leading-[1.8] text-[var(--color-brand-cocoa)]/65 max-w-full lg:max-w-[430px] line-clamp-3 lg:line-clamp-2"
                         >
                             {summary || "详细分析见下方报告。"}
                         </m.p>
                     </div>
 
-                    {/* Desktop: Character IP Image（高度随卡片自适应，底部与文字区对齐，顶部略超出卡片上缘） */}
+                    {/* Desktop: Character IP Image（高度随卡片自适应，底部与文字区对齐，顶部探出卡片上缘） */}
                     {characterReady && !characterImgFailed && (
-                        <div className="hidden lg:block absolute right-3 -top-6 bottom-10 z-10 pointer-events-none">
+                        <div className="hidden lg:block absolute right-3 -top-20 bottom-10 z-10 pointer-events-none">
                             <Image
                                 src={characterImgSrc}
                                 alt={skinTypeName}
@@ -196,6 +203,18 @@ export default function ShareCardPage({
                         </div>
                     )}
                 </div>
+
+                {/* 证书落款：日期 · 编号，固定在卡片右下角 */}
+                {(dateText || idText) && (
+                    <m.p
+                        {...stagger(0.5)}
+                        className="absolute bottom-4 right-5 z-10 text-[11px] font-light tracking-[0.08em] text-brand-charcoal/45 tabular-nums"
+                    >
+                        {dateText || ""}
+                        {dateText && idText ? " · " : ""}
+                        {idText ? `No.${idText}` : ""}
+                    </m.p>
+                )}
             </m.div>
 
             {/* 证书卡外操作区：极简——单一实心主按钮 + 纯文字次级入口，弱化一切装饰 */}
@@ -231,15 +250,6 @@ export default function ShareCardPage({
                         </button>
                     )}
                 </div>
-
-                {/* 证书落款：日期 · 编号 */}
-                {(dateText || idText) && (
-                    <m.p {...stagger(0.5)} className="text-[11px] font-light tracking-[0.08em] text-brand-charcoal/45 tabular-nums">
-                        {dateText || ""}
-                        {dateText && idText ? " · " : ""}
-                        {idText ? `No.${idText}` : ""}
-                    </m.p>
-                )}
 
                 {onReTest && (
                     <m.button
