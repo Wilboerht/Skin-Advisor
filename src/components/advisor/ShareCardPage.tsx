@@ -193,7 +193,7 @@ export default function ShareCardPage({
                         {/* 分享版标签：弱化处理，不抢派系名焦点 */}
                         <m.div
                             {...stagger(0.1)}
-                            className="relative z-10 mb-4 lg:mb-5 inline-flex h-[24px] px-2.5 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/12 bg-transparent text-[11px] font-medium text-[var(--color-brand-charcoal)]/60 tracking-[0.12em] whitespace-nowrap self-start"
+                            className="relative z-10 mb-5 lg:mb-6 inline-flex h-[24px] px-2.5 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/12 bg-transparent text-[11px] font-medium text-[var(--color-brand-charcoal)]/60 tracking-[0.12em] whitespace-nowrap self-start"
                         >
                             肌智派证书
                         </m.div>
@@ -201,7 +201,7 @@ export default function ShareCardPage({
                         {/* 归属标题：独立成段，与派系宣告之间留出呼吸 */}
                         <m.h2
                             {...stagger(0.18)}
-                            className="text-balance text-[15px] lg:text-[18px] font-medium text-brand-espresso/80 leading-snug tracking-[0.01em] mb-4 lg:mb-5"
+                            className="text-balance text-[15px] lg:text-[18px] font-medium text-brand-espresso/80 leading-snug tracking-[0.01em] mb-6 lg:mb-8"
                         >
                             {isReturning ? "欢迎回来，您的测肤报告已更新" : "恭喜完成首次测肤，您的报告已生成"}
                         </m.h2>
@@ -209,13 +209,13 @@ export default function ShareCardPage({
                         {/* 派系宣告：引语与派系名紧贴成组，结果即主角（无「」包裹，靠字号与字距立住气场） */}
                         <m.p
                             {...stagger(0.26)}
-                            className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em] mb-2 lg:mb-2.5"
+                            className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em] mb-1.5 lg:mb-2"
                         >
                             根据检测结果，您的肌智派系为
                         </m.p>
                         <m.h3
                             {...stagger(0.3)}
-                            className="text-[42px] lg:text-[52px] font-serif font-light text-brand-espresso leading-none tracking-[0.12em] mb-4 lg:mb-5"
+                            className="text-[44px] lg:text-[56px] font-serif font-light text-brand-espresso leading-none tracking-[0.14em] mb-6 lg:mb-8"
                         >
                             {skinTypeName}
                         </m.h3>
@@ -223,7 +223,7 @@ export default function ShareCardPage({
                         {/* 摘要：适读字号 + 宽松行高，三行截断 */}
                         <m.p
                             {...stagger(0.4)}
-                            className="text-[13px] lg:text-[14px] leading-[1.75] lg:leading-[1.8] text-[var(--color-brand-cocoa)]/65 max-w-full lg:max-w-[430px] line-clamp-3"
+                            className="text-[13px] lg:text-[14px] leading-[1.7] lg:leading-[1.75] text-[var(--color-brand-cocoa)]/65 max-w-full lg:max-w-[430px] line-clamp-3"
                         >
                             {summary || "详细分析见下方报告。"}
                         </m.p>
