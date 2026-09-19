@@ -219,7 +219,7 @@ export default function ShareCardPage({
 
                         {/* 派系宣告：左侧「引语 + 派系名」两行；右侧徽章占满两行高度（顶部=引语顶、底部=派系名底）
                             徽章高度 = 引语行高(12×1.5=18 / 13×1.5=19.5) + gap-1.5(6) + 派系名(40/48) = 64 / 73.5 */}
-                        <div className={`flex items-start justify-between gap-4 lg:gap-5 ${percentile !== null ? "pb-4" : ""}`}>
+                        <div className={`flex items-start justify-between gap-4 lg:gap-5 lg:pr-6 ${percentile !== null ? "pb-4" : ""}`}>
                             <div className="flex flex-col gap-1.5">
                                 <m.p
                                     {...stagger(0.26)}
