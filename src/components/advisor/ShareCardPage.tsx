@@ -353,7 +353,7 @@ export default function ShareCardPage({
             {/* 重新测试：无额度时展示原因而非入口，避免点进去才发现走不通；可用时与主 CTA 拉开距离、视觉降级，点击后二次确认 */}
             {onReTest && (
                 reTestBlockedReason ? (
-                    <m.div {...stagger(0.55)} className="mt-8 lg:mt-10 flex justify-center">
+                    <m.div {...stagger(0.55)} className="mt-6 flex justify-center">
                         <p className="text-[11px] font-light text-brand-charcoal/35 tracking-[0.04em]">
                             {reTestBlockedReason === "login"
                                 ? "登录后可重新测试"
@@ -364,7 +364,7 @@ export default function ShareCardPage({
                     </m.div>
                 ) : (
                     <>
-                        <m.div {...stagger(0.55)} className="mt-8 lg:mt-10 flex justify-center">
+                        <m.div {...stagger(0.55)} className="mt-6 flex justify-center">
                             <button
                                 type="button"
                                 onClick={() => setShowReTestConfirm(true)}
