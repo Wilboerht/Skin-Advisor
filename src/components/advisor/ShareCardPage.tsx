@@ -94,26 +94,26 @@ export default function ShareCardPage({
 
     const fireGiftConfetti = useCallback(() => {
         if (reduceMotion || giftConfettiTimer.current !== null) return;
-        const pieces = Array.from({ length: 14 }, (_, i) => {
-            const angle = ((-140 + Math.random() * 100) * Math.PI) / 180;
-            const distance = 26 + Math.random() * 26;
+        const pieces = Array.from({ length: 24 }, (_, i) => {
+            const angle = ((-160 + Math.random() * 140) * Math.PI) / 180;
+            const distance = 40 + Math.random() * 50;
             return {
                 id: ++giftConfettiSeq.current,
                 x: Math.cos(angle) * distance,
                 y: Math.sin(angle) * distance,
-                rotate: (Math.random() - 0.5) * 320,
-                width: 2 + Math.round(Math.random() * 2),
-                height: 6 + Math.round(Math.random() * 4),
+                rotate: (Math.random() - 0.5) * 540,
+                width: 3 + Math.round(Math.random() * 3),
+                height: 8 + Math.round(Math.random() * 8),
                 color: GIFT_CONFETTI_COLORS[i % GIFT_CONFETTI_COLORS.length],
-                delay: Math.random() * 0.08,
-                duration: 0.6 + Math.random() * 0.3,
+                delay: Math.random() * 0.1,
+                duration: 0.7 + Math.random() * 0.4,
             };
         });
         setGiftConfetti(pieces);
         giftConfettiTimer.current = window.setTimeout(() => {
             setGiftConfetti([]);
             giftConfettiTimer.current = null;
-        }, 1000);
+        }, 1300);
     }, [reduceMotion]);
 
     useEffect(() => () => {
@@ -189,8 +189,8 @@ export default function ShareCardPage({
 
                 {/* 文字区 */}
                 <div className="relative z-10 w-full px-6 pt-6 pb-12 lg:p-10 lg:pr-[36%]">
-                    {/* 间距系统：区块间统一 24/32px（gap-6 lg:gap-8），组内统一 8px（gap-2），全部落在 8px 网格上 */}
-                    <div className="flex flex-col justify-center gap-6 lg:gap-8">
+                    {/* 间距系统：区块间统一 16/24px（gap-4 lg:gap-6），组内统一 6px（gap-1.5），全部落在 4px 网格上 */}
+                    <div className="flex flex-col justify-center gap-4 lg:gap-6">
                         {/* 分享版标签：弱化处理，不抢派系名焦点 */}
                         <m.div
                             {...stagger(0.1)}
@@ -207,8 +207,8 @@ export default function ShareCardPage({
                             {isReturning ? "欢迎回来，您的测肤报告已更新" : "恭喜完成首次测肤，您的报告已生成"}
                         </m.h2>
 
-                        {/* 派系宣告：引语与派系名以 8px 组内间距紧贴，与相邻区块的 24/32px 形成邻近性对比 */}
-                        <div className="flex flex-col gap-2">
+                        {/* 派系宣告：引语与派系名以 6px 组内间距紧贴，与相邻区块的 16/24px 形成邻近性对比 */}
+                        <div className="flex flex-col gap-1.5">
                             <m.p
                                 {...stagger(0.26)}
                                 className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em]"
@@ -217,7 +217,7 @@ export default function ShareCardPage({
                             </m.p>
                             <m.h3
                                 {...stagger(0.3)}
-                                className="text-[44px] lg:text-[56px] font-serif font-light text-brand-espresso leading-none tracking-[0.14em]"
+                                className="text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.12em]"
                             >
                                 {skinTypeName}
                             </m.h3>
