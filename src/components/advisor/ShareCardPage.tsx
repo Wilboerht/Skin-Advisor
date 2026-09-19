@@ -187,8 +187,8 @@ export default function ShareCardPage({
                             <Image
                                 src={characterImgSrc}
                                 alt={skinTypeName}
-                                width={190}
-                                height={254}
+                                width={480}
+                                height={640}
                                 className="h-full w-auto object-contain object-right drop-shadow-[0_10px_24px_rgba(0,0,0,0.15)]"
                                 priority
                                 onError={handleCharacterImageError}
