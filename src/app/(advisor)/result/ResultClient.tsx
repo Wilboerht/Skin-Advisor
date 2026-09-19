@@ -50,6 +50,7 @@ const PosterTemplatePicker = dynamic(
     () => import("@/components/advisor/poster/PosterTemplatePicker").then((mod) => mod.PosterTemplatePicker),
     { ssr: false }
 );
+const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
 
 // Re-export for backward compatibility with existing imports
 export { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -405,6 +406,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const [posterMounted, setPosterMounted] = useState(false);
     // 版式选择弹层懒挂载：多模板时才可能打开，打开过保持挂载以保留退场动画
     const shouldRenderPosterPicker = useLazyOpen(showPosterPicker);
+    // 肌智派送好礼弹窗：结果页原地打开，避免跳首页丢失当前报告上下文
+    const [showGiftModal, setShowGiftModal] = useState(false);
+    const shouldRenderGiftModal = useLazyOpen(showGiftModal);
     const [dismissValidationWarning, setDismissValidationWarning] = useState(false);
     // SSR 水合安全：初始值固定 false，挂载后再从 sessionStorage 同步（同 ackedSessionId）
     useEffect(() => {
@@ -1593,7 +1597,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             certId={sessionId}
                                             onOpenReport={handleFlipToReport}
                                             onReTest={handleReTest}
-                                            onGift={() => navPush('/?gift=1')}
+                                            onGift={() => setShowGiftModal(true)}
                                             isReturning={!!prevSum}
                                         />
                                     </section>
@@ -1812,6 +1816,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         onClose={closePosterSaveModal}
                         onSaved={() => { if (!isMock) trackResultShare("image"); }}
                     />
+
+                    {/* 肌智派送好礼活动弹窗：结果页原地打开（懒挂载，首次点开才加载分包） */}
+                    {shouldRenderGiftModal && (
+                        <GiftModal isOpen={showGiftModal} onClose={() => setShowGiftModal(false)} />
+                    )}
                 </div>)}
         </>
         </ResultErrorBoundary>
