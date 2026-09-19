@@ -478,6 +478,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     useEffect(() => {
         if (isMock || typeof overallScore !== "number") return;
         let cancelled = false;
+        // 评分变化（如重新分析）先清掉旧百分位，避免展示与当前分数不符的副标
+        setScorePercentile(null);
         (async () => {
             try {
                 const res = await fetch(`/api/advisor/score-percentile?score=${Math.round(overallScore)}`);

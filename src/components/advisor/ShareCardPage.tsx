@@ -225,7 +225,7 @@ export default function ShareCardPage({
                             >
                                 根据检测结果，您的肌智派系为
                             </m.p>
-                            <div className="flex items-end gap-4 lg:gap-5">
+                            <div className="flex items-start gap-4 lg:gap-5">
                                 <m.h3
                                     {...stagger(0.3)}
                                     className="text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.12em]"
@@ -233,7 +233,7 @@ export default function ShareCardPage({
                                     {skinTypeName}
                                 </m.h3>
                                 {score !== undefined && (
-                                    <m.div {...stagger(0.34)} className="relative flex shrink-0 flex-col items-center pb-0.5">
+                                    <m.div {...stagger(0.34)} className="flex shrink-0 flex-col items-center">
                                         <div className="relative flex h-16 w-16 lg:h-[76px] lg:w-[76px] items-center justify-center rounded-full border border-brand-gold/55">
                                             <div aria-hidden="true" className="absolute inset-[3px] rounded-full border border-dashed border-brand-gold/30" />
                                             <div className="flex flex-col items-center leading-none">
@@ -244,7 +244,7 @@ export default function ShareCardPage({
                                             </div>
                                         </div>
                                         {percentile !== null && (
-                                            <p className="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap text-[10px] font-light leading-none tracking-[0.02em] text-brand-espresso/50">
+                                            <p className="mt-1.5 whitespace-nowrap text-[10px] font-light leading-none tracking-[0.02em] text-brand-espresso/50">
                                                 超过 {percentile}% 的用户
                                             </p>
                                         )}

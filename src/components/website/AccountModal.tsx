@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { LoginGuide } from "@/components/website/LoginGuide";
+import { AccountRootView } from "@/components/website/AccountRootView";
 import { AccountMyTab } from "@/components/website/AccountMyTab";
 import { AccountMembershipTab } from "@/components/website/AccountMembershipTab";
 import { AccountMallTab } from "@/components/website/AccountMallTab";
@@ -27,29 +28,39 @@ const ACCOUNT_TABS: { key: AccountTab; label: string }[] = [
 ];
 
 /**
- * AccountModal — 用户面板弹层（替代原 /profile 独立页），分「我的 / 会员 / 积分商城」三个 tab。
- * 「我的」：资料可编辑（头像/昵称/生日/性别走 BFF /api/account/profile）、积分余额、
- * 测肤派系与用量、护肤档案入口、安全中心链接、退出登录；
- * 「会员」：等级卡 / 升级进度 / 全档权益（/api/account/membership，tab 首次激活才拉取）；
- * 「积分商城」：官网 /account/embed?tab=mall iframe（tab 首次激活才挂载）。
+ * AccountModal — 用户面板弹层（替代原 /profile 独立页），两级视图：
+ * 根视图（最早样式）：身份展示 +「护肤档案」「会员中心」两个入口 + 退出登录；
+ * 会员中心视图：「我的 / 会员 / 积分商城」三个 tab（我的=资料可编辑走 BFF、
+ * 会员=等级权益 /api/account/membership、积分商城=官网 embed iframe），
+ * 根视图 ⇄ 会员中心 淡入淡出切换，会员中心内返回键/Escape 先回根视图。
  * 未登录：登录引导视图，点击按钮走 SSO 统一登录。
  * 容器/动效/关闭按钮与 GiftModal 等全站模态框对齐。
  */
 export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const { user, logout } = useAuth();
 
-  useBodyScrollLock({ enabled: isOpen, iosSafe: true });
-  // 移动端返回键/返回手势：先关账户弹层（再按返回才离开页面）
-  useModalBackClose(isOpen, onClose);
+  // 两级视图：root = 根视图（简洁入口），center = 会员中心（三个 tab）
+  const [view, setView] = useState<"root" | "center">("root");
 
-  // tab 状态：关闭弹层后复位到「我的」，但已激活过的 tab 保持挂载（避免商城 iframe
-  // 与会员数据每次重开都重新加载）；账号切换时全部重置，防止展示上一账号的残留数据
+  useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+
+  // 返回分层：会员中心视图先回根视图，根视图才关闭弹层
+  const handleBackRequest = view === "center" ? () => setView("root") : onClose;
+  // 移动端返回键/返回手势
+  useModalBackClose(isOpen, handleBackRequest);
+
+  // tab 状态（会员中心内）：关闭弹层后复位到「我的」，但已激活过的 tab 保持挂载（避免商城
+  // iframe 与会员数据每次重开都重新加载）；账号切换时全部重置，防止展示上一账号的残留数据
   const [activeTab, setActiveTab] = useState<AccountTab>("my");
   const [visitedTabs, setVisitedTabs] = useState<AccountTab[]>(["my"]);
   useEffect(() => {
-    if (!isOpen) setActiveTab("my");
+    if (!isOpen) {
+      setView("root");
+      setActiveTab("my");
+    }
   }, [isOpen]);
   useEffect(() => {
+    setView("root");
     setActiveTab("my");
     setVisitedTabs(["my"]);
   }, [user?.id]);
@@ -80,10 +91,10 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [logoutGlobal, setLogoutGlobal] = useState(false);
 
-  // Escape 分层：确认框打开时优先关确认框，再次按下才关主弹层
+  // Escape 分层：确认框打开时优先关确认框，其次会员中心回根视图，最后才关主弹层
   const modalRef = useFocusTrap<HTMLDivElement>(
     isOpen,
-    showLogoutConfirm ? () => setShowLogoutConfirm(false) : onClose
+    showLogoutConfirm ? () => setShowLogoutConfirm(false) : handleBackRequest
   );
 
   const handleLogout = () => {
@@ -140,6 +151,17 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 <X size={16} strokeWidth={2.5} />
               </button>
 
+              {/* 会员中心视图：左上角返回根视图 */}
+              {user && view === "center" && (
+                <button
+                  onClick={() => setView("root")}
+                  aria-label="返回"
+                  className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] left-3 sm:top-5 sm:left-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
+                >
+                  <ArrowLeft size={16} strokeWidth={2.5} />
+                </button>
+              )}
+
               <div className="max-h-[85vh] sm:max-h-[80vh] overflow-y-auto px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8 flex flex-col items-center">
                 <h2 id="account-modal-title" className="sr-only">
                   我的账户
@@ -148,48 +170,75 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 {!user ? (
                   <LoginGuide onNavigateLogin={onClose} />
                 ) : (
-                  <>
-                    {/* tab 栏：胶囊分段（与全站 tabs 规范一致） */}
-                    <div
-                      role="tablist"
-                      aria-label="账户面板"
-                      className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1 mb-6"
-                    >
-                      {ACCOUNT_TABS.map((t) => (
-                        <button
-                          key={t.key}
-                          type="button"
-                          role="tab"
-                          aria-selected={activeTab === t.key}
-                          onClick={() => activateTab(t.key)}
-                          className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
-                            activeTab === t.key
-                              ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
-                              : "text-brand-charcoal/60 hover:text-brand-charcoal"
-                          }`}
+                  <AnimatePresence mode="wait" initial={false}>
+                    {view === "root" ? (
+                      <m.div
+                        key="root"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.18 }}
+                        className="w-full flex flex-col items-center"
+                      >
+                        <AccountRootView
+                          user={user}
+                          onClose={onClose}
+                          onOpenCenter={() => setView("center")}
+                          onRequestLogout={handleLogout}
+                        />
+                      </m.div>
+                    ) : (
+                      <m.div
+                        key="center"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.18 }}
+                        className="w-full flex flex-col items-center"
+                      >
+                        {/* tab 栏：胶囊分段（与全站 tabs 规范一致） */}
+                        <div
+                          role="tablist"
+                          aria-label="会员中心"
+                          className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1 mb-6"
                         >
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
+                          {ACCOUNT_TABS.map((t) => (
+                            <button
+                              key={t.key}
+                              type="button"
+                              role="tab"
+                              aria-selected={activeTab === t.key}
+                              onClick={() => activateTab(t.key)}
+                              className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
+                                activeTab === t.key
+                                  ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
+                                  : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                              }`}
+                            >
+                              {t.label}
+                            </button>
+                          ))}
+                        </div>
 
-                    {/* tab 面板：首次激活才挂载，之后保持挂载仅隐藏 */}
-                    {visitedTabs.includes("my") && (
-                      <div role="tabpanel" hidden={activeTab !== "my"} className="w-full flex flex-col items-center">
-                        <AccountMyTab user={user} onClose={onClose} onRequestLogout={handleLogout} />
-                      </div>
+                        {/* tab 面板：首次激活才挂载，之后保持挂载仅隐藏 */}
+                        {visitedTabs.includes("my") && (
+                          <div role="tabpanel" hidden={activeTab !== "my"} className="w-full flex flex-col items-center">
+                            <AccountMyTab user={user} />
+                          </div>
+                        )}
+                        {visitedTabs.includes("membership") && (
+                          <div role="tabpanel" hidden={activeTab !== "membership"} className="w-full">
+                            <AccountMembershipTab />
+                          </div>
+                        )}
+                        {visitedTabs.includes("mall") && (
+                          <div role="tabpanel" hidden={activeTab !== "mall"} className="w-full">
+                            <AccountMallTab onClose={onClose} />
+                          </div>
+                        )}
+                      </m.div>
                     )}
-                    {visitedTabs.includes("membership") && (
-                      <div role="tabpanel" hidden={activeTab !== "membership"} className="w-full">
-                        <AccountMembershipTab />
-                      </div>
-                    )}
-                    {visitedTabs.includes("mall") && (
-                      <div role="tabpanel" hidden={activeTab !== "mall"} className="w-full">
-                        <AccountMallTab onClose={onClose} />
-                      </div>
-                    )}
-                  </>
+                  </AnimatePresence>
                 )}
               </div>
             </m.div>

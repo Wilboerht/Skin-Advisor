@@ -1,19 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import {
+    buildDistribution,
+    percentileFromDistribution,
+    type ScoreDistribution,
+} from "@/lib/score-percentile";
 
 /**
- * 综合评分真实百分位：按「每个用户最近一次含真实视觉评分的测肤（analysisSource=hybrid）」聚合，
- * 返回该分数超过的平台用户百分比。
- * - 样本不足 MIN_SAMPLE_SIZE 时返回 percentile: null（前端隐藏该行，避免小样本误导）
- * - analysisSource=text（无面部分析、无评分）与未归属游客会话不参与
- * - 归档冷层保留 faceAnalysis.overallScore，与热层一并参与
- * - 进程内 10 分钟缓存 + CDN 缓存头，避免每次展示都扫表
+ * 综合评分真实百分位：按「每个用户最近一次含真实视觉评分的测肤」聚合。
+ *
+ * 数据口径（重要）：
+ * - 只看 `analysisResult.faceAnalysis.overallScore` 存在且为数值的行——analyze 落库时
+ *   faceAnalysis 显式取真实 AI 视觉结果（fallback 路径显式置 null），因此"有分数"即真实评分；
+ * - **不能用 `analysisSource = 'hybrid'` 过滤**：前端埋点 analysis_complete 会把该字段
+ *   覆写为 'ai' / 'fallback'（useAdvisorAnalytics → analytics/track），落库值不稳定；
+ * - 每个 userId 只取最近一次（DISTINCT ON），与"超过 X% 的测肤用户"文案口径一致；
+ * - 归档冷层保留 faceAnalysis.overallScore，一并参与。
+ *
+ * 性能：一次查询取全量分数直方图（≤101 桶）并全局缓存，任意 score 由缓存求累计，
+ * 避免按 score 缓存被刷导致重复扫表；样本不足时 percentileFromDistribution 返回 null。
  */
-const MIN_SAMPLE_SIZE = 50;
 const CACHE_TTL_MS = 10 * 60 * 1000;
-const cache = new Map<number, { percentile: number | null; sampleSize: number; expiresAt: number }>();
 
-const CACHE_HEADERS = { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=1800" };
+interface DistributionCache {
+    dist: ScoreDistribution;
+    expiresAt: number;
+}
+
+let cache: DistributionCache | null = null;
+let refreshPromise: Promise<ScoreDistribution> | null = null;
+
+async function loadDistribution(): Promise<ScoreDistribution> {
+    // 正则先保证可安全转 numeric（源码里 \\ 转义后 SQL 实际收到 \.）：桶按显示分数四舍五入取整
+    const rows = await prisma.$queryRaw<Array<{ score: number; count: number }>>`
+        WITH latest AS (
+            SELECT DISTINCT ON ("userId")
+                   ROUND(("analysisResult"->'faceAnalysis'->>'overallScore')::numeric)::int AS score,
+                   COALESCE("analysisCompletedAt", "completedAt", "createdAt") AS ordered_at
+            FROM "AdvisorSession"
+            WHERE "userId" IS NOT NULL
+              AND ("analysisResult"->'faceAnalysis'->>'overallScore') ~ '^[0-9]+(\\.[0-9]+)?$'
+            ORDER BY "userId", ordered_at DESC
+        )
+        SELECT score, COUNT(*)::int AS count
+        FROM latest
+        GROUP BY score
+        ORDER BY score
+    `;
+    return buildDistribution(rows);
+}
+
+async function getDistribution(): Promise<ScoreDistribution> {
+    if (cache && cache.expiresAt > Date.now()) return cache.dist;
+    // 并发防击穿：同一次刷新只发一条查询
+    if (!refreshPromise) {
+        refreshPromise = loadDistribution()
+            .then((dist) => {
+                cache = { dist, expiresAt: Date.now() + CACHE_TTL_MS };
+                return dist;
+            })
+            .finally(() => {
+                refreshPromise = null;
+            });
+    }
+    return refreshPromise;
+}
 
 export async function GET(request: NextRequest) {
     const raw = Number(request.nextUrl.searchParams.get("score"));
@@ -22,42 +73,14 @@ export async function GET(request: NextRequest) {
     }
     const score = Math.round(raw);
 
-    const cached = cache.get(score);
-    if (cached && cached.expiresAt > Date.now()) {
-        return NextResponse.json(
-            { percentile: cached.percentile, sampleSize: cached.sampleSize },
-            { headers: CACHE_HEADERS }
-        );
-    }
-
     try {
-        const rows = await prisma.$queryRaw<Array<{ total: number; below: number }>>`
-            WITH latest AS (
-                SELECT DISTINCT ON ("userId")
-                       ("analysisResult"->'faceAnalysis'->>'overallScore')::numeric AS score
-                FROM "AdvisorSession"
-                WHERE "userId" IS NOT NULL
-                  AND "analysisSource" = 'hybrid'
-                  AND "analysisResult"->'faceAnalysis'->>'overallScore' IS NOT NULL
-                ORDER BY "userId", COALESCE("analysisCompletedAt", "completedAt", "createdAt") DESC
-            )
-            SELECT COUNT(*)::int AS total,
-                   COUNT(*) FILTER (WHERE score < ${score})::int AS below
-            FROM latest
-        `;
-        const total = rows[0]?.total ?? 0;
-        const below = rows[0]?.below ?? 0;
-        const percentile =
-            total >= MIN_SAMPLE_SIZE
-                ? Math.min(99, Math.max(1, Math.round((below / total) * 100)))
-                : null;
-
-        if (cache.size > 128) cache.clear();
-        cache.set(score, { percentile, sampleSize: total, expiresAt: Date.now() + CACHE_TTL_MS });
-
-        return NextResponse.json({ percentile, sampleSize: total }, { headers: CACHE_HEADERS });
+        const dist = await getDistribution();
+        return NextResponse.json(
+            { percentile: percentileFromDistribution(dist, score), sampleSize: dist.total },
+            { headers: { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=1800" } }
+        );
     } catch (error) {
-        // 数据库不可用（如未配置 DATABASE_URL 的本地环境）：静默降级为不展示
+        // 数据库不可用（如未配置 DATABASE_URL 的本地环境）：静默降级为不展示，且不写缓存
         console.error("[score-percentile] aggregate failed:", error);
         return NextResponse.json({ percentile: null, sampleSize: 0 });
     }
