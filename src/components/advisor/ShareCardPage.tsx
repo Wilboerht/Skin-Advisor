@@ -172,17 +172,10 @@ export default function ShareCardPage({
                             「{skinTypeName}」
                         </m.h3>
 
-                        {/* 金色短分隔：把"点评"与派系宣告区隔开 */}
-                        <m.div
-                            {...stagger(0.34)}
-                            aria-hidden="true"
-                            className="w-8 h-px bg-brand-gold/50 mb-3 lg:mb-4"
-                        />
-
-                        {/* 摘要：适读字号 + 宽松行高，移动端三行/桌面两行截断 */}
+                        {/* 摘要：适读字号 + 宽松行高，三行截断 */}
                         <m.p
                             {...stagger(0.4)}
-                            className="text-[13px] lg:text-[14px] leading-[1.75] lg:leading-[1.8] text-[var(--color-brand-cocoa)]/65 max-w-full lg:max-w-[430px] line-clamp-3 lg:line-clamp-2"
+                            className="text-[13px] lg:text-[14px] leading-[1.75] lg:leading-[1.8] text-[var(--color-brand-cocoa)]/65 max-w-full lg:max-w-[430px] line-clamp-3"
                         >
                             {summary || "详细分析见下方报告。"}
                         </m.p>
