@@ -409,6 +409,25 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 肌智派送好礼弹窗：结果页原地打开，避免跳首页丢失当前报告上下文
     const [showGiftModal, setShowGiftModal] = useState(false);
     const shouldRenderGiftModal = useLazyOpen(showGiftModal);
+    // 重新测试入口额度预检：无额度/需登录时改展示原因，避免点进去到问卷页才发现走不通
+    const [reTestBlockedReason, setReTestBlockedReason] = useState<"login" | "daily" | "lifetime" | null>(null);
+    const userId = user?.id;
+    useEffect(() => {
+        if (isMock) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch("/api/advisor/test-limit");
+                if (!res.ok) return;
+                const data = await res.json();
+                if (cancelled) return;
+                setReTestBlockedReason(data.canTest ? null : data.requireLogin ? "login" : data.quotaPeriod === "lifetime" ? "lifetime" : "daily");
+            } catch {
+                // 预检失败不阻塞：照常展示入口，进入问卷时还有一次预检兜底
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [isMock, userId]);
     const [dismissValidationWarning, setDismissValidationWarning] = useState(false);
     // SSR 水合安全：初始值固定 false，挂载后再从 sessionStorage 同步（同 ackedSessionId）
     useEffect(() => {
@@ -1597,6 +1616,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             certId={sessionId}
                                             onOpenReport={handleFlipToReport}
                                             onReTest={handleReTest}
+                                            reTestBlockedReason={reTestBlockedReason}
                                             onGift={() => setShowGiftModal(true)}
                                             isReturning={!!prevSum}
                                         />

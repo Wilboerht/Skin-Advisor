@@ -1,67 +1,62 @@
 "use client";
 
-import Image from "next/image";
-import { createElement, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ChevronRight, LogOut, NotebookPen, Settings2, Smartphone, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useModalBackClose } from "@/hooks/use-modal-back-close";
-import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { LoginGuide } from "@/components/website/LoginGuide";
-import { getFactionIcon } from "@/components/website/faction-icons";
-import { getSkinTypeByIpKey } from "@/lib/result-content";
-import type { HistorySession } from "@/components/website/TestHistoryList";
+import { AccountMyTab } from "@/components/website/AccountMyTab";
+import { AccountMembershipTab } from "@/components/website/AccountMembershipTab";
+import { AccountMallTab } from "@/components/website/AccountMallTab";
 
 interface AccountModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-function maskPhone(phone?: string | null) {
-  if (!phone) return "—";
-  if (phone.length <= 7) return phone;
-  return phone.slice(0, 3) + "****" + phone.slice(-4);
-}
+type AccountTab = "my" | "membership" | "mall";
 
-// 四档会员徽章：中文名 + 配色（历史值 ADVANCED 按金卡兜底，与后端 normalizeMembershipLevel 一致）
-const MEMBER_BADGES: Record<string, { label: string; className: string }> = {
-  SILVER: { label: "银卡会员", className: "border-slate-400/70 text-slate-500" },
-  GOLD: { label: "金卡会员", className: "border-[#C9A86C]/70 text-[#8B7355]" },
-  DIAMOND: { label: "钻石会员", className: "border-sky-400/70 text-sky-600" },
-  ADVANCED: { label: "金卡会员", className: "border-[#C9A86C]/70 text-[#8B7355]" },
-};
-const REGULAR_BADGE = { label: "普通会员", className: "border-brand-charcoal/15 text-brand-charcoal/65" };
-
-function getMemberBadge(level?: string | null) {
-  return (level && MEMBER_BADGES[level]) || REGULAR_BADGE;
-}
-
-/** /api/advisor/test-limit 的 usage 字段（登录用户） */
-interface TestUsage {
-  totalUsed: number;
-  todayUsed: number;
-  lifetimeLimit: number | null;
-  dailyLimit: number | null;
-  unlimited: boolean;
-}
+const ACCOUNT_TABS: { key: AccountTab; label: string }[] = [
+  { key: "my", label: "我的" },
+  { key: "membership", label: "会员" },
+  { key: "mall", label: "积分商城" },
+];
 
 /**
- * AccountModal — 「我的」账户弹层（替代原 /profile 独立页）
- * 已登录：头像、昵称、手机号（纯展示；资料编辑统一到 NIHPLOD 主站账号中心）、护肤档案入口、退出登录。
+ * AccountModal — 用户面板弹层（替代原 /profile 独立页），分「我的 / 会员 / 积分商城」三个 tab。
+ * 「我的」：资料可编辑（头像/昵称/生日/性别走 BFF /api/account/profile）、积分余额、
+ * 测肤派系与用量、护肤档案入口、安全中心链接、退出登录；
+ * 「会员」：等级卡 / 升级进度 / 全档权益（/api/account/membership，tab 首次激活才拉取）；
+ * 「积分商城」：官网 /account/embed?tab=mall iframe（tab 首次激活才挂载）。
  * 未登录：登录引导视图，点击按钮走 SSO 统一登录。
- * 容器/动效/关闭按钮与 GiftModal 等全站模态框对齐；测肤记录在护肤档案弹层查看。
+ * 容器/动效/关闭按钮与 GiftModal 等全站模态框对齐。
  */
 export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const { user, logout } = useAuth();
-  const { openDiaryModal } = useDiaryModal();
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
   // 移动端返回键/返回手势：先关账户弹层（再按返回才离开页面）
   useModalBackClose(isOpen, onClose);
+
+  // tab 状态：关闭弹层后复位到「我的」，已激活过的 tab 保持挂载（避免商城 iframe 反复加载）
+  const [activeTab, setActiveTab] = useState<AccountTab>("my");
+  const [visitedTabs, setVisitedTabs] = useState<AccountTab[]>(["my"]);
+  useEffect(() => {
+    if (!isOpen) {
+      setActiveTab("my");
+      setVisitedTabs(["my"]);
+    }
+  }, [isOpen]);
+
+  const activateTab = (tab: AccountTab) => {
+    setActiveTab(tab);
+    setVisitedTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]));
+  };
 
   // 遮罩防误触：记录打开时刻，打开后 350ms 内忽略遮罩点击关闭——
   // 入口双击的第二下会穿透到遮罩上，若不设保护会"打开即被关闭"
@@ -80,32 +75,6 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // 测肤用量（登录用户打开弹层时拉取；接口失败静默不展示该行）
-  const [testUsage, setTestUsage] = useState<TestUsage | null>(null);
-  // 最新测肤派系（身份核心信息；取最近一次测肤记录的 persona ipKey，派系名与图标据此派生）
-  const [latestPersona, setLatestPersona] = useState<string | null>(null);
-  useEffect(() => {
-    if (!isOpen || !user) return;
-    let cancelled = false;
-    fetch("/api/advisor/test-limit")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!cancelled && data?.usage) setTestUsage(data.usage as TestUsage);
-      })
-      .catch(() => { /* 静默失败 */ });
-    // 最新派系：复用 history 接口（lite），仅取第一条的 persona
-    fetch("/api/advisor/history?page=1&limit=1&lite=1")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled) return;
-        const latest = (data?.history as HistorySession[] | undefined)?.[0];
-        const persona = (latest?.analysisResult as { persona?: string } | undefined)?.persona;
-        setLatestPersona(persona ?? null);
-      })
-      .catch(() => { /* 静默失败 */ });
-    return () => { cancelled = true; };
-  }, [isOpen, user]);
-
   // 退出确认框状态：global = 勾选「同时退出所有 NIHPLOD 平台」
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [logoutGlobal, setLogoutGlobal] = useState(false);
@@ -122,9 +91,6 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
     // logout 内部已完成整页跳转，无需再处理路由
     await logout({ global });
   };
-
-  // 派系信息派生：ipKey → 类型数据（未知 key 时整体不渲染该行）
-  const latestPersonaType = latestPersona ? getSkinTypeByIpKey(latestPersona) : null;
 
   if (!mounted) return null;
 
@@ -167,7 +133,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 <X size={16} strokeWidth={2.5} />
               </button>
 
-              <div className="px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8 flex flex-col items-center">
+              <div className="max-h-[85vh] sm:max-h-[80vh] overflow-y-auto px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8 flex flex-col items-center">
                 <h2 id="account-modal-title" className="sr-only">
                   我的账户
                 </h2>
@@ -176,93 +142,46 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                   <LoginGuide onNavigateLogin={onClose} />
                 ) : (
                   <>
-                {/* 头像（纯展示，更换请前往主站账号中心） */}
-                <div className="relative w-24 h-24 rounded-full overflow-hidden bg-[#ECEBE6] shadow-md mb-4">
-                  {user.avatar ? (
-                    <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-3xl font-medium text-[#6B5E50]">
-                      {(user.name?.[0] || "?").toUpperCase()}
+                    {/* tab 栏：胶囊分段（与全站 tabs 规范一致） */}
+                    <div
+                      role="tablist"
+                      aria-label="账户面板"
+                      className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1 mb-6"
+                    >
+                      {ACCOUNT_TABS.map((t) => (
+                        <button
+                          key={t.key}
+                          type="button"
+                          role="tab"
+                          aria-selected={activeTab === t.key}
+                          onClick={() => activateTab(t.key)}
+                          className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
+                            activeTab === t.key
+                              ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
+                              : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
                     </div>
-                  )}
-                </div>
 
-                {/* 昵称（纯展示）+ 会员徽章（REGULAR 普通 / SILVER 银卡 / GOLD 金卡 / DIAMOND 钻石，历史 ADVANCED 按金卡兜底） */}
-                <p className="text-xl font-semibold text-[#1A1A1A] mb-1.5 flex items-center gap-2">
-                  {user.name || "朋友"}
-                  {(() => {
-                    const badge = getMemberBadge(user.membershipLevel);
-                    return (
-                      <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${badge.className}`}>
-                        {badge.label}
-                      </span>
-                    );
-                  })()}
-                </p>
-
-                {/* 手机号 */}
-                <div className={`flex items-center gap-1.5 text-[13px] text-[#5E5E5E] ${testUsage ? "mb-1.5" : "mb-8"}`}>
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>{maskPhone(user.phone)}</span>
-                </div>
-
-                {/* 最新测肤派系：档案身份核心（有测肤记录时显示；图标与派系一一对应） */}
-                {latestPersonaType && (
-                  <span className="mb-2 inline-flex h-[22px] px-2 items-center gap-1 rounded-full border border-brand-charcoal/[0.1] bg-white/60 text-[11px] font-light tracking-[0.04em] text-brand-charcoal/70 whitespace-nowrap">
-                    {createElement(getFactionIcon(latestPersonaType.ipKey), {
-                      className: "w-3 h-3 text-brand-charcoal/60 shrink-0",
-                      strokeWidth: 1.5,
-                    })}
-                    我的肌智派形象 · {latestPersonaType.typeName}
-                  </span>
-                )}
-
-                {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量；接口失败不渲染 */}
-                {testUsage && (
-                  <p className={`text-[12px] text-[#6B5E50] font-light tracking-[0.05em] ${latestPersonaType ? "mb-4" : "mb-6"}`}>
-                    {testUsage.unlimited
-                      ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
-                      : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
-                  </p>
-                )}
-
-                {/* 护肤档案入口：打开全局护肤档案弹层 */}
-                <button
-                  onClick={() => {
-                    onClose();
-                    openDiaryModal();
-                  }}
-                  className="group w-full flex items-center justify-between px-4 py-3 mb-3 rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 text-[13px] tracking-[0.05em] text-[#5E5E5E] hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors cursor-pointer"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <NotebookPen className="w-4 h-4" />
-                    护肤档案
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
-                </button>
-
-                {/* 资料编辑统一到主站账号中心：整行卡片式入口，与弱操作「退出登录」拉开层级 */}
-                <a
-                  href="https://nihplod.cn/account"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group w-full flex items-center justify-between px-4 py-3 mb-6 rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 text-[13px] tracking-[0.05em] text-[#5E5E5E] hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <Settings2 className="w-4 h-4" />
-                    管理账号资料
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
-                </a>
-
-                {/* 退出登录 */}
-                <button
-                  onClick={handleLogout}
-                  className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#6B5E50] hover:text-[#1A1A1A] transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  退出登录
-                </button>
+                    {/* tab 面板：首次激活才挂载，之后保持挂载仅隐藏 */}
+                    {visitedTabs.includes("my") && (
+                      <div role="tabpanel" hidden={activeTab !== "my"} className="w-full flex flex-col items-center">
+                        <AccountMyTab user={user} onClose={onClose} onRequestLogout={handleLogout} />
+                      </div>
+                    )}
+                    {visitedTabs.includes("membership") && (
+                      <div role="tabpanel" hidden={activeTab !== "membership"} className="w-full">
+                        <AccountMembershipTab />
+                      </div>
+                    )}
+                    {visitedTabs.includes("mall") && (
+                      <div role="tabpanel" hidden={activeTab !== "mall"} className="w-full">
+                        <AccountMallTab onClose={onClose} />
+                      </div>
+                    )}
                   </>
                 )}
               </div>

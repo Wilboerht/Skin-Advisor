@@ -5,6 +5,7 @@ import { m, useReducedMotion } from "framer-motion";
 import { ArrowRight, Gift, ImageDown, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { getCharacterImage, getSkinTypeName, type IPMatchParams } from "@/lib/result-utils";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface ShareCardPageProps {
     nickname: string;
@@ -25,6 +26,8 @@ interface ShareCardPageProps {
     onOpenReport?: () => void;
     /** 重新测试入口（正常消耗测试次数）；缺省时不展示 */
     onReTest?: () => void;
+    /** 重新测试不可用原因：login=需登录 / daily=今日用完 / lifetime=总次数用完；缺省=可用（正常展示入口） */
+    reTestBlockedReason?: "login" | "daily" | "lifetime" | null;
     /** 参与抽奖入口（肌智派送好礼）；缺省时不展示 */
     onGift?: () => void;
     /** 复测用户（存在历史报告）：标题不再称"首次" */
@@ -74,6 +77,7 @@ export default function ShareCardPage({
     certId,
     onOpenReport,
     onReTest,
+    reTestBlockedReason = null,
     onGift,
     isReturning = false,
 }: ShareCardPageProps) {
@@ -119,6 +123,9 @@ export default function ShareCardPage({
     useEffect(() => () => {
         if (giftConfettiTimer.current !== null) window.clearTimeout(giftConfettiTimer.current);
     }, []);
+
+    // 重新测试二次确认：会清空当前测肤记录并消耗 1 次额度，误触成本高
+    const [showReTestConfirm, setShowReTestConfirm] = useState(false);
 
     useEffect(() => {
         setCharacterImgSrc(characterImage);
@@ -317,18 +324,47 @@ export default function ShareCardPage({
                         </button>
                     )}
                 </div>
-
-                {onReTest && (
-                    <m.button
-                        {...stagger(0.55)}
-                        type="button"
-                        onClick={onReTest}
-                        className="text-[12px] font-light text-brand-charcoal/55 underline underline-offset-4 hover:text-brand-charcoal transition-colors tracking-[0.04em] cursor-pointer"
-                    >
-                        认为派系判断不准确？重新测试（消耗 1 次测试额度）
-                    </m.button>
-                )}
             </m.div>
+
+            {/* 重新测试：无额度时展示原因而非入口，避免点进去才发现走不通；可用时与主 CTA 拉开距离、视觉降级，点击后二次确认 */}
+            {onReTest && (
+                reTestBlockedReason ? (
+                    <m.div {...stagger(0.55)} className="mt-8 lg:mt-10 flex justify-center">
+                        <p className="text-[11px] font-light text-brand-charcoal/35 tracking-[0.04em]">
+                            {reTestBlockedReason === "login"
+                                ? "登录后可重新测试"
+                                : reTestBlockedReason === "lifetime"
+                                    ? "测肤次数已用完"
+                                    : "今日测试次数已用完"}
+                        </p>
+                    </m.div>
+                ) : (
+                    <>
+                        <m.div {...stagger(0.55)} className="mt-8 lg:mt-10 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={() => setShowReTestConfirm(true)}
+                                className="text-[11px] font-light text-brand-charcoal/45 tracking-[0.04em] underline-offset-4 transition-colors hover:text-brand-charcoal/70 hover:underline cursor-pointer"
+                            >
+                                认为派系判断不准确？重新测试（消耗 1 次测试额度）
+                            </button>
+                        </m.div>
+                        <ConfirmModal
+                            isOpen={showReTestConfirm}
+                            onClose={() => setShowReTestConfirm(false)}
+                            onConfirm={() => {
+                                setShowReTestConfirm(false);
+                                onReTest();
+                            }}
+                            title="重新测试？"
+                            message="重新测试将清空当前测肤记录，并消耗 1 次测试额度。确认开始吗？"
+                            confirmText="重新测试"
+                            cancelText="取消"
+                            variant="warning"
+                        />
+                    </>
+                )
+            )}
         </div>
     );
 }
