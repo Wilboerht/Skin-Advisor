@@ -545,11 +545,11 @@ export default function HomeClient() {
               男性 IP 置于波浪层之下（下身没入蓝色区域），女性 IP 立于波浪层之上、裙摆抵到底部栏 */}
           <div className="relative flex flex-1 flex-col w-full overflow-hidden bg-[#EFE9DA]">
             {/* 左侧男性 IP（极简派 · 手持几何晶体）：移动端空间不足时隐藏。
-                bottom-31% 的取数：男性图顶部含 13% 透明边距、女性图底部含 5.5%，
-                此位置使"男性头顶 → 顶栏"与"女性脚底 → 底部栏"的视距一致（按常规桌面视口标定） */}
+                头顶 → 顶栏下缘的间距 = 底部栏高度（56px），与女性 IP"脚底 → 底部栏"的间距上下呼应。
+                图片顶部透明边占图高 13%，故 top = 56px − 13%×图高（图高 48/63vh）；按顶部锚定，不随视口高度漂移 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[2%] lg:left-[5%] bottom-[31%] hidden md:block"
+              className="absolute z-10 left-[2%] lg:left-[5%] top-[calc(56px-6.2vh)] lg:top-[calc(56px-8.2vh)] hidden md:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
