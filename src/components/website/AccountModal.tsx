@@ -3,7 +3,7 @@
 import { Component, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ArrowLeft, Crown, Gift, User, X } from "lucide-react";
+import { ArrowLeft, Gift, User, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -51,18 +51,16 @@ interface AccountModalProps {
   onClose: () => void;
 }
 
-type AccountTab = "my" | "membership" | "mall";
+type AccountTab = "my" | "mall";
 
 const ACCOUNT_TABS: { key: AccountTab; label: string }[] = [
   { key: "my", label: "我的" },
-  { key: "membership", label: "会员" },
   { key: "mall", label: "积分商城" },
 ];
 
 /** 移动端底部 Tab 栏图标（与主站用户中心的底部导航形态对齐） */
 const TAB_ICONS: Record<AccountTab, typeof User> = {
   my: User,
-  membership: Crown,
   mall: Gift,
 };
 
@@ -72,8 +70,8 @@ const MOBILE_QUERY = "(max-width: 639px)";
 /**
  * AccountModal — 用户面板弹层（替代原 /profile 独立页），两级视图：
  * 根视图（最早样式）：身份展示 +「护肤档案」「会员中心」两个入口 + 退出登录；
- * 会员中心视图：「我的 / 会员 / 积分商城」三个 tab（我的=资料可编辑走 BFF、
- * 会员=等级权益 /api/account/membership、积分商城=官网 embed iframe），
+ * 会员中心视图：「我的 / 积分商城」两个 tab（我的=身份与资料（BFF /api/account/profile）
+ * + 会员等级权益（/api/account/membership）合并展示；积分商城=官网 embed iframe），
  * 根视图 ⇄ 会员中心保持挂载淡入切换（中心视图首次进入后不卸载），返回键/Escape 先回根视图。
  * 未登录：登录引导视图，点击按钮走 SSO 统一登录。
  * 容器/动效/关闭按钮与 GiftModal 等全站模态框对齐。
@@ -82,7 +80,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const { user, logout } = useAuth();
   const { openAuthModal } = useAuthModal();
 
-  // 两级视图：root = 根视图（简洁入口），center = 会员中心（三个 tab）
+  // 两级视图：root = 根视图（简洁入口），center = 会员中心（两个 tab）
   const [view, setView] = useState<"root" | "center">("root");
   // 中心视图首次进入后保持挂载（仅用 hidden 切换）：root ⇄ center 往返、切 tab 不再重载
   // iframe/会员数据/折叠状态；账号切换时重置卸载，避免残留上一账号内容
@@ -233,17 +231,19 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
               }`}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* 关闭按钮 */}
-              <button
-                onClick={onClose}
-                aria-label="关闭"
-                className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
-              >
-                <X size={16} strokeWidth={2.5} />
-              </button>
+              {/* 关闭按钮：桌面端会员中心视图并入下方顶栏，其余场景悬浮右上角 */}
+              {!(shellFixed && !isMobile) && (
+                <button
+                  onClick={onClose}
+                  aria-label="关闭"
+                  className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
+                >
+                  <X size={16} strokeWidth={2.5} />
+                </button>
+              )}
 
-              {/* 会员中心视图：左上角返回根视图 */}
-              {user && view === "center" && (
+              {/* 会员中心视图：左上角返回根视图（桌面端并入下方顶栏） */}
+              {user && view === "center" && !(shellFixed && !isMobile) && (
                 <button
                   onClick={() => setView("root")}
                   aria-label="返回"
@@ -253,9 +253,17 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 </button>
               )}
 
-              {/* 桌面端固定 tab 栏（会员中心视图）：壳内顶栏，位于滚动区外，不遮挡内容 */}
+              {/* 桌面端固定 tab 栏（会员中心视图）：壳内顶栏（返回 / tab / 关闭），位于滚动区外，
+                  不遮挡内容；三组元素在栏内统一垂直居中（items-center） */}
               {shellFixed && !isMobile && (
-                <div className="shrink-0 w-full px-6 md:px-8 pt-10 pb-3 border-b border-brand-espresso/[0.08] flex justify-center">
+                <div className="shrink-0 w-full px-6 md:px-8 py-4 border-b border-brand-espresso/[0.08] grid grid-cols-[1fr_auto_1fr] items-center">
+                  <button
+                    onClick={() => setView("root")}
+                    aria-label="返回"
+                    className="justify-self-start w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft size={16} strokeWidth={2.5} />
+                  </button>
                   <div
                     role="tablist"
                     aria-label="会员中心"
@@ -282,6 +290,13 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                       </button>
                     ))}
                   </div>
+                  <button
+                    onClick={onClose}
+                    aria-label="关闭"
+                    className="justify-self-end w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
+                  >
+                    <X size={16} strokeWidth={2.5} />
+                  </button>
                 </div>
               )}
 
@@ -337,18 +352,11 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                             hidden={activeTab !== "my"}
                             className="w-full flex flex-col items-center"
                           >
-                            <AccountMyTab user={user} onRequestLogin={requestLogin} />
-                          </div>
-                        )}
-                        {visitedTabs.includes("membership") && (
-                          <div
-                            role="tabpanel"
-                            id="account-tabpanel-membership"
-                            aria-labelledby={isMobile ? "account-tab-mobile-membership" : "account-tab-membership"}
-                            hidden={activeTab !== "membership"}
-                            className="w-full"
-                          >
-                            <AccountMembershipTab onRequestLogin={requestLogin} />
+                            {/* 桌面端（lg+）双列：左身份/资料/安全，右会员等级/进度/权益；移动端单列堆叠 */}
+                            <div className="w-full grid grid-cols-1 lg:grid-cols-2 lg:gap-10 lg:items-start">
+                              <AccountMyTab user={user} onRequestLogin={requestLogin} />
+                              <AccountMembershipTab onRequestLogin={requestLogin} />
+                            </div>
                           </div>
                         )}
                         {visitedTabs.includes("mall") && (
@@ -375,7 +383,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                   className="shrink-0 border-t border-brand-espresso/[0.08] bg-[#FDFBF7] px-3 pt-1.5"
                   style={{ paddingBottom: "calc(0.375rem + env(safe-area-inset-bottom, 0px))" }}
                 >
-                  <div className="grid grid-cols-3">
+                  <div className="grid grid-cols-2">
                     {ACCOUNT_TABS.map((t) => {
                       const Icon = TAB_ICONS[t.key];
                       const active = activeTab === t.key;

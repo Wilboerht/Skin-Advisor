@@ -46,8 +46,8 @@ function progressPercent(progress: number) {
 }
 
 /**
- * 「会员」tab：当前等级卡 + 升级进度 + 全档权益列表。
- * 由 AccountModal 在 tab 首次激活时才挂载（不预取）；中心视图保持挂载，
+ * 会员等级区（已并入「我的」页，桌面端为右列）：当前等级卡 + 升级进度 + 全档权益列表。
+ * 由 AccountModal 在「我的」页首次激活时随 AccountMyTab 一起挂载；中心视图保持挂载，
  * root ⇄ center 往返不会重复拉取，重新打开弹层时才重新挂载刷新。
  */
 export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () => void }) {

@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useLazyOpen } from "@/hooks/use-lazy-open";
 
-// 账户弹层懒加载：只有点自己的头像才需要——结果页首屏包体优化（AccountModal 内含三个 tab 与上传逻辑）
+// 账户弹层懒加载：只有点自己的头像才需要——结果页首屏包体优化（AccountModal 内含会员/商城与上传逻辑）
 const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
 
 /**
