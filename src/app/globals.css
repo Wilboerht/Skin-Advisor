@@ -794,14 +794,14 @@ html.hide-page-scrollbar::-webkit-scrollbar {
 }
 
 /* ========== 首页 Hero 一屏适配 ========== */
-/* 首页壳：为固定顶栏预留高度（顶栏 = 64/80 + 安全区） */
+/* 首页壳：为固定顶栏预留高度（顶栏 = 72/88 + 安全区） */
 .home-shell {
-  padding-top: calc(64px + env(safe-area-inset-top, 0px));
+  padding-top: calc(72px + env(safe-area-inset-top, 0px));
 }
 
 @media (min-width: 768px) {
   .home-shell {
-    padding-top: calc(80px + env(safe-area-inset-top, 0px));
+    padding-top: calc(88px + env(safe-area-inset-top, 0px));
   }
 }
 

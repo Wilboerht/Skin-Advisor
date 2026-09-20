@@ -425,8 +425,8 @@ export default function HomeClient() {
       </AnimatePresence>
 
       {/* 顶部栏（设计稿版式）：左蓝色汉堡按钮 + 中肌智派徽章（相对顶栏整体居中）+ 右 NIHPLOD logo；
-          白底固定定位，汉堡内收纳测肤有礼 / 常见问题 / 了解肌智派入口 */}
-      <header className="fixed inset-x-0 top-0 z-40 bg-white border-b border-black/[0.06]">
+          淡奶油底固定定位（与底部栏同色），汉堡内收纳测肤有礼 / 常见问题 / 了解肌智派入口 */}
+      <header className="fixed inset-x-0 top-0 z-40 bg-[#FBF9F3] border-b border-black/[0.06]">
         <div className="relative flex items-center justify-between">
           {/* 左：汉堡按钮（宽度与右侧 logo 区一致：logo 96/128 + 右内边距 16/32 = 112/160） */}
           <button
@@ -434,7 +434,7 @@ export default function HomeClient() {
             onClick={() => setShowMenu((v) => !v)}
             aria-label={showMenu ? "关闭菜单" : "打开菜单"}
             aria-expanded={showMenu}
-            className="flex h-16 w-28 md:h-20 md:w-40 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2"
+            className="flex h-[72px] w-28 md:h-[88px] md:w-40 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2"
           >
             {showMenu ? <X className="w-6 h-6" strokeWidth={2} /> : <Menu className="w-6 h-6" strokeWidth={2} />}
           </button>
@@ -568,7 +568,7 @@ export default function HomeClient() {
               <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
                 <h1 className="leading-[1.12]">
                   <span className="block -mr-[0.1em] text-[54px] md:text-[80px] lg:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
-                  <div className="mt-1.5 md:mt-2">
+                  <span className="block mt-1.5 md:mt-2">
                     <span className="relative inline-flex items-center justify-center -mr-[0.14em] text-[26px] md:text-[38px] lg:text-[44px] font-medium tracking-[0.14em] text-[#1c1c1c]">
                       你的肌肤派系
                       <button
@@ -577,7 +577,7 @@ export default function HomeClient() {
                         aria-label="常见问题"
                         aria-haspopup="dialog"
                         aria-expanded={showFaqModal}
-                        className="absolute left-full top-1/2 -translate-y-1/2 ml-1 md:ml-2 inline-flex w-6 h-6 md:w-8 md:h-8 items-center justify-center rounded-full bg-[#2E4D9E] text-white transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
+                        className="absolute left-full top-[calc(50%+0.05em)] -translate-y-1/2 ml-1 md:ml-2 inline-flex w-6 h-6 md:w-8 md:h-8 items-center justify-center rounded-full bg-[#2E4D9E] text-white transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer touch-manipulation before:absolute before:inset-0 before:content-[''] max-md:before:-inset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
                       >
                         <svg
                           aria-hidden="true"
@@ -594,7 +594,7 @@ export default function HomeClient() {
                         </svg>
                       </button>
                     </span>
-                  </div>
+                  </span>
                 </h1>
                 <p className="mt-4 md:mt-6 text-[13px] md:text-[16px] leading-[1.9] tracking-[0.05em] text-[#84817a]">
                   获得专业的面部分析报告
@@ -614,8 +614,8 @@ export default function HomeClient() {
             </section>
           </div>
 
-          {/* 底部栏：米色通栏（与 Hero 上区同色），并入首屏；内容全宽，备案居左、链接与版权居右 */}
-          <div className="relative z-40 bg-[#EFE9DA]">
+          {/* 底部栏：淡奶油色通栏（比 Hero 上区的米色更浅），并入首屏；内容全宽，备案居左、链接与版权居右 */}
+          <div className="relative z-40 bg-[#FBF9F3]">
             <div className="w-full px-6 lg:px-10 h-16 md:h-14 flex items-center">
               <HomepageFooter />
             </div>
