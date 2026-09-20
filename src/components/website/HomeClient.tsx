@@ -565,16 +565,17 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 波浪分界：米白 → 蓝灰，N 形 swoosh——左起点与右终点水平对齐（均在 SVG 内 40 高处），
-                中间先斜下后上扬，单谷弧线。蓝色面积 ≈ 内容区的 43%（SVG 高 64% × 蓝色占 SVG 的 67%） */}
+            {/* 波浪分界：米白 → 蓝灰，单一明显缓弧（一上一下：峰更鼓、谷更凹），整体自左向右微微上扬。
+                viewBox 加高到 400 给峰顶留出头空间（贝塞尔控制点 -40 不出界，实际曲线最低点 >0）。
+                蓝色面积 ≈ 内容区的 44%（SVG 高 60% × 蓝色占 SVG 的 73.1%） */}
             <svg
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 z-20 h-[64%] w-full"
-              viewBox="0 0 1440 320"
+              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full"
+              viewBox="0 0 1440 400"
               preserveAspectRatio="none"
             >
               <path
-                d="M0,40 C360,175 1000,165 1440,40 L1440,320 L0,320 Z"
+                d="M0,150 C480,-40 960,230 1440,90 L1440,400 L0,400 Z"
                 fill="#93A5BE"
               />
             </svg>
@@ -640,8 +641,8 @@ export default function HomeClient() {
                   您口袋里的专属的护肤管家
                 </p>
               </div>
-              {/* CTA 区：独立定位在内容区 64% 高处（蓝色区上部），与文字区互不联动 */}
-              <div className="absolute inset-x-0 top-[64%] -translate-y-1/2 flex flex-col items-center px-6 opacity-0 animate-fade-in-up">
+              {/* CTA 区：独立定位在内容区 62% 高处（蓝色区上部，N 形谷底中点约 66%，留有余量），与文字区互不联动 */}
+              <div className="absolute inset-x-0 top-[62%] -translate-y-1/2 flex flex-col items-center px-6 opacity-0 animate-fade-in-up">
                 <button
                   type="button"
                   onClick={handleStart}
