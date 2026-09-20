@@ -565,9 +565,9 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 波浪分界：米白 → 蓝灰，单一缓弧（一上一下），整体自左向右微微上扬。
-                蓝色面积 ≈ 内容区的 48%：曲线平均上缘约在 SVG 内 19% 深处（蓝色占 SVG 的 80.6%），
-                SVG 高 60% × 80.6% ≈ 48% */}
+            {/* 波浪分界：米白 → 蓝灰，单一明显缓弧（一上一下，波幅加大），整体自左向右微微上扬。
+                蓝色面积 ≈ 内容区的 46%：曲线平均上缘约在 SVG 内 23% 深处（蓝色占 SVG 的 77.3%），
+                SVG 高 60% × 77.3% ≈ 46% */}
             <svg
               aria-hidden="true"
               className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full"
@@ -575,7 +575,7 @@ export default function HomeClient() {
               preserveAspectRatio="none"
             >
               <path
-                d="M0,80 C480,16 960,96 1440,56 L1440,320 L0,320 Z"
+                d="M0,110 C480,0 960,130 1440,50 L1440,320 L0,320 Z"
                 fill="#93A5BE"
               />
             </svg>
