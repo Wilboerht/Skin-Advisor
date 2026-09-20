@@ -580,10 +580,12 @@ export default function HomeClient() {
               />
             </svg>
 
-            {/* 右侧女性 IP（沙漠派 · 金发蓝缕捧水滴）：立于波浪之上，下身抵底部栏 */}
+            {/* 右侧女性 IP（沙漠派 · 金发蓝缕捧水滴）：立于波浪之上。
+                脚底 → 底部栏上缘的间距 = 底部栏高度（64/56px）：图片底部透明边占图高 5.5%，
+                故 bottom = 栏高 − 5.5%×图高（图高 33/55/69vh） */}
             <m.div
               aria-hidden="true"
-              className="absolute z-30 -right-[6%] md:right-[1%] lg:right-[4%] bottom-0"
+              className="absolute z-30 -right-[6%] md:right-[1%] lg:right-[4%] bottom-[calc(64px-1.8vh)] md:bottom-[calc(56px-3vh)] lg:bottom-[calc(56px-3.8vh)]"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}

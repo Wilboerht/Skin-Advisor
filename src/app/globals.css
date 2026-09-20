@@ -806,14 +806,15 @@ html.hide-page-scrollbar::-webkit-scrollbar {
 }
 
 /* ========== 首页专用：Dock 上浮（不入层，确保压过 Tailwind utilities 的 mb） ========== */
-/* Dock 底边与女性 IP 脚底同一水平线：上浮量 = 底部栏高 64/56 + 脚底视距（图高 33/69vh × 底部透明边 5.5% ≈ 13/34px）
-   （body.home-dock-raised 由 HomeClient 挂载/卸载时加减；脚底视距随视口高度轻微浮动，按常规视口标定） */
+/* Dock 底边与女性 IP 脚底同一水平线；脚底 → 底部栏上缘的间距 = 底部栏高（见 HomeClient 女性 IP 的 bottom 取数），
+   故上浮量 = 2 × 底部栏高（64/56）= 128/112px
+   （body.home-dock-raised 由 HomeClient 挂载/卸载时加减） */
 body.home-dock-raised .dock-panel {
-  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 77px);
+  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 128px);
 }
 
 @media (min-width: 768px) {
   body.home-dock-raised .dock-panel {
-    margin-bottom: 90px;
+    margin-bottom: 112px;
   }
 }
