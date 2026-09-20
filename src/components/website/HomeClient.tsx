@@ -146,6 +146,7 @@ export default function HomeClient() {
   const [showFaqModal, setShowFaqModal] = useState(false);
   // 顶栏汉堡菜单（测肤有礼 / 常见问题 / 了解肌智派入口收纳其中）
   const [showMenu, setShowMenu] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
 
@@ -167,6 +168,17 @@ export default function HomeClient() {
     faqLastOpenRef.current = now;
     setShowFaqModal(true);
   };
+
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setShowMenu(false);
+      menuButtonRef.current?.focus({ preventScroll: true });
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showMenu]);
 
   // Location/Region states
   const [isLocating, setIsLocating] = useState(false);
@@ -431,10 +443,12 @@ export default function HomeClient() {
           {/* 左：汉堡按钮（宽度与右侧 logo 区一致：logo 96/128 + 右内边距 16/32 = 112/160） */}
           <button
             type="button"
+            ref={menuButtonRef}
             onClick={() => setShowMenu((v) => !v)}
             aria-label={showMenu ? "关闭菜单" : "打开菜单"}
             aria-expanded={showMenu}
-            className="flex h-[72px] w-28 md:h-[88px] md:w-40 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2"
+            aria-controls="home-menu"
+            className="relative z-50 flex h-[72px] w-28 md:h-[88px] md:w-40 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2"
           >
             {showMenu ? <X className="w-6 h-6" strokeWidth={2} /> : <Menu className="w-6 h-6" strokeWidth={2} />}
           </button>
@@ -464,15 +478,34 @@ export default function HomeClient() {
           </div>
 
           {/* 汉堡下拉菜单：遮罩点击关闭 */}
-          {showMenu && (
-            <>
-              <div aria-hidden="true" className="fixed inset-0 z-40 cursor-default" onClick={() => setShowMenu(false)} />
-              <div className="absolute left-3 md:left-5 top-[calc(100%+8px)] z-50 w-60 rounded-2xl border border-black/[0.06] bg-white p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)]">
+          <AnimatePresence>
+            {showMenu && (
+              <m.div
+                key="menu-backdrop"
+                aria-hidden="true"
+                className="fixed inset-0 z-40 cursor-default"
+                onClick={() => setShowMenu(false)}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
+              />
+            )}
+            {showMenu && (
+              <m.div
+                key="menu-panel"
+                id="home-menu"
+                className="absolute left-3 md:left-5 top-[calc(100%+8px)] z-50 w-60 origin-top rounded-2xl border border-black/[0.06] bg-white p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)]"
+                initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }}
+              >
                 <button
                   type="button"
                   onClick={() => { setShowMenu(false); openGiftModal(); }}
                   aria-haspopup="dialog"
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] cursor-pointer"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
                 >
                   <Gift className="w-4 h-4 text-brand-bronze" strokeWidth={1.75} />
                   测肤有礼 · 参与赢好礼
@@ -481,7 +514,7 @@ export default function HomeClient() {
                   type="button"
                   onClick={() => { setShowMenu(false); handleOpenFaq(); }}
                   aria-haspopup="dialog"
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] cursor-pointer"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
                 >
                   <CircleHelp className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
                   常见问题
@@ -489,14 +522,14 @@ export default function HomeClient() {
                 <Link
                   href="/skin-types"
                   onClick={() => setShowMenu(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05]"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08]"
                 >
                   <Sparkles className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
                   了解肌智派
                 </Link>
-              </div>
-            </>
-          )}
+              </m.div>
+            )}
+          </AnimatePresence>
         </div>
       </header>
 
@@ -564,10 +597,11 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 中央文案：主标题 + 副标题（右侧蓝色问号 = 常见问题）+ CTA；按钮落在蓝色区域（硬投影白胶囊）。
-                在"顶栏下缘 → Dock 上缘"之间垂直居中：pb-20 上移 40px = (Dock 上浮 80/72 + Dock 高 64 − 底部栏高 64/56) / 2（两端巧合一致），文案自然跨越波浪分界 */}
-            <section className="relative z-40 mx-auto flex flex-1 flex-col items-center justify-center px-6 pb-20 text-center">
-              <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
+            {/* 中央文案：按色块分区放置——文字（主标题 + 副标题含蓝色问号 = 常见问题）在米色区居中，
+                CTA 按钮（硬投影白胶囊）在蓝色区居中。波浪最高点约在内容区 46% 高处，文字区取上 44%，按钮区取剩余 56% */}
+            <section className="relative z-40 mx-auto flex flex-1 w-full flex-col items-center px-6 text-center">
+              {/* 文字区：米色区域（上 44%）垂直居中 */}
+              <div className="flex h-[44%] flex-col items-center justify-center opacity-0 animate-fade-in-up">
                 <h1 className="leading-[1.12]">
                   <span className="block -mr-[0.1em] text-[54px] md:text-[80px] lg:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
                   <span className="block mt-1.5 md:mt-2">
@@ -603,11 +637,14 @@ export default function HomeClient() {
                   <br />
                   您口袋里的专属的护肤管家
                 </p>
+              </div>
+              {/* CTA 区：蓝色区域（下 56%）垂直居中 */}
+              <div className="flex flex-1 flex-col items-center justify-center opacity-0 animate-fade-in-up">
                 <button
                   type="button"
                   onClick={handleStart}
                   disabled={isLoading || isNavigating}
-                  className="mt-9 md:mt-12 inline-flex items-center justify-center gap-2 h-12 md:h-14 px-10 md:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] md:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 h-12 md:h-14 px-10 md:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] md:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isLoading ? "正在连接" : "立刻体验"}</span>
