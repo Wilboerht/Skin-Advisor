@@ -423,15 +423,17 @@ export default function HomeClient() {
 
       {/* 顶部栏：与结果页/问卷页同规格（左空 + 中 logo + 右用户区），移动端同样显示；
           固定定位 + 毛玻璃底，logo 可点回首页 */}
-      <header className="fixed inset-x-0 top-0 z-40 pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-5 bg-[#ebe5d8]/85 backdrop-blur-md border-b border-brand-charcoal/[0.06] md:border-b-0">
-        <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-2 w-full px-4 md:px-12 lg:px-20">
+      <header className="fixed inset-x-0 top-0 z-40 pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-5 bg-[#f3efe6]/85 backdrop-blur-md border-b border-brand-charcoal/[0.06] md:border-b-0">
+        <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-2 w-full px-4 xl:px-20">
           {/* 左槽：活动/常见问题入口（移动端圆形图标版，md+ 描边胶囊；h-9 为 border-box，不撑高顶栏） */}
           <div className="justify-self-start flex items-center gap-1 md:gap-1.5">
             <button
               type="button"
               onClick={openGiftModal}
               aria-label="测肤有礼 · 参与赢好礼"
-              className="group inline-flex h-9 w-9 -my-0.5 items-center justify-center rounded-full border border-brand-gold/45 bg-brand-gold/[0.06] text-brand-bronze transition-colors hover:border-brand-gold/75 hover:bg-brand-gold/[0.12] active:opacity-80 md:-my-0 md:w-auto md:gap-1.5 md:px-3.5 cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
+              aria-haspopup="dialog"
+              aria-expanded={showGiftModal}
+              className="group inline-flex h-9 w-9 -my-0.5 items-center justify-center rounded-full border border-brand-gold/50 bg-brand-gold/[0.08] text-brand-bronze shadow-[0_2px_10px_-6px_rgba(201,168,108,0.6)] transition-colors hover:border-brand-gold/80 hover:bg-brand-gold/[0.14] active:opacity-80 md:-my-0 md:w-auto md:gap-1.5 md:px-3.5 cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
             >
               <Gift className="w-[18px] h-[18px] md:w-3.5 md:h-3.5" strokeWidth={1.75} />
               <span className="hidden md:inline text-[13px] font-light tracking-[0.08em] whitespace-nowrap">
@@ -442,7 +444,9 @@ export default function HomeClient() {
               type="button"
               onClick={handleOpenFaq}
               aria-label="常见问题"
-              className="group inline-flex h-9 w-9 -my-0.5 items-center justify-center rounded-full border border-brand-charcoal/12 text-brand-charcoal/70 transition-colors hover:border-brand-charcoal/30 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal active:opacity-80 md:-my-0 md:w-auto md:gap-1.5 md:px-3.5 cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2"
+              aria-haspopup="dialog"
+              aria-expanded={showFaqModal}
+              className="group inline-flex h-9 w-9 -my-0.5 items-center justify-center rounded-full border border-brand-charcoal/15 text-brand-charcoal/70 transition-colors hover:border-brand-charcoal/35 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal active:opacity-80 md:-my-0 md:w-auto md:gap-1.5 md:px-3.5 cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2"
             >
               <CircleHelp className="w-[18px] h-[18px] md:w-3.5 md:h-3.5" strokeWidth={1.75} />
               <span className="hidden md:inline text-[13px] font-light tracking-[0.08em] whitespace-nowrap">
@@ -571,7 +575,7 @@ export default function HomeClient() {
                 {/* 柔光底：让形象从米白底上"浮"起来 */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute bottom-[8%] left-1/2 -translate-x-1/2 lg:left-auto lg:right-[8%] lg:translate-x-0 w-[72%] lg:w-[84%] aspect-square rounded-full bg-[#e3dbc9]/70 blur-3xl"
+                  className="pointer-events-none absolute bottom-[8%] left-1/2 -translate-x-1/2 lg:left-auto lg:right-[8%] lg:translate-x-0 w-[72%] lg:w-[84%] aspect-square rounded-full bg-[#e3dbc9]/55 blur-3xl"
                 />
                 {/* 男版（桌面）：略小、后置 */}
                 <Image
@@ -598,14 +602,16 @@ export default function HomeClient() {
             </div>
           </div>
 
-          {/* 页脚（移动端/中屏：沉底于 Dock 上方；xl 以上见下方固定通栏版本） */}
-          <div className="mt-auto pt-6 px-6 md:mb-4 xl:hidden">
+          {/* 页脚（移动端/中屏：沉底于 Dock 上方；xl 以上见下方固定通栏版本）。
+              全端贴边 16px，与顶栏的"通栏"方案保持同一网格 */}
+          <div className="mt-auto pt-4 md:pt-6 px-4 md:mb-4 xl:hidden">
             <HomepageFooter />
           </div>
         </m.div>
 
-      {/* xl 桌面端页脚：固定屏幕底部通栏，备案居左、链接与版权居右（z 高于内容层 z-20、低于 Dock；<1280px 时全宽页脚会与居中悬浮 Dock 胶囊横向交叠，故改走上方沉底版） */}
-      <div className="hidden xl:block fixed bottom-2 left-4 right-4 z-30">
+      {/* xl 桌面端页脚：固定屏幕底部通栏，备案居左、链接与版权居右（z 高于内容层 z-20、低于 Dock；
+          xl 及以上左右内缩 80px 与顶栏同网格，<1280px 改走上方 16px 贴边的沉底版） */}
+      <div className="hidden xl:block fixed bottom-2 left-20 right-20 z-30">
         <HomepageFooter />
       </div>
 

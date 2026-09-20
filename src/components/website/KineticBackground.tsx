@@ -14,10 +14,10 @@ export function KineticBackground() {
             <div className="kinetic-bg-base" />
             <div className="kinetic-dot-pattern" />
             <div className="kinetic-watermark">
-                {/* PC 端水印（≥1025px 断点切换见 globals.css） */}
+                {/* PC 端水印（≥1025px 断点切换见 globals.css）：浅底上进一步减淡 */}
                 <div
                     className="kinetic-watermark-pc relative"
-                    style={{ filter: "brightness(0) invert(0.95)", opacity: 0.22 }}
+                    style={{ filter: "brightness(0) invert(0.95)", opacity: 0.16 }}
                 >
                     <Image
                         src="/images/N-web.svg"

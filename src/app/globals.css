@@ -635,7 +635,8 @@
 /* ========== 首页 Kinetic 背景（移植自 nihplod.cn 主站 globals.css，保持一致） ========== */
 
 :root {
-  --kinetic-bg: #ebe5d8;
+  /* 底色减浓：原 #ebe5d8 偏饱和发"土"，降一档到更轻的暖米色 */
+  --kinetic-bg: #f3efe6;
 }
 
 /* 底层纯色背景 + 渐变遮罩（移动端中央白色提亮） */
@@ -645,7 +646,7 @@
   background-color: var(--kinetic-bg);
   background-image: radial-gradient(
     circle at 50% 50%,
-    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0.45) 0%,
     transparent 100%
   );
   pointer-events: none;
@@ -653,7 +654,8 @@
 
 @media (min-width: 768px) {
   .kinetic-bg-base {
-    background-image: radial-gradient(circle at 50% 50%, transparent 0%, rgba(0, 0, 0, 0.04) 100%);
+    /* 桌面端边缘暗角减半，避免四周发"浓" */
+    background-image: radial-gradient(circle at 50% 50%, transparent 0%, rgba(0, 0, 0, 0.02) 100%);
   }
 }
 
@@ -711,7 +713,8 @@
 
 .kinetic-watermark-mobile {
   display: block;
-  opacity: 0.12;
+  /* 移动端水印减淡，避免浅底上纹理过密 */
+  opacity: 0.09;
 }
 
 @media (min-width: 1025px) {
