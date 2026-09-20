@@ -480,9 +480,9 @@ export default function HomeClient() {
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
           {/* 首屏 Hero：左文右图分栏（一屏垂直居中，矮屏/横屏放不下时可滚动）。
-              内容区使用更窄的独立容器（80% / 1200 下限），不与顶栏、页脚的 chrome 轨对齐 */}
+              内容区使用更窄的独立容器（70% / 1100 下限），不与顶栏、页脚的 chrome 轨对齐 */}
           <div className="flex-1 w-full flex items-center">
-            <div className="w-[min(100%,max(80%,1200px))] mx-auto px-6 lg:px-10 grid grid-cols-1 lg:grid-cols-[minmax(0,46%)_minmax(0,54%)] items-center gap-4 lg:gap-10">
+            <div className="w-[min(100%,max(70%,1100px))] mx-auto px-6 lg:px-10 grid grid-cols-1 lg:grid-cols-[minmax(0,46%)_minmax(0,54%)] items-center gap-4 lg:gap-10">
               {/* 左列：品牌 / 标题 / 卖点 / 操作 */}
               <section className="relative z-10 flex flex-col items-center text-center lg:items-start lg:text-left">
                 <div className="opacity-0 animate-fade-in-up flex flex-col items-center lg:items-start">
@@ -587,7 +587,7 @@ export default function HomeClient() {
                   width={1024}
                   height={1024}
                   sizes="(min-width: 1024px) 520px, 60vw"
-                  className="relative h-[30vh] min-h-[160px] lg:h-[66vh] w-auto object-contain object-center lg:object-right drop-shadow-[0_16px_30px_rgba(0,38,62,0.14)]"
+                  className="relative h-[30vh] min-h-[160px] lg:h-[60vh] w-auto object-contain object-center lg:object-right drop-shadow-[0_16px_30px_rgba(0,38,62,0.14)]"
                   priority
                 />
               </m.div>
