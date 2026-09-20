@@ -225,7 +225,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className={`relative z-10 w-full sm:max-w-2xl bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col ${
+              className={`relative z-10 w-full sm:max-w-sm bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col ${
                 shellFixed
                   ? "h-[calc(100dvh_-_max(4rem,env(safe-area-inset-top)_+_0.75rem))] sm:h-[min(640px,85dvh)]"
                   : "max-h-[85vh] sm:max-h-[80vh]"
