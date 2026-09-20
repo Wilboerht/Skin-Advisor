@@ -253,9 +253,45 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 </button>
               )}
 
+              {/* 桌面端固定 tab 栏（会员中心视图）：壳内顶栏，位于滚动区外，不遮挡内容 */}
+              {shellFixed && !isMobile && (
+                <div className="shrink-0 w-full px-6 md:px-8 pt-10 pb-3 border-b border-brand-espresso/[0.08] flex justify-center">
+                  <div
+                    role="tablist"
+                    aria-label="会员中心"
+                    onKeyDown={handleTabListKeyDown}
+                    className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1"
+                  >
+                    {ACCOUNT_TABS.map((t) => (
+                      <button
+                        key={t.key}
+                        type="button"
+                        role="tab"
+                        id={`account-tab-${t.key}`}
+                        aria-controls={`account-tabpanel-${t.key}`}
+                        aria-selected={activeTab === t.key}
+                        tabIndex={activeTab === t.key ? 0 : -1}
+                        onClick={() => activateTab(t.key)}
+                        className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
+                          activeTab === t.key
+                            ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
+                            : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div
                 data-account-scroll
-                className={`flex-1 min-h-0 overflow-y-auto px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 flex flex-col items-center ${
+                className={`flex-1 min-h-0 overflow-y-auto px-6 md:px-8 flex flex-col items-center ${
+                  shellFixed && !isMobile
+                    ? "pt-3"
+                    : "pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10"
+                } ${
                   shellFixed && isMobile
                     ? "pb-6"
                     : "pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8"
@@ -292,38 +328,6 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                         transition={{ duration: 0.18 }}
                         className={`w-full flex flex-col items-center ${view === "center" ? "" : "hidden"}`}
                       >
-                        {/* 桌面端胶囊 tab：吸顶（负外边距抵消滚动容器上内边距，不透明背景盖住滚过的内容） */}
-                        {!isMobile && (
-                          <div className="sticky top-0 z-10 w-full -mx-6 md:-mx-8 px-6 md:px-8 -mt-[calc(3rem+env(safe-area-inset-top,0px))] sm:-mt-10 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-3 bg-[#FDFBF7] flex justify-center mb-3">
-                            <div
-                              role="tablist"
-                              aria-label="会员中心"
-                              onKeyDown={handleTabListKeyDown}
-                              className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1"
-                            >
-                              {ACCOUNT_TABS.map((t) => (
-                                <button
-                                  key={t.key}
-                                  type="button"
-                                  role="tab"
-                                  id={`account-tab-${t.key}`}
-                                  aria-controls={`account-tabpanel-${t.key}`}
-                                  aria-selected={activeTab === t.key}
-                                  tabIndex={activeTab === t.key ? 0 : -1}
-                                  onClick={() => activateTab(t.key)}
-                                  className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
-                                    activeTab === t.key
-                                      ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
-                                      : "text-brand-charcoal/60 hover:text-brand-charcoal"
-                                  }`}
-                                >
-                                  {t.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
                         {/* tab 面板：首次激活才挂载，之后保持挂载仅隐藏；aria-labelledby 随端切换指向可见 tab */}
                         {visitedTabs.includes("my") && (
                           <div
