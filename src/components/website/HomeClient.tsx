@@ -565,17 +565,16 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 波浪分界：米白 → 蓝灰，单一明显缓弧（一上一下，波幅加大），整体自左向右微微上扬。
-                蓝色面积 ≈ 内容区的 46%：曲线平均上缘约在 SVG 内 23% 深处（蓝色占 SVG 的 77.3%），
-                SVG 高 60% × 77.3% ≈ 46% */}
+            {/* 波浪分界：米白 → 蓝灰，N 形 swoosh——左起点与右终点水平对齐（均在 SVG 内 40 高处），
+                中间先斜下后上扬，单谷弧线。蓝色面积 ≈ 内容区的 43%（SVG 高 64% × 蓝色占 SVG 的 67%） */}
             <svg
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full"
+              className="absolute inset-x-0 bottom-0 z-20 h-[64%] w-full"
               viewBox="0 0 1440 320"
               preserveAspectRatio="none"
             >
               <path
-                d="M0,110 C480,0 960,130 1440,50 L1440,320 L0,320 Z"
+                d="M0,40 C360,175 1000,165 1440,40 L1440,320 L0,320 Z"
                 fill="#93A5BE"
               />
             </svg>
@@ -647,8 +646,17 @@ export default function HomeClient() {
                   type="button"
                   onClick={handleStart}
                   disabled={isLoading || isNavigating}
-                  className="inline-flex items-center justify-center gap-2 h-12 md:h-14 px-10 md:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] md:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                  className="relative inline-flex items-center justify-center gap-2 h-12 md:h-14 px-10 md:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] md:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                 >
+                  {/* FREE 角标：按钮子元素，随按钮悬浮/点按位移一起动；纯装饰，不拦截点击 */}
+                  <Image
+                    src="/images/free.png"
+                    alt=""
+                    aria-hidden="true"
+                    width={512}
+                    height={512}
+                    className="absolute -top-5 -right-3.5 md:-top-6 md:-right-5 w-10 md:w-12 h-auto rotate-12 pointer-events-none select-none drop-shadow-[0_4px_8px_rgba(0,38,62,0.18)]"
+                  />
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isLoading ? "正在连接" : "立刻体验"}</span>
                 </button>
