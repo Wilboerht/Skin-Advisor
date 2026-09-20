@@ -11,6 +11,9 @@ const FOCUSABLE_SELECTORS = [
     '[tabindex]:not([tabindex="-1"])',
 ].join(", ");
 
+// 嵌套弹层栈：仅最上层弹层响应 Escape，避免"一次 Esc 连关多层"
+const trapStack: symbol[] = [];
+
 export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: () => void) {
     const containerRef = useRef<T>(null);
     const previousActiveElement = useRef<HTMLElement | null>(null);
@@ -27,6 +30,9 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: 
 
         const container = containerRef.current;
         if (!container) return;
+
+        const trapId = Symbol("focus-trap");
+        trapStack.push(trapId);
 
         // 动态获取可聚焦元素（支持模态框内容动态变化，如 loading → 内容）
         const getFocusableElements = () =>
@@ -47,6 +53,7 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: 
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
+                if (trapStack[trapStack.length - 1] !== trapId) return;
                 onEscapeRef.current?.();
                 return;
             }
@@ -78,6 +85,8 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: 
         document.addEventListener("keydown", handleKeyDown);
         return () => {
             document.removeEventListener("keydown", handleKeyDown);
+            const idx = trapStack.indexOf(trapId);
+            if (idx >= 0) trapStack.splice(idx, 1);
             previousActiveElement.current?.focus();
         };
     }, [isOpen]);

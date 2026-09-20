@@ -188,7 +188,13 @@ export default function HomeClient() {
   };
 
   const openSkinTypesModal = () => {
+    setShowSkinTypesModal(true);
+  };
+
+  const openSkinTypesModalFromMenu = () => {
     setShowMenu(false);
+    // 菜单项随菜单卸载，先把焦点还给汉堡按钮，弹层关闭后焦点才能正确归还
+    menuButtonRef.current?.focus({ preventScroll: true });
     setShowSkinTypesModal(true);
   };
 
@@ -573,7 +579,7 @@ export default function HomeClient() {
                 </button>
                 <button
                   type="button"
-                  onClick={openSkinTypesModal}
+                  onClick={openSkinTypesModalFromMenu}
                   aria-haspopup="dialog"
                   className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
                 >
@@ -666,7 +672,8 @@ export default function HomeClient() {
             {/* 左下角「测肤有礼」宣传卡（仅 PC，移动端入口在汉堡菜单）：点击打开活动弹窗。
                 纵向与 Dock 同一条中线：中线 = 内容区底部上方 88px（Dock 上浮 112 + 半高 32 − 底部栏 56）；
                 卡高约 64px（图 48 + 上下 padding 16），故 bottom = 88 − 32 = 56px（bottom-14）。
-                左缘与底部栏内容左缘对齐（px-6 lg:px-10 = 24/40px） */}
+                左缘与底部栏内容左缘对齐（px-6 lg:px-10 = 24/40px）。
+                呼吸浮动动画见 globals.css .gift-card-breathe（CSS 动画会覆盖 transform，故不再用悬浮位移） */}
             <m.button
               type="button"
               onClick={openGiftModal}
@@ -676,8 +683,15 @@ export default function HomeClient() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.4, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
-              className="absolute z-40 left-6 lg:left-10 bottom-14 hidden lg:flex items-center gap-3 rounded-2xl bg-white/95 backdrop-blur-sm py-2 pl-2 pr-4 border border-white/60 shadow-[0_12px_30px_-10px_rgba(0,38,62,0.25)] transition-transform duration-200 hover:-translate-y-1 motion-reduce:transition-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
+              className="gift-card-breathe absolute z-40 left-6 lg:left-10 bottom-14 hidden lg:flex items-center gap-3 rounded-2xl bg-white/95 backdrop-blur-sm py-2 pl-2 pr-4 border border-white/60 shadow-[0_12px_30px_-10px_rgba(0,38,62,0.25)] transition-shadow duration-200 hover:shadow-[0_18px_38px_-10px_rgba(0,38,62,0.32)] motion-reduce:transition-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
             >
+              {/* 活动角标：金色圆形礼物徽章，压在卡片右上角 */}
+              <span
+                aria-hidden="true"
+                className="absolute -top-2.5 -right-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#C9A86C] text-white shadow-[0_4px_10px_-2px_rgba(201,168,108,0.7)] rotate-6"
+              >
+                <Gift className="w-3.5 h-3.5" strokeWidth={2} />
+              </span>
               <Image
                 src="/images/gift-badge.webp"
                 alt=""
