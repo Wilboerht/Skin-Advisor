@@ -203,19 +203,6 @@
     }
   }
 
-  /* 首页专用：底部栏为米色通栏并入首屏，Dock 落在内容区（Hero）底部、贴底部栏上缘不压栏
-     （body.home-dock-raised 由 HomeClient 挂载/卸载时加减；特异性高于 .dock-panel 的 mb 工具类；
-     上浮量 = 底部栏高 64/56 + 间隙 8） */
-  body.home-dock-raised .dock-panel {
-    margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
-  }
-
-  @media (min-width: 768px) {
-    body.home-dock-raised .dock-panel {
-      margin-bottom: 64px;
-    }
-  }
-
   html {
     scroll-behavior: smooth;
     background-color: #FDFBF7;
@@ -807,13 +794,26 @@ html.hide-page-scrollbar::-webkit-scrollbar {
 }
 
 /* ========== 首页 Hero 一屏适配 ========== */
-/* 首页壳：为固定顶栏预留高度（顶栏 = 56/72 + 安全区） */
+/* 首页壳：为固定顶栏预留高度（顶栏 = 64/80 + 安全区） */
 .home-shell {
-  padding-top: calc(56px + env(safe-area-inset-top, 0px));
+  padding-top: calc(64px + env(safe-area-inset-top, 0px));
 }
 
 @media (min-width: 768px) {
   .home-shell {
-    padding-top: calc(72px + env(safe-area-inset-top, 0px));
+    padding-top: calc(80px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* ========== 首页专用：Dock 上浮（不入层，确保压过 Tailwind utilities 的 mb） ========== */
+/* 底部栏为米色通栏并入首屏，Dock 落在内容区（Hero）底部蓝色区域内、与底部栏不重合
+   （body.home-dock-raised 由 HomeClient 挂载/卸载时加减；上浮量 = 底部栏高 64/56 + 间隙 16） */
+body.home-dock-raised .dock-panel {
+  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+}
+
+@media (min-width: 768px) {
+  body.home-dock-raised .dock-panel {
+    margin-bottom: 72px;
   }
 }

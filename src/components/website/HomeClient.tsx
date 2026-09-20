@@ -434,7 +434,7 @@ export default function HomeClient() {
             onClick={() => setShowMenu((v) => !v)}
             aria-label={showMenu ? "关闭菜单" : "打开菜单"}
             aria-expanded={showMenu}
-            className="flex h-14 w-28 md:h-[72px] md:w-40 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2"
+            className="flex h-16 w-28 md:h-20 md:w-40 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2"
           >
             {showMenu ? <X className="w-6 h-6" strokeWidth={2} /> : <Menu className="w-6 h-6" strokeWidth={2} />}
           </button>
@@ -445,8 +445,8 @@ export default function HomeClient() {
               alt="肌智派"
               width={256}
               height={156}
-              sizes="(min-width: 768px) 96px, 72px"
-              className="h-11 md:h-14 w-auto object-contain"
+              sizes="(min-width: 768px) 112px, 88px"
+              className="h-14 md:h-[68px] w-auto object-contain"
               priority
             />
           </Link>
@@ -510,7 +510,7 @@ export default function HomeClient() {
       >
           {/* 首屏 Hero（设计稿版式）：米白上区 + 蓝灰波浪下区，左右 IP 形象夹峙中央文案。
               男性 IP 置于波浪层之下（下身没入蓝色区域），女性 IP 立于波浪层之上、裙摆抵到底部栏 */}
-          <div className="relative flex-1 w-full overflow-hidden bg-[#EFE9DA]">
+          <div className="relative flex flex-1 flex-col w-full overflow-hidden bg-[#EFE9DA]">
             {/* 左侧男性 IP（极简派 · 手持几何晶体）：移动端空间不足时隐藏 */}
             <m.div
               aria-hidden="true"
@@ -563,24 +563,38 @@ export default function HomeClient() {
             </m.div>
 
             {/* 中央文案：主标题 + 副标题（右侧蓝色问号 = 常见问题）+ CTA；按钮落在蓝色区域（硬投影白胶囊）。
-                在整个内容区（顶栏下缘 → 底部栏上缘）垂直居中，不做 Dock 补偿，文案自然跨越波浪分界 */}
-            <section className="relative z-40 mx-auto flex h-full flex-col items-center justify-center px-6 text-center">
+                在"顶栏下缘 → Dock 上缘"之间垂直居中：pb-20 上移 40px = (Dock 上浮 80/72 + Dock 高 64 − 底部栏高 64/56) / 2（两端巧合一致），文案自然跨越波浪分界 */}
+            <section className="relative z-40 mx-auto flex flex-1 flex-col items-center justify-center px-6 pb-20 text-center">
               <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
                 <h1 className="leading-[1.12]">
-                  <span className="block text-[54px] md:text-[80px] lg:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
-                  <span className="mt-1.5 md:mt-2 flex items-center justify-center gap-3 text-[26px] md:text-[38px] lg:text-[44px] font-medium tracking-[0.14em] text-[#1c1c1c]">
-                    你的肌肤派系
-                    <button
-                      type="button"
-                      onClick={handleOpenFaq}
-                      aria-label="常见问题"
-                      aria-haspopup="dialog"
-                      aria-expanded={showFaqModal}
-                      className="inline-flex w-7 h-7 md:w-9 md:h-9 items-center justify-center rounded-full bg-[#2E4D9E] text-white text-[15px] md:text-[19px] font-bold leading-none transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
-                    >
-                      ?
-                    </button>
-                  </span>
+                  <span className="block -mr-[0.1em] text-[54px] md:text-[80px] lg:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
+                  <div className="mt-1.5 md:mt-2">
+                    <span className="relative inline-flex items-center justify-center -mr-[0.14em] text-[26px] md:text-[38px] lg:text-[44px] font-medium tracking-[0.14em] text-[#1c1c1c]">
+                      你的肌肤派系
+                      <button
+                        type="button"
+                        onClick={handleOpenFaq}
+                        aria-label="常见问题"
+                        aria-haspopup="dialog"
+                        aria-expanded={showFaqModal}
+                        className="absolute left-full top-1/2 -translate-y-1/2 ml-1 md:ml-2 inline-flex w-6 h-6 md:w-8 md:h-8 items-center justify-center rounded-full bg-[#2E4D9E] text-white transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={3}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="w-[18px] h-[18px] md:w-[22px] md:h-[22px]"
+                        >
+                          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                          <path d="M12 17h.01" />
+                        </svg>
+                      </button>
+                    </span>
+                  </div>
                 </h1>
                 <p className="mt-4 md:mt-6 text-[13px] md:text-[16px] leading-[1.9] tracking-[0.05em] text-[#84817a]">
                   获得专业的面部分析报告
