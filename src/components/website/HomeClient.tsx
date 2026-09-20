@@ -597,11 +597,12 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 中央文案：按色块分区放置——文字（主标题 + 副标题含蓝色问号 = 常见问题）在米色区居中，
-                CTA 按钮（硬投影白胶囊）在蓝色区居中。波浪最高点约在内容区 46% 高处，文字区取上 44%，按钮区取剩余 56% */}
-            <section className="relative z-40 mx-auto flex flex-1 w-full flex-col items-center px-6 text-center">
-              {/* 文字区：米色区域（上 44%）垂直居中 */}
-              <div className="flex h-[44%] flex-col items-center justify-center opacity-0 animate-fade-in-up">
+            {/* 中央文案：文字与按钮各自绝对定位、互不联动——
+                文字（主标题 + 副标题含蓝色问号 = 常见问题）贴波浪上方（米色区下半部）；
+                CTA 按钮（硬投影白胶囊）定在蓝色区上部（内容区 64% 高处） */}
+            <section className="relative z-40 flex-1 w-full text-center">
+              {/* 文字区：米色区下半部，底部对齐贴波浪上方（区高 = 波浪最高点 46%，底部留白 24/40px） */}
+              <div className="absolute inset-x-0 top-0 flex h-[46%] flex-col items-center justify-end px-6 pb-6 md:pb-10 opacity-0 animate-fade-in-up">
                 <h1 className="leading-[1.12]">
                   <span className="block -mr-[0.1em] text-[54px] md:text-[80px] lg:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
                   <span className="block mt-1.5 md:mt-2">
@@ -638,8 +639,8 @@ export default function HomeClient() {
                   您口袋里的专属的护肤管家
                 </p>
               </div>
-              {/* CTA 区：蓝色区域（下 56%）垂直居中 */}
-              <div className="flex flex-1 flex-col items-center justify-center opacity-0 animate-fade-in-up">
+              {/* CTA 区：独立定位在内容区 64% 高处（蓝色区上部），与文字区互不联动 */}
+              <div className="absolute inset-x-0 top-[64%] -translate-y-1/2 flex flex-col items-center px-6 opacity-0 animate-fade-in-up">
                 <button
                   type="button"
                   onClick={handleStart}
