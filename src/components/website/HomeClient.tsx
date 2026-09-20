@@ -157,6 +157,12 @@ export default function HomeClient() {
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
 
+  // 引导流程弹窗（称呼/位置/隐私三步）打开期间隐藏底部 Dock（卸载时兜底还原）
+  useEffect(() => {
+    document.body.classList.toggle("home-modal-open", showOnboardingModal);
+    return () => document.body.classList.remove("home-modal-open");
+  }, [showOnboardingModal]);
+
   // 弹窗懒加载 latch：首次打开前不渲染 dynamic 组件（chunk 不下载），打开过后保持挂载以保留退场动画
   const shouldRenderAccount = useLazyOpen(showAccountModal);
   const shouldRenderGift = useLazyOpen(showGiftModal);

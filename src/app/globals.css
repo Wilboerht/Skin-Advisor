@@ -818,3 +818,8 @@ body.home-dock-raised .dock-panel {
     margin-bottom: 112px;
   }
 }
+
+/* 首页引导流程弹窗（称呼/位置/隐私三步）打开期间隐藏 Dock（body.home-modal-open 由 HomeClient 加减） */
+body.home-modal-open .dock-panel {
+  display: none;
+}
