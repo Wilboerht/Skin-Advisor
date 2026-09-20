@@ -567,7 +567,7 @@ export default function HomeClient() {
 
             {/* 波浪分界：米白 → 蓝灰，单一明显缓弧（一上一下：峰更鼓、谷更凹），整体自左向右微微上扬。
                 viewBox 加高到 400 给峰顶留出头空间（贝塞尔控制点 -40 不出界，实际曲线最低点 >0）。
-                蓝色面积 ≈ 内容区的 45%（SVG 高 60% × 蓝色占 SVG 的 75%） */}
+                蓝色面积 ≈ 内容区的 50%（SVG 高 60% × 蓝色占 SVG 的 83.3%；较上一版再上移 3%） */}
             <svg
               aria-hidden="true"
               className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full"
@@ -575,7 +575,7 @@ export default function HomeClient() {
               preserveAspectRatio="none"
             >
               <path
-                d="M0,120 C480,-40 960,230 1440,90 L1440,400 L0,400 Z"
+                d="M0,87 C480,-73 960,197 1440,57 L1440,400 L0,400 Z"
                 fill="#93A5BE"
               />
             </svg>
