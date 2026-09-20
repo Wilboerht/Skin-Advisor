@@ -531,11 +531,11 @@ export default function HomeClient() {
             </m.div>
 
             {/* 波浪分界：米白 → 蓝灰，缓弧自左向右微微上扬。
-                蓝色面积 = 内容区的 55%：曲线平均上缘约在 SVG 内 20% 深处（蓝色占 SVG 的 79.7%），
-                SVG 高 69% × 79.7% ≈ 55% */}
+                蓝色面积 ≈ 内容区的 48%：曲线平均上缘约在 SVG 内 20% 深处（蓝色占 SVG 的 79.7%），
+                SVG 高 60% × 79.7% ≈ 48% */}
             <svg
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 z-20 h-[69%] w-full"
+              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full"
               viewBox="0 0 1440 320"
               preserveAspectRatio="none"
             >
