@@ -586,7 +586,7 @@ export default function HomeClient() {
                 图片顶部透明边占图高 13%，故 top = 56px − 13%×图高（图高 48/63vh）；按顶部锚定，不随视口高度漂移 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[2%] lg:left-[5%] top-[calc(56px-6.2vh)] lg:top-[calc(56px-8.2vh)] hidden md:block"
+              className="absolute z-10 left-[2%] lg:left-[5%] top-[calc(56px-5.7vh)] lg:top-[calc(56px-7.5vh)] hidden md:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -597,21 +597,30 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="(min-width: 1024px) 34vw, 26vw"
-                className="h-[48vh] lg:h-[63vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[44vh] lg:h-[58vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
 
             {/* 波浪分界：米白 → 蓝灰，单一明显缓弧（一上一下：峰更鼓、谷更凹），整体自左向右微微上扬。
-                viewBox 加高到 400 给峰顶留出头空间（贝塞尔控制点 -40 不出界，实际曲线最低点 >0）。
-                蓝色面积 ≈ 内容区的 50%（SVG 高 60% × 蓝色占 SVG 的 83.3%；较上一版再上移 3%） */}
+                viewBox 加高到 400 给峰顶留出头空间（贝塞尔控制点 -73 不出界，实际曲线最低点 >0）。
+                移动端横向压缩约 3.7 倍会让同一曲线显得过陡，故移动端用平缓路径（振幅约减半、蓝色面积与桌面端对齐），
+                桌面端路径不变。蓝色面积 ≈ 内容区的 47~50%（SVG 高 60%） */}
             <svg
               aria-hidden="true"
               className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full"
               viewBox="0 0 1440 400"
               preserveAspectRatio="none"
             >
+              {/* 移动端：平缓版 */}
               <path
+                className="md:hidden"
+                d="M0,95 C480,35 960,145 1440,75 L1440,400 L0,400 Z"
+                fill="#93A5BE"
+              />
+              {/* 桌面端：明显波幅版 */}
+              <path
+                className="hidden md:block"
                 d="M0,87 C480,-73 960,197 1440,57 L1440,400 L0,400 Z"
                 fill="#93A5BE"
               />
@@ -639,8 +648,8 @@ export default function HomeClient() {
             </m.div>
 
             {/* 中央文案：文字与按钮各自绝对定位、互不联动——
-                文字（主标题 + 副标题含蓝色问号 = 常见问题）贴波浪上方（米色区下半部）；
-                CTA 按钮（硬投影白胶囊）定在蓝色区上部（内容区 64% 高处） */}
+                文字（主标题 + 副标题含蓝色问号 = 跳转「了解肌智派」）贴波浪上方（米色区下半部）；
+                CTA 按钮（硬投影白胶囊）定在蓝色区上部（内容区 62% 高处） */}
             <section className="relative z-40 flex-1 w-full text-center">
               {/* 文字区：米色区下半部，底部对齐贴波浪上方（区高 48%，底部留白 24/40px） */}
               <div className="absolute inset-x-0 top-0 flex h-[48%] flex-col items-center justify-end px-6 pb-6 md:pb-10 opacity-0 animate-fade-in-up">
@@ -649,12 +658,10 @@ export default function HomeClient() {
                   <span className="block mt-1.5 md:mt-2">
                     <span className="relative inline-flex items-center justify-center -mr-[0.14em] text-[26px] md:text-[38px] lg:text-[44px] font-medium tracking-[0.14em] text-[#1c1c1c]">
                       你的肌肤派系
-                      <button
-                        type="button"
-                        onClick={handleOpenFaq}
-                        aria-label="常见问题"
-                        aria-haspopup="dialog"
-                        aria-expanded={showFaqModal}
+                      {/* 蓝色问号：跳转「了解肌智派」派系列表页（扩大触达区：移动端热区外扩 8px） */}
+                      <Link
+                        href="/skin-types"
+                        aria-label="了解肌智派"
                         className="absolute left-full top-[calc(50%+0.05em)] -translate-y-1/2 ml-1 md:ml-2 inline-flex w-6 h-6 md:w-8 md:h-8 items-center justify-center rounded-full bg-[#2E4D9E] text-white transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer touch-manipulation before:absolute before:inset-0 before:content-[''] max-md:before:-inset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
                       >
                         <svg
@@ -670,7 +677,7 @@ export default function HomeClient() {
                           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                           <path d="M12 17h.01" />
                         </svg>
-                      </button>
+                      </Link>
                     </span>
                   </span>
                 </h1>
