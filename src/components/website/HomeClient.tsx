@@ -502,19 +502,19 @@ export default function HomeClient() {
                     />
                   </m.div>
 
-                  {/* 说明胶囊：AI 护肤顾问 · 预计时长（替代原主卡的流程预告位置） */}
-                  <span className="mb-3 md:mb-5 inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-brand-charcoal/[0.06] text-brand-charcoal/70 text-[11px] font-light tracking-[0.12em] whitespace-nowrap">
+                  {/* 说明胶囊：AI 护肤顾问 · 预计时长（字阶 caption 档：12px / 0.1em） */}
+                  <span className="mb-3 md:mb-5 inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-brand-charcoal/[0.06] text-brand-charcoal/70 text-[12px] font-light tracking-[0.1em] whitespace-nowrap">
                     AI 护肤顾问 · 约 3 分钟
                   </span>
 
-                  {/* 标题：两段式排版，第二行弱化（一屏适配字号见 globals 的 .home-hero-title） */}
-                  <h1 className="home-hero-title font-serif text-brand-charcoal font-light leading-[1.15] tracking-[0.02em] mb-3 md:mb-5">
+                  {/* 标题：两段式排版，第二行弱化；行高放宽到 1.18 让两行更透气 */}
+                  <h1 className="home-hero-title font-serif text-brand-charcoal font-light leading-[1.18] tracking-[0.04em] mb-4 md:mb-6">
                     三分钟，
                     <br />
                     <span className="text-brand-charcoal/55">读懂你的肌肤。</span>
                   </h1>
 
-                  <p className="text-[14px] md:text-[15px] leading-[1.9] text-brand-charcoal/65 font-light max-w-md lg:max-w-[500px] mb-5 md:mb-8">以 AI 之眼完成面部扫描，结合专业问卷测出你的专属肌智派系，<br className="hidden lg:block" />匹配科学护肤方案与好物推荐。</p>
+                  <p className="text-[14px] md:text-[16px] leading-[1.8] tracking-[0.01em] text-brand-charcoal/70 font-light max-w-md lg:max-w-[500px] mb-6 md:mb-8">以 AI 之眼完成面部扫描，结合专业问卷测出你的专属肌智派系，<br className="hidden lg:block" />匹配科学护肤方案与好物推荐。</p>
 
                   {/* 操作区：主按钮（藏青 + 圆形箭头章，悬停箭头旋转）+ 次级入口（窄屏并排省高度） */}
                   <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -522,7 +522,7 @@ export default function HomeClient() {
                       type="button"
                       onClick={handleStart}
                       disabled={isLoading || isNavigating}
-                      className="group/cta inline-flex flex-1 sm:flex-none items-center justify-center gap-3 h-12 pl-7 pr-2 rounded-full bg-[var(--color-brand-charcoal)] text-white text-[14px] font-normal tracking-[0.08em] shadow-[0_10px_30px_-10px_rgba(0,38,62,0.45)] transition-colors duration-300 hover:bg-[var(--color-brand-charcoal)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                      className="group/cta inline-flex flex-1 sm:flex-none items-center justify-center gap-3 h-12 pl-7 pr-2 rounded-full bg-[var(--color-brand-charcoal)] text-white text-[15px] font-normal tracking-[0.08em] shadow-[0_10px_30px_-10px_rgba(0,38,62,0.45)] transition-colors duration-300 hover:bg-[var(--color-brand-charcoal)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <span>{isLoading ? "正在连接" : "开始测肤"}</span>
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15">
@@ -535,24 +535,24 @@ export default function HomeClient() {
                     </button>
                     <Link
                       href="/skin-types"
-                      className="inline-flex flex-1 sm:flex-none items-center justify-center h-12 px-7 rounded-full border border-brand-charcoal/20 text-brand-charcoal/80 text-[14px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.03]"
+                      className="inline-flex flex-1 sm:flex-none items-center justify-center h-12 px-7 rounded-full border border-brand-charcoal/20 text-brand-charcoal/80 text-[15px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.03]"
                     >
                       了解肌智派
                     </Link>
                   </div>
 
-                  {/* 三步预告：降低"点进去要干嘛"的不确定感（弱化处理） */}
-                  <div className="mt-4 md:mt-7 flex items-center gap-x-1.5 md:gap-x-2 whitespace-nowrap text-brand-charcoal/55 text-[11px] md:text-[12px] font-light tracking-[0.06em]">
+                  {/* 三步预告：caption 档 12px；与按钮组更近（16/24），与正文（24/32）形成明确的邻近层级 */}
+                  <div className="mt-4 md:mt-6 flex items-center gap-x-1.5 md:gap-x-2 whitespace-nowrap text-brand-charcoal/60 text-[12px] font-light tracking-[0.06em]">
                     <span className="flex items-center gap-1.5">
                       <ScanFace className="w-3.5 h-3.5" strokeWidth={1.5} />
                       问卷及面部扫描
                     </span>
-                    <ChevronRight className="w-3.5 h-3.5 text-brand-charcoal/25" strokeWidth={1.5} />
+                    <ChevronRight className="w-3.5 h-3.5 text-brand-charcoal/30" strokeWidth={1.5} />
                     <span className="flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" strokeWidth={1.5} />
                       AI 分析
                     </span>
-                    <ChevronRight className="w-3.5 h-3.5 text-brand-charcoal/25" strokeWidth={1.5} />
+                    <ChevronRight className="w-3.5 h-3.5 text-brand-charcoal/30" strokeWidth={1.5} />
                     <span className="flex items-center gap-1.5">
                       <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
                       专属报告
