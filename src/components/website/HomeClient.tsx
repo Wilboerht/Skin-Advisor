@@ -495,7 +495,7 @@ export default function HomeClient() {
               <m.div
                 key="menu-panel"
                 id="home-menu"
-                className="absolute left-3 md:left-5 top-[calc(100%+8px)] z-50 w-60 origin-top rounded-2xl border border-black/[0.06] bg-white p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)]"
+                className="absolute left-0 top-full z-50 w-60 origin-top-left rounded-br-2xl border-r border-b border-black/[0.06] bg-white p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)]"
                 initial={{ opacity: 0, y: -6, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
