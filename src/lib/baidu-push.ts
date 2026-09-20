@@ -58,7 +58,6 @@ export function getAllSiteUrls(baseUrl: string): string[] {
   urls.push(baseUrl);
 
   // 静态页面
-  urls.push(`${baseUrl}/skin-types`);
   urls.push(`${baseUrl}/faq`);
 
   return urls;

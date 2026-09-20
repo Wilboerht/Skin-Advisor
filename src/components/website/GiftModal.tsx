@@ -13,6 +13,8 @@ interface GiftModalProps {
   onClose: () => void;
   /** 点击"前往测试"：关闭弹窗并触发首页测肤流程；未提供时退化为跳首页的链接 */
   onStartTest?: () => void;
+  /** 点击"查看全部肌智派类型"：关闭本弹窗并打开肌智派类型弹窗 */
+  onOpenSkinTypes?: () => void;
 }
 
 /**
@@ -22,7 +24,7 @@ interface GiftModalProps {
  * 具体活动以官方媒体发布的实际内容为准。
  * /gift 旧链接已 308 重定向到 /?gift=1，由首页检测参数后打开本弹窗。
  */
-export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
+export function GiftModal({ isOpen, onClose, onStartTest, onOpenSkinTypes }: GiftModalProps) {
   // 打开弹窗时锁定背景滚动（首页自身也有一把 iosSafe 锁，引用计数保证嵌套安全）
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
   // 焦点圈定 + Escape 关闭
@@ -150,14 +152,17 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
                     <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                   </Link>
                 )}
-                <Link
-                  href="/skin-types"
-                  onClick={onClose}
-                  className="w-full inline-flex items-center justify-center gap-3 h-11 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer text-brand-charcoal/60 transition-colors duration-300 hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal"
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenSkinTypes?.();
+                  }}
+                  className="group w-full inline-flex items-center justify-center gap-3 h-11 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer text-brand-charcoal/60 transition-colors duration-300 hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal"
                 >
                   <span>查看全部肌智派类型</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
-                </Link>
+                </button>
               </div>
 
               {/* 官方声明 */}

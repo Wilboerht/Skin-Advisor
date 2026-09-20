@@ -14,8 +14,6 @@ export const PUBLIC_PATHS = [
     "/questions",              // 问卷页（页面公开，实际测肤需登录）
     "/face-scan",              // 面部扫描页（页面公开，实际测肤需登录）
     "/result",                 // 结果页（页面公开，报告数据需登录）
-    "/skin-types",             // 肤质类型列表
-    "/skin-types/:path*",      // 具体肤质类型页
     "/services",               // 顾问服务
     "/faq",                    // FAQ
     "/diary",                  // 护肤档案（游客可浏览页面，趋势/历程 API 仍需登录）

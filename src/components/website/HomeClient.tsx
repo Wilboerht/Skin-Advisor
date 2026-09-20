@@ -23,6 +23,7 @@ import { HomepageFooter } from "@/components/website/HomepageFooter";
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
 const FaqModal = dynamic(() => import("@/components/website/FaqModal").then((mod) => mod.FaqModal), { ssr: false });
 const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
+const SkinTypesModal = dynamic(() => import("@/components/website/SkinTypesModal").then((mod) => mod.SkinTypesModal), { ssr: false });
 // 专属顾问弹层：移动端 Dock 隐藏后，入口在汉堡菜单里，只有点开才加载 chunk
 const AdvisorContactModal = dynamic(() => import("@/components/website/AdvisorContactModal").then((mod) => mod.AdvisorContactModal), { ssr: false });
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
@@ -150,6 +151,8 @@ export default function HomeClient() {
   // 顶栏汉堡菜单（移动端收纳 Dock 入口：护肤档案 / 专属顾问 / 我的；另有测肤有礼 / 常见问题 / 了解肌智派）
   const [showMenu, setShowMenu] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  // 了解肌智派弹窗（替代原 /skin-types 独立页）
+  const [showSkinTypesModal, setShowSkinTypesModal] = useState(false);
   // 「专属顾问」弹层（移动端 Dock 隐藏后的入口；银卡及以上展示二维码，普通会员展示升级引导）
   const [showAdvisorModal, setShowAdvisorModal] = useState(false);
   // 「护肤档案」弹层（与 Dock 同一入口）
@@ -169,6 +172,7 @@ export default function HomeClient() {
   const shouldRenderFaq = useLazyOpen(showFaqModal);
   const shouldRenderOnboarding = useLazyOpen(showOnboardingModal);
   const shouldRenderAdvisor = useLazyOpen(showAdvisorModal);
+  const shouldRenderSkinTypes = useLazyOpen(showSkinTypesModal);
 
   // 防止用户在 checkTestLimit 进行过程中关闭弹窗后，异步回调又重新打开弹窗
   const startCancelledRef = useRef(false);
@@ -181,6 +185,11 @@ export default function HomeClient() {
     if (now - faqLastOpenRef.current < 250) return;
     faqLastOpenRef.current = now;
     setShowFaqModal(true);
+  };
+
+  const openSkinTypesModal = () => {
+    setShowMenu(false);
+    setShowSkinTypesModal(true);
   };
 
   useEffect(() => {
@@ -562,14 +571,15 @@ export default function HomeClient() {
                   <CircleHelp className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
                   常见问题
                 </button>
-                <Link
-                  href="/skin-types"
-                  onClick={() => setShowMenu(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08]"
+                <button
+                  type="button"
+                  onClick={openSkinTypesModal}
+                  aria-haspopup="dialog"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
                   了解肌智派
-                </Link>
+                </button>
               </m.div>
             )}
           </AnimatePresence>
@@ -653,6 +663,35 @@ export default function HomeClient() {
               />
             </m.div>
 
+            {/* 左下角「测肤有礼」宣传卡（仅 PC，移动端入口在汉堡菜单）：点击打开活动弹窗。
+                纵向与 Dock 同一条中线：中线 = 内容区底部上方 88px（Dock 上浮 112 + 半高 32 − 底部栏 56）；
+                卡高约 64px（图 48 + 上下 padding 16），故 bottom = 88 − 32 = 56px（bottom-14）。
+                左缘与底部栏内容左缘对齐（px-6 lg:px-10 = 24/40px） */}
+            <m.button
+              type="button"
+              onClick={openGiftModal}
+              aria-haspopup="dialog"
+              aria-expanded={showGiftModal}
+              aria-label="测肤有礼 · 参与赢好礼"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: prefersReducedMotion ? 0 : 0.4, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
+              className="absolute z-40 left-6 lg:left-10 bottom-14 hidden lg:flex items-center gap-3 rounded-2xl bg-white/95 backdrop-blur-sm py-2 pl-2 pr-4 border border-white/60 shadow-[0_12px_30px_-10px_rgba(0,38,62,0.25)] transition-transform duration-200 hover:-translate-y-1 motion-reduce:transition-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
+            >
+              <Image
+                src="/images/gift-badge.webp"
+                alt=""
+                aria-hidden="true"
+                width={640}
+                height={396}
+                className="h-12 w-auto object-contain"
+              />
+              <span className="flex flex-col items-start text-left">
+                <span className="text-[14px] font-bold tracking-[0.08em] text-[#22304E]">测肤有礼</span>
+                <span className="text-[11px] tracking-[0.04em] text-[#84817a]">参与赢 NIHPLOD 正装好礼</span>
+              </span>
+            </m.button>
+
             {/* 中央文案：文字与按钮各自绝对定位、互不联动——
                 文字（主标题 + 副标题含蓝色问号 = 跳转「了解肌智派」）贴波浪上方（米色区下半部）；
                 CTA 按钮（硬投影白胶囊）定在蓝色区上部（内容区 62% 高处） */}
@@ -664,9 +703,11 @@ export default function HomeClient() {
                   <span className="block mt-1.5 md:mt-2">
                     <span className="relative inline-flex items-center justify-center -mr-[0.14em] text-[26px] md:text-[38px] lg:text-[44px] font-medium tracking-[0.14em] text-[#1c1c1c]">
                       你的肌肤派系
-                      {/* 蓝色问号：跳转「了解肌智派」派系列表页（扩大触达区：移动端热区外扩 8px） */}
-                      <Link
-                        href="/skin-types"
+                      {/* 蓝色问号：打开「了解肌智派」弹窗（扩大触达区：移动端热区外扩 8px） */}
+                      <button
+                        type="button"
+                        onClick={openSkinTypesModal}
+                        aria-haspopup="dialog"
                         aria-label="了解肌智派"
                         className="absolute left-full top-[calc(50%+0.05em)] -translate-y-1/2 ml-1 md:ml-2 inline-flex w-6 h-6 md:w-8 md:h-8 items-center justify-center rounded-full bg-[#2E4D9E] text-white transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer touch-manipulation before:absolute before:inset-0 before:content-[''] max-md:before:-inset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
                       >
@@ -683,7 +724,7 @@ export default function HomeClient() {
                           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                           <path d="M12 17h.01" />
                         </svg>
-                      </Link>
+                      </button>
                     </span>
                   </span>
                 </h1>
@@ -742,6 +783,13 @@ export default function HomeClient() {
             setShowGiftModal(false);
             handleStart();
           }}
+          onOpenSkinTypes={openSkinTypesModal}
+        />
+      )}
+      {shouldRenderSkinTypes && (
+        <SkinTypesModal
+          isOpen={showSkinTypesModal}
+          onClose={() => setShowSkinTypesModal(false)}
         />
       )}
       {shouldRenderFaq && (

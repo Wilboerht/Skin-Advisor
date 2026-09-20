@@ -13,10 +13,10 @@ describe("isPublicPath", () => {
     });
 
     it('":path*" 通配匹配自身与子路径', () => {
-        expect(isPublicPath("/skin-types")).toBe(true);
-        expect(isPublicPath("/skin-types/dry")).toBe(true);
         expect(isPublicPath("/admin")).toBe(true);
         expect(isPublicPath("/admin/users")).toBe(true);
+        expect(isPublicPath("/preview")).toBe(true);
+        expect(isPublicPath("/preview/myskin")).toBe(true);
     });
 
     it("需登录页面判定为非公开（回调死循环防护依赖）", () => {
@@ -25,8 +25,8 @@ describe("isPublicPath", () => {
         expect(isPublicPath("/api/user/points")).toBe(false);
     });
 
-    it("通配前缀不误伤相似前缀路径", () => {
-        // "/skin-types/:path*" 不应匹配 "/skin-typesx"
+    it("已下线的独立页判定为非公开", () => {
+        expect(isPublicPath("/skin-types")).toBe(false);
         expect(isPublicPath("/skin-typesx")).toBe(false);
     });
 });

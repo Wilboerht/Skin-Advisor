@@ -12,27 +12,27 @@ export default function robots(): MetadataRoute.Robots {
       },
       {
         userAgent: "GPTBot",
-        allow: ["/", "/skin-types/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
+        allow: ["/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
         disallow: ["/admin/", "/api/", "/result", "/reports/", "/face-scan/", "/questions/"],
       },
       {
         userAgent: "CCBot",
-        allow: ["/", "/skin-types/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
+        allow: ["/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
         disallow: ["/admin/", "/api/", "/result", "/reports/", "/face-scan/", "/questions/"],
       },
       {
         userAgent: "anthropic-ai",
-        allow: ["/", "/skin-types/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
+        allow: ["/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
         disallow: ["/admin/", "/api/", "/result", "/reports/", "/face-scan/", "/questions/"],
       },
       {
         userAgent: "Google-Extended",
-        allow: ["/", "/skin-types/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
+        allow: ["/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
         disallow: ["/admin/", "/api/", "/result", "/reports/", "/face-scan/", "/questions/"],
       },
       {
         userAgent: "Baiduspider",
-        allow: ["/", "/skin-types/", "/faq/", "/gift/"],
+        allow: ["/", "/faq/", "/gift/"],
         disallow: ["/admin/", "/api/", "/result", "/reports/", "/face-scan/", "/questions/"],
         crawlDelay: 1,
       },
