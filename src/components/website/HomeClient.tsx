@@ -544,10 +544,12 @@ export default function HomeClient() {
           {/* 首屏 Hero（设计稿版式）：米白上区 + 蓝灰波浪下区，左右 IP 形象夹峙中央文案。
               男性 IP 置于波浪层之下（下身没入蓝色区域），女性 IP 立于波浪层之上、裙摆抵到底部栏 */}
           <div className="relative flex flex-1 flex-col w-full overflow-hidden bg-[#EFE9DA]">
-            {/* 左侧男性 IP（极简派 · 手持几何晶体）：移动端空间不足时隐藏 */}
+            {/* 左侧男性 IP（极简派 · 手持几何晶体）：移动端空间不足时隐藏。
+                bottom-31% 的取数：男性图顶部含 13% 透明边距、女性图底部含 5.5%，
+                此位置使"男性头顶 → 顶栏"与"女性脚底 → 底部栏"的视距一致（按常规桌面视口标定） */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[2%] lg:left-[5%] bottom-[34%] hidden md:block"
+              className="absolute z-10 left-[2%] lg:left-[5%] bottom-[31%] hidden md:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -558,14 +560,14 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="(min-width: 1024px) 34vw, 26vw"
-                className="h-[44vh] lg:h-[58vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[48vh] lg:h-[63vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
 
-            {/* 波浪分界：米白 → 蓝灰，缓弧自左向右微微上扬。
-                蓝色面积 ≈ 内容区的 48%：曲线平均上缘约在 SVG 内 20% 深处（蓝色占 SVG 的 79.7%），
-                SVG 高 60% × 79.7% ≈ 48% */}
+            {/* 波浪分界：米白 → 蓝灰，单一缓弧（一上一下），整体自左向右微微上扬。
+                蓝色面积 ≈ 内容区的 48%：曲线平均上缘约在 SVG 内 19% 深处（蓝色占 SVG 的 80.6%），
+                SVG 高 60% × 80.6% ≈ 48% */}
             <svg
               aria-hidden="true"
               className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full"
@@ -573,7 +575,7 @@ export default function HomeClient() {
               preserveAspectRatio="none"
             >
               <path
-                d="M0,84 C240,56 480,100 720,72 C960,44 1200,60 1440,32 L1440,320 L0,320 Z"
+                d="M0,80 C480,16 960,96 1440,56 L1440,320 L0,320 Z"
                 fill="#93A5BE"
               />
             </svg>
@@ -592,7 +594,7 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="(min-width: 1024px) 32vw, 44vw"
-                className="h-[36vh] md:h-[60vh] lg:h-[76vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                className="h-[33vh] md:h-[55vh] lg:h-[69vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                 priority
               />
             </m.div>
@@ -601,8 +603,8 @@ export default function HomeClient() {
                 文字（主标题 + 副标题含蓝色问号 = 常见问题）贴波浪上方（米色区下半部）；
                 CTA 按钮（硬投影白胶囊）定在蓝色区上部（内容区 64% 高处） */}
             <section className="relative z-40 flex-1 w-full text-center">
-              {/* 文字区：米色区下半部，底部对齐贴波浪上方（区高 = 波浪最高点 46%，底部留白 24/40px） */}
-              <div className="absolute inset-x-0 top-0 flex h-[46%] flex-col items-center justify-end px-6 pb-6 md:pb-10 opacity-0 animate-fade-in-up">
+              {/* 文字区：米色区下半部，底部对齐贴波浪上方（区高 48%，底部留白 24/40px） */}
+              <div className="absolute inset-x-0 top-0 flex h-[48%] flex-col items-center justify-end px-6 pb-6 md:pb-10 opacity-0 animate-fade-in-up">
                 <h1 className="leading-[1.12]">
                   <span className="block -mr-[0.1em] text-[54px] md:text-[80px] lg:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
                   <span className="block mt-1.5 md:mt-2">
