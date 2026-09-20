@@ -424,7 +424,8 @@ export default function HomeClient() {
       {/* 顶部栏：与结果页/问卷页同规格（左空 + 中 logo + 右用户区），移动端同样显示；
           固定定位 + 毛玻璃底，logo 可点回首页 */}
       <header className="fixed inset-x-0 top-0 z-40 pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-5 bg-[#f3efe6]/85 backdrop-blur-md border-b border-brand-charcoal/[0.06] md:border-b-0">
-        <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-2 w-full px-4 xl:px-20">
+        {/* 与页脚共享同一容器（chrome 轨：90% / 1280 下限）；Hero 用更窄的独立容器，不参与对齐 */}
+        <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-2 w-[min(100%,max(90%,1280px))] mx-auto px-6 lg:px-10">
           {/* 左槽：活动/常见问题入口（移动端圆形图标版，md+ 描边胶囊；h-9 为 border-box，不撑高顶栏） */}
           <div className="justify-self-start flex items-center gap-1 md:gap-1.5">
             <button
@@ -478,9 +479,10 @@ export default function HomeClient() {
         animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
-          {/* 首屏 Hero：左文右图分栏（一屏垂直居中，矮屏/横屏放不下时可滚动） */}
+          {/* 首屏 Hero：左文右图分栏（一屏垂直居中，矮屏/横屏放不下时可滚动）。
+              内容区使用更窄的独立容器（80% / 1200 下限），不与顶栏、页脚的 chrome 轨对齐 */}
           <div className="flex-1 w-full flex items-center">
-            <div className="w-full max-w-6xl mx-auto px-6 lg:px-10 grid grid-cols-1 lg:grid-cols-[minmax(0,46%)_minmax(0,54%)] items-center gap-4 lg:gap-10">
+            <div className="w-[min(100%,max(80%,1200px))] mx-auto px-6 lg:px-10 grid grid-cols-1 lg:grid-cols-[minmax(0,46%)_minmax(0,54%)] items-center gap-4 lg:gap-10">
               {/* 左列：品牌 / 标题 / 卖点 / 操作 */}
               <section className="relative z-10 flex flex-col items-center text-center lg:items-start lg:text-left">
                 <div className="opacity-0 animate-fade-in-up flex flex-col items-center lg:items-start">
@@ -514,7 +516,7 @@ export default function HomeClient() {
                     <span className="text-brand-charcoal/55">读懂你的肌肤。</span>
                   </h1>
 
-                  <p className="text-[14px] md:text-[16px] leading-[1.8] tracking-[0.01em] text-brand-charcoal/70 font-light max-w-md lg:max-w-[500px] mb-6 md:mb-8">以 AI 之眼完成面部扫描，结合专业问卷测出你的专属肌智派系，<br className="hidden lg:block" />匹配科学护肤方案与好物推荐。</p>
+                  <p className="text-[14px] md:text-[16px] leading-[1.8] tracking-[0.01em] text-brand-charcoal/70 font-light max-w-md lg:max-w-[500px] mb-6 md:mb-8">以 AI 之眼完成面部扫描，结合专业问卷测出你的专属肌智派系，<br className="hidden xl:block" />匹配科学护肤方案与好物推荐。</p>
 
                   {/* 操作区：主按钮（藏青 + 圆形箭头章，悬停箭头旋转）+ 次级入口（窄屏并排省高度） */}
                   <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -585,7 +587,7 @@ export default function HomeClient() {
                   width={1024}
                   height={1024}
                   sizes="(min-width: 1024px) 520px, 60vw"
-                  className="relative h-[26vh] min-h-[150px] lg:h-[58vh] w-auto object-contain object-center lg:object-right drop-shadow-[0_16px_30px_rgba(0,38,62,0.14)]"
+                  className="relative h-[30vh] min-h-[160px] lg:h-[66vh] w-auto object-contain object-center lg:object-right drop-shadow-[0_16px_30px_rgba(0,38,62,0.14)]"
                   priority
                 />
               </m.div>
@@ -593,16 +595,18 @@ export default function HomeClient() {
           </div>
 
           {/* 页脚（移动端/中屏：沉底于 Dock 上方；xl 以上见下方固定通栏版本）。
-              全端贴边 16px，与顶栏的"通栏"方案保持同一网格 */}
-          <div className="mt-auto pt-4 md:pt-6 px-4 md:mb-4 xl:hidden">
+              与顶栏共享 chrome 容器轨（90% / 1280 下限）；Hero 内容区独立更窄，不参与对齐 */}
+          <div className="mt-auto pt-4 md:pt-6 w-[min(100%,max(90%,1280px))] mx-auto px-6 lg:px-10 md:mb-4 xl:hidden">
             <HomepageFooter />
           </div>
         </m.div>
 
-      {/* xl 桌面端页脚：固定屏幕底部通栏，备案居左、链接与版权居右（z 高于内容层 z-20、低于 Dock；
-          xl 及以上左右内缩 80px 与顶栏同网格，<1280px 改走上方 16px 贴边的沉底版） */}
-      <div className="hidden xl:block fixed bottom-2 left-20 right-20 z-30">
-        <HomepageFooter />
+      {/* xl 桌面端页脚：固定屏幕底部通栏（全宽底 + 居中容器），备案居左、链接与版权居右；
+          与顶栏/Hero 三条竖轨对齐；<1280px 时全宽页脚会与居中悬浮 Dock 胶囊横向交叠，故改走上方沉底版 */}
+      <div className="hidden xl:block fixed bottom-2 inset-x-0 z-30">
+        <div className="w-[min(100%,max(90%,1280px))] mx-auto px-6 lg:px-10">
+          <HomepageFooter />
+        </div>
       </div>
 
       {/* "测肤有礼"入口为 Hero 下方的描边胶囊（见上方次级入口区），不再使用右下角悬浮卡片 */}
