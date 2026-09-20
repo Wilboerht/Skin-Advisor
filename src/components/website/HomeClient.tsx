@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2, X, Menu, Sparkles, Gift, CircleHelp } from "lucide-react";
+import { Loader2, X, Menu, Sparkles, Gift, CircleHelp, NotebookPen, MessageCircleHeart, CircleUserRound } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,6 +23,9 @@ import { HomepageFooter } from "@/components/website/HomepageFooter";
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
 const FaqModal = dynamic(() => import("@/components/website/FaqModal").then((mod) => mod.FaqModal), { ssr: false });
 const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
+// 专属顾问弹层：移动端 Dock 隐藏后，入口在汉堡菜单里，只有点开才加载 chunk
+const AdvisorContactModal = dynamic(() => import("@/components/website/AdvisorContactModal").then((mod) => mod.AdvisorContactModal), { ssr: false });
+import { useDiaryModal } from "@/components/website/DiaryModalContext";
 
 // Safe storage helper to prevent QuotaExceededError or Privacy Mode crashes
 const safeStorage = {
@@ -144,9 +147,13 @@ export default function HomeClient() {
   }, []);
   // FAQ 模态框（首页"常见问题"描边胶囊入口）
   const [showFaqModal, setShowFaqModal] = useState(false);
-  // 顶栏汉堡菜单（测肤有礼 / 常见问题 / 了解肌智派入口收纳其中）
+  // 顶栏汉堡菜单（移动端收纳 Dock 入口：护肤档案 / 专属顾问 / 我的；另有测肤有礼 / 常见问题 / 了解肌智派）
   const [showMenu, setShowMenu] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  // 「专属顾问」弹层（移动端 Dock 隐藏后的入口；银卡及以上展示二维码，普通会员展示升级引导）
+  const [showAdvisorModal, setShowAdvisorModal] = useState(false);
+  // 「护肤档案」弹层（与 Dock 同一入口）
+  const { openDiaryModal } = useDiaryModal();
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
 
@@ -155,6 +162,7 @@ export default function HomeClient() {
   const shouldRenderGift = useLazyOpen(showGiftModal);
   const shouldRenderFaq = useLazyOpen(showFaqModal);
   const shouldRenderOnboarding = useLazyOpen(showOnboardingModal);
+  const shouldRenderAdvisor = useLazyOpen(showAdvisorModal);
 
   // 防止用户在 checkTestLimit 进行过程中关闭弹窗后，异步回调又重新打开弹窗
   const startCancelledRef = useRef(false);
@@ -501,6 +509,35 @@ export default function HomeClient() {
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
                 transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }}
               >
+                {/* 移动端 Dock 入口（首页移动端不显示 Dock，导航收纳至此；桌面端 Dock 在，无需重复） */}
+                <button
+                  type="button"
+                  onClick={() => { setShowMenu(false); openDiaryModal(); }}
+                  aria-haspopup="dialog"
+                  className="flex md:hidden w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
+                >
+                  <NotebookPen className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
+                  护肤档案
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowMenu(false); setShowAdvisorModal(true); }}
+                  aria-haspopup="dialog"
+                  className="flex md:hidden w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
+                >
+                  <MessageCircleHeart className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
+                  专属顾问
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowMenu(false); setShowAccountModal(true); }}
+                  aria-haspopup="dialog"
+                  className="flex md:hidden w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
+                >
+                  <CircleUserRound className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
+                  我的
+                </button>
+                <div aria-hidden="true" className="md:hidden mx-3 my-1.5 border-t border-black/[0.06]" />
                 <button
                   type="button"
                   onClick={() => { setShowMenu(false); openGiftModal(); }}
@@ -680,6 +717,9 @@ export default function HomeClient() {
       {/* Modals：首次打开才加载对应 chunk（见上方 shouldRender* latch） */}
       {shouldRenderAccount && (
         <AccountModal isOpen={showAccountModal} onClose={() => setShowAccountModal(false)} />
+      )}
+      {shouldRenderAdvisor && (
+        <AdvisorContactModal isOpen={showAdvisorModal} onClose={() => setShowAdvisorModal(false)} />
       )}
       {shouldRenderGift && (
         <GiftModal
