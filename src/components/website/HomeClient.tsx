@@ -76,7 +76,7 @@ function GiftParamDetector({ onOpen }: { onOpen: () => void }) {
   return null;
 }
 
-/** ?start=1 检测组件：从站外页面（如 /skin-types 活动弹窗）点"开始测肤"进来时，
+/** ?start=1 检测组件：从站外页面（如活动弹窗）点"开始测肤"进来时，
  *  自动拉起与首页 CTA 完全相同的 handleStart 流程（限额检查 → 隐私授权），并清理 URL。
  *  firedRef 防 StrictMode 双跑导致重复触发。 */
 function StartParamDetector({ onStart }: { onStart: () => void }) {

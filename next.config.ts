@@ -94,6 +94,12 @@ const nextConfig: NextConfig = {
         destination: "/?gift=1",
         permanent: true,
       },
+      // 派系列表已改为首页弹窗：/skin-types 旧链接（搜索结果、llms 引用）308 回首页
+      {
+        source: "/skin-types",
+        destination: "/",
+        permanent: true,
+      },
     ];
   },
   async headers() {
