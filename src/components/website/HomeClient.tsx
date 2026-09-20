@@ -484,9 +484,9 @@ export default function HomeClient() {
               {/* 左列：品牌 / 标题 / 卖点 / 操作 */}
               <section className="relative z-10 flex flex-col items-center text-center lg:items-start lg:text-left">
                 <div className="opacity-0 animate-fade-in-up flex flex-col items-center lg:items-start">
-                  {/* 印章徽标 */}
+                  {/* 印章徽标：素材自带透明通道，无需混合模式/降透明；下边距按"留白 ≥ 0.5×标高"取 16/24 */}
                   <m.div
-                    className="mb-3 md:mb-5 inline-flex items-center"
+                    className="mb-4 md:mb-6 inline-flex items-center"
                     initial={{ opacity: 0, scale: 1.5, y: -10, filter: "blur(2px)" }}
                     animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
                     transition={{ delay: 0.35, duration: 0.4, ease: "easeOut" }}
@@ -496,8 +496,8 @@ export default function HomeClient() {
                       alt="肌智派"
                       width={256}
                       height={156}
-                      sizes="(min-width: 768px) 88px, 72px"
-                      className="h-10 md:h-[52px] w-auto opacity-90 mix-blend-multiply"
+                      sizes="(min-width: 768px) 86px, 66px"
+                      className="h-10 md:h-[52px] w-auto"
                       priority
                     />
                   </m.div>
@@ -541,8 +541,8 @@ export default function HomeClient() {
                     </Link>
                   </div>
 
-                  {/* 三步预告：caption 档 12px；与按钮组更近（16/24），与正文（24/32）形成明确的邻近层级 */}
-                  <div className="mt-4 md:mt-6 flex items-center gap-x-1.5 md:gap-x-2 whitespace-nowrap text-brand-charcoal/60 text-[12px] font-light tracking-[0.06em]">
+                  {/* 三步预告：caption 档 12px；与正文→按钮同间距（24/32），上下完全一致 */}
+                  <div className="mt-6 md:mt-8 flex items-center gap-x-1.5 md:gap-x-2 whitespace-nowrap text-brand-charcoal/60 text-[12px] font-light tracking-[0.06em]">
                     <span className="flex items-center gap-1.5">
                       <ScanFace className="w-3.5 h-3.5" strokeWidth={1.5} />
                       问卷及面部扫描
