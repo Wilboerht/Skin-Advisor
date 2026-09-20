@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, ChevronRight, Loader2, X, ScanFace, Sparkles, FileText, Gift, CircleHelp } from "lucide-react";
+import { Loader2, X, Menu, Sparkles, Gift, CircleHelp } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,8 +20,6 @@ import { useNavPush } from "@/hooks/use-nav-push";
 import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 import { HomepageFooter } from "@/components/website/HomepageFooter";
-import { KineticBackground } from "@/components/website/KineticBackground";
-import UserBadge from "@/components/advisor/UserBadge";
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
 const FaqModal = dynamic(() => import("@/components/website/FaqModal").then((mod) => mod.FaqModal), { ssr: false });
 const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
@@ -140,6 +138,8 @@ export default function HomeClient() {
   }, []);
   // FAQ 模态框（首页"常见问题"描边胶囊入口）
   const [showFaqModal, setShowFaqModal] = useState(false);
+  // 顶栏汉堡菜单（测肤有礼 / 常见问题 / 了解肌智派入口收纳其中）
+  const [showMenu, setShowMenu] = useState(false);
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
 
@@ -418,57 +418,79 @@ export default function HomeClient() {
         )}
       </AnimatePresence>
 
-      {/* 首页 Kinetic 背景：米白底 + 点阵 + N 水印（共享组件，样式类见 globals.css） */}
-      <KineticBackground />
-
-      {/* 顶部栏：与结果页/问卷页同规格（左空 + 中 logo + 右用户区），移动端同样显示；
-          固定定位 + 毛玻璃底，logo 可点回首页 */}
-      <header className="fixed inset-x-0 top-0 z-40 pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-5 bg-[#f3efe6]/85 backdrop-blur-md border-b border-brand-charcoal/[0.06] md:border-b-0">
-        {/* 与页脚共享同一容器（chrome 轨：90% / 1280 下限）；Hero 用更窄的独立容器，不参与对齐 */}
-        <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-2 w-[min(100%,max(90%,1280px))] mx-auto px-6 lg:px-10">
-          {/* 左槽：活动/常见问题入口（移动端圆形图标版，md+ 描边胶囊；h-9 为 border-box，不撑高顶栏） */}
-          <div className="justify-self-start flex items-center gap-1 md:gap-1.5">
-            <button
-              type="button"
-              onClick={openGiftModal}
-              aria-label="测肤有礼 · 参与赢好礼"
-              aria-haspopup="dialog"
-              aria-expanded={showGiftModal}
-              className="group inline-flex h-9 w-9 -my-0.5 items-center justify-center rounded-full border border-brand-gold/50 bg-brand-gold/[0.08] text-brand-bronze shadow-[0_2px_10px_-6px_rgba(201,168,108,0.6)] transition-colors hover:border-brand-gold/80 hover:bg-brand-gold/[0.14] active:opacity-80 md:-my-0 md:w-auto md:gap-1.5 md:px-3.5 cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
-            >
-              <Gift className="w-[18px] h-[18px] md:w-3.5 md:h-3.5" strokeWidth={1.75} />
-              <span className="hidden md:inline text-[13px] font-light tracking-[0.08em] whitespace-nowrap">
-                测肤有礼 · 参与赢好礼
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={handleOpenFaq}
-              aria-label="常见问题"
-              aria-haspopup="dialog"
-              aria-expanded={showFaqModal}
-              className="group inline-flex h-9 w-9 -my-0.5 items-center justify-center rounded-full border border-brand-charcoal/15 text-brand-charcoal/70 transition-colors hover:border-brand-charcoal/35 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal active:opacity-80 md:-my-0 md:w-auto md:gap-1.5 md:px-3.5 cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2"
-            >
-              <CircleHelp className="w-[18px] h-[18px] md:w-3.5 md:h-3.5" strokeWidth={1.75} />
-              <span className="hidden md:inline text-[13px] font-light tracking-[0.08em] whitespace-nowrap">
-                常见问题
-              </span>
-            </button>
-          </div>
-          <Link href="/" aria-label="回到首页" className="justify-self-center inline-flex items-center">
+      {/* 顶部栏（设计稿版式）：左蓝色汉堡按钮 + 中肌智派徽章（相对顶栏整体居中）+ 右 NIHPLOD logo；
+          白底固定定位，汉堡内收纳测肤有礼 / 常见问题 / 了解肌智派入口 */}
+      <header className="fixed inset-x-0 top-0 z-40 bg-white border-b border-black/[0.06]">
+        <div className="relative flex items-center justify-between">
+          {/* 左：汉堡按钮（宽度与右侧 logo 区一致：logo 96/128 + 右内边距 16/32 = 112/160） */}
+          <button
+            type="button"
+            onClick={() => setShowMenu((v) => !v)}
+            aria-label={showMenu ? "关闭菜单" : "打开菜单"}
+            aria-expanded={showMenu}
+            className="flex h-14 w-28 md:h-[72px] md:w-40 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2"
+          >
+            {showMenu ? <X className="w-6 h-6" strokeWidth={2} /> : <Menu className="w-6 h-6" strokeWidth={2} />}
+          </button>
+          {/* 中：肌智派徽章，绝对定位相对顶栏整体居中，不受左右两侧宽度影响 */}
+          <Link href="/" aria-label="回到首页" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center" onClick={() => setShowMenu(false)}>
+            <Image
+              src="/images/jzp-eyebrow.png"
+              alt="肌智派"
+              width={256}
+              height={156}
+              sizes="(min-width: 768px) 96px, 72px"
+              className="h-11 md:h-14 w-auto object-contain"
+              priority
+            />
+          </Link>
+          {/* 右：NIHPLOD 品牌 logo（容器定宽与左侧汉堡按钮一致，左右对称） */}
+          <div className="w-28 md:w-40 pr-4 md:pr-8 flex items-center justify-end select-none">
             <Image
               src="/NIHPLOD-logo.svg"
               alt="NIHPLOD"
               width={120}
               height={30}
-              sizes="(min-width: 768px) 108px, 96px"
-              className="h-7 md:h-9 w-auto object-contain"
+              sizes="(min-width: 768px) 120px, 96px"
+              className="h-6 md:h-8 w-auto object-contain"
               priority
             />
-          </Link>
-          <div className="justify-self-end flex items-center">
-            <UserBadge compact />
           </div>
+
+          {/* 汉堡下拉菜单：遮罩点击关闭 */}
+          {showMenu && (
+            <>
+              <div aria-hidden="true" className="fixed inset-0 z-40 cursor-default" onClick={() => setShowMenu(false)} />
+              <div className="absolute left-3 md:left-5 top-[calc(100%+8px)] z-50 w-60 rounded-2xl border border-black/[0.06] bg-white p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)]">
+                <button
+                  type="button"
+                  onClick={() => { setShowMenu(false); openGiftModal(); }}
+                  aria-haspopup="dialog"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] cursor-pointer"
+                >
+                  <Gift className="w-4 h-4 text-brand-bronze" strokeWidth={1.75} />
+                  测肤有礼 · 参与赢好礼
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowMenu(false); handleOpenFaq(); }}
+                  aria-haspopup="dialog"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] cursor-pointer"
+                >
+                  <CircleHelp className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
+                  常见问题
+                </button>
+                <Link
+                  href="/skin-types"
+                  onClick={() => setShowMenu(false)}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05]"
+                >
+                  <Sparkles className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
+                  了解肌智派
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </header>
 
@@ -479,137 +501,100 @@ export default function HomeClient() {
         animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
-          {/* 首屏 Hero：左文右图分栏（一屏垂直居中，矮屏/横屏放不下时可滚动）。
-              内容区使用更窄的独立容器（70% / 1100 下限），不与顶栏、页脚的 chrome 轨对齐 */}
-          <div className="flex-1 w-full flex items-center">
-            <div className="w-[min(100%,max(70%,1100px))] mx-auto px-6 lg:px-10 grid grid-cols-1 lg:grid-cols-[minmax(0,46%)_minmax(0,54%)] items-center gap-4 lg:gap-10">
-              {/* 左列：品牌 / 标题 / 卖点 / 操作 */}
-              <section className="relative z-10 flex flex-col items-center text-center lg:items-start lg:text-left">
-                <div className="opacity-0 animate-fade-in-up flex flex-col items-center lg:items-start">
-                  {/* 印章徽标：素材自带透明通道，无需混合模式/降透明；下边距按"留白 ≥ 0.5×标高"取 16/24 */}
-                  <m.div
-                    className="mb-4 md:mb-6 inline-flex items-center"
-                    initial={{ opacity: 0, scale: 1.5, y: -10, filter: "blur(2px)" }}
-                    animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-                    transition={{ delay: 0.35, duration: 0.4, ease: "easeOut" }}
-                  >
-                    <Image
-                      src="/images/jzp-eyebrow.png"
-                      alt="肌智派"
-                      width={256}
-                      height={156}
-                      sizes="(min-width: 768px) 86px, 66px"
-                      className="h-10 md:h-[52px] w-auto"
-                      priority
-                    />
-                  </m.div>
+          {/* 首屏 Hero（设计稿版式）：米白上区 + 蓝灰波浪下区，左右 IP 形象夹峙中央文案。
+              男性 IP 置于波浪层之下（下身没入蓝色区域），女性 IP 立于波浪层之上 */}
+          <div className="relative flex-1 w-full overflow-hidden bg-[#EFE9DA]">
+            {/* 左侧男性 IP（极简派 · 手持几何晶体）：移动端空间不足时隐藏 */}
+            <m.div
+              aria-hidden="true"
+              className="absolute z-10 left-[2%] lg:left-[5%] bottom-[32%] hidden md:block"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
+            >
+              <Image
+                src="/images/character/minimalist/minimalist_male.webp"
+                alt=""
+                width={960}
+                height={1280}
+                sizes="(min-width: 1024px) 34vw, 26vw"
+                className="h-[42vh] lg:h-[56vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                priority
+              />
+            </m.div>
 
-                  {/* 说明胶囊：AI 护肤顾问 · 预计时长（字阶 caption 档：12px / 0.1em） */}
-                  <span className="mb-3 md:mb-5 inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-brand-charcoal/[0.06] text-brand-charcoal/70 text-[12px] font-light tracking-[0.1em] whitespace-nowrap">
-                    AI 护肤顾问 · 约 3 分钟
-                  </span>
+            {/* 波浪分界：米白 → 蓝灰，S 形曲线自左向右微微上扬 */}
+            <svg
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 z-20 h-[46%] w-full"
+              viewBox="0 0 1440 320"
+              preserveAspectRatio="none"
+            >
+              <path
+                d="M0,118 C180,84 360,140 560,112 C760,84 920,122 1100,86 C1240,58 1360,74 1440,58 L1440,320 L0,320 Z"
+                fill="#93A5BE"
+              />
+            </svg>
 
-                  {/* 标题：两段式排版，第二行弱化；行高放宽到 1.18 让两行更透气 */}
-                  <h1 className="home-hero-title font-serif text-brand-charcoal font-light leading-[1.18] tracking-[0.04em] mb-4 md:mb-6">
-                    三分钟，
-                    <br />
-                    <span className="text-brand-charcoal/55">读懂你的肌肤。</span>
-                  </h1>
+            {/* 右侧女性 IP（沙漠派 · 金发蓝缕捧水滴）：立于波浪之上，下身出屏 */}
+            <m.div
+              aria-hidden="true"
+              className="absolute z-30 -right-[6%] md:right-[1%] lg:right-[4%] bottom-0"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
+            >
+              <Image
+                src="/images/character/desert/desert_female.webp"
+                alt=""
+                width={960}
+                height={1280}
+                sizes="(min-width: 1024px) 32vw, 44vw"
+                className="h-[36vh] md:h-[58vh] lg:h-[74vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                priority
+              />
+            </m.div>
 
-                  <p className="text-[14px] md:text-[16px] leading-[1.8] tracking-[0.01em] text-brand-charcoal/70 font-light max-w-md lg:max-w-[500px] mb-6 md:mb-8">以 AI 之眼完成面部扫描，结合专业问卷测出你的专属肌智派系，<br className="hidden xl:block" />匹配科学护肤方案与好物推荐。</p>
-
-                  {/* 操作区：主按钮（藏青 + 圆形箭头章，悬停箭头旋转）+ 次级入口（窄屏并排省高度） */}
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={handleStart}
-                      disabled={isLoading || isNavigating}
-                      className="group/cta inline-flex flex-1 sm:flex-none items-center justify-center gap-3 h-12 pl-7 pr-2 rounded-full bg-[var(--color-brand-charcoal)] text-white text-[15px] font-normal tracking-[0.08em] shadow-[0_10px_30px_-10px_rgba(0,38,62,0.45)] transition-colors duration-300 hover:bg-[var(--color-brand-charcoal)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                      <span>{isLoading ? "正在连接" : "开始测肤"}</span>
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15">
-                        {isLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <ArrowUpRight className="w-4 h-4 transition-transform duration-300 group-hover/cta:rotate-45 motion-reduce:transition-none" />
-                        )}
-                      </span>
-                    </button>
-                    <Link
-                      href="/skin-types"
-                      className="inline-flex flex-1 sm:flex-none items-center justify-center h-12 px-7 rounded-full border border-brand-charcoal/20 text-brand-charcoal/80 text-[15px] font-light tracking-[0.08em] transition-colors duration-300 hover:border-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.03]"
-                    >
-                      了解肌智派
-                    </Link>
-                  </div>
-
-                  {/* 三步预告：caption 档 12px；与正文→按钮同间距（24/32），上下完全一致 */}
-                  <div className="mt-6 md:mt-8 flex items-center gap-x-1.5 md:gap-x-2 whitespace-nowrap text-brand-charcoal/60 text-[12px] font-light tracking-[0.06em]">
-                    <span className="flex items-center gap-1.5">
-                      <ScanFace className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      问卷及面部扫描
-                    </span>
-                    <ChevronRight className="w-3.5 h-3.5 text-brand-charcoal/30" strokeWidth={1.5} />
-                    <span className="flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      AI 分析
-                    </span>
-                    <ChevronRight className="w-3.5 h-3.5 text-brand-charcoal/30" strokeWidth={1.5} />
-                    <span className="flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      专属报告
-                    </span>
-                  </div>
-                </div>
-              </section>
-
-              {/* 右列：Hero 配图（临时占位：来自 Myskin.Today 参考项目，自有素材就绪后替换；
-                  纯装饰；矮屏移动端由 .home-hero-visual 隐藏） */}
-              <m.div
-                className="home-hero-visual relative flex w-full items-end justify-center lg:justify-end"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  delay: prefersReducedMotion ? 0 : 0.25,
-                  duration: prefersReducedMotion ? 0 : 0.5,
-                  ease: "easeOut",
-                }}
-              >
-                {/* 柔光底：让配图从底色上"浮"起来 */}
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute bottom-[8%] left-1/2 -translate-x-1/2 lg:left-auto lg:right-[8%] lg:translate-x-0 w-[72%] lg:w-[84%] aspect-square rounded-full bg-[#e3dbc9]/55 blur-3xl"
-                />
-                <Image
-                  src="/images/hero-illustration-placeholder.webp"
-                  alt=""
-                  aria-hidden="true"
-                  width={1024}
-                  height={1024}
-                  sizes="(min-width: 1024px) 520px, 60vw"
-                  className="relative h-[30vh] min-h-[160px] lg:h-[60vh] w-auto object-contain object-center lg:object-right drop-shadow-[0_16px_30px_rgba(0,38,62,0.14)]"
-                  priority
-                />
-              </m.div>
-            </div>
+            {/* 中央文案：主标题 + 副标题 + CTA；按钮落在蓝色区域（硬投影白胶囊） */}
+            <section className="relative z-40 mx-auto flex h-full flex-col items-center justify-center px-6 text-center">
+              <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
+                <h1 className="leading-[1.12]">
+                  <span className="block text-[54px] md:text-[80px] lg:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
+                  <span className="mt-1.5 md:mt-2 block text-[26px] md:text-[38px] lg:text-[44px] font-medium tracking-[0.14em] text-[#1c1c1c]">你的肌肤派系</span>
+                </h1>
+                <p className="mt-4 md:mt-6 text-[13px] md:text-[16px] leading-[1.9] tracking-[0.05em] text-[#84817a]">
+                  获得专业的面部分析报告
+                  <br />
+                  您口袋里的专属的护肤管家
+                </p>
+                <button
+                  type="button"
+                  onClick={handleStart}
+                  disabled={isLoading || isNavigating}
+                  className="mt-9 md:mt-12 inline-flex items-center justify-center gap-2 h-12 md:h-14 px-10 md:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] md:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{isLoading ? "正在连接" : "立刻体验"}</span>
+                </button>
+              </div>
+            </section>
           </div>
 
-          {/* 页脚（移动端/中屏：沉底于 Dock 上方；xl 以上见下方固定通栏版本）。
-              与顶栏共享 chrome 容器轨（90% / 1280 下限）；Hero 内容区独立更窄，不参与对齐 */}
-          <div className="mt-auto pt-4 md:pt-6 w-[min(100%,max(90%,1280px))] mx-auto px-6 lg:px-10 md:mb-4 xl:hidden">
+          {/* 页脚（移动端/中屏：沉底于 Dock 上方；xl 以上见下方固定通栏版本） */}
+          <div className="relative z-40 mt-auto pt-4 md:pt-6 w-[min(100%,max(90%,1280px))] mx-auto px-6 lg:px-10 md:mb-4 xl:hidden">
             <HomepageFooter />
           </div>
         </m.div>
 
       {/* xl 桌面端页脚：固定屏幕底部通栏（全宽底 + 居中容器），备案居左、链接与版权居右；
           与顶栏/Hero 三条竖轨对齐；<1280px 时全宽页脚会与居中悬浮 Dock 胶囊横向交叠，故改走上方沉底版 */}
-      <div className="hidden xl:block fixed bottom-2 inset-x-0 z-30">
+      <div className="hidden xl:block fixed bottom-2 inset-x-0 z-40">
         <div className="w-[min(100%,max(90%,1280px))] mx-auto px-6 lg:px-10">
           <HomepageFooter />
         </div>
       </div>
 
-      {/* "测肤有礼"入口为 Hero 下方的描边胶囊（见上方次级入口区），不再使用右下角悬浮卡片 */}
+      {/* "测肤有礼"入口已收纳进顶栏汉堡菜单，不再使用右下角悬浮卡片 */}
 
       {/* Modals：首次打开才加载对应 chunk（见上方 shouldRender* latch） */}
       {shouldRenderAccount && (
