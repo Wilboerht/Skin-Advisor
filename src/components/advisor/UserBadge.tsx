@@ -11,10 +11,11 @@ import { useLazyOpen } from "@/hooks/use-lazy-open";
 const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
 
 /**
- * UserBadge — 结果页顶部栏用户身份区：头像 + 用户名（极简）。
+ * UserBadge — 顶部栏用户身份区：头像 + 用户名（极简）。
  * 登录态点击打开账户弹层（AccountModal）；未登录显示登录引导。
+ * compact：小屏顶栏用紧凑形态（隐藏昵称，避免与居中 logo 拥挤）
  */
-export default function UserBadge() {
+export default function UserBadge({ compact = false }: { compact?: boolean }) {
   const { user, isInitialized } = useAuth();
   const { openAuthModal } = useAuthModal();
   // 登录态点击打开账户弹层（AccountModal，替代原 /profile 页；该页已重定向到首页）
@@ -32,7 +33,7 @@ export default function UserBadge() {
     return (
       <div
         aria-hidden="true"
-        className="w-[140px] h-8 rounded-full bg-brand-charcoal/5 animate-pulse"
+        className={`${compact ? "w-9 md:w-[140px]" : "w-[140px]"} h-8 rounded-full bg-brand-charcoal/5 animate-pulse`}
       />
     );
   }
@@ -75,8 +76,10 @@ export default function UserBadge() {
           )}
         </span>
 
-        {/* 用户名 */}
-        <span className="max-w-[110px] lg:max-w-[160px] truncate text-[13px] lg:text-[14px] font-medium text-brand-charcoal group-hover:text-[var(--color-brand-cocoa)] transition-colors">
+        {/* 用户名（compact 小屏隐藏，避免与居中 logo 拥挤） */}
+        <span
+          className={`${compact ? "hidden md:inline" : ""} max-w-[110px] lg:max-w-[160px] truncate text-[13px] lg:text-[14px] font-medium text-brand-charcoal group-hover:text-[var(--color-brand-cocoa)] transition-colors`}
+        >
           {nickname}
         </span>
       </button>

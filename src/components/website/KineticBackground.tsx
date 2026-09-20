@@ -37,6 +37,7 @@ export function KineticBackground() {
                         src="/images/watermark-mobile.webp"
                         alt=""
                         fill
+                        sizes="100vw"
                         style={{ objectFit: "cover" }}
                     />
                 </div>

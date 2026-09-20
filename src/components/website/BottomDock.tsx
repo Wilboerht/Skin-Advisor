@@ -95,10 +95,10 @@ export function BottomDock() {
   };
 
   const tabClass = (active: boolean) =>
-    `group relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.02em] select-none touch-manipulation [-webkit-tap-highlight-color:transparent] transition duration-300 active:scale-[0.97] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
+    `group relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-[48px] min-h-[48px] rounded-2xl text-[11px] tracking-[0.02em] select-none touch-manipulation [-webkit-tap-highlight-color:transparent] transition duration-300 active:scale-[0.97] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
       active
-        ? "text-[var(--color-brand-cocoa)]"
-        : "text-brand-charcoal/70 hover:text-brand-charcoal/90 active:text-brand-charcoal"
+        ? "text-brand-charcoal before:absolute before:inset-x-1.5 before:inset-y-1 before:rounded-2xl before:bg-brand-charcoal/[0.06] before:content-['']"
+        : "text-brand-charcoal/60 hover:text-brand-charcoal/90 active:text-brand-charcoal"
     }`;
 
   // 打开面板类 tab 对应的弹层
@@ -122,7 +122,7 @@ export function BottomDock() {
     }
   };
 
-  const renderContent = (tab: DockTab) => (
+  const renderContent = (tab: DockTab, active: boolean) => (
     <>
       {tab.panel === "account" && user?.avatar ? (
         <span className="relative block w-[22px] h-[22px] rounded-full overflow-hidden">
@@ -131,10 +131,10 @@ export function BottomDock() {
       ) : (
         <tab.icon
           className="w-[22px] h-[22px] transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
-          strokeWidth={1.75}
+          strokeWidth={active ? 2 : 1.75}
         />
       )}
-      <span className="font-light">{tab.label}</span>
+      <span className={active ? "font-normal" : "font-light"}>{tab.label}</span>
     </>
   );
 
@@ -145,7 +145,7 @@ export function BottomDock() {
     >
       {/* 全端统一悬浮胶囊：移动端实色（全宽磨砂在低端机上合成开销高）+ 上浮 8px；桌面端磨砂 + 更宽定宽 */}
       <div
-        className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 max-w-[420px] md:max-w-md bg-[#FDFBF7] md:bg-[#FDFBF7]/90 md:backdrop-blur-md rounded-full border border-brand-charcoal/[0.08] shadow-[0_8px_30px_rgba(61,47,37,0.12)] mb-[calc(env(safe-area-inset-bottom,0px)+var(--dock-bottom-offset))] md:mb-8 pointer-events-auto"
+        className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 max-w-[420px] md:max-w-md bg-[#FDFBF7] md:bg-[#FDFBF7]/90 md:backdrop-blur-md rounded-full border border-brand-charcoal/[0.08] shadow-[0_8px_30px_rgba(0,38,62,0.12)] mb-[calc(env(safe-area-inset-bottom,0px)+var(--dock-bottom-offset))] md:mb-8 pointer-events-auto"
       >
         {TABS.map((tab) => {
           const active = isActive(tab);
@@ -160,7 +160,7 @@ export function BottomDock() {
                 aria-expanded={isPanelOpen(tab.panel)}
                 className={`${tabClass(active)} cursor-pointer`}
               >
-                {renderContent(tab)}
+                {renderContent(tab, active)}
               </button>
             );
           }
@@ -172,7 +172,7 @@ export function BottomDock() {
               onClick={handleActiveClick(active)}
               className={tabClass(active)}
             >
-              {renderContent(tab)}
+              {renderContent(tab, active)}
             </Link>
           );
         })}
