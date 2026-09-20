@@ -194,8 +194,9 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
 
   if (!mounted) return null;
 
-  // 会员中心视图使用固定壳高（移动端近全屏抽屉 / 桌面端 640px 卡片，内容区独立滚动），
-  // 避免切换 tab 时弹层高度随内容跳变；根视图/登录引导保持内容自适应
+  // 会员中心视图使用固定壳尺寸（移动端 86dvh / 桌面端与护肤档案弹层同规格：1100 宽 /
+  // min(680, dvh-3rem) 高，内容区独立滚动），避免切换 tab 时弹层高度随内容跳变；
+  // 根视图/登录引导保持原有内容自适应样式（窄卡片）
   const shellFixed = !!user && view === "center";
 
   return createPortal(
@@ -225,10 +226,10 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className={`relative z-10 w-full sm:max-w-sm bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col ${
+              className={`relative z-10 w-full bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col ${
                 shellFixed
-                  ? "h-[calc(100dvh_-_max(4rem,env(safe-area-inset-top)_+_0.75rem))] sm:h-[min(640px,85dvh)]"
-                  : "max-h-[85vh] sm:max-h-[80vh]"
+                  ? "h-[86dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-[1100px]"
+                  : "sm:max-w-sm max-h-[85vh] sm:max-h-[80vh]"
               }`}
               onClick={(e) => e.stopPropagation()}
             >
