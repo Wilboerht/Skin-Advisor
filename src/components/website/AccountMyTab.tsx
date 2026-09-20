@@ -226,7 +226,7 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
   const genderValue = profile?.gender ?? user.gender ?? null;
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="w-full">
       {/* 会话过期（BFF 401）：本地 user 态未同步时的兜底引导 */}
       {sessionExpired && (
         <div
@@ -244,170 +244,179 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
         </div>
       )}
 
-      {/* 头像：点击更换（上传 OSS 后 PATCH 主站资料） */}
-      <button
-        type="button"
-        onClick={() => avatarInputRef.current?.click()}
-        disabled={saving !== null}
-        aria-label="更换头像"
-        className="group relative w-24 h-24 rounded-full overflow-hidden bg-[#ECEBE6] shadow-md mb-4 cursor-pointer disabled:cursor-wait"
-      >
-        {displayAvatar ? (
-          <Image src={displayAvatar} alt="" fill unoptimized className="object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl font-medium text-[#6B5E50]">
-            {(displayName[0] || "?").toUpperCase()}
-          </div>
-        )}
-        <span className="absolute inset-x-0 bottom-0 h-7 flex items-center justify-center bg-black/35 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-          {saving === "avatar" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-        </span>
-      </button>
-      <input
-        ref={avatarInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        className="hidden"
-        onChange={handleAvatarChange}
-      />
-
-      {/* 昵称：点击进入行内编辑（≤20 字符）+ 会员徽章 */}
-      {editingNickname ? (
-        <div className="flex items-center gap-2 mb-1.5">
+      {/* 桌面端（lg+）双列：左身份区 / 右资料编辑与安全入口；移动端单列堆叠（顺序不变） */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-10">
+        {/* 左列：头像 / 昵称 / 手机号 / 积分余额 */}
+        <div className="flex flex-col items-center lg:self-start">
+          {/* 头像：点击更换（上传 OSS 后 PATCH 主站资料） */}
+          <button
+            type="button"
+            onClick={() => avatarInputRef.current?.click()}
+            disabled={saving !== null}
+            aria-label="更换头像"
+            className="group relative w-24 h-24 rounded-full overflow-hidden bg-[#ECEBE6] shadow-md mb-4 cursor-pointer disabled:cursor-wait"
+          >
+            {displayAvatar ? (
+              <Image src={displayAvatar} alt="" fill unoptimized className="object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-3xl font-medium text-[#6B5E50]">
+                {(displayName[0] || "?").toUpperCase()}
+              </div>
+            )}
+            <span className="absolute inset-x-0 bottom-0 h-7 flex items-center justify-center bg-black/35 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+              {saving === "avatar" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+            </span>
+          </button>
           <input
-            autoFocus
-            value={nicknameDraft}
-            maxLength={20}
-            onChange={(e) => setNicknameDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") saveNickname();
-              if (e.key === "Escape") setEditingNickname(false);
-            }}
-            disabled={saving === "nickname"}
-            aria-label="昵称"
-            className="w-40 text-center text-lg font-semibold text-[#1A1A1A] bg-white border border-brand-charcoal/20 rounded-xl px-3 py-1 focus:outline-none focus:border-brand-charcoal/50"
+            ref={avatarInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={handleAvatarChange}
           />
-          <button
-            type="button"
-            onClick={saveNickname}
-            disabled={saving !== null}
-            aria-label="保存昵称"
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/[0.08] text-brand-charcoal hover:bg-brand-charcoal/15 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            {saving === "nickname" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-4 h-4" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditingNickname(false)}
-            disabled={saving !== null}
-            aria-label="取消编辑"
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      ) : (
-        <p className="text-xl font-semibold text-[#1A1A1A] mb-1.5 flex items-center gap-2">
-          {displayName}
-          <button
-            type="button"
-            onClick={startEditNickname}
-            aria-label="修改昵称"
-            className="w-6 h-6 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
-          >
-            <Pencil className="w-3 h-3" />
-          </button>
-          <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${badge.className}`}>
-            {badge.label}
-          </span>
-        </p>
-      )}
 
-      {/* 手机号（主站已掩码；回退值本地掩码） */}
-      <div className="flex items-center gap-1.5 text-[13px] text-[#5E5E5E] mb-1.5">
-        <Smartphone className="w-3.5 h-3.5" />
-        <span>{displayPhone}</span>
-      </div>
-
-      {/* 积分余额：无手机号时接口必降级（不显示会闪一下的骨架）；有手机号时保留骨架，避免下方内容跳动 */}
-      {hasPhone && points === undefined ? (
-        <div aria-hidden="true" className="h-5 w-28 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-4" />
-      ) : typeof points === "number" ? (
-        <div className="flex items-center gap-1.5 text-[13px] text-[#8B7355] mb-4">
-          <Coins className="w-3.5 h-3.5" />
-          <span>积分余额 {points}</span>
-        </div>
-      ) : null}
-
-      {/* 资料编辑：生日（一次性，锁定后需客服）+ 性别（三态） */}
-      <div className="w-full rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 mb-3 divide-y divide-brand-charcoal/[0.06]">
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#5E5E5E]">
-            <Cake className="w-4 h-4" />
-            生日
-          </span>
-          {birthdayLocked ? (
-            <span className="text-[12px] text-brand-charcoal/45">已设置，修改请联系客服</span>
-          ) : (
-            <input
-              type="date"
-              value={birthdayValue}
-              max={todayStr}
-              disabled={saving !== null}
-              aria-label="生日"
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v && v !== birthdayValue) patchProfile({ birthday: v }, "birthday");
-              }}
-              className="text-[13px] text-brand-charcoal bg-transparent border border-brand-charcoal/15 rounded-lg px-2 py-1 focus:outline-none focus:border-brand-charcoal/40 disabled:opacity-50"
-            />
-          )}
-        </div>
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#5E5E5E]">
-            <Pencil className="w-4 h-4" />
-            性别
-          </span>
-          <div className="inline-flex rounded-full border border-brand-charcoal/[0.12] bg-white p-0.5" role="group" aria-label="性别">
-            {([
-              { value: "male", label: "男" },
-              { value: "female", label: "女" },
-              { value: null, label: "保密" },
-            ] as const).map((opt) => (
-              <button
-                key={opt.label}
-                type="button"
-                disabled={saving !== null}
-                aria-pressed={genderValue === opt.value}
-                onClick={() => {
-                  if (genderValue !== opt.value) patchProfile({ gender: opt.value }, "gender");
+          {/* 昵称：点击进入行内编辑（≤20 字符）+ 会员徽章 */}
+          {editingNickname ? (
+            <div className="flex items-center gap-2 mb-1.5">
+              <input
+                autoFocus
+                value={nicknameDraft}
+                maxLength={20}
+                onChange={(e) => setNicknameDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveNickname();
+                  if (e.key === "Escape") setEditingNickname(false);
                 }}
-                className={`inline-flex h-6 items-center rounded-full px-2.5 text-[12px] transition-colors cursor-pointer disabled:opacity-50 ${
-                  genderValue === opt.value
-                    ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
-                    : "text-brand-charcoal/60 hover:text-brand-charcoal"
-                }`}
+                disabled={saving === "nickname"}
+                aria-label="昵称"
+                className="w-40 text-center text-lg font-semibold text-[#1A1A1A] bg-white border border-brand-charcoal/20 rounded-xl px-3 py-1 focus:outline-none focus:border-brand-charcoal/50"
+              />
+              <button
+                type="button"
+                onClick={saveNickname}
+                disabled={saving !== null}
+                aria-label="保存昵称"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/[0.08] text-brand-charcoal hover:bg-brand-charcoal/15 transition-colors cursor-pointer disabled:opacity-50"
               >
-                {opt.label}
+                {saving === "nickname" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-4 h-4" />}
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setEditingNickname(false)}
+                disabled={saving !== null}
+                aria-label="取消编辑"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <p className="text-xl font-semibold text-[#1A1A1A] mb-1.5 flex items-center gap-2">
+              {displayName}
+              <button
+                type="button"
+                onClick={startEditNickname}
+                aria-label="修改昵称"
+                className="w-6 h-6 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+              <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${badge.className}`}>
+                {badge.label}
+              </span>
+            </p>
+          )}
+
+          {/* 手机号（主站已掩码；回退值本地掩码） */}
+          <div className="flex items-center gap-1.5 text-[13px] text-[#5E5E5E] mb-1.5">
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>{displayPhone}</span>
           </div>
+
+          {/* 积分余额：无手机号时接口必降级（不显示会闪一下的骨架）；有手机号时保留骨架，避免下方内容跳动 */}
+          {hasPhone && points === undefined ? (
+            <div aria-hidden="true" className="h-5 w-28 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-4" />
+          ) : typeof points === "number" ? (
+            <div className="flex items-center gap-1.5 text-[13px] text-[#8B7355] mb-4">
+              <Coins className="w-3.5 h-3.5" />
+              <span>积分余额 {points}</span>
+            </div>
+          ) : null}
+        </div>
+
+        {/* 右列：资料编辑 + 安全中心入口 */}
+        <div className="w-full">
+          {/* 资料编辑：生日（一次性，锁定后需客服）+ 性别（三态） */}
+          <div className="w-full rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 mb-3 divide-y divide-brand-charcoal/[0.06]">
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#5E5E5E]">
+                <Cake className="w-4 h-4" />
+                生日
+              </span>
+              {birthdayLocked ? (
+                <span className="text-[12px] text-brand-charcoal/45">已设置，修改请联系客服</span>
+              ) : (
+                <input
+                  type="date"
+                  value={birthdayValue}
+                  max={todayStr}
+                  disabled={saving !== null}
+                  aria-label="生日"
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v && v !== birthdayValue) patchProfile({ birthday: v }, "birthday");
+                  }}
+                  className="text-[13px] text-brand-charcoal bg-transparent border border-brand-charcoal/15 rounded-lg px-2 py-1 focus:outline-none focus:border-brand-charcoal/40 disabled:opacity-50"
+                />
+              )}
+            </div>
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#5E5E5E]">
+                <Pencil className="w-4 h-4" />
+                性别
+              </span>
+              <div className="inline-flex rounded-full border border-brand-charcoal/[0.12] bg-white p-0.5" role="group" aria-label="性别">
+                {([
+                  { value: "male", label: "男" },
+                  { value: "female", label: "女" },
+                  { value: null, label: "保密" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    disabled={saving !== null}
+                    aria-pressed={genderValue === opt.value}
+                    onClick={() => {
+                      if (genderValue !== opt.value) patchProfile({ gender: opt.value }, "gender");
+                    }}
+                    className={`inline-flex h-6 items-center rounded-full px-2.5 text-[12px] transition-colors cursor-pointer disabled:opacity-50 ${
+                      genderValue === opt.value
+                        ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
+                        : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 安全中心：主站账号中心（设备与授权管理），新窗口打开 */}
+          <a
+            href={`${SSO_BASE_URL}/account`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group w-full flex items-center justify-between px-4 py-3 mb-6 rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 text-[13px] tracking-[0.05em] text-[#5E5E5E] hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors"
+          >
+            <span className="inline-flex items-center gap-2">
+              <Settings2 className="w-4 h-4" />
+              安全中心（设备与授权管理）
+            </span>
+            <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
+          </a>
         </div>
       </div>
-
-      {/* 安全中心：主站账号中心（设备与授权管理），新窗口打开 */}
-      <a
-        href={`${SSO_BASE_URL}/account`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group w-full flex items-center justify-between px-4 py-3 mb-6 rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 text-[13px] tracking-[0.05em] text-[#5E5E5E] hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors"
-      >
-        <span className="inline-flex items-center gap-2">
-          <Settings2 className="w-4 h-4" />
-          安全中心（设备与授权管理）
-        </span>
-        <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
-      </a>
     </div>
   );
 }

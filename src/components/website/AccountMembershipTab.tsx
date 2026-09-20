@@ -100,14 +100,21 @@ export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () =>
   useEffect(() => { load(); }, [load]);
 
   if (loading) {
-    // 骨架屏：等级卡 + 进度条 + 权益行
+    // 骨架屏：与真实双列布局一致（左：等级卡 + 进度条，右：权益标题 + 权益行）
     return (
       <div className="w-full animate-pulse" aria-busy="true" aria-label="会员信息加载中">
-        <div className="h-28 rounded-2xl bg-brand-charcoal/[0.06] mb-4" />
-        <div className="h-10 rounded-xl bg-brand-charcoal/[0.05] mb-6" />
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-16 rounded-2xl bg-brand-charcoal/[0.04] mb-3" />
-        ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-10">
+          <div>
+            <div className="h-28 rounded-2xl bg-brand-charcoal/[0.06] mb-4" />
+            <div className="h-10 rounded-xl bg-brand-charcoal/[0.05] mb-6 lg:mb-0" />
+          </div>
+          <div className="w-full">
+            <div className="h-4 w-24 rounded-full bg-brand-charcoal/[0.05] mb-3" />
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-16 rounded-2xl bg-brand-charcoal/[0.04] mb-3" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -144,110 +151,118 @@ export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () =>
 
   return (
     <div className="w-full">
-      {/* 当前等级卡 */}
-      <div className="rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 px-5 py-4 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="inline-flex items-center gap-1.5 text-[13px] tracking-[0.05em] text-[#5E5E5E]">
-            <Crown className="w-4 h-4" />
-            当前等级
-          </span>
-          <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${badge.className}`}>
-            {data.currentLevel?.name ?? badge.label}
-          </span>
-        </div>
-        <p className="text-[12px] font-light text-brand-charcoal/55 tracking-[0.03em]">
-          会员号 {data.memberId} · 累计消费 {formatYuan(data.totalSpent)}
-        </p>
-      </div>
-
-      {/* 升级进度：已到顶档时不渲染 */}
-      {data.nextLevel && (
-        <div className="rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 px-5 py-4 mb-6">
-          <div className="flex items-center justify-between mb-2 text-[12px]">
-            <span className="text-[#5E5E5E] tracking-[0.05em]">
-              再消费 {formatYuan(data.nextLevel.spentNeeded)} 升级{data.nextLevel.name}
-            </span>
-            <span className="text-brand-charcoal/45">{progressPercent(data.nextLevel.progress)}%</span>
+      {/* 桌面端（lg+）双列：左当前等级与升级进度 / 右全档权益；移动端单列堆叠（顺序不变） */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-10">
+        {/* 左列：当前等级卡 + 升级进度 */}
+        <div className="lg:self-start">
+          {/* 当前等级卡 */}
+          <div className="rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 px-5 py-4 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="inline-flex items-center gap-1.5 text-[13px] tracking-[0.05em] text-[#5E5E5E]">
+                <Crown className="w-4 h-4" />
+                当前等级
+              </span>
+              <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${badge.className}`}>
+                {data.currentLevel?.name ?? badge.label}
+              </span>
+            </div>
+            <p className="text-[12px] font-light text-brand-charcoal/55 tracking-[0.03em]">
+              会员号 {data.memberId} · 累计消费 {formatYuan(data.totalSpent)}
+            </p>
           </div>
-          <div
-            role="progressbar"
-            aria-valuenow={progressPercent(data.nextLevel.progress)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="h-1.5 rounded-full bg-brand-charcoal/[0.08] overflow-hidden"
-          >
-            <div
-              className="h-full rounded-full bg-[#C9A86C] transition-[width] duration-500"
-              style={{ width: `${progressPercent(data.nextLevel.progress)}%` }}
-            />
-          </div>
-        </div>
-      )}
 
-      {/* 全档权益 */}
-      <h3 className="text-[13px] font-medium text-[#1A1A1A] tracking-[0.05em] mb-3 flex items-center gap-1.5">
-        <Sparkles className="w-3.5 h-3.5 text-brand-charcoal/50" />
-        会员权益
-      </h3>
-      <div className="flex flex-col gap-3">
-        {data.allLevels.map((lv) => {
-          const lvBadge = getMemberBadge(lv.level);
-          const isCurrent = lv.level === data.membershipLevel;
-          // 默认展开当前等级；用户手动开合后以覆盖值为准
-          const expanded = expandedOverrides[lv.level] ?? isCurrent;
-          const panelId = `membership-benefits-${lv.level}`;
-          return (
-            <section
-              key={lv.level}
-              className={`rounded-2xl border px-5 py-4 ${
-                isCurrent
-                  ? "border-[#C9A86C]/50 bg-[#C9A86C]/[0.06]"
-                  : "border-brand-charcoal/[0.08] bg-white/70"
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() =>
-                  setExpandedOverrides((prev) => ({ ...prev, [lv.level]: !expanded }))
-                }
-                aria-expanded={expanded}
-                aria-controls={panelId}
-                className="w-full flex items-center justify-between gap-3 text-left cursor-pointer"
+          {/* 升级进度：已到顶档时不渲染 */}
+          {data.nextLevel && (
+            <div className="rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 px-5 py-4 mb-6 lg:mb-0">
+              <div className="flex items-center justify-between mb-2 text-[12px]">
+                <span className="text-[#5E5E5E] tracking-[0.05em]">
+                  再消费 {formatYuan(data.nextLevel.spentNeeded)} 升级{data.nextLevel.name}
+                </span>
+                <span className="text-brand-charcoal/45">{progressPercent(data.nextLevel.progress)}%</span>
+              </div>
+              <div
+                role="progressbar"
+                aria-valuenow={progressPercent(data.nextLevel.progress)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="h-1.5 rounded-full bg-brand-charcoal/[0.08] overflow-hidden"
               >
-                <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${lv.colorClass ?? lvBadge.className}`}>
-                  {lv.name}
-                </span>
-                <span className="flex items-center gap-2 min-w-0">
-                  <span className="text-[11px] font-light text-brand-charcoal/45 truncate">
-                    {lv.maxSpent != null
-                      ? `消费 ${formatYuan(lv.minSpent)} - ${formatYuan(lv.maxSpent)}`
-                      : lv.minSpent > 0
-                        ? `消费满 ${formatYuan(lv.minSpent)}`
-                        : "注册即享"}
-                  </span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 shrink-0 text-brand-charcoal/40 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
-                  />
-                </span>
-              </button>
-              {expanded && (
-                <ul id={panelId} className="mt-2.5 flex flex-col gap-2">
-                  {lv.benefits.map((b, i) => (
-                    <li key={`${b.title}-${i}`} className="flex items-start gap-2.5">
-                      <span className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full bg-brand-charcoal/[0.05] text-[13px] leading-none">
-                        {b.icon}
+                <div
+                  className="h-full rounded-full bg-[#C9A86C] transition-[width] duration-500"
+                  style={{ width: `${progressPercent(data.nextLevel.progress)}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 右列：全档权益 */}
+        <div className="w-full">
+          <h3 className="text-[13px] font-medium text-[#1A1A1A] tracking-[0.05em] mb-3 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-brand-charcoal/50" />
+            会员权益
+          </h3>
+          <div className="flex flex-col gap-3">
+            {data.allLevels.map((lv) => {
+              const lvBadge = getMemberBadge(lv.level);
+              const isCurrent = lv.level === data.membershipLevel;
+              // 默认展开当前等级；用户手动开合后以覆盖值为准
+              const expanded = expandedOverrides[lv.level] ?? isCurrent;
+              const panelId = `membership-benefits-${lv.level}`;
+              return (
+                <section
+                  key={lv.level}
+                  className={`rounded-2xl border px-5 py-4 ${
+                    isCurrent
+                      ? "border-[#C9A86C]/50 bg-[#C9A86C]/[0.06]"
+                      : "border-brand-charcoal/[0.08] bg-white/70"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedOverrides((prev) => ({ ...prev, [lv.level]: !expanded }))
+                    }
+                    aria-expanded={expanded}
+                    aria-controls={panelId}
+                    className="w-full flex items-center justify-between gap-3 text-left cursor-pointer"
+                  >
+                    <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${lv.colorClass ?? lvBadge.className}`}>
+                      {lv.name}
+                    </span>
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="text-[11px] font-light text-brand-charcoal/45 truncate">
+                        {lv.maxSpent != null
+                          ? `消费 ${formatYuan(lv.minSpent)} - ${formatYuan(lv.maxSpent)}`
+                          : lv.minSpent > 0
+                            ? `消费满 ${formatYuan(lv.minSpent)}`
+                            : "注册即享"}
                       </span>
-                      <div className="min-w-0">
-                        <p className="text-[12px] text-[#1A1A1A] tracking-[0.03em]">{b.title}</p>
-                        <p className="text-[11px] font-light text-brand-charcoal/50 leading-relaxed">{b.desc}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          );
-        })}
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 shrink-0 text-brand-charcoal/40 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+                      />
+                    </span>
+                  </button>
+                  {expanded && (
+                    <ul id={panelId} className="mt-2.5 flex flex-col gap-2">
+                      {lv.benefits.map((b, i) => (
+                        <li key={`${b.title}-${i}`} className="flex items-start gap-2.5">
+                          <span className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full bg-brand-charcoal/[0.05] text-[13px] leading-none">
+                            {b.icon}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-[12px] text-[#1A1A1A] tracking-[0.03em]">{b.title}</p>
+                            <p className="text-[11px] font-light text-brand-charcoal/50 leading-relaxed">{b.desc}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
