@@ -117,6 +117,12 @@ export default function HomeClient() {
     initSession();
   }, [initSession]);
 
+  // 首页一屏布局含米色底部栏：给 body 打标，CSS 中据此上浮 Dock 避开底部栏（卸载时还原）
+  useEffect(() => {
+    document.body.classList.add("home-dock-raised");
+    return () => document.body.classList.remove("home-dock-raised");
+  }, []);
+
   // Capture ref parameter: moved to <RefCapture /> rendered in JSX (useSearchParams needs Suspense boundary)
 
   // 首页为一屏布局（h-dvh 不滚动），无需整页锁定 body 滚动；
@@ -494,20 +500,21 @@ export default function HomeClient() {
         </div>
       </header>
 
-      {/* 内容区域 - 一屏布局（min-h-dvh + .home-shell 为顶栏预留高度；矮屏/横屏放不下时可滚动）；pb-dock 为底部 Dock 留白 */}
+      {/* 内容区域 - 一屏布局：顶栏 + Hero + 米色底部栏恰好一屏，Dock 悬浮于 Hero 蓝色区域之上；
+          矮屏/横屏放不下时页面可滚动兜底 */}
       <m.div
-        className="home-shell relative z-20 flex flex-col min-h-dvh pb-dock"
+        className="home-shell relative z-20 flex flex-col min-h-dvh"
         initial={{ opacity: 0, scale: 0.98 }}
         animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
           {/* 首屏 Hero（设计稿版式）：米白上区 + 蓝灰波浪下区，左右 IP 形象夹峙中央文案。
-              男性 IP 置于波浪层之下（下身没入蓝色区域），女性 IP 立于波浪层之上 */}
+              男性 IP 置于波浪层之下（下身没入蓝色区域），女性 IP 立于波浪层之上、裙摆抵到底部栏 */}
           <div className="relative flex-1 w-full overflow-hidden bg-[#EFE9DA]">
             {/* 左侧男性 IP（极简派 · 手持几何晶体）：移动端空间不足时隐藏 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[2%] lg:left-[5%] bottom-[32%] hidden md:block"
+              className="absolute z-10 left-[2%] lg:left-[5%] bottom-[34%] hidden md:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -518,25 +525,25 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="(min-width: 1024px) 34vw, 26vw"
-                className="h-[42vh] lg:h-[56vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[44vh] lg:h-[58vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
 
-            {/* 波浪分界：米白 → 蓝灰，S 形曲线自左向右微微上扬 */}
+            {/* 波浪分界：米白 → 蓝灰，缓弧自左向右微微上扬 */}
             <svg
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 z-20 h-[46%] w-full"
+              className="absolute inset-x-0 bottom-0 z-20 h-[54%] w-full"
               viewBox="0 0 1440 320"
               preserveAspectRatio="none"
             >
               <path
-                d="M0,118 C180,84 360,140 560,112 C760,84 920,122 1100,86 C1240,58 1360,74 1440,58 L1440,320 L0,320 Z"
+                d="M0,84 C240,56 480,100 720,72 C960,44 1200,60 1440,32 L1440,320 L0,320 Z"
                 fill="#93A5BE"
               />
             </svg>
 
-            {/* 右侧女性 IP（沙漠派 · 金发蓝缕捧水滴）：立于波浪之上，下身出屏 */}
+            {/* 右侧女性 IP（沙漠派 · 金发蓝缕捧水滴）：立于波浪之上，下身抵底部栏 */}
             <m.div
               aria-hidden="true"
               className="absolute z-30 -right-[6%] md:right-[1%] lg:right-[4%] bottom-0"
@@ -550,17 +557,30 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="(min-width: 1024px) 32vw, 44vw"
-                className="h-[36vh] md:h-[58vh] lg:h-[74vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                className="h-[36vh] md:h-[60vh] lg:h-[76vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                 priority
               />
             </m.div>
 
-            {/* 中央文案：主标题 + 副标题 + CTA；按钮落在蓝色区域（硬投影白胶囊） */}
+            {/* 中央文案：主标题 + 副标题（右侧蓝色问号 = 常见问题）+ CTA；按钮落在蓝色区域（硬投影白胶囊）。
+                在整个内容区（顶栏下缘 → 底部栏上缘）垂直居中，不做 Dock 补偿，文案自然跨越波浪分界 */}
             <section className="relative z-40 mx-auto flex h-full flex-col items-center justify-center px-6 text-center">
               <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
                 <h1 className="leading-[1.12]">
                   <span className="block text-[54px] md:text-[80px] lg:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
-                  <span className="mt-1.5 md:mt-2 block text-[26px] md:text-[38px] lg:text-[44px] font-medium tracking-[0.14em] text-[#1c1c1c]">你的肌肤派系</span>
+                  <span className="mt-1.5 md:mt-2 flex items-center justify-center gap-3 text-[26px] md:text-[38px] lg:text-[44px] font-medium tracking-[0.14em] text-[#1c1c1c]">
+                    你的肌肤派系
+                    <button
+                      type="button"
+                      onClick={handleOpenFaq}
+                      aria-label="常见问题"
+                      aria-haspopup="dialog"
+                      aria-expanded={showFaqModal}
+                      className="inline-flex w-7 h-7 md:w-9 md:h-9 items-center justify-center rounded-full bg-[#2E4D9E] text-white text-[15px] md:text-[19px] font-bold leading-none transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
+                    >
+                      ?
+                    </button>
+                  </span>
                 </h1>
                 <p className="mt-4 md:mt-6 text-[13px] md:text-[16px] leading-[1.9] tracking-[0.05em] text-[#84817a]">
                   获得专业的面部分析报告
@@ -580,19 +600,13 @@ export default function HomeClient() {
             </section>
           </div>
 
-          {/* 页脚（移动端/中屏：沉底于 Dock 上方；xl 以上见下方固定通栏版本） */}
-          <div className="relative z-40 mt-auto pt-4 md:pt-6 w-[min(100%,max(90%,1280px))] mx-auto px-6 lg:px-10 md:mb-4 xl:hidden">
-            <HomepageFooter />
+          {/* 底部栏：米色通栏（与 Hero 上区同色），并入首屏；内容全宽，备案居左、链接与版权居右 */}
+          <div className="relative z-40 bg-[#EFE9DA]">
+            <div className="w-full px-6 lg:px-10 h-16 md:h-14 flex items-center">
+              <HomepageFooter />
+            </div>
           </div>
         </m.div>
-
-      {/* xl 桌面端页脚：固定屏幕底部通栏（全宽底 + 居中容器），备案居左、链接与版权居右；
-          与顶栏/Hero 三条竖轨对齐；<1280px 时全宽页脚会与居中悬浮 Dock 胶囊横向交叠，故改走上方沉底版 */}
-      <div className="hidden xl:block fixed bottom-2 inset-x-0 z-40">
-        <div className="w-[min(100%,max(90%,1280px))] mx-auto px-6 lg:px-10">
-          <HomepageFooter />
-        </div>
-      </div>
 
       {/* "测肤有礼"入口已收纳进顶栏汉堡菜单，不再使用右下角悬浮卡片 */}
 

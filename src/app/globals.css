@@ -203,6 +203,19 @@
     }
   }
 
+  /* 首页专用：底部栏为米色通栏并入首屏，Dock 落在内容区（Hero）底部、贴底部栏上缘不压栏
+     （body.home-dock-raised 由 HomeClient 挂载/卸载时加减；特异性高于 .dock-panel 的 mb 工具类；
+     上浮量 = 底部栏高 64/56 + 间隙 8） */
+  body.home-dock-raised .dock-panel {
+    margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+  }
+
+  @media (min-width: 768px) {
+    body.home-dock-raised .dock-panel {
+      margin-bottom: 64px;
+    }
+  }
+
   html {
     scroll-behavior: smooth;
     background-color: #FDFBF7;
