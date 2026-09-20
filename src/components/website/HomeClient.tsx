@@ -561,7 +561,8 @@ export default function HomeClient() {
                 </div>
               </section>
 
-              {/* 右列：肌智派 IP 形象插画（纯装饰；矮屏移动端由 .home-hero-visual 隐藏） */}
+              {/* 右列：Hero 配图（临时占位：来自 Myskin.Today 参考项目，自有素材就绪后替换；
+                  纯装饰；矮屏移动端由 .home-hero-visual 隐藏） */}
               <m.div
                 className="home-hero-visual relative flex w-full items-end justify-center lg:justify-end"
                 initial={{ opacity: 0, y: 16 }}
@@ -572,30 +573,19 @@ export default function HomeClient() {
                   ease: "easeOut",
                 }}
               >
-                {/* 柔光底：让形象从米白底上"浮"起来 */}
+                {/* 柔光底：让配图从底色上"浮"起来 */}
                 <div
                   aria-hidden="true"
                   className="pointer-events-none absolute bottom-[8%] left-1/2 -translate-x-1/2 lg:left-auto lg:right-[8%] lg:translate-x-0 w-[72%] lg:w-[84%] aspect-square rounded-full bg-[#e3dbc9]/55 blur-3xl"
                 />
-                {/* 男版（桌面）：略小、后置 */}
                 <Image
-                  src="/images/character/combination/combination_male.webp"
+                  src="/images/hero-illustration-placeholder.webp"
                   alt=""
                   aria-hidden="true"
-                  width={960}
-                  height={1280}
-                  sizes="(min-width: 1024px) 260px, 0px"
-                  className="relative hidden lg:block h-[42vh] w-auto object-contain object-bottom drop-shadow-[0_16px_30px_rgba(0,38,62,0.14)]"
-                />
-                {/* 女版：主形象（移动端单图居中） */}
-                <Image
-                  src="/images/character/combination/combination_female.webp"
-                  alt=""
-                  aria-hidden="true"
-                  width={960}
-                  height={1280}
-                  sizes="(min-width: 1024px) 380px, 60vw"
-                  className="relative h-[20vh] min-h-[132px] lg:h-[56vh] w-auto object-contain object-bottom drop-shadow-[0_16px_30px_rgba(0,38,62,0.16)] lg:-ml-16"
+                  width={1024}
+                  height={1024}
+                  sizes="(min-width: 1024px) 520px, 60vw"
+                  className="relative h-[26vh] min-h-[150px] lg:h-[58vh] w-auto object-contain object-center lg:object-right drop-shadow-[0_16px_30px_rgba(0,38,62,0.14)]"
                   priority
                 />
               </m.div>
