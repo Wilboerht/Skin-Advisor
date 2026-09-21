@@ -630,11 +630,11 @@ export default function HomeClient() {
             </m.div>
 
             {/* 左前：沙漠派女性（金发蓝缕捧水滴）：立于波浪之上（z-30），
-                宽屏下沉 12vh——脚底没入底部栏，允许被遮挡；底部栏 z-40 自然压盖。
+                宽屏下沉 20vh——脚底没入底部栏，允许被遮挡；底部栏 z-40 自然压盖。
                 <1440px 移动端：bottom = −5.5%×图高（底部透明边），脚底贴底部栏上缘 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-30 -left-[6%] min-[1440px]:left-[1%] -bottom-[1.9vh] min-[1440px]:-bottom-[12vh]"
+              className="absolute z-30 -left-[6%] min-[1440px]:-left-[2%] -bottom-[1.9vh] min-[1440px]:-bottom-[20vh]"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -695,10 +695,10 @@ export default function HomeClient() {
             </m.div>
 
             {/* 右前：沙漠派男性（捧水滴）：仅 ≥1440px 显示（z-30，立于波浪之上），
-                与左前沙漠女完全同规格（同高 86vh、同下沉 12vh），两人视觉大小与基线一致 */}
+                与左前沙漠女完全同规格（同高 86vh、同下沉 20vh），两人视觉大小与基线一致 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-30 right-[1%] -bottom-[12vh] hidden min-[1440px]:block"
+              className="absolute z-30 -right-[2%] -bottom-[20vh] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.35, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
