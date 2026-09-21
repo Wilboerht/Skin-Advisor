@@ -67,7 +67,7 @@ interface AccountRootViewProps {
 
 /**
  * 用户面板根视图：身份与资料 + 功能入口。
- * 资料可编辑（头像/昵称/生日/性别走 BFF /api/account/profile，性别供问卷预填）；
+ * 头像/昵称/性别可编辑（BFF /api/account/profile，性别供问卷预填；生日只读展示）；
  * 入口：护肤档案（全局档案弹层）、会员中心（等级/积分/权益 + 积分商城）、安全中心（主站账号管理）。
  */
 export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, onRequestLogin }: AccountRootViewProps) {
@@ -108,18 +108,18 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
 
   // 主站资料（BFF）：拉取失败时回退展示 UserProvider 的会话字段
   const [profile, setProfile] = useState<AccountProfile | null>(null);
-  // 保存进行态（防重复提交）：avatar / nickname / birthday / gender
+  // 保存进行态（防重复提交）：avatar / nickname / gender
   const [saving, setSaving] = useState<string | null>(null);
   // 保存互斥锁用 ref：state 闭包在连续事件里可能读到旧值，ref 才是可靠锁
   const savingRef = useRef(false);
   // 会话过期（BFF 返回 401）：本地 user 态未同步时的兜底引导
   const [sessionExpired, setSessionExpired] = useState(false);
-  // 生日一次性锁定：403 birthday_locked 后禁用输入
-  const [birthdayLocked, setBirthdayLocked] = useState(false);
 
   // 昵称行内编辑
   const [editingNickname, setEditingNickname] = useState(false);
   const [nicknameDraft, setNicknameDraft] = useState("");
+  // 性别编辑非常态展开：默认只展示当前值，点击进入编辑态（三态分段控件）
+  const [editingGender, setEditingGender] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -127,7 +127,6 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
     let cancelled = false;
     // 账号切换时先清空旧数据，避免重取期间展示上一账号的内容
     setProfile(null);
-    setBirthdayLocked(false);
     setSessionExpired(false);
     fetch("/api/account/profile")
       .then((r) => {
@@ -146,11 +145,11 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
   }, [user.id]);
 
   /**
-   * PATCH /api/account/profile 的请求本体（不含互斥锁）：403 视为生日锁定；成功后刷新会话用户态。
-   * 调用方负责持锁与 saving 态展示。
+   * PATCH /api/account/profile 的请求本体（不含互斥锁）；成功后刷新会话用户态。
+   * 调用方负责持锁与 saving 态展示。（生日为只读展示，不走 PATCH）
    */
   const requestProfilePatch = async (
-    body: { nickname?: string; avatar?: string; birthday?: string; gender?: "male" | "female" | null }
+    body: { nickname?: string; avatar?: string; gender?: "male" | "female" | null }
   ): Promise<boolean> => {
     try {
       const res = await fetchWithCsrf("/api/account/profile", {
@@ -161,17 +160,6 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
       if (res.status === 401) {
         setSessionExpired(true);
         toast.error("登录状态已过期，请重新登录");
-        return false;
-      }
-      if (res.status === 403 && body.birthday !== undefined) {
-        // 仅生日锁定才禁用输入框；CSRF 拦截/权限不足/scope 配置缺失等其他 403 不误锁
-        const errData = (await res.json().catch(() => null)) as { error?: string } | null;
-        if (errData?.error === "birthday_locked") {
-          setBirthdayLocked(true);
-          toast.warning("生日已设置过，如需修改请联系客服");
-          return false;
-        }
-        toast.error("保存未成功，请稍后再试");
         return false;
       }
       if (!res.ok) {
@@ -192,7 +180,7 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
 
   /** 带互斥锁的保存入口（ref 锁：state 闭包在连续事件里可能读到旧值） */
   const patchProfile = async (
-    body: { nickname?: string; avatar?: string; birthday?: string; gender?: "male" | "female" | null },
+    body: { nickname?: string; avatar?: string; gender?: "male" | "female" | null },
     field: string
   ): Promise<boolean> => {
     if (savingRef.current) return false;
@@ -248,9 +236,9 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
   const displayName = profile?.nickname ?? user.name ?? "朋友";
   const displayAvatar = profile?.avatar ?? user.avatar;
   const displayPhone = profile?.phone ?? maskPhone(user.phone);
-  const todayStr = new Date().toISOString().slice(0, 10);
   const birthdayValue = profile?.birthday ? profile.birthday.slice(0, 10) : "";
   const genderValue = profile?.gender ?? user.gender ?? null;
+  const genderLabel = genderValue === "male" ? "男" : genderValue === "female" ? "女" : "保密";
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -385,59 +373,73 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
         </>
       )}
 
-      {/* 资料编辑：生日（一次性，锁定后需客服）+ 性别（三态，供问卷预填） */}
+      {/* 资料：生日只读展示（设置/修改在主站或客服）；性别可编辑但非常态展开，
+          默认只显示当前值，点击进入编辑态（供问卷预填） */}
       <div className={`w-full ${ACCOUNT_CARD} mb-4 divide-y divide-brand-charcoal/[0.06]`}>
         <div className="flex items-center justify-between px-4 py-3">
           <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-brand-charcoal/60">
             <Cake className="w-4 h-4" />
             生日
           </span>
-          {birthdayLocked ? (
-            <span className="text-[12px] text-brand-charcoal/45">已设置，修改请联系客服</span>
-          ) : (
-            <input
-              type="date"
-              value={birthdayValue}
-              max={todayStr}
-              disabled={saving !== null}
-              aria-label="生日"
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v && v !== birthdayValue) patchProfile({ birthday: v }, "birthday");
-              }}
-              className="text-[13px] text-brand-charcoal bg-transparent border border-brand-charcoal/15 rounded-lg px-2 py-1 focus:outline-none focus:border-brand-charcoal/40 disabled:opacity-50"
-            />
-          )}
+          <span className="text-[13px] text-brand-charcoal">{birthdayValue || "未设置"}</span>
         </div>
         <div className="flex items-center justify-between px-4 py-3">
           <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-brand-charcoal/60">
             <Pencil className="w-4 h-4" />
             性别
           </span>
-          <div className="inline-flex rounded-full border border-brand-charcoal/[0.12] bg-white p-0.5" role="group" aria-label="性别">
-            {([
-              { value: "male", label: "男" },
-              { value: "female", label: "女" },
-              { value: null, label: "保密" },
-            ] as const).map((opt) => (
+          {editingGender ? (
+            <div className="flex items-center gap-1.5">
+              <div className="inline-flex rounded-full border border-brand-charcoal/[0.12] bg-white p-0.5" role="group" aria-label="性别">
+                {([
+                  { value: "male", label: "男" },
+                  { value: "female", label: "女" },
+                  { value: null, label: "保密" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    disabled={saving !== null}
+                    aria-pressed={genderValue === opt.value}
+                    onClick={async () => {
+                      if (genderValue === opt.value) {
+                        setEditingGender(false);
+                        return;
+                      }
+                      const ok = await patchProfile({ gender: opt.value }, "gender");
+                      if (ok) setEditingGender(false);
+                    }}
+                    className={`inline-flex h-6 items-center rounded-full px-2.5 text-[12px] transition-colors cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
+                      genderValue === opt.value
+                        ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
+                        : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
               <button
-                key={opt.label}
                 type="button"
+                onClick={() => setEditingGender(false)}
                 disabled={saving !== null}
-                aria-pressed={genderValue === opt.value}
-                onClick={() => {
-                  if (genderValue !== opt.value) patchProfile({ gender: opt.value }, "gender");
-                }}
-                className={`inline-flex h-6 items-center rounded-full px-2.5 text-[12px] transition-colors cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
-                  genderValue === opt.value
-                    ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
-                    : "text-brand-charcoal/60 hover:text-brand-charcoal"
-                }`}
+                aria-label="取消编辑"
+                className="w-6 h-6 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/5 transition-colors cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
               >
-                {opt.label}
+                {saving === "gender" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditingGender(true)}
+              aria-label="修改性别"
+              className="inline-flex items-center gap-1.5 text-[13px] text-brand-charcoal transition-colors cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
+            >
+              {genderLabel}
+              <Pencil className="w-3 h-3 text-brand-charcoal/40" />
+            </button>
+          )}
         </div>
       </div>
 

@@ -649,7 +649,7 @@ export default function HomeClient() {
                 图片顶部透明边占图高 13%，故 top = 56px − 13%×图高（图高 48/63vh）；按顶部锚定，不随视口高度漂移 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[2%] lg:left-[5%] top-[calc(56px-5.7vh)] lg:top-[calc(56px-7.5vh)] hidden md:block"
+              className="absolute z-10 left-0 lg:left-[3%] top-[calc(56px-5.7vh)] lg:top-[calc(56px-7.5vh)] hidden md:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -694,7 +694,7 @@ export default function HomeClient() {
                 故 bottom = 栏高 − 5.5%×图高（图高 33/55/69vh） */}
             <m.div
               aria-hidden="true"
-              className="absolute z-30 -right-[6%] md:right-[1%] lg:right-[4%] bottom-[calc(64px-1.8vh)] md:bottom-[calc(56px-3vh)] lg:bottom-[calc(56px-3.8vh)]"
+              className="absolute z-30 -right-[8%] md:-right-[1%] lg:right-[2%] bottom-[calc(64px-1.8vh)] md:bottom-[calc(56px-3vh)] lg:bottom-[calc(56px-3.8vh)]"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -710,17 +710,19 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 左下角「测肤有礼」宣传卡（仅 PC；移动端入口在 CTA 下方文字链与汉堡菜单）：点击打开活动弹窗。
+            {/* 左下角「测肤有礼」宣传位（仅 PC；移动端入口在 CTA 下方文字链与汉堡菜单）：点击打开活动弹窗。
+                版式＝产品图＋对话气泡：白底产品图下垫一块边缘柔化的白椭圆（让白底融进蓝灰背景），
+                右侧白色气泡带小尾巴指向产品图，不再使用卡片底板。
                 纵向与 Dock 同一条中线：中线 = 内容区底部上方 88px（Dock 上浮 112 + 半高 32 − 底部栏 56）；
-                卡高约 84px（图 64 + 上下 padding 20），故 bottom = 88 − 42 ≈ 48px（bottom-12）。
+                组合高约 112px（产品图 h-28），故 bottom = 88 − 56 = 32px（bottom-8）。
                 左缘与底部栏内容左缘对齐（px-6 lg:px-10 = 24/40px）。
-                呼吸浮动在外层 wrapper（globals.css .gift-card-breathe，CSS 动画会覆盖所在元素的
+                呼吸浮动在外层 wrapper（globals.css .gift-breathe，CSS 动画会覆盖所在元素的
                 transform），按钮本体不带 CSS 动画，hover 上浮位移因此可用 */}
             <m.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.4, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
-              className="gift-card-breathe absolute z-40 left-6 lg:left-10 bottom-12 hidden lg:block"
+              className="gift-breathe absolute z-40 left-6 lg:left-10 bottom-8 hidden lg:block"
             >
               <button
                 type="button"
@@ -728,26 +730,43 @@ export default function HomeClient() {
                 aria-haspopup="dialog"
                 aria-expanded={showGiftModal}
                 aria-label="测肤有礼 · 参与赢好礼"
-                className="relative flex items-center gap-3 rounded-2xl bg-white/95 backdrop-blur-sm py-2.5 pl-2.5 pr-4 border border-white/60 shadow-[0_12px_30px_-10px_rgba(0,38,62,0.25)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_-10px_rgba(0,38,62,0.32)] motion-reduce:transition-none motion-reduce:hover:transform-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
+                className="group relative flex items-center gap-5 rounded-2xl transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:transform-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
               >
-                {/* 活动角标：金色圆形礼物徽章，压在卡片右上角 */}
-                <span
-                  aria-hidden="true"
-                  className="absolute -top-2.5 -right-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#C9A86C] text-white shadow-[0_4px_10px_-2px_rgba(201,168,108,0.7)] rotate-6"
-                >
-                  <Gift className="w-3.5 h-3.5" strokeWidth={2} />
+                {/* 产品图：白底图下垫一块白椭圆并以 radial-gradient 遮罩柔化边缘（与图同色的白把白底自然接出去）。
+                    遮罩不透明区需覆盖到图片四边之外（图占椭圆半宽 ~76%/76%），故取 80% */}
+                <span className="relative shrink-0">
+                  <span
+                    aria-hidden="true"
+                    className="absolute -inset-x-7 -inset-y-[18px] rounded-[50%] bg-white"
+                    style={{
+                      WebkitMaskImage: "radial-gradient(closest-side, #000 80%, transparent 100%)",
+                      maskImage: "radial-gradient(closest-side, #000 80%, transparent 100%)",
+                    }}
+                  />
+                  <Image
+                    src="/images/gift-badge.webp"
+                    alt=""
+                    aria-hidden="true"
+                    width={640}
+                    height={396}
+                    className="relative h-28 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                  />
                 </span>
-                <Image
-                  src="/images/gift-badge.webp"
-                  alt=""
-                  aria-hidden="true"
-                  width={640}
-                  height={396}
-                  className="h-16 w-auto object-contain"
-                />
-                <span className="flex flex-col items-start text-left">
-                  <span className="text-[15px] font-bold tracking-[0.08em] text-brand-charcoal">测肤有礼</span>
-                  <span className="text-[11px] tracking-[0.04em] text-brand-charcoal/60">参与赢 NIHPLOD 正装好礼</span>
+                {/* 对话气泡：左侧中点伸出小尾巴指向产品图 */}
+                <span className="relative rounded-2xl bg-white px-4 py-2.5 text-left shadow-[0_12px_30px_-10px_rgba(0,38,62,0.25)] transition-shadow duration-200 group-hover:shadow-[0_18px_38px_-10px_rgba(0,38,62,0.32)] motion-reduce:transition-none">
+                  <span
+                    aria-hidden="true"
+                    className="absolute -left-[5px] top-1/2 -mt-[5px] h-2.5 w-2.5 rotate-45 rounded-[2px] bg-white"
+                  />
+                  <span className="relative block text-[15px] font-bold tracking-[0.08em] text-brand-charcoal">测肤有礼</span>
+                  <span className="relative mt-0.5 block text-[11px] tracking-[0.04em] text-brand-charcoal/60">参与赢 NIHPLOD 正装好礼</span>
+                  {/* 活动角标：金色圆形礼物徽章，压在气泡右上角 */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-2.5 -right-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#C9A86C] text-white shadow-[0_4px_10px_-2px_rgba(201,168,108,0.7)] rotate-6"
+                  >
+                    <Gift className="w-3.5 h-3.5" strokeWidth={2} />
+                  </span>
                 </span>
               </button>
             </m.div>
