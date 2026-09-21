@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { m } from "framer-motion";
 import { ChevronDown, Crown, RefreshCw, Sparkles } from "lucide-react";
 import { getMemberBadge } from "@/components/website/member-badges";
+import { ACCOUNT_CARD, ACCOUNT_SECTION_TITLE } from "@/components/website/account-styles";
 
 /** GET /api/account/membership 响应结构（BFF 契约） */
 interface MembershipBenefit {
@@ -44,6 +46,51 @@ function progressPercent(progress: number) {
   const p = progress <= 1 ? progress * 100 : progress;
   return Math.min(100, Math.max(0, Math.round(p)));
 }
+
+/** 等级卡（hero）按档位配色：金=品牌金渐变，钻石=深青灰 + 金点缀，银=暖灰，普通=米渐变。
+ *  badge=卡内徽章，sub=次要文字，track/fill=进度条轨道/填充 */
+interface LevelCardTheme {
+  card: string;
+  badge: string;
+  sub: string;
+  track: string;
+  fill: string;
+}
+
+const GOLD_CARD_THEME: LevelCardTheme = {
+  card: "border-transparent bg-gradient-to-br from-[#D4B77A] via-[#C9A86C] to-[#B8975B] text-white",
+  badge: "border-white/50 text-white bg-white/10",
+  sub: "text-white/80",
+  track: "bg-white/25",
+  fill: "bg-white/90",
+};
+
+const LEVEL_CARD_THEMES: Record<string, LevelCardTheme> = {
+  GOLD: GOLD_CARD_THEME,
+  ADVANCED: GOLD_CARD_THEME,
+  DIAMOND: {
+    card: "border-transparent bg-gradient-to-br from-[#00263E] to-[#4A6272] text-white",
+    badge: "border-[#C9A86C]/60 text-[#D4B77A] bg-[#C9A86C]/10",
+    sub: "text-white/70",
+    track: "bg-white/15",
+    fill: "bg-[#C9A86C]",
+  },
+  SILVER: {
+    card: "border-transparent bg-gradient-to-br from-[#EDEBE6] to-[#D9D5CE] text-brand-charcoal",
+    badge: "border-slate-400/60 text-slate-500 bg-white/40",
+    sub: "text-brand-charcoal/60",
+    track: "bg-brand-charcoal/[0.1]",
+    fill: "bg-[#C9A86C]",
+  },
+};
+
+const DEFAULT_CARD_THEME: LevelCardTheme = {
+  card: "border-transparent bg-gradient-to-br from-[#F5F2ED] to-[#E8E2D9] text-brand-charcoal",
+  badge: "border-brand-charcoal/25 text-brand-charcoal/65 bg-white/50",
+  sub: "text-brand-charcoal/60",
+  track: "bg-brand-charcoal/[0.1]",
+  fill: "bg-[#C9A86C]",
+};
 
 /**
  * 会员等级区（已并入「我的」页，桌面端为右列）：当前等级卡 + 升级进度 + 全档权益列表。
@@ -100,11 +147,11 @@ export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () =>
   useEffect(() => { load(); }, [load]);
 
   if (loading) {
-    // 骨架屏：等级卡 + 进度条 + 权益行
+    // 骨架屏：等级卡（含进度）+ 权益标题 + 权益行，高度对齐真实内容避免加载完成时跳动
     return (
       <div className="w-full animate-pulse" aria-busy="true" aria-label="会员信息加载中">
-        <div className="h-28 rounded-2xl bg-brand-charcoal/[0.06] mb-4" />
-        <div className="h-10 rounded-xl bg-brand-charcoal/[0.05] mb-6" />
+        <div className="h-[136px] rounded-2xl bg-brand-charcoal/[0.06] mb-6" />
+        <div className="h-6 w-24 rounded-lg bg-brand-charcoal/[0.05] mb-3" />
         {[0, 1, 2].map((i) => (
           <div key={i} className="h-16 rounded-2xl bg-brand-charcoal/[0.04] mb-3" />
         ))}
@@ -115,7 +162,7 @@ export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () =>
   if (error || sessionExpired || !data) {
     return (
       <div className="w-full flex flex-col items-center py-10">
-        <p className="text-[13px] text-[#6B5E50] mb-4">
+        <p className="text-[13px] text-brand-charcoal/60 mb-4">
           {sessionExpired ? "登录状态已过期，请重新登录后查看会员信息" : "会员信息加载失败"}
         </p>
         {sessionExpired ? (
@@ -141,52 +188,61 @@ export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () =>
   }
 
   const badge = getMemberBadge(data.membershipLevel);
+  const cardTheme = LEVEL_CARD_THEMES[data.membershipLevel] ?? DEFAULT_CARD_THEME;
 
   return (
     <div className="w-full">
-      {/* 当前等级卡 */}
-      <div className="rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 px-5 py-4 mb-4">
+      {/* 当前等级卡（hero）：档位渐变底，会员号/累计消费/升级进度并入卡内 */}
+      <div className={`rounded-2xl border px-5 py-4 mb-6 shadow-[0_8px_24px_rgba(61,47,37,0.12)] ${cardTheme.card}`}>
         <div className="flex items-center justify-between mb-2">
-          <span className="inline-flex items-center gap-1.5 text-[13px] tracking-[0.05em] text-[#5E5E5E]">
+          <span className={`inline-flex items-center gap-1.5 text-[13px] tracking-[0.05em] ${cardTheme.sub}`}>
             <Crown className="w-4 h-4" />
             当前等级
           </span>
-          <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${badge.className}`}>
+          <span className={`text-[11px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${cardTheme.badge}`}>
             {data.currentLevel?.name ?? badge.label}
           </span>
         </div>
-        <p className="text-[12px] font-light text-brand-charcoal/55 tracking-[0.03em]">
+        <p className={`text-[12px] font-light tracking-[0.03em] ${cardTheme.sub}`}>
           会员号 {data.memberId} · 累计消费 {formatYuan(data.totalSpent)}
         </p>
+
+        {/* 升级进度：并入等级卡底部；已到顶档时不渲染 */}
+        {data.nextLevel && (
+          <div className="mt-4">
+            <div className={`flex items-center justify-between mb-2 text-[12px] ${cardTheme.sub}`}>
+              <span className="tracking-[0.05em]">
+                再消费 {formatYuan(data.nextLevel.spentNeeded)} 升级{data.nextLevel.name}
+              </span>
+              <span>{progressPercent(data.nextLevel.progress)}%</span>
+            </div>
+            <div
+              role="progressbar"
+              aria-valuenow={progressPercent(data.nextLevel.progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              className={`relative h-1.5 rounded-full overflow-hidden ${cardTheme.track}`}
+            >
+              <div
+                className={`h-full rounded-full ${cardTheme.fill} transition-[width] duration-500`}
+                style={{ width: `${progressPercent(data.nextLevel.progress)}%` }}
+              />
+              {/* 微光流动：与分析加载进度条同款 */}
+              <m.div
+                aria-hidden="true"
+                className="absolute top-0 bottom-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                initial={{ left: "-33%" }}
+                animate={{ left: "100%" }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* 升级进度：已到顶档时不渲染 */}
-      {data.nextLevel && (
-        <div className="rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 px-5 py-4 mb-6">
-          <div className="flex items-center justify-between mb-2 text-[12px]">
-            <span className="text-[#5E5E5E] tracking-[0.05em]">
-              再消费 {formatYuan(data.nextLevel.spentNeeded)} 升级{data.nextLevel.name}
-            </span>
-            <span className="text-brand-charcoal/45">{progressPercent(data.nextLevel.progress)}%</span>
-          </div>
-          <div
-            role="progressbar"
-            aria-valuenow={progressPercent(data.nextLevel.progress)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="h-1.5 rounded-full bg-brand-charcoal/[0.08] overflow-hidden"
-          >
-            <div
-              className="h-full rounded-full bg-[#C9A86C] transition-[width] duration-500"
-              style={{ width: `${progressPercent(data.nextLevel.progress)}%` }}
-            />
-          </div>
-        </div>
-      )}
-
       {/* 全档权益 */}
-      <h3 className="text-[13px] font-medium text-[#1A1A1A] tracking-[0.05em] mb-3 flex items-center gap-1.5">
-        <Sparkles className="w-3.5 h-3.5 text-brand-charcoal/50" />
+      <h3 className={`${ACCOUNT_SECTION_TITLE} mb-3 flex items-center gap-1.5`}>
+        <Sparkles className="w-4 h-4 text-brand-charcoal/50" />
         会员权益
       </h3>
       <div className="flex flex-col gap-3">
@@ -199,11 +255,11 @@ export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () =>
           return (
             <section
               key={lv.level}
-              className={`rounded-2xl border px-5 py-4 ${
+              className={
                 isCurrent
-                  ? "border-[#C9A86C]/50 bg-[#C9A86C]/[0.06]"
-                  : "border-brand-charcoal/[0.08] bg-white/70"
-              }`}
+                  ? "rounded-2xl border border-[#C9A86C]/50 bg-[#C9A86C]/[0.06] px-5 py-4 shadow-[0_2px_12px_rgba(61,47,37,0.05)]"
+                  : `${ACCOUNT_CARD} px-5 py-4`
+              }
             >
               <button
                 type="button"
@@ -212,9 +268,9 @@ export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () =>
                 }
                 aria-expanded={expanded}
                 aria-controls={panelId}
-                className="w-full flex items-center justify-between gap-3 text-left cursor-pointer"
+                className="w-full flex items-center justify-between gap-3 text-left cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
               >
-                <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${lv.colorClass ?? lvBadge.className}`}>
+                <span className={`text-[11px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${lv.colorClass ?? lvBadge.className}`}>
                   {lv.name}
                 </span>
                 <span className="flex items-center gap-2 min-w-0">
@@ -238,7 +294,7 @@ export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () =>
                         {b.icon}
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[12px] text-[#1A1A1A] tracking-[0.03em]">{b.title}</p>
+                        <p className="text-[12px] text-brand-charcoal tracking-[0.03em]">{b.title}</p>
                         <p className="text-[11px] font-light text-brand-charcoal/50 leading-relaxed">{b.desc}</p>
                       </div>
                     </li>

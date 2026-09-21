@@ -6,6 +6,7 @@ import { ChevronRight, Crown, LogOut, NotebookPen, Smartphone } from "lucide-rea
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { getFactionIcon } from "@/components/website/faction-icons";
 import { getMemberBadge } from "@/components/website/member-badges";
+import { ACCOUNT_ENTRY_ROW, ACCOUNT_AVATAR_SHADOW } from "@/components/website/account-styles";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import type { User } from "@/components/auth/UserProvider";
 import type { HistorySession } from "@/components/website/TestHistoryList";
@@ -77,7 +78,7 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout }
   return (
     <div className="w-full flex flex-col items-center">
       {/* 头像（纯展示；更换在「会员中心 → 我的」） */}
-      <div className="w-24 h-24 rounded-full overflow-hidden bg-[#ECEBE6] shadow-md mb-4">
+      <div className={`w-24 h-24 rounded-full overflow-hidden bg-[#ECEBE6] ${ACCOUNT_AVATAR_SHADOW} mb-4`}>
         {user.avatar ? (
           <Image src={user.avatar} alt="" width={96} height={96} unoptimized className="object-cover w-full h-full" />
         ) : (
@@ -88,15 +89,15 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout }
       </div>
 
       {/* 昵称 + 会员徽章 */}
-      <p className="text-xl font-semibold text-[#1A1A1A] mb-1.5 flex items-center gap-2">
+      <p className="text-xl font-semibold text-brand-charcoal mb-1.5 flex items-center gap-2">
         {user.name ?? "朋友"}
-        <span className={`text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${badge.className}`}>
+        <span className={`text-[11px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${badge.className}`}>
           {badge.label}
         </span>
       </p>
 
       {/* 手机号 */}
-      <div className="flex items-center gap-1.5 text-[13px] text-[#5E5E5E] mb-1.5">
+      <div className="flex items-center gap-1.5 text-[13px] text-brand-charcoal/60 mb-1.5">
         <Smartphone className="w-3.5 h-3.5" />
         <span>{maskPhone(user.phone)}</span>
       </div>
@@ -121,7 +122,7 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout }
 
           {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量 */}
           {testUsage && (
-            <p className="text-[12px] text-[#6B5E50] font-light tracking-[0.05em] mb-4">
+            <p className="text-[12px] text-brand-charcoal/55 font-light tracking-[0.05em] mb-4">
               {testUsage.unlimited
                 ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
                 : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
@@ -136,7 +137,7 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout }
           onClose();
           openDiaryModal();
         }}
-        className="group w-full flex items-center justify-between px-4 py-3 mb-3 rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 text-[13px] tracking-[0.05em] text-[#5E5E5E] hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors cursor-pointer"
+        className={`${ACCOUNT_ENTRY_ROW} mb-3`}
       >
         <span className="inline-flex items-center gap-2">
           <NotebookPen className="w-4 h-4" />
@@ -148,7 +149,7 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout }
       {/* 会员中心入口：淡入会员中心视图（我的 / 会员 / 积分商城） */}
       <button
         onClick={onOpenCenter}
-        className="group w-full flex items-center justify-between px-4 py-3 mb-6 rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 text-[13px] tracking-[0.05em] text-[#5E5E5E] hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors cursor-pointer"
+        className={`${ACCOUNT_ENTRY_ROW} mb-6`}
       >
         <span className="inline-flex items-center gap-2">
           <Crown className="w-4 h-4" />
@@ -160,7 +161,7 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout }
       {/* 退出登录 */}
       <button
         onClick={onRequestLogout}
-        className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#6B5E50] hover:text-[#1A1A1A] transition-colors cursor-pointer"
+        className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 rounded-md"
       >
         <LogOut className="w-4 h-4" strokeWidth={1.5} />
         退出登录

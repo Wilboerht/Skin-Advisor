@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { fetchWithCsrf, POINTS_CHANGED_EVENT } from "@/lib/fetch-client";
 import { uploadImage } from "@/lib/upload-client";
+import { ACCOUNT_CARD, ACCOUNT_ENTRY_ROW, ACCOUNT_AVATAR_SHADOW } from "@/components/website/account-styles";
 import type { User } from "@/components/auth/UserProvider";
 
 // 主站 origin（安全中心等站外链接）：取值口径与 AccountMallTab 一致，本地/预发可随环境变量切换
@@ -251,7 +252,7 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
           onClick={() => avatarInputRef.current?.click()}
           disabled={saving !== null}
           aria-label="更换头像"
-          className="group relative w-24 h-24 rounded-full overflow-hidden bg-[#ECEBE6] shadow-md mb-4 cursor-pointer disabled:cursor-wait"
+          className={`group relative w-24 h-24 rounded-full overflow-hidden bg-[#ECEBE6] ${ACCOUNT_AVATAR_SHADOW} mb-4 cursor-pointer disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2`}
         >
           {displayAvatar ? (
             <Image src={displayAvatar} alt="" fill unoptimized className="object-cover" />
@@ -286,7 +287,7 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
               }}
               disabled={saving === "nickname"}
               aria-label="昵称"
-              className="w-40 text-center text-lg font-semibold text-[#1A1A1A] bg-white border border-brand-charcoal/20 rounded-xl px-3 py-1 focus:outline-none focus:border-brand-charcoal/50"
+              className="w-40 text-center text-lg font-semibold text-brand-charcoal bg-white border border-brand-charcoal/20 rounded-xl px-3 py-1 focus:outline-none focus:border-brand-charcoal/50"
             />
             <button
               type="button"
@@ -308,13 +309,13 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
             </button>
           </div>
         ) : (
-          <p className="text-xl font-semibold text-[#1A1A1A] mb-1.5 flex items-center gap-2">
+          <p className="text-xl font-semibold text-brand-charcoal mb-1.5 flex items-center gap-2">
             {displayName}
             <button
               type="button"
               onClick={startEditNickname}
               aria-label="修改昵称"
-              className="w-6 h-6 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
+              className="w-6 h-6 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/5 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
             >
               <Pencil className="w-3 h-3" />
             </button>
@@ -322,7 +323,7 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
         )}
 
         {/* 手机号（主站已掩码；回退值本地掩码） */}
-        <div className="flex items-center gap-1.5 text-[13px] text-[#5E5E5E] mb-1.5">
+        <div className="flex items-center gap-1.5 text-[13px] text-brand-charcoal/60 mb-1.5">
           <Smartphone className="w-3.5 h-3.5" />
           <span>{displayPhone}</span>
         </div>
@@ -331,7 +332,7 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
         {hasPhone && points === undefined ? (
           <div aria-hidden="true" className="h-5 w-28 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-4" />
         ) : typeof points === "number" ? (
-          <div className="flex items-center gap-1.5 text-[13px] text-[#8B7355] mb-4">
+          <div className="flex items-center gap-1.5 text-[13px] text-brand-bronze mb-4">
             <Coins className="w-3.5 h-3.5" />
             <span>积分余额 {points}</span>
           </div>
@@ -339,9 +340,9 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
       </div>
 
       {/* 资料编辑：生日（一次性，锁定后需客服）+ 性别（三态） */}
-      <div className="w-full rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 mb-3 divide-y divide-brand-charcoal/[0.06]">
+      <div className={`w-full ${ACCOUNT_CARD} mb-4 divide-y divide-brand-charcoal/[0.06]`}>
         <div className="flex items-center justify-between px-4 py-3">
-          <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#5E5E5E]">
+          <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-brand-charcoal/60">
             <Cake className="w-4 h-4" />
             生日
           </span>
@@ -363,7 +364,7 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
           )}
         </div>
         <div className="flex items-center justify-between px-4 py-3">
-          <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#5E5E5E]">
+          <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-brand-charcoal/60">
             <Pencil className="w-4 h-4" />
             性别
           </span>
@@ -381,7 +382,7 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
                 onClick={() => {
                   if (genderValue !== opt.value) patchProfile({ gender: opt.value }, "gender");
                 }}
-                className={`inline-flex h-6 items-center rounded-full px-2.5 text-[12px] transition-colors cursor-pointer disabled:opacity-50 ${
+                className={`inline-flex h-6 items-center rounded-full px-2.5 text-[12px] transition-colors cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
                   genderValue === opt.value
                     ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
                     : "text-brand-charcoal/60 hover:text-brand-charcoal"
@@ -399,7 +400,7 @@ export function AccountMyTab({ user, onRequestLogin }: AccountMyTabProps) {
         href={`${SSO_BASE_URL}/account`}
         target="_blank"
         rel="noopener noreferrer"
-        className="group w-full flex items-center justify-between px-4 py-3 mb-6 rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 text-[13px] tracking-[0.05em] text-[#5E5E5E] hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors"
+        className={`${ACCOUNT_ENTRY_ROW} mb-6`}
       >
         <span className="inline-flex items-center gap-2">
           <Settings2 className="w-4 h-4" />

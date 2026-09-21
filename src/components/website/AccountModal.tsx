@@ -10,6 +10,7 @@ import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { LoginGuide } from "@/components/website/LoginGuide";
+import { ACCOUNT_SHELL } from "@/components/website/account-styles";
 import { AccountRootView } from "@/components/website/AccountRootView";
 import { AccountMyTab } from "@/components/website/AccountMyTab";
 import { AccountMembershipTab } from "@/components/website/AccountMembershipTab";
@@ -31,7 +32,7 @@ class AccountPanelErrorBoundary extends Component<{ children: ReactNode }, { has
     if (this.state.hasError) {
       return (
         <div className="w-full flex flex-col items-center py-10">
-          <p className="text-[13px] text-[#6B5E50] mb-4">内容出错了，请重试</p>
+          <p className="text-[13px] text-brand-charcoal/60 mb-4">内容出错了，请重试</p>
           <button
             type="button"
             onClick={() => this.setState({ hasError: false })}
@@ -224,7 +225,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className={`relative z-10 w-full bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col ${
+              className={`relative z-10 w-full ${ACCOUNT_SHELL} overflow-hidden flex flex-col ${
                 shellFixed
                   ? "h-[86dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-[1100px]"
                   : "sm:max-w-sm max-h-[85vh] sm:max-h-[80vh]"
@@ -399,7 +400,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                           }`}
                         >
                           <Icon className="h-5 w-5" strokeWidth={active ? 2 : 1.5} />
-                          <span className="text-[10px] leading-none">{t.label}</span>
+                          <span className="text-[11px] leading-none">{t.label}</span>
                         </button>
                       );
                     })}
@@ -430,21 +431,21 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full max-w-xs bg-[#FDFBF7] rounded-[24px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
+              className="relative z-10 w-full max-w-xs bg-[#F7F4EE] rounded-[24px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 id="logout-confirm-title" className="text-base font-semibold text-[#1A1A1A] mb-2">
+              <h3 id="logout-confirm-title" className="text-base font-semibold text-brand-charcoal mb-2">
                 退出登录
               </h3>
-              <p className="text-[13px] font-light text-[#6B5E50] leading-relaxed mb-4">
+              <p className="text-[13px] font-light text-brand-charcoal/60 leading-relaxed mb-4">
                 默认仅退出本站；勾选后将同时退出主站及所有 NIHPLOD 平台。
               </p>
-              <label className="flex items-center gap-2 mb-6 cursor-pointer select-none text-[13px] text-[#5E5E5E] tracking-[0.03em]">
+              <label className="flex items-center gap-2 mb-6 cursor-pointer select-none text-[13px] text-brand-charcoal/70 tracking-[0.03em]">
                 <input
                   type="checkbox"
                   checked={logoutGlobal}
                   onChange={(e) => setLogoutGlobal(e.target.checked)}
-                  className="w-4 h-4 accent-[#3D4430]"
+                  className="w-4 h-4 accent-brand-charcoal"
                 />
                 同时退出所有 NIHPLOD 平台
               </label>
@@ -459,7 +460,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                 <button
                   type="button"
                   onClick={handleLogoutConfirm}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-[13px] tracking-[0.05em] hover:bg-red-700 transition-colors cursor-pointer"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-[var(--color-brand-danger)] text-white text-[13px] tracking-[0.05em] transition-opacity hover:opacity-90 cursor-pointer"
                 >
                   {logoutGlobal ? "退出所有平台" : "退出本站"}
                 </button>

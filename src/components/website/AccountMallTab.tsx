@@ -112,7 +112,7 @@ export function AccountMallTab({ onClose }: AccountMallTabProps) {
           role="alert"
           className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl border border-brand-charcoal/[0.08] bg-white/60"
         >
-          <p className="text-[13px] text-[#6B5E50] mb-4">积分商城加载失败，请检查网络后重试</p>
+          <p className="text-[13px] text-brand-charcoal/60 mb-4">积分商城加载失败，请检查网络后重试</p>
           <button
             type="button"
             onClick={retry}
