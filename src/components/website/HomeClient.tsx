@@ -529,8 +529,8 @@ export default function HomeClient() {
               alt="肌智派"
               width={256}
               height={156}
-              sizes="(min-width: 768px) 112px, 88px"
-              className="h-14 md:h-[68px] w-auto object-contain"
+              sizes="(min-width: 768px) 92px, 72px"
+              className="h-11 md:h-14 w-auto object-contain"
               priority
             />
           </Link>
