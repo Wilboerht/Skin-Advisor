@@ -10,6 +10,8 @@ import { getFactionIcon } from "@/components/website/faction-icons";
 
 interface SkinTypesClientProps {
   types: SkinTypeData[];
+  /** 透传给详情弹窗：分析等待期复用时隐藏"开始测肤"CTA */
+  hideTestCTA?: boolean;
 }
 
 /** 环形偏移归一化：8 张卡对称排布，d ∈ [-4, 3] */
@@ -25,7 +27,7 @@ function offsetOf(i: number, activeIdx: number, total: number): number {
  * 中央卡正面大图，两侧透视缩小，点击侧卡聚焦、中央卡打开详情弹窗；
  * 桌面左右箭头 + 键盘 ←/→，底部进度点指示当前位置。移动端/PC 同构。
  */
-export function SkinTypesClient({ types }: SkinTypesClientProps) {
+export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientProps) {
   const [selected, setSelected] = useState<SkinTypeData | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -280,7 +282,7 @@ export function SkinTypesClient({ types }: SkinTypesClientProps) {
 
       {/* 派系导航已上移至轮播上方 */}
 
-      <SkinTypeModal data={selected} onClose={closeDetail} />
+      <SkinTypeModal data={selected} onClose={closeDetail} hideTestCTA={hideTestCTA} />
     </>
   );
 }

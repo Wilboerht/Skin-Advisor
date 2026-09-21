@@ -78,19 +78,21 @@ function GiftParamDetector({ onOpen }: { onOpen: () => void }) {
 
 /** ?start=1 检测组件：从站外页面（如活动弹窗）点"开始测肤"进来时，
  *  自动拉起与首页 CTA 完全相同的 handleStart 流程（限额检查 → 隐私授权），并清理 URL。
- *  firedRef 防 StrictMode 双跑导致重复触发。 */
-function StartParamDetector({ onStart }: { onStart: () => void }) {
+ *  firedRef 防 StrictMode 双跑导致重复触发。
+ *  authReady（会话初始化完成）前不触发：刚登录回跳时 /api/auth/me 尚未落地，
+ *  立即触发会让 handleStart 拿 user=null 的旧快照把已登录用户误判成游客。 */
+function StartParamDetector({ onStart, authReady }: { onStart: () => void; authReady: boolean }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const firedRef = useRef(false);
   useEffect(() => {
-    if (typeof window === "undefined" || firedRef.current) return;
+    if (typeof window === "undefined" || firedRef.current || !authReady) return;
     if (searchParams.get("start") === "1") {
       firedRef.current = true;
       router.replace("/", { scroll: false });
       onStart();
     }
-  }, [searchParams, onStart, router]);
+  }, [searchParams, onStart, router, authReady]);
   return null;
 }
 
@@ -112,7 +114,17 @@ export default function HomeClient() {
   const { openAuthModal } = useAuthModal();
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
-  const { user, refresh: refreshUser } = useAuth();
+  const { user, isInitialized, refresh: refreshUser } = useAuth();
+
+  // 最新登录态镜像：handleStart/checkTestLimit 的异步流程跨越多个 await，
+  // 闭包里的 user 可能仍是点击时的旧快照（刚登录回跳时 /api/auth/me 尚未落地），
+  // 决策点必须读 ref 里的最新值，否则会把已登录用户误判成游客走昵称流程
+  const userRef = useRef(user);
+  const isInitializedRef = useRef(isInitialized);
+  useEffect(() => {
+    userRef.current = user;
+    isInitializedRef.current = isInitialized;
+  }, [user, isInitialized]);
 
   const prefersReducedMotion = useReducedMotion();
 
@@ -165,6 +177,17 @@ export default function HomeClient() {
     document.body.classList.toggle("home-modal-open", showOnboardingModal);
     return () => document.body.classList.remove("home-modal-open");
   }, [showOnboardingModal]);
+
+  // 兜底自愈：极端情况下弹窗已按游客流程打开（如 /api/auth/me 初次请求 429/超时，
+  // user 保持 null），之后登录态由定时续期/visibilitychange 落地时，
+  // 回填昵称让昵称屏自动收起（OnboardingFlowModal 会据 isLoggedIn/nickname 重算屏幕）。
+  // 用户已手动输入昵称时不覆盖
+  useEffect(() => {
+    if (showOnboardingModal && user?.name && !nickname.trim()) {
+      setNickname(user.name);
+      safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, user.name);
+    }
+  }, [showOnboardingModal, user, nickname]);
 
   // 弹窗懒加载 latch：首次打开前不渲染 dynamic 组件（chunk 不下载），打开过后保持挂载以保留退场动画
   const shouldRenderAccount = useLazyOpen(showAccountModal);
@@ -366,9 +389,18 @@ export default function HomeClient() {
         setTestLimitInfo(data);
 
         // 前端认为已登录但后端按游客处理时，可能 JWT 已失效，
-        // 刷新用户态后重试一次。
-        if (user && data.isGuest && canRefresh) {
+        // 刷新用户态后重试一次。（读 userRef 最新值而非闭包快照）
+        if (userRef.current && data.isGuest && canRefresh) {
           console.warn("[Auth Mismatch] Frontend has user but backend returned guest. Refreshing session...");
+          await refreshUser();
+          return runCheck(false);
+        }
+
+        // 反向错配：前端还是游客快照但后端识别为已登录（刚登录回跳后
+        // /api/auth/me 尚未落地），刷新用户态后重试一次，
+        // 避免已登录用户被当游客走昵称/隐私授权流程
+        if (!userRef.current && !data.isGuest && canRefresh) {
+          console.warn("[Auth Mismatch] Backend has session but frontend user not ready. Refreshing session...");
           await refreshUser();
           return runCheck(false);
         }
@@ -381,7 +413,7 @@ export default function HomeClient() {
     };
 
     return runCheck(allowRefresh);
-  }, [user, refreshUser]);
+  }, [refreshUser]);
 
 
   // 防重复触发：限额检查是异步的，等待期间按钮仍可点，快速双击会并发跑两遍流程
@@ -393,6 +425,13 @@ export default function HomeClient() {
     startCancelledRef.current = false;
 
     try {
+      // 会话未初始化（如刚登录回跳、/api/auth/me 仍在途）时先等其完成：
+      // refresh 有单飞机制，会并入挂载时发起的同一次请求，不产生额外流量。
+      // 否则后续的登录态判断会拿 user=null 的旧快照，把已登录用户误判成游客
+      if (!isInitializedRef.current) {
+        await refreshUser();
+      }
+
       // Check test limit first
       const limit = await checkTestLimit();
 
@@ -417,10 +456,12 @@ export default function HomeClient() {
         return;
       }
 
-      // If user is logged in and has a name, pre-fill it and let the modal handle skipping the step
-      if (user?.name) {
-        setNickname(user.name);
-        safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, user.name);
+      // 决策点读最新登录态（前面 await 期间 /api/auth/me 可能刚落地），
+      // 而非点击时的闭包快照；已登录且有名字时回填昵称，弹窗据此跳过昵称屏
+      const latestUser = userRef.current;
+      if (latestUser?.name) {
+        setNickname(latestUser.name);
+        safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, latestUser.name);
       }
       setIsHomeExiting(true);
       if (!showOnboardingModal) {
@@ -430,7 +471,7 @@ export default function HomeClient() {
     } finally {
       startingRef.current = false;
     }
-  }, [checkTestLimit, user, showOnboardingModal]);
+  }, [checkTestLimit, refreshUser, showOnboardingModal]);
 
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
@@ -447,7 +488,7 @@ export default function HomeClient() {
       <Suspense fallback={null}>
         <RefCapture />
         <GiftParamDetector onOpen={openGiftModal} />
-        <StartParamDetector onStart={handleStart} />
+        <StartParamDetector onStart={handleStart} authReady={isInitialized} />
       </Suspense>
 
       {/* Full Screen Loading Overlay */}

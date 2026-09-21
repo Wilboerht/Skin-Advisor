@@ -64,6 +64,14 @@ export function OnboardingFlowModal({
     // 焦点圈定：Tab 在弹层内循环、关闭后焦点归还触发元素（原实现只 focus 容器，Tab 会跑到背景页）
     const modalRef = useFocusTrap<HTMLDivElement>(isOpen);
 
+    // 屏幕列表可能中途收缩：弹窗按游客流程打开后登录态才落地（昵称/授权屏被移除），
+    // 钳制 activeIndex 防止越界渲染空白；maxVisitedIndex 由 goTo 的边界检查兜底
+    useEffect(() => {
+        if (activeIndex > totalScreens - 1) {
+            setActiveIndex(totalScreens - 1);
+        }
+    }, [activeIndex, totalScreens]);
+
     useEffect(() => {
         onCloseRef.current = onClose;
     }, [onClose]);

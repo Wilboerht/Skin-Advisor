@@ -13,6 +13,9 @@ import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 interface SkinTypesModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** 分析等待期复用时置 true：隐藏"测一测"/"开始测肤"站内跳转 CTA，
+   *  避免把用户导离进行中的分析流程（/?start=1 会重启测肤引导） */
+  hideTestCTA?: boolean;
 }
 
 const orderedTypes = routeOrder
@@ -24,7 +27,7 @@ const orderedTypes = routeOrder
  * 容器/动效/关闭按钮与 SkinTypeModal、GiftModal、FaqModal 对齐；
  * 内容仅保留：标题 + 测肤 CTA + 派系轮播（移动端为图鉴网格）
  */
-export function SkinTypesModal({ isOpen, onClose }: SkinTypesModalProps) {
+export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTypesModalProps) {
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
@@ -80,7 +83,7 @@ export function SkinTypesModal({ isOpen, onClose }: SkinTypesModalProps) {
 
               {/* 可滚动内容区 */}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
-                {/* 头部：标题 + 测肤 CTA */}
+                {/* 头部：标题 + 测肤 CTA（分析等待期复用时隐藏 CTA） */}
                 <div className="text-center mb-5 md:mb-7">
                   <h2
                     id="skin-types-modal-title"
@@ -88,22 +91,24 @@ export function SkinTypesModal({ isOpen, onClose }: SkinTypesModalProps) {
                   >
                     肌智派<sup className="text-[0.55em] align-super font-sans">™</sup>形象与护理方案
                   </h2>
-                  <Link
-                    href="/?start=1"
-                    onClick={onClose}
-                    className="group mt-4 md:mt-5 inline-flex items-center justify-center gap-2 px-6 h-11 rounded-full border border-[#00263E]/40 bg-transparent text-[#00263E] text-sm font-medium transition-colors duration-200 hover:border-[#00263E] hover:bg-[#00263E]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2"
-                  >
-                    <span>测一测，了解我的肤质类型</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
-                  </Link>
+                  {!hideTestCTA && (
+                    <Link
+                      href="/?start=1"
+                      onClick={onClose}
+                      className="group mt-4 md:mt-5 inline-flex items-center justify-center gap-2 px-6 h-11 rounded-full border border-[#00263E]/40 bg-transparent text-[#00263E] text-sm font-medium transition-colors duration-200 hover:border-[#00263E] hover:bg-[#00263E]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2"
+                    >
+                      <span>测一测，了解我的肤质类型</span>
+                      <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
+                    </Link>
+                  )}
                 </div>
 
                 {/* 派系轮播：移动端为图鉴网格，桌面端为 Cover Flow */}
                 <div className="md:hidden">
-                  <SkinTypesMobileList types={orderedTypes} />
+                  <SkinTypesMobileList types={orderedTypes} hideTestCTA={hideTestCTA} />
                 </div>
                 <div className="hidden md:block">
-                  <SkinTypesClient types={orderedTypes} />
+                  <SkinTypesClient types={orderedTypes} hideTestCTA={hideTestCTA} />
                 </div>
               </div>
             </m.div>

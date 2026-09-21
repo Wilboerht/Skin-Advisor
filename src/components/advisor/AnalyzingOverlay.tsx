@@ -2,7 +2,7 @@
 
 import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useEffect, useState, useRef, useCallback, useSyncExternalStore } from "react";
-import { LogOut } from "lucide-react";
+import { LogOut, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 
@@ -23,9 +23,12 @@ interface AnalyzingOverlayProps {
     onCancel?: () => void;
     queuePosition?: number;
     queueWaitSeconds?: number;
+    /** 等待期"了解派系"入口：打开派系介绍弹层（纯静态内容，不打断分析；
+     *  弹层 state 由外层持有，overlay 在完成卸载时不会带走它） */
+    onShowSkinTypes?: () => void;
 }
 
-export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitSeconds }: AnalyzingOverlayProps) {
+export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitSeconds, onShowSkinTypes }: AnalyzingOverlayProps) {
     const [showCancel, setShowCancel] = useState(false);
     const prefersReducedMotion = useReducedMotion();
     // 避免 SSR 与服务端渲染状态不一致，同时避免 effect 中同步 setState
@@ -256,6 +259,21 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                             ? `当前使用人数较多${queueWaitSeconds ? `，预计还需约 ${queueWaitSeconds} 秒` : ""}`
                             : "AI 顾问正在全力为您分析，请再稍候片刻"}
                     </m.p>
+                )}
+
+                {/* 等待期入口：派系介绍（延迟淡入，不抢进度文案的首屏注意力） */}
+                {onShowSkinTypes && (
+                    <m.button
+                        type="button"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: prefersReducedMotion ? 0 : 1.2, duration: prefersReducedMotion ? 0 : 0.8 }}
+                        onClick={onShowSkinTypes}
+                        className="mt-8 inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-brand-charcoal/[0.15] text-brand-charcoal/55 text-[12px] font-light tracking-[0.08em] transition-colors duration-300 hover:text-brand-charcoal hover:border-brand-charcoal/35 hover:bg-brand-charcoal/[0.03] cursor-pointer"
+                    >
+                        <span>等待时，了解 8 大肌肤派系</span>
+                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    </m.button>
                 )}
             </div>
 

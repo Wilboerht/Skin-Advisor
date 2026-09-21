@@ -51,6 +51,8 @@ const PosterTemplatePicker = dynamic(
     { ssr: false }
 );
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
+// 派系介绍弹层：分析等待期的消遣内容（纯静态 JSON），点击才加载分包
+const SkinTypesModal = dynamic(() => import("@/components/website/SkinTypesModal").then((mod) => mod.SkinTypesModal), { ssr: false });
 
 // Re-export for backward compatibility with existing imports
 export { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -453,6 +455,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 肌智派送好礼弹窗：结果页原地打开，避免跳首页丢失当前报告上下文
     const [showGiftModal, setShowGiftModal] = useState(false);
     const shouldRenderGiftModal = useLazyOpen(showGiftModal);
+    // 分析等待期的派系介绍弹层：入口在 AnalyzingOverlay 内，但 state 必须挂在本层——
+    // overlay 在分析完成时卸载退出，放在它内部会把弹层一起带走；
+    // 不接 useModalBackClose：完成时的 router.replace 会和返回键哨兵的 history.back() 竞争
+    const [showSkinTypesModal, setShowSkinTypesModal] = useState(false);
+    const shouldRenderSkinTypesModal = useLazyOpen(showSkinTypesModal);
     // 重新测试入口额度预检：无额度/需登录时改展示原因，避免点进去到问卷页才发现走不通
     const [reTestBlockedReason, setReTestBlockedReason] = useState<"login" | "daily" | "lifetime" | null>(null);
     const userId = user?.id;
@@ -1421,6 +1428,14 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         execute();
     }, [searchParams, result, analysisState.status, clientDataLoaded, runAnalysis, recoverSession, router, startMock, isMock]);
 
+    // 分析完成/失败、或结果已就绪：加载层退出、页面即将跳转结果页，
+    // 主动关闭等待期的派系介绍弹层，避免其以更高 z 层级浮在结果页/错误页上
+    useEffect(() => {
+        if (result || analysisState.status === 'completed' || analysisState.status === 'error') {
+            setShowSkinTypesModal(false);
+        }
+    }, [result, analysisState.status]);
+
     // Mock 完成后注入假数据，渲染结果页（动态加载 mock 数据，不影响生产包体积）；仅开发环境生效
     useEffect(() => {
         if (!isMock || searchParams.get('mock') !== 'true') return;
@@ -1598,9 +1613,20 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         onCancel={() => navPush('/questions?edit=true')}
                         queuePosition={analysisState.queuePosition}
                         queueWaitSeconds={analysisState.queueWaitSeconds}
+                        onShowSkinTypes={() => setShowSkinTypesModal(true)}
                     />
                 )}
             </AnimatePresence>
+
+            {/* 等待期派系介绍弹层：挂在 overlay 外层，overlay 完成卸载时不受影响；
+                hideTestCTA 隐藏"测一测"入口，防止用户被导离进行中的分析 */}
+            {shouldRenderSkinTypesModal && (
+                <SkinTypesModal
+                    isOpen={showSkinTypesModal}
+                    onClose={() => setShowSkinTypesModal(false)}
+                    hideTestCTA
+                />
+            )}
 
             {/* --- GENDER MISMATCH MODAL --- */}
             <AnimatePresence>

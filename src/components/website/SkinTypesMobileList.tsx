@@ -8,6 +8,8 @@ import { getFactionIcon } from "@/components/website/faction-icons";
 
 interface SkinTypesMobileListProps {
   types: SkinTypeData[];
+  /** 透传给详情弹窗：分析等待期复用时隐藏"开始测肤"CTA */
+  hideTestCTA?: boolean;
 }
 
 /**
@@ -16,7 +18,7 @@ interface SkinTypesMobileListProps {
  * 改为 2 列图鉴网格：形象为主角，名字为辅，点击打开详情弹窗（简介在弹窗内完整呈现）。
  * 桌面端仍由 SkinTypesClient 轮播承载。
  */
-export function SkinTypesMobileList({ types }: SkinTypesMobileListProps) {
+export function SkinTypesMobileList({ types, hideTestCTA = false }: SkinTypesMobileListProps) {
   const [selected, setSelected] = useState<SkinTypeData | null>(null);
 
   // 视口放大到桌面端时自动关闭详情：本组件被 display:none 隐藏后，
@@ -64,7 +66,7 @@ export function SkinTypesMobileList({ types }: SkinTypesMobileListProps) {
         })}
       </ul>
 
-      <SkinTypeModal data={selected} onClose={closeDetail} />
+      <SkinTypeModal data={selected} onClose={closeDetail} hideTestCTA={hideTestCTA} />
     </>
   );
 }

@@ -14,6 +14,8 @@ interface SkinTypeModalProps {
   /** null 表示关闭 */
   data: SkinTypeData | null;
   onClose: () => void;
+  /** 分析等待期复用时置 true：隐藏"开始测肤"CTA，避免把用户导离进行中的分析流程 */
+  hideTestCTA?: boolean;
 }
 
 /**
@@ -21,7 +23,7 @@ interface SkinTypeModalProps {
  * 容器/动效/关闭按钮与 GiftModal、FaqModal 对齐；
  * 内容保留：形象与简介、优势高光、护肤日常、护肤公式（不含成分产品表）
  */
-export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
+export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeModalProps) {
   const isOpen = data !== null;
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
@@ -196,17 +198,19 @@ export function SkinTypeModal({ data, onClose }: SkinTypeModalProps) {
                 </section>
               )}
 
-              {/* CTA */}
-              <div className="flex justify-center">
-                <Link
-                  href="/"
-                  onClick={onClose}
-                  className="group inline-flex items-center justify-center gap-2 h-11 px-8 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#4a3a2c]"
-                >
-                  <span>开始测肤，解锁你的专属形象</span>
-                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
-                </Link>
-              </div>
+              {/* CTA（分析等待期复用时隐藏，防止用户被导离进行中的分析） */}
+              {!hideTestCTA && (
+                <div className="flex justify-center">
+                  <Link
+                    href="/"
+                    onClick={onClose}
+                    className="group inline-flex items-center justify-center gap-2 h-11 px-8 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#4a3a2c]"
+                  >
+                    <span>开始测肤，解锁你的专属形象</span>
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
+                  </Link>
+                </div>
+              )}
             </div>
           </m.div>
         </div>
