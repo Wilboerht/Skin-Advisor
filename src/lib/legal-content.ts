@@ -16,7 +16,7 @@ export interface LegalDoc {
 }
 
 export const PRIVACY_DOC: LegalDoc = {
-  title: "隐私政策（简版）",
+  title: "隐私政策（摘要）",
   fullUrl: "https://nihplod.cn/privacy",
   sections: [
     {
@@ -67,7 +67,7 @@ export const PRIVACY_DOC: LegalDoc = {
 };
 
 export const TERMS_DOC: LegalDoc = {
-  title: "服务条款（简版）",
+  title: "服务条款（摘要）",
   fullUrl: "https://nihplod.cn/terms",
   sections: [
     {

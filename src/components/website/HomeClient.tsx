@@ -605,15 +605,15 @@ export default function HomeClient() {
         animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
-          {/* 首屏 Hero（设计稿版式）：米白上区 + 蓝灰波浪下区，左右 IP 形象夹峙中央文案。
-              男性 IP 置于波浪层之下（下身没入蓝色区域），女性 IP 立于波浪层之上、裙摆抵到底部栏 */}
+          {/* 首屏 Hero（设计稿版式）：米白上区 + 蓝灰波浪下区，四个 IP 形象两两夹峙中央文案——
+              每侧一后一前：后排水小、没入波浪（波浪层之下）；前排高大、立于波浪之上、抵到底部栏 */}
           <div className="relative flex flex-1 flex-col w-full overflow-hidden bg-[#EFE9DA]">
-            {/* 左侧男性 IP（极简派 · 手持几何晶体）：<1440px 空间不足时隐藏。
-                头顶 → 顶栏下缘的间距 = 底部栏高度（56px），与女性 IP"脚底 → 底部栏"的间距上下呼应。
-                图片顶部透明边占图高 13%，故 top = 56px − 13%×图高（图高 70vh）；按顶部锚定，不随视口高度漂移 */}
+            {/* 左后：极简派男性（银灰西装 · 手持几何晶体）：仅 ≥1440px 显示（z-10，波浪层之下）。
+                头顶 → 顶栏下缘的间距 = 底部栏高度（56px）。
+                图片顶部透明边占图高 13%，故 top = 56px − 13%×图高（图高 63vh）；按顶部锚定，不随视口高度漂移 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[3%] top-[calc(56px-9.1vh)] hidden min-[1440px]:block"
+              className="absolute z-10 left-[12%] top-[calc(56px-8.2vh)] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -623,8 +623,29 @@ export default function HomeClient() {
                 alt=""
                 width={960}
                 height={1280}
-                sizes="40vw"
-                className="h-[70vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                sizes="36vw"
+                className="h-[63vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                priority
+              />
+            </m.div>
+
+            {/* 左前：沙漠派女性（金发蓝缕捧水滴）：立于波浪之上（z-30），
+                宽屏下沉 12vh——脚底没入底部栏，允许被遮挡；底部栏 z-40 自然压盖。
+                <1440px 移动端：bottom = −5.5%×图高（底部透明边），脚底贴底部栏上缘 */}
+            <m.div
+              aria-hidden="true"
+              className="absolute z-30 -left-[6%] min-[1440px]:left-[1%] -bottom-[1.9vh] min-[1440px]:-bottom-[12vh]"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
+            >
+              <Image
+                src="/images/character/desert/desert_female.webp"
+                alt=""
+                width={960}
+                height={1280}
+                sizes="(min-width: 1440px) 41vw, 44vw"
+                className="h-[34vh] min-[1440px]:h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                 priority
               />
             </m.div>
@@ -653,23 +674,42 @@ export default function HomeClient() {
               />
             </svg>
 
-            {/* 右侧女性 IP（沙漠派 · 金发蓝缕捧水滴）：立于波浪之上。
-                脚底 → 底部栏上缘的间距 = 底部栏高度（64/56px）：图片底部透明边占图高 5.5%，
-                故 bottom = 栏高 − 5.5%×图高（图高 30/62vh） */}
+            {/* 右后：敏感派女性（紫发托腮）：仅 ≥1440px 显示（z-10，波浪层之下），
+                与左后极简男同高同顶距，左右对称 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-30 -right-[8%] min-[1440px]:right-[2%] bottom-[calc(64px-1.6vh)] min-[1440px]:bottom-[calc(56px-3.4vh)]"
+              className="absolute z-10 right-[13%] top-[calc(56px-8.2vh)] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
+              transition={{ delay: prefersReducedMotion ? 0 : 0.25, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
             >
               <Image
-                src="/images/character/desert/desert_female.webp"
+                src="/images/character/sensitive/sensitive_female.webp"
                 alt=""
                 width={960}
                 height={1280}
-                sizes="(min-width: 1440px) 29vw, 40vw"
-                className="h-[30vh] min-[1440px]:h-[62vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                sizes="36vw"
+                className="h-[63vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                priority
+              />
+            </m.div>
+
+            {/* 右前：沙漠派男性（捧水滴）：仅 ≥1440px 显示（z-30，立于波浪之上），
+                与左前沙漠女完全同规格（同高 86vh、同下沉 12vh），两人视觉大小与基线一致 */}
+            <m.div
+              aria-hidden="true"
+              className="absolute z-30 right-[1%] -bottom-[12vh] hidden min-[1440px]:block"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: prefersReducedMotion ? 0 : 0.35, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
+            >
+              <Image
+                src="/images/character/desert/desert_male.webp"
+                alt=""
+                width={960}
+                height={1280}
+                sizes="41vw"
+                className="h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                 priority
               />
             </m.div>

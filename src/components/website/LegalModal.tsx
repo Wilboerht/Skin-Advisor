@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, m } from "framer-motion";
 import { X } from "lucide-react";
 import type { LegalDoc } from "@/lib/legal-content";
@@ -22,6 +23,11 @@ export function LegalModal({ isOpen, onClose, doc }: LegalModalProps) {
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
+  // Portal 到 body：弹层从页脚（.home-shell，relative z-20）内渲染时会被困在该 stacking context，
+  // 顶栏（fixed z-40）会盖在遮罩之上；且祖先的 transform 会改变 fixed 的定位参照
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // 遮罩防误触：打开后 350ms 内忽略遮罩点击关闭（与 FaqModal 一致）
   const openSinceRef = useRef(0);
   useEffect(() => {
@@ -33,7 +39,9 @@ export function LegalModal({ isOpen, onClose, doc }: LegalModalProps) {
     onClose();
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div
@@ -54,8 +62,7 @@ export function LegalModal({ isOpen, onClose, doc }: LegalModalProps) {
           />
 
           {/* 弹窗主体：移动端底部升起，桌面端居中卡片。
-              弹层挂在页脚 DOM 内（页脚有 tracking-[0.12em]，letter-spacing 会继承进来把正文撑开），
-              故在此重置为 tracking-normal，正文回到默认字距 */}
+              tracking-normal：防止宿主页脚（tracking-[0.12em]）等外部字距继承进正文 */}
           <m.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -116,6 +123,7 @@ export function LegalModal({ isOpen, onClose, doc }: LegalModalProps) {
           </m.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

@@ -806,7 +806,7 @@ html.hide-page-scrollbar::-webkit-scrollbar {
 }
 
 /* ========== 首页专用：Dock 上浮（不入层，确保压过 Tailwind utilities 的 mb） ========== */
-/* Dock 底边与女性 IP 脚底同一水平线；脚底 → 底部栏上缘的间距 = 底部栏高（见 HomeClient 女性 IP 的 bottom 取数），
+/* Dock 底边与底部栏上缘保持一个栏高的间距，
    故上浮量 = 2 × 底部栏高（64/56）= 128/112px
    （body.home-dock-raised 由 HomeClient 挂载/卸载时加减） */
 body.home-dock-raised .dock-panel {
