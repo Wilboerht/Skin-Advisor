@@ -144,9 +144,9 @@ export function BottomDock() {
       className="fixed bottom-0 left-0 right-0 z-[var(--z-dock)] pointer-events-none px-3"
     >
       {/* 全端统一悬浮胶囊：移动端实色（全宽磨砂在低端机上合成开销高）+ 上浮 8px；桌面端磨砂 + 更宽定宽。
-          首页移动端不显示（入口收纳进顶栏汉堡菜单），桌面端及其他页面正常 */}
+          首页同样显示（上浮避开底部栏，见 globals.css 的 home-dock-raised） */}
       <div
-        className={`dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 max-w-[420px] md:max-w-md bg-[#FDFBF7] md:bg-[#FDFBF7]/90 md:backdrop-blur-md rounded-full border border-brand-charcoal/[0.08] shadow-[0_8px_30px_rgba(0,38,62,0.12)] mb-[calc(env(safe-area-inset-bottom,0px)+var(--dock-bottom-offset))] md:mb-8 pointer-events-auto${pathname === "/" ? " max-md:hidden" : ""}`}
+        className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 max-w-[420px] md:max-w-md bg-[#FDFBF7] md:bg-[#FDFBF7]/90 md:backdrop-blur-md rounded-full border border-brand-charcoal/[0.08] shadow-[0_8px_30px_rgba(0,38,62,0.12)] mb-[calc(env(safe-area-inset-bottom,0px)+var(--dock-bottom-offset))] md:mb-8 pointer-events-auto"
       >
         {TABS.map((tab) => {
           const active = isActive(tab);

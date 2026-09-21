@@ -799,7 +799,7 @@ html.hide-page-scrollbar::-webkit-scrollbar {
   padding-top: calc(72px + env(safe-area-inset-top, 0px));
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1440px) {
   .home-shell {
     padding-top: calc(88px + env(safe-area-inset-top, 0px));
   }
@@ -813,7 +813,7 @@ body.home-dock-raised .dock-panel {
   margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 128px);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1440px) {
   body.home-dock-raised .dock-panel {
     margin-bottom: 112px;
   }
