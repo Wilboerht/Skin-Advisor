@@ -5,6 +5,7 @@ import { m } from "framer-motion";
 import { ChevronDown, Crown, RefreshCw, Sparkles } from "lucide-react";
 import { getMemberBadge } from "@/components/website/member-badges";
 import { ACCOUNT_CARD, ACCOUNT_SECTION_TITLE } from "@/components/website/account-styles";
+import { POINTS_CHANGED_EVENT } from "@/lib/fetch-client";
 
 /** GET /api/account/membership 响应结构（BFF 契约） */
 interface MembershipBenefit {
@@ -146,6 +147,24 @@ export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () =>
 
   useEffect(() => { load(); }, [load]);
 
+  // 积分余额：与等级/消费同属会员资产，并入等级卡；null = 接口不可用（不展示该行，不闪骨架）
+  const [points, setPoints] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const fetchPoints = () =>
+      fetch("/api/account/points")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (!cancelled) setPoints(typeof d?.available === "number" ? d.available : null); })
+        .catch(() => { /* 保留旧值 */ });
+    fetchPoints();
+    // 打卡实际到账积分后（POINTS_CHANGED_EVENT）静默刷新余额，保持与主站账本一致
+    window.addEventListener(POINTS_CHANGED_EVENT, fetchPoints);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(POINTS_CHANGED_EVENT, fetchPoints);
+    };
+  }, []);
+
   if (loading) {
     // 骨架屏：等级卡（含进度）+ 权益标题 + 权益行，高度对齐真实内容避免加载完成时跳动
     return (
@@ -205,6 +224,7 @@ export function AccountMembershipTab({ onRequestLogin }: { onRequestLogin: () =>
         </div>
         <p className={`text-[12px] font-light tracking-[0.03em] ${cardTheme.sub}`}>
           会员号 {data.memberId} · 累计消费 {formatYuan(data.totalSpent)}
+          {typeof points === "number" && ` · 积分余额 ${points}`}
         </p>
 
         {/* 升级进度：并入等级卡底部；已到顶档时不渲染 */}

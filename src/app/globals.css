@@ -825,7 +825,8 @@ body.home-modal-open .dock-panel {
 }
 
 /* ========== 首页「测肤有礼」宣传卡：呼吸浮动（微弱上下浮动吸引注意，reduced-motion 关闭） ========== */
-/* 注意：CSS 动画运行期间会覆盖 transform，故卡片不再用 Tailwind 悬浮位移，改用 hover 加深阴影 */
+/* 动画挂在外层 wrapper 上（CSS 动画会覆盖所在元素的 transform）；
+   按钮本体不带动画，因此 hover 上浮位移不受影响 */
 @keyframes gift-card-breathe {
   0%,
   100% {

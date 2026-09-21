@@ -710,42 +710,47 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 左下角「测肤有礼」宣传卡（仅 PC，移动端入口在汉堡菜单）：点击打开活动弹窗。
+            {/* 左下角「测肤有礼」宣传卡（仅 PC；移动端入口在 CTA 下方文字链与汉堡菜单）：点击打开活动弹窗。
                 纵向与 Dock 同一条中线：中线 = 内容区底部上方 88px（Dock 上浮 112 + 半高 32 − 底部栏 56）；
-                卡高约 64px（图 48 + 上下 padding 16），故 bottom = 88 − 32 = 56px（bottom-14）。
+                卡高约 84px（图 64 + 上下 padding 20），故 bottom = 88 − 42 ≈ 48px（bottom-12）。
                 左缘与底部栏内容左缘对齐（px-6 lg:px-10 = 24/40px）。
-                呼吸浮动动画见 globals.css .gift-card-breathe（CSS 动画会覆盖 transform，故不再用悬浮位移） */}
-            <m.button
-              type="button"
-              onClick={openGiftModal}
-              aria-haspopup="dialog"
-              aria-expanded={showGiftModal}
-              aria-label="测肤有礼 · 参与赢好礼"
+                呼吸浮动在外层 wrapper（globals.css .gift-card-breathe，CSS 动画会覆盖所在元素的
+                transform），按钮本体不带 CSS 动画，hover 上浮位移因此可用 */}
+            <m.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.4, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
-              className="gift-card-breathe absolute z-40 left-6 lg:left-10 bottom-14 hidden lg:flex items-center gap-3 rounded-2xl bg-white/95 backdrop-blur-sm py-2 pl-2 pr-4 border border-white/60 shadow-[0_12px_30px_-10px_rgba(0,38,62,0.25)] transition-shadow duration-200 hover:shadow-[0_18px_38px_-10px_rgba(0,38,62,0.32)] motion-reduce:transition-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
+              className="gift-card-breathe absolute z-40 left-6 lg:left-10 bottom-12 hidden lg:block"
             >
-              {/* 活动角标：金色圆形礼物徽章，压在卡片右上角 */}
-              <span
-                aria-hidden="true"
-                className="absolute -top-2.5 -right-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#C9A86C] text-white shadow-[0_4px_10px_-2px_rgba(201,168,108,0.7)] rotate-6"
+              <button
+                type="button"
+                onClick={openGiftModal}
+                aria-haspopup="dialog"
+                aria-expanded={showGiftModal}
+                aria-label="测肤有礼 · 参与赢好礼"
+                className="relative flex items-center gap-3 rounded-2xl bg-white/95 backdrop-blur-sm py-2.5 pl-2.5 pr-4 border border-white/60 shadow-[0_12px_30px_-10px_rgba(0,38,62,0.25)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_-10px_rgba(0,38,62,0.32)] motion-reduce:transition-none motion-reduce:hover:transform-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
               >
-                <Gift className="w-3.5 h-3.5" strokeWidth={2} />
-              </span>
-              <Image
-                src="/images/gift-badge.webp"
-                alt=""
-                aria-hidden="true"
-                width={640}
-                height={396}
-                className="h-12 w-auto object-contain"
-              />
-              <span className="flex flex-col items-start text-left">
-                <span className="text-[14px] font-bold tracking-[0.08em] text-[#22304E]">测肤有礼</span>
-                <span className="text-[11px] tracking-[0.04em] text-[#84817a]">参与赢 NIHPLOD 正装好礼</span>
-              </span>
-            </m.button>
+                {/* 活动角标：金色圆形礼物徽章，压在卡片右上角 */}
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-2.5 -right-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#C9A86C] text-white shadow-[0_4px_10px_-2px_rgba(201,168,108,0.7)] rotate-6"
+                >
+                  <Gift className="w-3.5 h-3.5" strokeWidth={2} />
+                </span>
+                <Image
+                  src="/images/gift-badge.webp"
+                  alt=""
+                  aria-hidden="true"
+                  width={640}
+                  height={396}
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="flex flex-col items-start text-left">
+                  <span className="text-[15px] font-bold tracking-[0.08em] text-brand-charcoal">测肤有礼</span>
+                  <span className="text-[11px] tracking-[0.04em] text-brand-charcoal/60">参与赢 NIHPLOD 正装好礼</span>
+                </span>
+              </button>
+            </m.div>
 
             {/* 中央文案：文字与按钮各自绝对定位、互不联动——
                 文字（主标题 + 副标题含蓝色问号 = 跳转「了解肌智派」）贴波浪上方（米色区下半部）；
@@ -809,6 +814,18 @@ export default function HomeClient() {
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isLoading ? "正在连接" : "立刻体验"}</span>
                 </button>
+
+                {/* 移动端「测肤有礼」入口：PC 有左下角宣传卡，移动端在 CTA 下方给轻量文字入口
+                    （位于蓝色波浪区上方，用白字；PC 隐藏避免与宣传卡重复） */}
+                <button
+                  type="button"
+                  onClick={openGiftModal}
+                  aria-haspopup="dialog"
+                  className="lg:hidden mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] tracking-[0.1em] text-white/85 transition-colors hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                >
+                  <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  <span>测肤有礼 · 参与赢好礼</span>
+                </button>
               </div>
             </section>
           </div>
@@ -821,7 +838,7 @@ export default function HomeClient() {
           </div>
         </m.div>
 
-      {/* "测肤有礼"入口已收纳进顶栏汉堡菜单，不再使用右下角悬浮卡片 */}
+      {/* "测肤有礼"入口：PC 左下角宣传卡 + 移动端 CTA 下方文字链 + 顶栏汉堡菜单 */}
 
       {/* Modals：首次打开才加载对应 chunk（见上方 shouldRender* latch） */}
       {shouldRenderAccount && (

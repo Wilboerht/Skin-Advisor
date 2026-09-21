@@ -3,7 +3,7 @@
 import { Component, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ArrowLeft, Gift, User, X } from "lucide-react";
+import { ArrowLeft, Crown, Gift, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -12,7 +12,6 @@ import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { LoginGuide } from "@/components/website/LoginGuide";
 import { ACCOUNT_SHELL } from "@/components/website/account-styles";
 import { AccountRootView } from "@/components/website/AccountRootView";
-import { AccountMyTab } from "@/components/website/AccountMyTab";
 import { AccountMembershipTab } from "@/components/website/AccountMembershipTab";
 import { AccountMallTab } from "@/components/website/AccountMallTab";
 
@@ -55,13 +54,13 @@ interface AccountModalProps {
 type AccountTab = "my" | "mall";
 
 const ACCOUNT_TABS: { key: AccountTab; label: string }[] = [
-  { key: "my", label: "我的" },
+  { key: "my", label: "会员" },
   { key: "mall", label: "积分商城" },
 ];
 
 /** 移动端底部 Tab 栏图标（与主站用户中心的底部导航形态对齐） */
-const TAB_ICONS: Record<AccountTab, typeof User> = {
-  my: User,
+const TAB_ICONS: Record<AccountTab, typeof Crown> = {
+  my: Crown,
   mall: Gift,
 };
 
@@ -70,9 +69,10 @@ const MOBILE_QUERY = "(max-width: 639px)";
 
 /**
  * AccountModal — 用户面板弹层（替代原 /profile 独立页），两级视图：
- * 根视图（最早样式）：身份展示 +「护肤档案」「会员中心」两个入口 + 退出登录；
- * 会员中心视图：「我的 / 积分商城」两个 tab（我的=身份与资料（BFF /api/account/profile）
- * + 会员等级权益（/api/account/membership）合并展示；积分商城=官网 embed iframe），
+ * 根视图：身份与资料（头像/昵称/生日/性别可编辑，BFF /api/account/profile）
+ * +「护肤档案」「会员中心」「安全中心」入口 + 退出登录；
+ * 会员中心视图：「会员 / 积分商城」两个 tab（会员=等级卡（含积分余额/升级进度）
+ * + 全档权益（/api/account/membership）；积分商城=官网 embed iframe），
  * 根视图 ⇄ 会员中心保持挂载淡入切换（中心视图首次进入后不卸载），返回键/Escape 先回根视图。
  * 未登录：登录引导视图，点击按钮走 SSO 统一登录。
  * 容器/动效/关闭按钮与 GiftModal 等全站模态框对齐。
@@ -97,7 +97,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   // 移动端返回键/返回手势
   useModalBackClose(isOpen, handleBackRequest);
 
-  // tab 状态（会员中心内）：关闭弹层后复位到「我的」，但已激活过的 tab 保持挂载（避免商城
+  // tab 状态（会员中心内）：关闭弹层后复位到「会员」，但已激活过的 tab 保持挂载（避免商城
   // iframe 与会员数据每次重开都重新加载）；账号切换时全部重置，防止展示上一账号的残留数据
   const [activeTab, setActiveTab] = useState<AccountTab>("my");
   const [visitedTabs, setVisitedTabs] = useState<AccountTab[]>(["my"]);
@@ -333,6 +333,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                         onClose={onClose}
                         onOpenCenter={() => setView("center")}
                         onRequestLogout={handleLogout}
+                        onRequestLogin={requestLogin}
                       />
                     </m.div>
 
@@ -351,11 +352,11 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                             id="account-tabpanel-my"
                             aria-labelledby={isMobile ? "account-tab-mobile-my" : "account-tab-my"}
                             hidden={activeTab !== "my"}
-                            className="w-full flex flex-col items-center"
+                            className="w-full"
                           >
-                            {/* 桌面端（lg+）双列：左身份/资料/安全，右会员等级/进度/权益；移动端单列堆叠 */}
-                            <div className="w-full grid grid-cols-1 lg:grid-cols-2 lg:gap-10 lg:items-start">
-                              <AccountMyTab user={user} onRequestLogin={requestLogin} />
+                            {/* 会员内容单列居中：等级卡（含积分/升级进度）+ 全档权益；
+                                资料编辑已并入根视图，不再双列并排 */}
+                            <div className="w-full max-w-xl mx-auto">
                               <AccountMembershipTab onRequestLogin={requestLogin} />
                             </div>
                           </div>
