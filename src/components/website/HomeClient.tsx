@@ -610,10 +610,12 @@ export default function HomeClient() {
           <div className="relative flex flex-1 flex-col w-full overflow-hidden bg-[#EFE9DA]">
             {/* 左后：极简派男性（银灰西装 · 手持几何晶体）：仅 ≥1440px 显示（z-10，波浪层之下）。
                 头顶 → 顶栏下缘的间距 = 底部栏高度（56px）。
-                图片顶部透明边占图高 13%，故 top = 56px − 13%×图高（图高 63vh）；按顶部锚定，不随视口高度漂移 */}
+                该图顶部透明边占图高 8.5%（实测），故 top = 56px − 8.5%×图高（图高 61vh）；按顶部锚定，不随视口高度漂移。
+                图高取 61vh（而非右后的 63vh）：该图内容占图高 86.9%、敏感女占 84.5%，61×0.869 ≈ 63×0.845，
+                两人实际人物高度一致；该图画幅为 1254×1254 方形，width/height 须与实际一致 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[12%] top-[calc(56px-8.2vh)] hidden min-[1440px]:block"
+              className="absolute z-10 left-[12%] top-[calc(56px-5.2vh)] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -621,10 +623,10 @@ export default function HomeClient() {
               <Image
                 src="/images/character/minimalist/minimalist_male.webp"
                 alt=""
-                width={960}
-                height={1280}
-                sizes="36vw"
-                className="h-[63vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                width={1254}
+                height={1254}
+                sizes="34vw"
+                className="h-[61vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
@@ -674,11 +676,12 @@ export default function HomeClient() {
               />
             </svg>
 
-            {/* 右后：敏感派女性（紫发托腮）：仅 ≥1440px 显示（z-10，波浪层之下），
-                与左后极简男同高同顶距，左右对称 */}
+            {/* 右后：敏感派女性（紫发托腮）：仅 ≥1440px 显示（z-10，波浪层之下）。
+                顶部透明边占图高 10%（实测），top = 56px − 10%×图高（图高 63vh）；
+                与左后极简男头顶同高、人物实际高度一致（见左后注释的换算），左右对称 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 right-[13%] top-[calc(56px-8.2vh)] hidden min-[1440px]:block"
+              className="absolute z-10 right-[13%] top-[calc(56px-6.3vh)] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.25, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
