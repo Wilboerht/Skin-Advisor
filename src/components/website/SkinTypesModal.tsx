@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
@@ -63,13 +64,14 @@ export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTyp
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
             />
 
-            {/* 弹窗主体：移动端底部升起，桌面端与护肤档案弹层同规格 */}
+            {/* 弹窗主体：移动端底部升起；桌面端高度贴合内容（不再固定 680，避免轮播下方留大片空白），
+                超过视口时用 max-h + 内部滚动兜底 */}
             <m.div
               initial={{ opacity: 0, scale: 0.96, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full h-[85dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-[1100px] bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
+              className="relative z-10 w-full h-[85dvh] sm:h-auto sm:max-h-[min(680px,calc(100dvh-3rem))] sm:max-w-[1100px] bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
@@ -83,8 +85,17 @@ export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTyp
 
               {/* 可滚动内容区 */}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
-                {/* 头部：标题 + 测肤 CTA（分析等待期复用时隐藏 CTA） */}
+                {/* 头部：肌智派徽标 + 标题 + 测肤 CTA（分析等待期复用时隐藏 CTA） */}
                 <div className="text-center mb-5 md:mb-7">
+                  <div className="mb-3 md:mb-4 flex justify-center">
+                    <Image
+                      src="/images/jzp-eyebrow.png"
+                      alt="肌智派"
+                      width={256}
+                      height={156}
+                      className="h-12 md:h-14 w-auto object-contain"
+                    />
+                  </div>
                   <h2
                     id="skin-types-modal-title"
                     className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em]"

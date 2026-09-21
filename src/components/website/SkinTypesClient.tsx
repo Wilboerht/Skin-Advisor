@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SkinTypeData } from "@/lib/result-content";
 import { SkinTypeModal } from "@/components/website/SkinTypeModal";
@@ -141,11 +141,16 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
         })}
       </div>
 
-      {/* 外层相对容器：轮播裁剪区 + 两侧翻页按钮（按钮在裁剪容器外，垂直线与卡片舞台中线对齐） */}
+      {/* 轮播区（无左右翻页按钮：用上方派系 chip、拖拽、←/→ 键切换） */}
       <div className="relative">
-        {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出；桌面可拖拽 */}
+        {/* 平面轮播（无 3D 透视）：overflow-hidden 裁剪远端卡防横向页面溢出；桌面可拖拽。
+            两侧用渐变遮罩淡出，避免侧卡被容器边缘"硬切"出直角边 */}
         <div
           className="relative w-full overflow-hidden select-none md:cursor-grab md:active:cursor-grabbing"
+          style={{
+            WebkitMaskImage: "linear-gradient(to right, transparent, #000 7%, #000 93%, transparent)",
+            maskImage: "linear-gradient(to right, transparent, #000 7%, #000 93%, transparent)",
+          }}
           onTouchStart={onCarouselTouchStart}
           onTouchEnd={onCarouselTouchEnd}
           onPointerDown={onCarouselPointerDown}
@@ -162,10 +167,10 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
               const Icon = getFactionIcon(type.ipKey);
               // 大小与透明度的层级：中央最大，左右各三张依次缩小、越远越透明
               const scale = [1, 0.85, 0.7, 0.58, 0.45][abs] ?? 0.4;
-              const opacity = [1, 0.7, 0.45, 0.25, 0.12][abs] ?? 0.1;
-              // 失焦层级：离中央越远，内容越模糊、遮罩越重，凸显中央卡
-              const blurPx = [0, 2.5, 4, 6, 8][abs] ?? 10;
-              const veilOpacity = [0, 0.15, 0.3, 0.42, 0.55][abs] ?? 0.6;
+              const opacity = [1, 0.78, 0.52, 0.32, 0.16][abs] ?? 0.12;
+              // 失焦层级：离中央越远，内容越模糊、遮罩越轻（只做柔化，不洗白内容），凸显中央卡
+              const blurPx = [0, 2.5, 4.5, 6.5, 9][abs] ?? 10;
+              const veilOpacity = [0, 0.06, 0.14, 0.22, 0.3][abs] ?? 0.34;
               // 平面层叠：仅横向展开 + 层级缩放，无旋转角度；垂直 -50% 居中
               const transform = `translate(calc(-50% + ${d} * var(--fan-offset)), -50%) scale(${scale})`;
               const zIndex = 10 - abs;
@@ -260,27 +265,7 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
             })}
           </div>
         </div>
-
-        {/* 桌面左右翻页按钮：置于裁剪容器外（页边距槽内），垂直对齐舞台中线 */}
-        <button
-          type="button"
-          onClick={() => step(-1)}
-          aria-label="上一个"
-          className="group hidden md:flex absolute -left-4 lg:-left-8 top-[105px] md:top-[180px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/60 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
-        >
-          <ChevronLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-0.5" strokeWidth={1.5} />
-        </button>
-        <button
-          type="button"
-          onClick={() => step(1)}
-          aria-label="下一个"
-          className="group hidden md:flex absolute -right-4 lg:-right-8 top-[105px] md:top-[180px] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full border border-brand-espresso/[0.12] bg-white/70 backdrop-blur-sm text-brand-charcoal/60 hover:bg-white hover:border-brand-espresso/30 hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 transition-colors duration-300 cursor-pointer"
-        >
-          <ChevronRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={1.5} />
-        </button>
       </div>
-
-      {/* 派系导航已上移至轮播上方 */}
 
       <SkinTypeModal data={selected} onClose={closeDetail} hideTestCTA={hideTestCTA} />
     </>
