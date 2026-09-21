@@ -53,13 +53,15 @@ export function LegalModal({ isOpen, onClose, doc }: LegalModalProps) {
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
           />
 
-          {/* 弹窗主体：移动端底部升起，桌面端居中卡片 */}
+          {/* 弹窗主体：移动端底部升起，桌面端居中卡片。
+              弹层挂在页脚 DOM 内（页脚有 tracking-[0.12em]，letter-spacing 会继承进来把正文撑开），
+              故在此重置为 tracking-normal，正文回到默认字距 */}
           <m.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full h-[85dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-lg bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+            className="relative z-10 w-full h-[85dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-lg bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col tracking-normal"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮 */}
