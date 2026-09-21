@@ -602,15 +602,6 @@ export default function HomeClient() {
                 <div aria-hidden="true" className="md:hidden mx-3 my-1.5 border-t border-black/[0.06]" />
                 <button
                   type="button"
-                  onClick={() => { setShowMenu(false); openGiftModal(); }}
-                  aria-haspopup="dialog"
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
-                >
-                  <Gift className="w-4 h-4 text-brand-bronze" strokeWidth={1.75} />
-                  测肤有礼 · 参与赢好礼
-                </button>
-                <button
-                  type="button"
                   onClick={() => { setShowMenu(false); handleOpenFaq(); }}
                   aria-haspopup="dialog"
                   className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
@@ -691,10 +682,10 @@ export default function HomeClient() {
 
             {/* 右侧女性 IP（沙漠派 · 金发蓝缕捧水滴）：立于波浪之上。
                 脚底 → 底部栏上缘的间距 = 底部栏高度（64/56px）：图片底部透明边占图高 5.5%，
-                故 bottom = 栏高 − 5.5%×图高（图高 33/55/69vh） */}
+                故 bottom = 栏高 − 5.5%×图高（图高 30/50/62vh） */}
             <m.div
               aria-hidden="true"
-              className="absolute z-30 -right-[8%] md:-right-[1%] lg:right-[2%] bottom-[calc(64px-1.8vh)] md:bottom-[calc(56px-3vh)] lg:bottom-[calc(56px-3.8vh)]"
+              className="absolute z-30 -right-[8%] md:-right-[1%] lg:right-[2%] bottom-[calc(64px-1.6vh)] md:bottom-[calc(56px-2.8vh)] lg:bottom-[calc(56px-3.4vh)]"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -704,8 +695,8 @@ export default function HomeClient() {
                 alt=""
                 width={960}
                 height={1280}
-                sizes="(min-width: 1024px) 32vw, 44vw"
-                className="h-[33vh] md:h-[55vh] lg:h-[69vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                sizes="(min-width: 1024px) 29vw, 40vw"
+                className="h-[30vh] md:h-[50vh] lg:h-[62vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                 priority
               />
             </m.div>
