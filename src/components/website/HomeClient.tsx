@@ -646,10 +646,10 @@ export default function HomeClient() {
           <div className="relative flex flex-1 flex-col w-full overflow-hidden bg-[#EFE9DA]">
             {/* 左侧男性 IP（极简派 · 手持几何晶体）：移动端空间不足时隐藏。
                 头顶 → 顶栏下缘的间距 = 底部栏高度（56px），与女性 IP"脚底 → 底部栏"的间距上下呼应。
-                图片顶部透明边占图高 13%，故 top = 56px − 13%×图高（图高 48/63vh）；按顶部锚定，不随视口高度漂移 */}
+                图片顶部透明边占图高 13%，故 top = 56px − 13%×图高（图高 54/70vh）；按顶部锚定，不随视口高度漂移 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-0 lg:left-[3%] top-[calc(56px-5.7vh)] lg:top-[calc(56px-7.5vh)] hidden md:block"
+              className="absolute z-10 left-0 lg:left-[3%] top-[calc(56px-7vh)] lg:top-[calc(56px-9.1vh)] hidden md:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -659,8 +659,8 @@ export default function HomeClient() {
                 alt=""
                 width={960}
                 height={1280}
-                sizes="(min-width: 1024px) 34vw, 26vw"
-                className="h-[44vh] lg:h-[58vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                sizes="(min-width: 1024px) 40vw, 33vw"
+                className="h-[54vh] lg:h-[70vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
