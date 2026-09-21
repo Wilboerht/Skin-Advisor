@@ -823,26 +823,3 @@ body.home-dock-raised .dock-panel {
 body.home-modal-open .dock-panel {
   display: none;
 }
-
-/* ========== 首页「测肤有礼」宣传位：呼吸浮动（微弱上下浮动吸引注意，reduced-motion 关闭） ========== */
-/* 动画挂在外层 wrapper 上（CSS 动画会覆盖所在元素的 transform）；
-   按钮本体不带动画，因此 hover 上浮位移不受影响 */
-@keyframes gift-breathe {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-}
-
-.gift-breathe {
-  animation: gift-breathe 4.5s ease-in-out 1s infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gift-breathe {
-    animation: none;
-  }
-}

@@ -712,18 +712,15 @@ export default function HomeClient() {
 
             {/* 左下角「测肤有礼」宣传位（仅 ≥1280px 显示；更窄的桌面宽度下会与 Dock 重叠，
                 移动端入口在 CTA 下方文字链与汉堡菜单）：点击打开活动弹窗。
-                版式＝产品图＋对话气泡：白底产品图下垫一块边缘柔化的白椭圆（让白底融进蓝灰背景），
-                右侧白色气泡带小尾巴指向产品图，不再使用卡片底板。
+                版式＝产品图（素材自带透明底）＋对话气泡：右侧白色气泡带小尾巴指向产品图，不用卡片底板。
                 纵向与 Dock 同一条中线：中线 = 内容区底部上方 88px（Dock 上浮 112 + 半高 32 − 底部栏 56）；
                 产品图高 96px（≥1440px 放大到 112px），故 bottom = 88 − 48/56 = 40/32px（bottom-10，≥1440px 为 bottom-8）。
-                左缘与底部栏内容左缘对齐（px-6 lg:px-10 = 24/40px）。
-                呼吸浮动在外层 wrapper（globals.css .gift-breathe，CSS 动画会覆盖所在元素的
-                transform），按钮本体不带 CSS 动画，hover 上浮位移因此可用 */}
+                左缘与底部栏内容左缘对齐（px-6 lg:px-10 = 24/40px）。 */}
             <m.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.4, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
-              className="gift-breathe absolute z-40 left-6 lg:left-10 bottom-10 min-[1440px]:bottom-8 hidden xl:block"
+              className="absolute z-40 left-6 lg:left-10 bottom-10 min-[1440px]:bottom-8 hidden xl:block"
             >
               <button
                 type="button"
@@ -733,26 +730,14 @@ export default function HomeClient() {
                 aria-label="测肤有礼 · 参与赢好礼"
                 className="group relative flex items-center gap-4 min-[1440px]:gap-5 rounded-2xl transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:transform-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
               >
-                {/* 产品图：白底图下垫一块白椭圆并以 radial-gradient 遮罩柔化边缘（与图同色的白把白底自然接出去）。
-                    遮罩不透明区需覆盖到图片四边之外（图占椭圆半宽 74~76%），故取 80% */}
-                <span className="relative shrink-0">
-                  <span
-                    aria-hidden="true"
-                    className="absolute -inset-x-7 -inset-y-[18px] rounded-[50%] bg-white"
-                    style={{
-                      WebkitMaskImage: "radial-gradient(closest-side, #000 80%, transparent 100%)",
-                      maskImage: "radial-gradient(closest-side, #000 80%, transparent 100%)",
-                    }}
-                  />
-                  <Image
-                    src="/images/gift-badge.webp"
-                    alt=""
-                    aria-hidden="true"
-                    width={640}
-                    height={396}
-                    className="relative h-24 min-[1440px]:h-28 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                  />
-                </span>
+                <Image
+                  src="/images/gift-badge.webp"
+                  alt=""
+                  aria-hidden="true"
+                  width={640}
+                  height={396}
+                  className="relative h-24 min-[1440px]:h-28 w-auto shrink-0 object-contain transition-transform duration-200 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                />
                 {/* 对话气泡：左侧中点伸出小尾巴指向产品图 */}
                 <span className="relative rounded-2xl bg-white px-4 py-2.5 text-left shadow-[0_12px_30px_-10px_rgba(0,38,62,0.25)] transition-shadow duration-200 group-hover:shadow-[0_18px_38px_-10px_rgba(0,38,62,0.32)] motion-reduce:transition-none">
                   <span
