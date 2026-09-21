@@ -1,17 +1,28 @@
 "use client";
 
+import { useState } from "react";
 import { Link } from "next-view-transitions";
 import Image from "next/image";
+import dynamic from "next/dynamic";
+import { PRIVACY_DOC, TERMS_DOC } from "@/lib/legal-content";
+import { useLazyOpen } from "@/hooks/use-lazy-open";
+
+const LegalModal = dynamic(() => import("@/components/website/LegalModal").then((mod) => mod.LegalModal), { ssr: false });
 
 /**
- * HomepageFooter — 首页页脚（版权 + 政策链接 + 备案）
+ * HomepageFooter — 首页页脚（版权 + 政策入口 + 备案）
  * 浅色低存在感。宽屏（≥1440px）：备案居左、链接与版权居右（ICP 的 mr-auto 形成左右两组），单行排列。
  * 窄屏（<1440px）：居中两行——第一行 公安备案 | 版权，第二行 ICP备案 | 隐私政策 | 服务条款；
  * 通过 flex order 重排实现，宽屏顺序与分组不变。
+ * 「隐私政策 / 服务条款」打开站内简版弹窗（LegalModal），完整版在弹窗内链至官网。
  */
 export function HomepageFooter() {
-    const linkClass = "flex !min-h-0 !min-w-0 items-center hover:text-brand-charcoal/60 transition-colors";
+    const linkClass = "flex !min-h-0 !min-w-0 items-center hover:text-brand-charcoal/60 transition-colors cursor-pointer";
     const separatorClass = "text-brand-charcoal/40 select-none";
+
+    // 简版法律文本弹窗：隐私政策 / 服务条款共用一个 LegalModal，同时只开一个
+    const [legalDoc, setLegalDoc] = useState<"privacy" | "terms" | null>(null);
+    const shouldRenderLegal = useLazyOpen(legalDoc !== null);
 
     return (
         <footer className="w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/70 min-[1440px]:flex-nowrap min-[1440px]:justify-start">
@@ -56,15 +67,33 @@ export function HomepageFooter() {
 
             <span aria-hidden="true" className={`order-6 min-[1440px]:order-5 ${separatorClass}`}>|</span>
 
-            <Link href="/privacy" className={`order-7 min-[1440px]:order-4 ${linkClass}`}>
+            <button
+                type="button"
+                onClick={() => setLegalDoc("privacy")}
+                aria-haspopup="dialog"
+                className={`order-7 min-[1440px]:order-4 ${linkClass}`}
+            >
                 隐私政策
-            </Link>
+            </button>
 
             <span aria-hidden="true" className={`order-8 min-[1440px]:order-7 ${separatorClass}`}>|</span>
 
-            <Link href="/terms" className={`order-9 min-[1440px]:order-6 ${linkClass}`}>
+            <button
+                type="button"
+                onClick={() => setLegalDoc("terms")}
+                aria-haspopup="dialog"
+                className={`order-9 min-[1440px]:order-6 ${linkClass}`}
+            >
                 服务条款
-            </Link>
+            </button>
+
+            {shouldRenderLegal && (
+                <LegalModal
+                    isOpen={legalDoc !== null}
+                    onClose={() => setLegalDoc(null)}
+                    doc={legalDoc === "terms" ? TERMS_DOC : PRIVACY_DOC}
+                />
+            )}
         </footer>
     );
 }

@@ -116,7 +116,7 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
       <div
         role="group"
         aria-label="派系导航"
-        className="mb-4 md:mb-5 mx-auto flex flex-wrap justify-center gap-2 md:max-w-[360px] lg:max-w-none"
+        className="mb-4 md:mb-8 mx-auto flex flex-wrap justify-center gap-2 md:max-w-[360px] lg:max-w-none"
       >
         {types.map((t, i) => {
           const active = i === activeIdx;
@@ -158,8 +158,8 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
           onPointerUp={(e) => finishPointerDrag(e, false)}
           onPointerCancel={(e) => finishPointerDrag(e, true)}
         >
-          {/* 卡片舞台：高度与中央卡一致；--fan-offset 控制相邻卡的横向展开距离（移动端/桌面分开） */}
-          <div className="relative h-[210px] md:h-[360px] [--fan-offset:130px] md:[--fan-offset:150px]">
+          {/* 卡片舞台：高度贴合中央卡（500×312.5），避免上下留出多余空白 */}
+          <div className="relative h-[210px] md:h-[320px] [--fan-offset:130px] md:[--fan-offset:150px]">
             {types.map((type, i) => {
               const d = offsetOf(i, activeIdx, types.length);
               const abs = Math.abs(d);

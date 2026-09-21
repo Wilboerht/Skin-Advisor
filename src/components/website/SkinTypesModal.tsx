@@ -86,7 +86,7 @@ export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTyp
               {/* 可滚动内容区 */}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
                 {/* 头部：肌智派徽标 + 标题 + 测肤 CTA（分析等待期复用时隐藏 CTA） */}
-                <div className="text-center mb-5 md:mb-7">
+                <div className="text-center mb-5 md:mb-6">
                   <div className="mb-3 md:mb-4 flex justify-center">
                     <Image
                       src="/images/jzp-eyebrow.png"

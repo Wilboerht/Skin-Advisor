@@ -674,64 +674,6 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 左下角「测肤有礼」宣传位（仅 ≥1440px 显示；更窄的宽度下会与 Dock 重叠，
-                窄屏入口在 CTA 下方文字链与汉堡菜单）：点击打开活动弹窗。
-                版式＝产品图（素材自带透明底）＋对话气泡：右侧白色气泡带小尾巴指向产品图，不用卡片底板。
-                纵向与 Dock 同一条中线：中线 = 内容区底部上方 88px（Dock 上浮 112 + 半高 32 − 底部栏 56）；
-                产品图高 112px，故 bottom = 88 − 56 = 32px（bottom-8）。
-                左缘与底部栏内容左缘对齐（min-[1440px]:px-10 = 40px）。 */}
-            <m.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: prefersReducedMotion ? 0 : 0.4, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
-              className="absolute z-40 left-10 bottom-8 hidden min-[1440px]:block"
-            >
-              <button
-                type="button"
-                onClick={openGiftModal}
-                aria-haspopup="dialog"
-                aria-expanded={showGiftModal}
-                aria-label="测肤有礼 · 参与赢好礼"
-                className="group relative flex items-center gap-5 rounded-2xl transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:transform-none cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
-              >
-                <Image
-                  src="/images/gift-badge.webp"
-                  alt=""
-                  aria-hidden="true"
-                  width={640}
-                  height={396}
-                  className="relative h-28 w-auto shrink-0 object-contain transition-transform duration-200 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                />
-                {/* 对话气泡：椭圆气球（50% 圆角椭圆）＋左下小尾巴，文字居中对齐；
-                    椭圆与尾巴同为白色、相互叠放，外层 drop-shadow 让两者共用一条投影轮廓 */}
-                <span
-                  className="relative block h-[74px] w-[184px] shrink-0"
-                  style={{ filter: "drop-shadow(0 10px 10px rgba(0,38,62,0.18))" }}
-                >
-                  <span aria-hidden="true" className="absolute inset-0 rounded-[50%] bg-white" />
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 20 22"
-                    fill="currentColor"
-                    className="absolute -left-[10px] bottom-[18px] h-[26px] w-5 text-white"
-                  >
-                    <path d="M20 0 C13 3 6 9 0 22 C6 17 13 14 20 12 Z" />
-                  </svg>
-                  <span className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                    <span className="block text-[15px] font-bold tracking-[0.08em] text-brand-charcoal">测肤有礼</span>
-                    <span className="mt-0.5 block text-[11px] tracking-[0.04em] text-brand-charcoal/60">参与赢 NIHPLOD 正装好礼</span>
-                  </span>
-                  {/* 活动角标：金色圆形礼物徽章，压在气泡右上圆弧上 */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute -top-1 right-[13px] flex h-7 w-7 items-center justify-center rounded-full bg-[#C9A86C] text-white shadow-[0_4px_10px_-2px_rgba(201,168,108,0.7)] rotate-6"
-                  >
-                    <Gift className="w-3.5 h-3.5" strokeWidth={2} />
-                  </span>
-                </span>
-              </button>
-            </m.div>
-
             {/* 中央文案：文字与按钮各自绝对定位、互不联动——
                 文字（主标题 + 副标题含蓝色问号 = 跳转「了解肌智派」）贴波浪上方（米色区下半部）；
                 CTA 按钮（硬投影白胶囊）定在蓝色区上部（内容区 62% 高处） */}
