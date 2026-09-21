@@ -12,12 +12,14 @@ import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { isSafeInternalPath } from "@/lib/url-utils";
 import { LoginGuide } from "@/components/website/LoginGuide";
+import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
 
 // SSO 迁移后，login / register / forgot_password 统一引导至主站账号中心，
 // 仅 wechat_bind 仍在弹窗内完成。
 
 export function AuthModal() {
     const { isOpen, view, closeAuthModal } = useAuthModal();
+    const { openLegalDoc } = useLegalDocModal();
     const toast = useToast();
 
     // 说明：?login=wechat_bind 深链接检测已上移至常驻的 AuthUrlDetector
@@ -347,9 +349,10 @@ export function AuthModal() {
                                                     </div>
                                                     <span className="text-xs text-brand-charcoal/50 tracking-wide">
                                                         我已阅读并同意
-                                                        <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                                        {/* 位于 <label> 内：preventDefault 阻止触发达成勾选，stopPropagation 阻止冒泡 */}
+                                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openLegalDoc("terms"); }} className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer">《用户协议》</button>
                                                         和
-                                                        <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openLegalDoc("privacy"); }} className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer">《隐私政策》</button>
                                                     </span>
                                                 </label>
                                             </m.div>
@@ -495,9 +498,10 @@ export function AuthModal() {
                                     </div>
                                     <span className="text-xs text-brand-charcoal/50 tracking-wide">
                                         我已阅读并同意
-                                        <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                        {/* 位于 <label> 内：preventDefault 阻止触发达成勾选，stopPropagation 阻止冒泡 */}
+                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openLegalDoc("terms"); }} className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer">《用户协议》</button>
                                         和
-                                        <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openLegalDoc("privacy"); }} className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer">《隐私政策》</button>
                                     </span>
                                 </label>
                                 <div className="pt-2">

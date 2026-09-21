@@ -761,7 +761,7 @@ export default function HomeClient() {
                 <h1 className="leading-[1.12]">
                   <span className="block -mr-[0.1em] text-[54px] md:text-[80px] lg:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
                   <span className="block mt-1.5 md:mt-2">
-                    <span className="relative inline-flex items-center justify-center -mr-[0.14em] text-[26px] md:text-[38px] lg:text-[44px] font-medium tracking-[0.14em] text-[#1c1c1c]">
+                    <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[26px] md:text-[38px] lg:text-[44px] font-medium tracking-[0.1em] text-[#1c1c1c]">
                       你的肌肤派系
                       {/* 蓝色问号：打开「了解肌智派」弹窗（扩大触达区：移动端热区外扩 8px） */}
                       <button

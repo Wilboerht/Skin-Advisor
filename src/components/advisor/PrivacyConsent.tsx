@@ -5,6 +5,7 @@ import { m } from "framer-motion";
 import { Shield, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
 
 interface PrivacyConsentProps {
     onConsent: () => void;
@@ -15,6 +16,7 @@ export const CONSENT_VERSION = "2025-06-01";
 export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
     const [agreed, setAgreed] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
+    const { openLegalDoc } = useLegalDocModal();
 
     return (
         <div className="flex w-full flex-col items-center">
@@ -135,9 +137,10 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         </div>
                         <span className="text-xs text-[#5E5E5E] leading-relaxed">
                             我已阅读并同意
-                            <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] underline underline-offset-2 mx-0.5">《隐私政策》</a>
+                            {/* 位于 <label> 内：preventDefault 阻止触发达成勾选，stopPropagation 阻止冒泡 */}
+                            <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openLegalDoc("privacy"); }} className="text-[#3D4430] underline underline-offset-2 mx-0.5 cursor-pointer">《隐私政策》</button>
                             和
-                            <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] underline underline-offset-2 mx-0.5">《服务条款》</a>
+                            <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openLegalDoc("terms"); }} className="text-[#3D4430] underline underline-offset-2 mx-0.5 cursor-pointer">《服务条款》</button>
                             ，了解并同意上述数据收集与使用方式。
                         </span>
                     </label>

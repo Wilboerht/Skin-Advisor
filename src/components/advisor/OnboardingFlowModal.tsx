@@ -6,6 +6,7 @@ import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
 
 interface OnboardingFlowProps {
     isOpen: boolean;
@@ -39,6 +40,7 @@ export function OnboardingFlowModal({
     isLoggedIn,
 }: OnboardingFlowProps) {
     const toast = useToast();
+    const { openLegalDoc } = useLegalDocModal();
     // Determine which screens to show
     const hasNicknameScreen = !isLoggedIn || !nickname;
     const hasLegalScreen = !isLoggedIn;
@@ -490,25 +492,21 @@ export function OnboardingFlowModal({
                                                 }}
                                             >
                                                 根据相关法律法规，请确认您已年满 14 周岁，且已阅读并同意我们的
-                                                <a
-                                                    href="https://nihplod.cn/privacy"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-brand-charcoal/75 mx-1"
-                                                    onClick={(e) => e.stopPropagation()}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); openLegalDoc("privacy"); }}
+                                                    className="text-brand-charcoal/75 mx-1 underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer"
                                                 >
                                                     隐私政策
-                                                </a>
+                                                </button>
                                                 与
-                                                <a
-                                                    href="https://nihplod.cn/terms"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-brand-charcoal/75 mx-1"
-                                                    onClick={(e) => e.stopPropagation()}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); openLegalDoc("terms"); }}
+                                                    className="text-brand-charcoal/75 mx-1 underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer"
                                                 >
                                                     服务条款
-                                                </a>。
+                                                </button>。
                                             </span>
                                         </div>
                                     </div>

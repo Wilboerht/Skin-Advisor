@@ -4,8 +4,8 @@ import { useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Sun, ScanEye, ScanFace, ChevronLeft } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
 import { SKIN_STATE_OPTIONS, DEFAULT_SKIN_STATE, isMakeupState, type SkinStateValue } from "@/lib/skin-state";
 
 interface ScanGuideModalProps {
@@ -25,8 +25,8 @@ const CHIP_LABELS: Record<SkinStateValue, string> = {
 };
 
 export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProps) {
-
     const [skinState, setSkinState] = useState<SkinStateValue>(DEFAULT_SKIN_STATE);
+    const { openLegalDoc } = useLegalDocModal();
     const isMakeup = isMakeupState(skinState);
 
     // 拍摄准备：带妆时"保持素颜"的提示与实际状态矛盾，改为"如实记录状态"
@@ -202,9 +202,9 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                             <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
                             <span className="hidden sm:inline text-brand-charcoal/30">·</span>
                             <div className="hidden sm:flex items-center gap-4 tracking-[0.12em]">
-                                <Link href="https://nihplod.cn/privacy" className="hover:text-brand-charcoal/80 transition-colors duration-300">隐私政策</Link>
+                                <button type="button" onClick={() => openLegalDoc("privacy")} className="hover:text-brand-charcoal/80 transition-colors duration-300 cursor-pointer">隐私政策</button>
                                 <span className="text-brand-charcoal/30">·</span>
-                                <Link href="https://nihplod.cn/terms" className="hover:text-brand-charcoal/80 transition-colors duration-300">服务条款</Link>
+                                <button type="button" onClick={() => openLegalDoc("terms")} className="hover:text-brand-charcoal/80 transition-colors duration-300 cursor-pointer">服务条款</button>
                             </div>
                         </div>
                     </div>

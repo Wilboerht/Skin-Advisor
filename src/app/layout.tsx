@@ -102,6 +102,8 @@ import { AuthModalGate } from "@/components/auth/AuthModalGate";
 import { AuthUrlDetector } from "@/components/auth/AuthUrlDetector";
 import { DiaryModalProvider } from "@/components/website/DiaryModalContext";
 import { DiaryModalGate } from "@/components/website/DiaryModalGate";
+import { LegalDocModalProvider } from "@/components/website/LegalDocModalContext";
+import { LegalDocModalGate } from "@/components/website/LegalDocModalGate";
 import { WebsiteLayoutClient } from "@/components/website/WebsiteLayoutClient";
 import { BottomDock } from "@/components/website/BottomDock";
 import { MotionConfigProvider } from "@/components/MotionConfigProvider";
@@ -156,6 +158,7 @@ export default function RootLayout({
             <UserProvider>
               <AuthModalProvider>
                 <DiaryModalProvider>
+                <LegalDocModalProvider>
                 <WebsiteLayoutClient>
                   <main
                     id="main-content"
@@ -173,8 +176,11 @@ export default function RootLayout({
                 </Suspense>
                 {/* 护肤档案弹层：全局开关（Dock/账户弹层均为入口）；Provider 需包住页面内容，结果页 UserBadge 内的 AccountModal 也消费该 context。懒挂载：首次打开才加载 */}
                 <DiaryModalGate />
+                {/* 隐私政策/服务条款弹层：各弹窗内的法务链接统一入口，层级高于所有业务弹窗 */}
+                <LegalDocModalGate />
                 {/* 全端底部 Dock：置于 <main> 外，避开 main 的 pointer-events hack；组件内按路由自我排除 */}
                 <BottomDock />
+                </LegalDocModalProvider>
                 </DiaryModalProvider>
               </AuthModalProvider>
             </UserProvider>
