@@ -649,13 +649,13 @@ export default function HomeClient() {
             {/* 左后：极简派男性（银灰西装）：仅 ≥1440px 显示（z-10，波浪层之下）。
                 PC 首页专属新素材 hero/back-left-male.webp（旧素材及其它页面不受影响）：
                 960×1280 画幅、顶部透明边占图高 2.19%（实测），
-                top = 56px − 2.19%×图高（图高 67vh）= calc(56px-1.47vh) → 头顶落在顶栏下 56px（= 底部栏高度）；
-                图高/width/height/sizes 与右后一致，两人头顶同高（顶部留白不同故 top 各自补偿）。
+                top = 56px − 2.19%×图高（图高 80vh，比右后大一档）= calc(56px-1.75vh) → 头顶落在顶栏下 56px（= 底部栏高度）；
+                width/height/sizes 与右后同规格，两人头顶同高（顶部留白不同故 top 各自补偿）。
                 水平：left-[14%] / right-[15%]。
                 替换图片须保持 960×1280 画幅，顶部透明边比例变化需同步 top 公式 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[14%] top-[calc(56px-1.47vh)] hidden min-[1440px]:block"
+              className="absolute z-10 left-[14%] top-[calc(56px-1.75vh)] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -666,7 +666,7 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="36vw"
-                className="h-[67vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[80vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
@@ -722,11 +722,11 @@ export default function HomeClient() {
             {/* 右后：敏感派女性（紫发托腮）：仅 ≥1440px 显示（z-10，波浪层之下）。
                 PC 首页专属新素材 hero/back-right-female.webp（派系弹窗仍用 sensitive/sensitive_female.webp 旧图）：
                 960×1280 画幅、顶部透明边占图高 3.36%（实测），
-                top = 56px − 3.36%×图高（图高 67vh）= calc(56px-2.25vh)；
+                top = 56px − 3.36%×图高（图高 72vh）= calc(56px-2.42vh)；
                 与左后极简男图高/width/height/sizes 一致，头顶同高（top 按各自留白补偿）、左右对称 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 right-[15%] top-[calc(56px-2.25vh)] hidden min-[1440px]:block"
+              className="absolute z-10 right-[15%] top-[calc(56px-2.42vh)] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.25, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -737,7 +737,7 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="36vw"
-                className="h-[67vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[72vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
