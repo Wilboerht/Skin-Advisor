@@ -25,7 +25,7 @@ export function HomepageFooter() {
     const shouldRenderLegal = useLazyOpen(legalDoc !== null);
 
     return (
-        <footer className="w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/70 min-[1440px]:flex-nowrap min-[1440px]:justify-start">
+        <footer className="w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/70 pc:flex-nowrap pc:justify-start">
             {/* 公安备案：窄屏第一行左，宽屏左组第一 */}
             <Link
                 href="http://www.beian.gov.cn/portal/registerSystemInfo"
@@ -47,42 +47,42 @@ export function HomepageFooter() {
 
             {/* 版权：窄屏第一行右，宽屏右组最后；窄屏用简写避免拥挤，
                 年份跨年瞬间 SSR/CSR 会不一致，抑制 hydration 告警 */}
-            <p suppressHydrationWarning className="order-3 min-[1440px]:order-8">
-                <span className="hidden min-[1440px]:inline">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
-                <span className="min-[1440px]:hidden">&copy; {new Date().getFullYear()} NIHPLOD</span>
+            <p suppressHydrationWarning className="order-3 pc:order-8">
+                <span className="hidden pc:inline">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
+                <span className="pc:hidden">&copy; {new Date().getFullYear()} NIHPLOD</span>
             </p>
 
             {/* 窄屏断行（宽屏不渲染） */}
-            <div aria-hidden="true" className="order-4 basis-full h-0 min-[1440px]:hidden" />
+            <div aria-hidden="true" className="order-4 basis-full h-0 pc:hidden" />
 
             {/* ICP 备案：窄屏第二行首，宽屏左组第二；mr-auto 把后续项推到右侧形成右组 */}
             <Link
                 href="https://beian.miit.gov.cn/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`order-5 min-[1440px]:order-3 min-[1440px]:mr-auto ${linkClass}`}
+                className={`order-5 pc:order-3 pc:mr-auto ${linkClass}`}
             >
                 沪ICP备2026014764号-1
             </Link>
 
-            <span aria-hidden="true" className={`order-6 min-[1440px]:order-5 ${separatorClass}`}>|</span>
+            <span aria-hidden="true" className={`order-6 pc:order-5 ${separatorClass}`}>|</span>
 
             <button
                 type="button"
                 onClick={() => setLegalDoc("privacy")}
                 aria-haspopup="dialog"
-                className={`order-7 min-[1440px]:order-4 ${linkClass}`}
+                className={`order-7 pc:order-4 ${linkClass}`}
             >
                 隐私政策
             </button>
 
-            <span aria-hidden="true" className={`order-8 min-[1440px]:order-7 ${separatorClass}`}>|</span>
+            <span aria-hidden="true" className={`order-8 pc:order-7 ${separatorClass}`}>|</span>
 
             <button
                 type="button"
                 onClick={() => setLegalDoc("terms")}
                 aria-haspopup="dialog"
-                className={`order-9 min-[1440px]:order-6 ${linkClass}`}
+                className={`order-9 pc:order-6 ${linkClass}`}
             >
                 服务条款
             </button>

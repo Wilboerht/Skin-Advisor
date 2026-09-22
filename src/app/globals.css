@@ -42,6 +42,13 @@
   /* 使用 srgb 色彩空间确保海报截图颜色一致 */
   --default-color-space: srgb;
 
+  /* 命名断点（统一来源，替代散落的 min-[1440px] 魔法值）：
+     pc = 桌面版式起点 1440（首页四人同台、88px 顶栏）；
+     2k = 1920、4k = 2560 为预留的大屏档位（当前暂无使用处，需要时直接用 2k:/4k: 变体） */
+  --breakpoint-pc: 1440px;
+  --breakpoint-2k: 1920px;
+  --breakpoint-4k: 2560px;
+
   --color-cream: #F0EDE1;
   --color-olive: #3D4430;
   --color-olive-light: rgba(61, 68, 48, 0.15);

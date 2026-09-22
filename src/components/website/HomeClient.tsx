@@ -482,7 +482,7 @@ export default function HomeClient() {
         type="button"
         onClick={handleStart}
         disabled={isLoading || isNavigating}
-        className="relative inline-flex items-center justify-center gap-2 h-12 min-[1440px]:h-14 px-10 min-[1440px]:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] min-[1440px]:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+        className="relative inline-flex items-center justify-center gap-2 h-12 pc:h-14 px-10 pc:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] pc:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         {/* FREE 角标：按钮子元素，随按钮悬浮/点按位移一起动；纯装饰，不拦截点击。
             移动端 32px 骑角：-top-4/-right-4（两轴各露一半），≥1440px 保持 48px */}
@@ -492,7 +492,7 @@ export default function HomeClient() {
           aria-hidden="true"
           width={512}
           height={512}
-          className="absolute -top-4 -right-4 min-[1440px]:-top-6 min-[1440px]:-right-5 w-8 min-[1440px]:w-12 h-auto rotate-12 pointer-events-none select-none drop-shadow-[0_4px_8px_rgba(0,38,62,0.18)]"
+          className="absolute -top-4 -right-4 pc:-top-6 pc:-right-5 w-8 pc:w-12 h-auto rotate-12 pointer-events-none select-none drop-shadow-[0_4px_8px_rgba(0,38,62,0.18)]"
         />
         {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
         <span>{isLoading ? "正在连接" : "立刻体验"}</span>
@@ -502,9 +502,9 @@ export default function HomeClient() {
         type="button"
         onClick={openGiftModal}
         aria-haspopup="dialog"
-        className="mt-4 min-[1440px]:mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] tracking-[0.1em] text-[#00263E]/85 min-[1440px]:text-white/85 transition-colors hover:text-[#00263E] min-[1440px]:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 min-[1440px]:focus-visible:ring-white/50"
+        className="mt-4 pc:mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] tracking-[0.1em] text-[#00263E]/85 pc:text-white/85 transition-colors hover:text-[#00263E] pc:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:focus-visible:ring-white/50"
       >
-        <Gift className="w-3.5 h-3.5 min-[1440px]:w-4 min-[1440px]:h-4" strokeWidth={1.75} />
+        <Gift className="w-3.5 h-3.5 pc:w-4 pc:h-4" strokeWidth={1.75} />
         <span>测肤分享赢好礼</span>
       </button>
     </>
@@ -546,31 +546,31 @@ export default function HomeClient() {
             aria-label={showMenu ? "关闭菜单" : "打开菜单"}
             aria-expanded={showMenu}
             aria-controls="home-menu"
-            className="relative z-50 flex h-[72px] w-28 min-[1440px]:h-[88px] min-[1440px]:w-40 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2"
+            className="relative z-50 flex h-[72px] w-28 pc:h-[88px] pc:w-40 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2"
           >
             {showMenu ? <X className="w-6 h-6" strokeWidth={2} /> : <Menu className="w-6 h-6" strokeWidth={2} />}
           </button>
           {/* 中：肌智派徽章，绝对定位相对顶栏整体居中，不受左右两侧宽度影响；<1440px 隐藏（改放 Hero 标题上方） */}
-          <Link href="/" aria-label="回到首页" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden min-[1440px]:inline-flex items-center" onClick={() => setShowMenu(false)}>
+          <Link href="/" aria-label="回到首页" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden pc:inline-flex items-center" onClick={() => setShowMenu(false)}>
             <Image
               src="/images/jzp-eyebrow.png"
               alt="肌智派"
               width={256}
               height={156}
               sizes="(min-width: 1440px) 92px, 72px"
-              className="h-11 min-[1440px]:h-14 w-auto object-contain"
+              className="h-11 pc:h-14 w-auto object-contain"
               priority
             />
           </Link>
           {/* 右：NIHPLOD 品牌 logo（容器定宽与左侧汉堡按钮一致，左右对称） */}
-          <div className="w-28 min-[1440px]:w-40 pr-4 min-[1440px]:pr-8 flex items-center justify-end select-none">
+          <div className="w-28 pc:w-40 pr-4 pc:pr-8 flex items-center justify-end select-none">
             <Image
               src="/NIHPLOD-logo.svg"
               alt="NIHPLOD"
               width={120}
               height={30}
               sizes="(min-width: 1440px) 120px, 96px"
-              className="h-6 min-[1440px]:h-8 w-auto object-contain"
+              className="h-6 pc:h-8 w-auto object-contain"
               priority
             />
           </div>
@@ -651,11 +651,13 @@ export default function HomeClient() {
                 960×1280 画幅、顶部透明边占图高 2.19%（实测），
                 top = 56px − 2.19%×图高（图高 86vh，比右后大一档）= calc(56px-1.88vh) → 头顶落在顶栏下 56px（= 底部栏高度）；
                 width/height/sizes 与右后同规格，两人头顶同高（顶部留白不同故 top 各自补偿）。
-                水平：left-[12%] / right-[13%]。
+                水平：left-[12%] / right-[13%]（与设计稿一致，不随屏宽内收）。
+                超大屏/窄窗保护：图高 = min(86vh,57vw)、top 补偿同步 min(1.88vh,1.25vw)，
+                仅在竖屏/近方形窄窗生效（横屏宽高比 ≥1.55 时与 86vh 完全一致，不改变现有观感）。
                 替换图片须保持 960×1280 画幅，顶部透明边比例变化需同步 top 公式 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[12%] top-[calc(56px-1.88vh)] hidden min-[1440px]:block"
+              className="absolute z-10 left-[12%] top-[calc(56px_-_min(1.88vh,1.25vw))] hidden pc:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -666,7 +668,7 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="36vw"
-                className="h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[min(86vh,57vw)] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
@@ -674,11 +676,13 @@ export default function HomeClient() {
             {/* 左前：沙漠派女性（金发蓝缕）：立于波浪之上（z-30），脚部藏进底部栏（底栏 z-40 自然压盖）。
                 手机端与右前沙漠男成对：保持 h-[36vh]，bottom-[6vh]，-left-[8%]，且 z-10 置于波浪层（z-20）之下——
                 分界线以下的腿部被蓝色遮住（没入波浪），露出的上身约在 Hero 高度 55%~69% 之间（文字层 z-40 再压在她上面）；
-                ≥1440px：z-30 站到波浪之上、h-[100vh]、bottom −44vh（宽屏下沉，与 h 同步加大以保持头部不过高）。
+                ≥1440px：z-30 站到波浪之上、h-[min(100vh,66vw)]、bottom −min(44vh,29vw)。
+                下沉量与图高成比例（44vh = 100vh×44%，与 66vw×44%≈29vw 同源），窄窗收窄时同步减小，
+                避免人物整体掉进底部裁切区之外消失。
                 素材：PC 首页专属新图 hero/front-left-female.webp（手机端同样使用，旧素材仅供派系弹窗） */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 min-[1440px]:z-30 -left-[8%] min-[1440px]:-left-[4%] bottom-[6vh] min-[1440px]:-bottom-[44vh]"
+              className="absolute z-10 pc:z-30 -left-[8%] pc:-left-[4%] bottom-[6vh] pc:-bottom-[min(44vh,29vw)]"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -689,7 +693,7 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="(min-width: 1440px) 47vw, 44vw"
-                className="h-[36vh] min-[1440px]:h-[100vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                className="h-[36vh] pc:h-[min(100vh,66vw)] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                 priority
               />
             </m.div>
@@ -700,20 +704,20 @@ export default function HomeClient() {
                 蓝色区占 Hero 高度：<1440px 32%（下移 24%）、≥1440px 46%（下移 7%，相对 SVG 自身高度，随视口等比缩放） */}
             <svg
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full translate-y-[24%] min-[1440px]:translate-y-[7%]"
+              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full translate-y-[24%] pc:translate-y-[7%]"
               viewBox="0 0 1440 400"
               preserveAspectRatio="none"
             >
               {/* <1440px：平缓版（振幅约减半、控制点向端线收拢更平缓，均值不变故蓝色面积不变）
                   + 方向为「先凹再突」：左侧先下凹、右侧再上突 */}
               <path
-                className="min-[1440px]:hidden"
+                className="pc:hidden"
                 d="M0,100 C480,125 960,55 1440,90 L1440,400 L0,400 Z"
                 fill="#93A5BE"
               />
               {/* ≥1440px：明显波幅版 */}
               <path
-                className="hidden min-[1440px]:block"
+                className="hidden pc:block"
                 d="M0,87 C480,-73 960,197 1440,57 L1440,400 L0,400 Z"
                 fill="#93A5BE"
               />
@@ -722,11 +726,12 @@ export default function HomeClient() {
             {/* 右后：敏感派女性（紫发托腮）：仅 ≥1440px 显示（z-10，波浪层之下）。
                 PC 首页专属新素材 hero/back-right-female.webp（派系弹窗仍用 sensitive/sensitive_female.webp 旧图）：
                 960×1280 画幅、顶部透明边占图高 3.36%（实测），
-                top = 56px − 3.36%×图高（图高 78vh）= calc(56px-2.62vh)；
-                与左后极简男 width/height/sizes 同规格，图高比左后小一档；两人头顶同高（top 按各自留白补偿）、左右对称 */}
+                top = 56px − 3.36%×图高（图高 min(78vh,52vw)）= calc(56px - min(2.62vh,1.75vw))；
+                与左后极简男 width/height/sizes 同规格，图高比左后小一档；两人头顶同高（top 按各自留白补偿）、左右对称。
+                水平：right-[13%]（同左后，不随屏宽内收）；窄窗保护范围同左后 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 right-[13%] top-[calc(56px-2.62vh)] hidden min-[1440px]:block"
+              className="absolute z-10 right-[13%] top-[calc(56px_-_min(2.62vh,1.75vw))] hidden pc:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.25, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -737,18 +742,19 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="36vw"
-                className="h-[78vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[min(78vh,52vw)] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
 
             {/* 右前：沙漠派男性：立于波浪之上（z-30），与左前沙漠女成对（手机端两个人物同屏）。
-                手机端：h-[42vh]、-right-[15%]、bottom −4vh（放大于女、脚部沉进底栏、头部约在 Hero 高度 60%）；
+                手机端：h-[46vh]、-right-[15%]、bottom −4vh（放大于女、脚部沉进底栏）；
                 外层 home-male-dock-clip 是 Hero 通高裁切台：Dock 顶边以下整段裁掉（腿不外露，视觉上被 Dock 遮挡），
-                裁切线与人物 bottom 解耦；≥1440px 裁切自动关闭，h-[108vh]（比左前大一档，下沉同步加大以保持头部位置）、-right-[8%]、bottom −52vh */}
+                裁切线与人物 bottom 解耦；≥1440px 裁切自动关闭，h-[min(108vh,72vw)]（比左前大一档）、-right-[8%]、
+                bottom −min(52vh,34.6vw)（下沉量与图高成比例：52vh = 108vh×48%，与 72vw×48%≈34.6vw 同源，窄窗同步收缩） */}
             <div aria-hidden="true" className="home-male-dock-clip pointer-events-none absolute inset-0 z-30">
               <m.div
-                className="absolute -right-[15%] -bottom-[4vh] min-[1440px]:-right-[8%] min-[1440px]:-bottom-[52vh]"
+                className="absolute -right-[15%] -bottom-[4vh] pc:-right-[8%] pc:-bottom-[min(52vh,34.6vw)]"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: prefersReducedMotion ? 0 : 0.35, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -759,7 +765,7 @@ export default function HomeClient() {
                   width={960}
                   height={1280}
                   sizes="(min-width: 1440px) 51vw, 40vw"
-                  className="h-[42vh] min-[1440px]:h-[108vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                  className="h-[46vh] pc:h-[min(108vh,72vw)] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                   priority
                 />
               </m.div>
@@ -769,9 +775,10 @@ export default function HomeClient() {
                 <1440px：徽章 + 标题 + 副标题 + CTA（含测肤有礼）同处文字流，顶部对齐、整体居中；
                 ≥1440px：CTA 独立绝对定位在内容区 69% 高处（蓝色区上部），与文字区互不联动 */}
             <section className="relative z-40 flex-1 w-full text-center">
-              {/* 文字区：顶部对齐——顶部内边距抵消固定顶栏高度（72/88px），文字顶边紧贴顶栏下缘；
+              {/* 文字区：顶部对齐——壳层（.home-shell）已为固定顶栏预留 72/88px，这里再叠加呼吸空间，
+                  移动端 56px（收窄一档，文字更靠上）、PC 88px；
                   h-[55%] 仅作容器兜底，文字实际高度小于容器，不触及波浪线 */}
-              <div className="absolute inset-x-0 top-0 flex h-[55%] flex-col items-center justify-start px-6 pt-[72px] min-[1440px]:pt-[88px] opacity-0 animate-fade-in-up">
+              <div className="absolute inset-x-0 top-0 flex h-[55%] flex-col items-center justify-start px-6 pt-[56px] pc:pt-[88px] opacity-0 animate-fade-in-up">
                 {/* 肌智派徽章：<1440px 从顶栏中央移入此处（顶栏只留汉堡 + NIHPLOD）；≥1440px 隐藏避免与顶栏重复。
                     mt-2 与顶栏下缘留 8px 呼吸；mb-8 与标题留 32px，和「副标题 → 立刻体验」间距（mt-8）同档 */}
                 <Image
@@ -780,15 +787,15 @@ export default function HomeClient() {
                   width={256}
                   height={156}
                   sizes="80px"
-                  className="mt-2 mb-8 h-12 w-auto object-contain min-[1440px]:hidden"
+                  className="mt-2 mb-8 h-12 w-auto object-contain pc:hidden"
                   priority
                 />
                 <h1 className="leading-[1.12]">
                   {/* 移动端（<1440px）：觉醒 + 你的肌肤派系 同一行、同字号（clamp 24~28px 随屏宽自适应，小屏不换行），
                       仅颜色区分（觉醒品牌蓝 / 其余深灰）；≥1440px 恢复两行大标题（觉醒 96px / 其余 44px） */}
-                  <span className="text-[clamp(24px,7.4vw,28px)] min-[1440px]:-mr-[0.1em] min-[1440px]:block min-[1440px]:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
-                  <span className="min-[1440px]:block min-[1440px]:mt-2">
-                    <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[clamp(24px,7.4vw,28px)] min-[1440px]:text-[44px] font-medium tracking-[0.1em] text-[#1c1c1c]">
+                  <span className="text-[clamp(24px,7.4vw,28px)] pc:-mr-[0.1em] pc:block pc:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
+                  <span className="pc:block pc:mt-2">
+                    <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[clamp(24px,7.4vw,28px)] pc:text-[44px] font-medium tracking-[0.1em] text-[#1c1c1c]">
                       你的肌肤派系
                       {/* 蓝色问号：打开「了解肌智派」弹窗（扩大触达区：移动端热区外扩 8px） */}
                       <button
@@ -796,7 +803,7 @@ export default function HomeClient() {
                         onClick={openSkinTypesModal}
                         aria-haspopup="dialog"
                         aria-label="了解肌智派"
-                        className="absolute left-full top-[calc(50%+0.05em)] -translate-y-1/2 ml-1 min-[1440px]:ml-2 inline-flex w-6 h-6 min-[1440px]:w-8 min-[1440px]:h-8 items-center justify-center rounded-full bg-[#2E4D9E] text-white transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer touch-manipulation before:absolute before:inset-0 before:content-[''] max-[1440px]:before:-inset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
+                        className="absolute left-full top-[calc(50%+0.05em)] -translate-y-1/2 ml-1 pc:ml-2 inline-flex w-6 h-6 pc:w-8 pc:h-8 items-center justify-center rounded-full bg-[#2E4D9E] text-white transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer touch-manipulation before:absolute before:inset-0 before:content-[''] max-pc:before:-inset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2"
                       >
                         <svg
                           aria-hidden="true"
@@ -806,7 +813,7 @@ export default function HomeClient() {
                           strokeWidth={3}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="w-[18px] h-[18px] min-[1440px]:w-[22px] min-[1440px]:h-[22px]"
+                          className="w-[18px] h-[18px] pc:w-[22px] pc:h-[22px]"
                         >
                           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                           <path d="M12 17h.01" />
@@ -815,19 +822,19 @@ export default function HomeClient() {
                     </span>
                   </span>
                 </h1>
-                <p className="mt-4 min-[1440px]:mt-6 text-[14px] min-[1440px]:text-[16px] leading-[1.75] min-[1440px]:leading-[1.9] tracking-[0.05em] text-[#84817a]">
+                <p className="mt-4 pc:mt-6 text-[14px] pc:text-[16px] leading-[1.75] pc:leading-[1.9] tracking-[0.05em] text-[#84817a]">
                   获得专业的面部分析报告
                   <br />
                   您口袋里的专属的护肤管家
                 </p>
                 {/* 移动端（<1440px）：CTA（主按钮 + 测肤有礼）接在副标题下方、随文字流居中对齐；
                     ≥1440px 由下方 69% 高处的绝对定位区渲染（两处互斥显示） */}
-                <div className="mt-8 flex min-[1440px]:hidden flex-col items-center">
+                <div className="mt-8 flex pc:hidden flex-col items-center">
                   {heroCta}
                 </div>
               </div>
               {/* CTA 区（仅 ≥1440px）：独立定位在内容区 69% 高处（蓝色区上部、留有余量），与文字区互不联动 */}
-              <div className="absolute inset-x-0 top-[69%] -translate-y-1/2 hidden min-[1440px]:flex flex-col items-center px-6 opacity-0 animate-fade-in-up">
+              <div className="absolute inset-x-0 top-[69%] -translate-y-1/2 hidden pc:flex flex-col items-center px-6 opacity-0 animate-fade-in-up">
                 {heroCta}
               </div>
             </section>
@@ -835,7 +842,7 @@ export default function HomeClient() {
 
           {/* 底部栏：淡奶油色通栏（比 Hero 上区的米色更浅），并入首屏；内容全宽，备案居左、链接与版权居右 */}
           <div className="relative z-40 bg-[#FBF9F3]">
-            <div className="w-full px-6 min-[1440px]:px-10 h-16 min-[1440px]:h-14 flex items-center">
+            <div className="w-full px-6 pc:px-10 h-16 pc:h-14 flex items-center">
               <HomepageFooter />
             </div>
           </div>
