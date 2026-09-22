@@ -42,10 +42,10 @@
   /* 使用 srgb 色彩空间确保海报截图颜色一致 */
   --default-color-space: srgb;
 
-  /* 命名断点（统一来源，替代散落的 min-[1440px] 魔法值）：
-     pc = 桌面版式起点 1440（首页四人同台、88px 顶栏）；
+  /* 命名断点（统一来源，替代散落的 min-[1280px] 魔法值）：
+     pc = 桌面版式起点 1280（首页四人同台、88px 顶栏）；
      2k = 1920、4k = 2560 为预留的大屏档位（当前暂无使用处，需要时直接用 2k:/4k: 变体） */
-  --breakpoint-pc: 1440px;
+  --breakpoint-pc: 1280px;
   --breakpoint-2k: 1920px;
   --breakpoint-4k: 2560px;
 
@@ -806,7 +806,7 @@ html.hide-page-scrollbar::-webkit-scrollbar {
   padding-top: calc(72px + env(safe-area-inset-top, 0px));
 }
 
-@media (min-width: 1440px) {
+@media (min-width: 1280px) {
   .home-shell {
     padding-top: calc(88px + env(safe-area-inset-top, 0px));
   }
@@ -820,7 +820,7 @@ body.home-dock-raised .dock-panel {
   margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 128px);
 }
 
-@media (min-width: 1440px) {
+@media (min-width: 1280px) {
   body.home-dock-raised .dock-panel {
     margin-bottom: 112px;
   }
@@ -836,12 +836,12 @@ body.home-modal-open .dock-panel {
    做法：外层套一个 Hero 通高的裁切台（absolute inset-0），在相对 Hero 底边
    safe + 128px（= 上浮 128px + Dock 高 64px − 底栏高 64px）处裁掉，线以下整段不显示——
    视觉上"被 Dock 遮挡"，且裁切线与人物自身的 bottom 解耦（改人物位置无需动这里）。
-   ≥1440px 布局不同（112/56 体系），不裁。 */
+   ≥1280px 布局不同（112/56 体系），不裁。 */
 .home-male-dock-clip {
   clip-path: inset(0 0 calc(128px + env(safe-area-inset-bottom, 0px)) 0);
 }
 
-@media (min-width: 1440px) {
+@media (min-width: 1280px) {
   .home-male-dock-clip {
     clip-path: none;
   }
@@ -851,7 +851,7 @@ body.home-modal-open .dock-panel {
 /* 文字区绝对定位不参与撑高，Dock 在首页上浮 128px（顶边约距视口底 192px）；
    视口过矮时压缩顶部留白与各元素间距，避免 CTA「测肤有礼」链接被 Dock 遮挡。
    不入层：需压过容器上的 Tailwind utilities（pt/mt/mb/h） */
-@media (max-height: 639px) and (max-width: 1439px) {
+@media (max-height: 639px) and (max-width: 1279px) {
   .home-hero-copy {
     padding-top: 28px;
   }
@@ -868,12 +868,12 @@ body.home-modal-open .dock-panel {
   }
 }
 
-/* ========== 首页 Hero：前排人物站位限宽（<1440px） ========== */
+/* ========== 首页 Hero：前排人物站位限宽（<1280px） ========== */
 /* 两人的 left/right 百分比原本相对整个视口，宽窗下会被甩到两端、中间大片留白。
    改为相对"居中 440px 内容列"定位，且用 min() 保持与百分比定位在 ≤440px 时数学等价
    （列左边 = 50% − min(50vw,220px)；女 left −8%×列宽 = min(8vw,35.2px)，男 right −15%×列宽 = min(15vw,66px)），
-   全宽度连续无跳变；≥1440px 由 pc: 版式接管。调整列宽只需同步 220/35.2/66 三个数 */
-@media (max-width: 1439px) {
+   全宽度连续无跳变；≥1280px 由 pc: 版式接管。调整列宽只需同步 220/35.2/66 三个数 */
+@media (max-width: 1279px) {
   .home-char-female {
     left: calc(50% - min(50vw, 220px) - min(8vw, 35.2px));
   }
@@ -882,13 +882,13 @@ body.home-modal-open .dock-panel {
   }
 }
 
-/* ========== 首页 Hero：PC 端四人站位限宽（≥1440px） ========== */
+/* ========== 首页 Hero：PC 端四人站位限宽（≥1280px） ========== */
 /* 与移动端同理：四人的 left/right 百分比相对视口，超宽屏（>1920）会被甩到两端。
-   改为相对"居中 1920px 内容列"（对应 --breakpoint-2k）定位，min() 公式在 1440~1920
+   改为相对"居中 1920px 内容列"（对应 --breakpoint-2k）定位，min() 公式在 1280~1920
    与原百分比定位数学等价（设计稿行为不变），>1920 冻结为 1920 构图居中：
    列左边 = 50% − min(50vw,960px)；各偏移 = min(pct×100vw, pct×1920)。
    调整列宽只需同步 960 与各 pct×列宽 数值 */
-@media (min-width: 1440px) {
+@media (min-width: 1280px) {
   .home-char-back-left {
     left: calc(50% - min(50vw, 960px) + min(12vw, 230.4px));
   }

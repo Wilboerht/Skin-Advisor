@@ -473,9 +473,9 @@ export default function HomeClient() {
     safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, nickname.trim());
   };
 
-  // Hero CTA 组合（主按钮 + 「测肤有礼」入口）：由 <1440px 文字流与 ≥1440px 绝对定位区共用，
+  // Hero CTA 组合（主按钮 + 「测肤有礼」入口）：由 <1280px 文字流与 ≥1280px 绝对定位区共用，
   // 两处容器互斥显示，避免样式漂移；
-  // 「测肤有礼」保持文字链风格：移动端用品牌深蓝 #00263E（米色底），≥1440px 沿用蓝区白字
+  // 「测肤有礼」保持文字链风格：移动端用品牌深蓝 #00263E（米色底），≥1280px 沿用蓝区白字
   const heroCta = (
     <>
       <button
@@ -485,7 +485,7 @@ export default function HomeClient() {
         className="relative inline-flex items-center justify-center gap-2 h-12 pc:h-14 px-10 pc:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] pc:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         {/* FREE 角标：按钮子元素，随按钮悬浮/点按位移一起动；纯装饰，不拦截点击。
-            移动端 32px 骑角：-top-4/-right-4（两轴各露一半），≥1440px 保持 48px */}
+            移动端 32px 骑角：-top-4/-right-4（两轴各露一半），≥1280px 保持 48px */}
         <Image
           src="/images/free.png"
           alt=""
@@ -502,7 +502,7 @@ export default function HomeClient() {
         type="button"
         onClick={openGiftModal}
         aria-haspopup="dialog"
-        className="mt-4 pc:mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] tracking-[0.1em] text-[#00263E]/85 pc:text-white/85 transition-colors hover:text-[#00263E] pc:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:focus-visible:ring-white/50"
+        className="mt-4 pc:mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] pc:text-[16px] tracking-[0.1em] text-[#00263E]/85 pc:text-white/85 transition-colors hover:text-[#00263E] pc:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:focus-visible:ring-white/50"
       >
         <Gift className="w-3.5 h-3.5 pc:w-4 pc:h-4" strokeWidth={1.75} />
         <span>测肤分享赢好礼</span>
@@ -533,9 +533,9 @@ export default function HomeClient() {
         )}
       </AnimatePresence>
 
-      {/* 顶部栏（设计稿版式）：左蓝色汉堡按钮 + 中肌智派徽章（相对顶栏整体居中，仅 ≥1440px）+ 右 NIHPLOD logo；
+      {/* 顶部栏（设计稿版式）：左蓝色汉堡按钮 + 中肌智派徽章（相对顶栏整体居中，仅 ≥1280px）+ 右 NIHPLOD logo；
           淡奶油底固定定位（与底部栏同色），汉堡内收纳测肤有礼 / 常见问题 / 了解肌智派入口；
-          <1440px 顶栏中央不放徽章，徽章移到 Hero 标题「觉醒」上方 */}
+          <1280px 顶栏中央不放徽章，徽章移到 Hero 标题「觉醒」上方 */}
       <header className="fixed inset-x-0 top-0 z-40 bg-[#FBF9F3] pt-[env(safe-area-inset-top,0px)] border-b border-black/[0.06]">
         <div className="relative flex items-center justify-between">
           {/* 左：汉堡按钮（宽度与右侧 logo 区一致：logo 96/128 + 右内边距 16/32 = 112/160） */}
@@ -550,14 +550,14 @@ export default function HomeClient() {
           >
             {showMenu ? <X className="w-6 h-6" strokeWidth={2} /> : <Menu className="w-6 h-6" strokeWidth={2} />}
           </button>
-          {/* 中：肌智派徽章，绝对定位相对顶栏整体居中，不受左右两侧宽度影响；<1440px 隐藏（改放 Hero 标题上方） */}
+          {/* 中：肌智派徽章，绝对定位相对顶栏整体居中，不受左右两侧宽度影响；<1280px 隐藏（改放 Hero 标题上方） */}
           <Link href="/" aria-label="回到首页" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden pc:inline-flex items-center" onClick={() => setShowMenu(false)}>
             <Image
               src="/images/jzp-eyebrow.png"
               alt="肌智派"
               width={256}
               height={156}
-              sizes="(min-width: 1440px) 92px, 72px"
+              sizes="(min-width: 1280px) 92px, 72px"
               className="h-11 pc:h-14 w-auto object-contain"
               priority
             />
@@ -569,7 +569,7 @@ export default function HomeClient() {
               alt="NIHPLOD"
               width={120}
               height={30}
-              sizes="(min-width: 1440px) 120px, 96px"
+              sizes="(min-width: 1280px) 120px, 96px"
               className="h-6 pc:h-8 w-auto object-contain"
               priority
             />
@@ -644,11 +644,11 @@ export default function HomeClient() {
       >
           {/* 首屏 Hero（设计稿版式）：米白上区 + 蓝灰波浪下区，四个 IP 形象两两夹峙中央文案——
               每侧一后一前：后排水小、没入波浪（波浪层之下）；前排高大、立于波浪之上、抵到底部栏。
-              <1440px 只显示前排两人（沙漠女左 / 沙漠男右成对站立）；≥1440px 四人同台。
+              <1280px 只显示前排两人（沙漠女左 / 沙漠男右成对站立）；≥1280px 四人同台。
               背景（米色 + 波浪）始终通栏；前排两人的水平站位由 globals.css 的 home-char-* 规则
               改为相对居中 440px 内容列定位（min() 公式，≤440px 与原百分比定位等价），避免宽窗下人物被甩到视口两端 */}
           <div className="relative flex flex-1 flex-col w-full overflow-hidden bg-[#EFE9DA]">
-            {/* 左后：极简派男性（银灰西装）：仅 ≥1440px 显示（z-10，波浪层之下）。
+            {/* 左后：极简派男性（银灰西装）：仅 ≥1280px 显示（z-10，波浪层之下）。
                 PC 首页专属新素材 hero/back-left-male.webp（旧素材及其它页面不受影响）：
                 960×1280 画幅、顶部透明边占图高 2.19%（实测），
                 top = 56px − 2.19%×图高（图高 86vh，比右后大一档）= calc(56px-1.88vh) → 头顶落在顶栏下 56px（= 底部栏高度）；
@@ -678,7 +678,7 @@ export default function HomeClient() {
             {/* 左前：沙漠派女性（金发蓝缕）：立于波浪之上（z-30），脚部藏进底部栏（底栏 z-40 自然压盖）。
                 手机端与右前沙漠男成对：保持 h-[36vh]，bottom-[6vh]，-left-[8%]，且 z-10 置于波浪层（z-20）之下——
                 分界线以下的腿部被蓝色遮住（没入波浪），露出的上身约在 Hero 高度 55%~69% 之间（文字层 z-40 再压在她上面）；
-                ≥1440px：z-30 站到波浪之上、h-[min(100vh,66vw)]、bottom −min(44vh,29vw)。
+                ≥1280px：z-30 站到波浪之上、h-[min(100vh,66vw)]、bottom −min(44vh,29vw)。
                 下沉量与图高成比例（44vh = 100vh×44%，与 66vw×44%≈29vw 同源），窄窗收窄时同步减小，
                 避免人物整体掉进底部裁切区之外消失。
                 素材：PC 首页专属新图 hero/front-left-female.webp（手机端同样使用，旧素材仅供派系弹窗） */}
@@ -694,7 +694,7 @@ export default function HomeClient() {
                 alt=""
                 width={960}
                 height={1280}
-                sizes="(min-width: 1440px) 47vw, 44vw"
+                sizes="(min-width: 1280px) 47vw, 44vw"
                 className="h-[36vh] pc:h-[min(100vh,66vw)] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                 priority
               />
@@ -702,22 +702,22 @@ export default function HomeClient() {
 
             {/* 波浪分界：米白 → 蓝灰，单一明显缓弧（一上一下：峰更鼓、谷更凹），整体自左向右微微上扬。
                 viewBox 加高到 400 给峰顶留出头空间（贝塞尔控制点 -73 不出界，实际曲线最低点 >0）。
-                窄屏横向压缩约 3.7 倍会让同一曲线显得过陡，故 <1440px 用平缓路径（振幅约减半）。
-                蓝色区占 Hero 高度：<1440px 32%（下移 24%）、≥1440px 46%（下移 7%，相对 SVG 自身高度，随视口等比缩放） */}
+                窄屏横向压缩约 3.7 倍会让同一曲线显得过陡，故 <1280px 用平缓路径（振幅约减半）。
+                蓝色区占 Hero 高度：<1280px 32%（下移 24%）、≥1280px 46%（下移 7%，相对 SVG 自身高度，随视口等比缩放） */}
             <svg
               aria-hidden="true"
               className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full translate-y-[24%] pc:translate-y-[7%]"
               viewBox="0 0 1440 400"
               preserveAspectRatio="none"
             >
-              {/* <1440px：平缓版（振幅约减半、控制点向端线收拢更平缓，均值不变故蓝色面积不变）
+              {/* <1280px：平缓版（振幅约减半、控制点向端线收拢更平缓，均值不变故蓝色面积不变）
                   + 方向为「先凹再突」：左侧先下凹、右侧再上突 */}
               <path
                 className="pc:hidden"
                 d="M0,100 C480,125 960,55 1440,90 L1440,400 L0,400 Z"
                 fill="#93A5BE"
               />
-              {/* ≥1440px：明显波幅版 */}
+              {/* ≥1280px：明显波幅版 */}
               <path
                 className="hidden pc:block"
                 d="M0,87 C480,-73 960,197 1440,57 L1440,400 L0,400 Z"
@@ -725,7 +725,7 @@ export default function HomeClient() {
               />
             </svg>
 
-            {/* 右后：敏感派女性（紫发托腮）：仅 ≥1440px 显示（z-10，波浪层之下）。
+            {/* 右后：敏感派女性（紫发托腮）：仅 ≥1280px 显示（z-10，波浪层之下）。
                 PC 首页专属新素材 hero/back-right-female.webp（派系弹窗仍用 sensitive/sensitive_female.webp 旧图）：
                 960×1280 画幅、顶部透明边占图高 3.36%（实测），
                 top = 56px − 3.36%×图高（图高 min(78vh,52vw)）= calc(56px - min(2.62vh,1.75vw))；
@@ -752,7 +752,7 @@ export default function HomeClient() {
             {/* 右前：沙漠派男性：立于波浪之上（z-30），与左前沙漠女成对（手机端两个人物同屏）。
                 手机端：h-[46vh]、-right-[15%]、bottom −4vh（放大于女、脚部沉进底栏）；
                 外层 home-male-dock-clip 是 Hero 通高裁切台：Dock 顶边以下整段裁掉（腿不外露，视觉上被 Dock 遮挡），
-                裁切线与人物 bottom 解耦；≥1440px 裁切自动关闭，h-[min(108vh,72vw)]（比左前大一档）、-right-[8%]、
+                裁切线与人物 bottom 解耦；≥1280px 裁切自动关闭，h-[min(108vh,72vw)]（比左前大一档）、-right-[8%]、
                 bottom −min(52vh,34.6vw)（下沉量与图高成比例：52vh = 108vh×48%，与 72vw×48%≈34.6vw 同源，窄窗同步收缩） */}
             <div aria-hidden="true" className="home-male-dock-clip pointer-events-none absolute inset-0 z-30">
               <m.div
@@ -766,7 +766,7 @@ export default function HomeClient() {
                   alt=""
                   width={960}
                   height={1280}
-                  sizes="(min-width: 1440px) 51vw, 40vw"
+                  sizes="(min-width: 1280px) 51vw, 40vw"
                   className="h-[46vh] pc:h-[min(108vh,72vw)] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                   priority
                 />
@@ -774,14 +774,14 @@ export default function HomeClient() {
             </div>
 
             {/* 中央文案：
-                <1440px：徽章 + 标题 + 副标题 + CTA（含测肤有礼）同处文字流，顶部对齐、整体居中；
-                ≥1440px：CTA 独立绝对定位在内容区 69% 高处（蓝色区上部），与文字区互不联动 */}
+                <1280px：徽章 + 标题 + 副标题 + CTA（含测肤有礼）同处文字流，顶部对齐、整体居中；
+                ≥1280px：CTA 独立绝对定位在内容区 69% 高处（蓝色区上部），与文字区互不联动 */}
             <section className="relative z-40 flex-1 w-full text-center">
               {/* 文字区：顶部对齐——壳层（.home-shell）已为固定顶栏预留 72/88px，这里再叠加呼吸空间，
                   移动端 56px（收窄一档，文字更靠上）、PC 88px；
                   h-[55%] 仅作容器兜底，文字实际高度小于容器，不触及波浪线 */}
               <div className="home-hero-copy absolute inset-x-0 top-0 flex h-[55%] flex-col items-center justify-start px-6 pt-[56px] pc:pt-[88px] opacity-0 animate-fade-in-up">
-                {/* 肌智派徽章：<1440px 从顶栏中央移入此处（顶栏只留汉堡 + NIHPLOD）；≥1440px 隐藏避免与顶栏重复。
+                {/* 肌智派徽章：<1280px 从顶栏中央移入此处（顶栏只留汉堡 + NIHPLOD）；≥1280px 隐藏避免与顶栏重复。
                     mt-2 与顶栏下缘留 8px 呼吸；mb-8 与标题留 32px，和「副标题 → 立刻体验」间距（mt-8）同档 */}
                 <Image
                   src="/images/jzp-eyebrow.png"
@@ -793,9 +793,9 @@ export default function HomeClient() {
                   priority
                 />
                 <h1 className="leading-[1.12]">
-                  {/* 移动端（<1440px）：觉醒 + 你的肌肤派系 同一行、同字号（clamp 24~28px 随屏宽自适应，小屏不换行），
+                  {/* 移动端（<1280px）：觉醒 + 你的肌肤派系 同一行、同字号（clamp 24~28px 随屏宽自适应，小屏不换行），
                       两段之间保留一个半角空格（{" "}，移动端同排可见；PC 两行分排时该空白被块级布局忽略）；
-                      仅颜色区分（觉醒品牌蓝 / 其余深灰）；≥1440px 恢复两行大标题（觉醒 96px / 其余 44px）。
+                      仅颜色区分（觉醒品牌蓝 / 其余深灰）；≥1280px 恢复两行大标题（觉醒 96px / 其余 44px）。
                       字距：两段同为 0.1em，但「觉醒」是粗体、后半段是 medium——同字距下浅字重观感偏松，
                       移动端把后半段收紧到 0.08em 做光学补偿（PC 两行分排无对比，保持 0.1em） */}
                   <span className="text-[clamp(24px,7.4vw,28px)] pc:-mr-[0.1em] pc:block pc:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>{" "}
@@ -832,13 +832,13 @@ export default function HomeClient() {
                   <br />
                   您口袋里的专属的护肤管家
                 </p>
-                {/* 移动端（<1440px）：CTA（主按钮 + 测肤有礼）接在副标题下方、随文字流居中对齐；
-                    ≥1440px 由下方 69% 高处的绝对定位区渲染（两处互斥显示） */}
+                {/* 移动端（<1280px）：CTA（主按钮 + 测肤有礼）接在副标题下方、随文字流居中对齐；
+                    ≥1280px 由下方 69% 高处的绝对定位区渲染（两处互斥显示） */}
                 <div className="mt-8 flex pc:hidden flex-col items-center">
                   {heroCta}
                 </div>
               </div>
-              {/* CTA 区（仅 ≥1440px）：独立定位在内容区 69% 高处（蓝色区上部、留有余量），与文字区互不联动 */}
+              {/* CTA 区（仅 ≥1280px）：独立定位在内容区 69% 高处（蓝色区上部、留有余量），与文字区互不联动 */}
               <div className="absolute inset-x-0 top-[69%] -translate-y-1/2 hidden pc:flex flex-col items-center px-6 opacity-0 animate-fade-in-up">
                 {heroCta}
               </div>
