@@ -649,13 +649,13 @@ export default function HomeClient() {
             {/* 左后：极简派男性（银灰西装）：仅 ≥1440px 显示（z-10，波浪层之下）。
                 PC 首页专属新素材 hero/back-left-male.webp（旧素材及其它页面不受影响）：
                 960×1280 画幅、顶部透明边占图高 2.19%（实测），
-                top = 56px − 2.19%×图高（图高 80vh，比右后大一档）= calc(56px-1.75vh) → 头顶落在顶栏下 56px（= 底部栏高度）；
+                top = 56px − 2.19%×图高（图高 86vh，比右后大一档）= calc(56px-1.88vh) → 头顶落在顶栏下 56px（= 底部栏高度）；
                 width/height/sizes 与右后同规格，两人头顶同高（顶部留白不同故 top 各自补偿）。
-                水平：left-[14%] / right-[15%]。
+                水平：left-[12%] / right-[13%]。
                 替换图片须保持 960×1280 画幅，顶部透明边比例变化需同步 top 公式 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[14%] top-[calc(56px-1.75vh)] hidden min-[1440px]:block"
+              className="absolute z-10 left-[12%] top-[calc(56px-1.88vh)] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -666,7 +666,7 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="36vw"
-                className="h-[80vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
@@ -674,11 +674,11 @@ export default function HomeClient() {
             {/* 左前：沙漠派女性（金发蓝缕）：立于波浪之上（z-30），脚部藏进底部栏（底栏 z-40 自然压盖）。
                 手机端与右前沙漠男成对：保持 h-[36vh]，bottom-[6vh]，-left-[8%]，且 z-10 置于波浪层（z-20）之下——
                 分界线以下的腿部被蓝色遮住（没入波浪），露出的上身约在 Hero 高度 55%~69% 之间（文字层 z-40 再压在她上面）；
-                ≥1440px：z-30 站到波浪之上、h-[86vh]、bottom −28vh（宽屏下沉），与右前同规格。
+                ≥1440px：z-30 站到波浪之上、h-[100vh]、bottom −44vh（宽屏下沉，与 h 同步加大以保持头部不过高）。
                 素材：PC 首页专属新图 hero/front-left-female.webp（手机端同样使用，旧素材仅供派系弹窗） */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 min-[1440px]:z-30 -left-[8%] min-[1440px]:-left-[2%] bottom-[6vh] min-[1440px]:-bottom-[28vh]"
+              className="absolute z-10 min-[1440px]:z-30 -left-[8%] min-[1440px]:-left-[4%] bottom-[6vh] min-[1440px]:-bottom-[44vh]"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -688,8 +688,8 @@ export default function HomeClient() {
                 alt=""
                 width={960}
                 height={1280}
-                sizes="(min-width: 1440px) 41vw, 44vw"
-                className="h-[36vh] min-[1440px]:h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                sizes="(min-width: 1440px) 47vw, 44vw"
+                className="h-[36vh] min-[1440px]:h-[100vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                 priority
               />
             </m.div>
@@ -722,11 +722,11 @@ export default function HomeClient() {
             {/* 右后：敏感派女性（紫发托腮）：仅 ≥1440px 显示（z-10，波浪层之下）。
                 PC 首页专属新素材 hero/back-right-female.webp（派系弹窗仍用 sensitive/sensitive_female.webp 旧图）：
                 960×1280 画幅、顶部透明边占图高 3.36%（实测），
-                top = 56px − 3.36%×图高（图高 72vh）= calc(56px-2.42vh)；
-                与左后极简男图高/width/height/sizes 一致，头顶同高（top 按各自留白补偿）、左右对称 */}
+                top = 56px − 3.36%×图高（图高 78vh）= calc(56px-2.62vh)；
+                与左后极简男 width/height/sizes 同规格，图高比左后小一档；两人头顶同高（top 按各自留白补偿）、左右对称 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 right-[15%] top-[calc(56px-2.42vh)] hidden min-[1440px]:block"
+              className="absolute z-10 right-[13%] top-[calc(56px-2.62vh)] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.25, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -737,7 +737,7 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="36vw"
-                className="h-[72vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[78vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
@@ -745,10 +745,10 @@ export default function HomeClient() {
             {/* 右前：沙漠派男性：立于波浪之上（z-30），与左前沙漠女成对（手机端两个人物同屏）。
                 手机端：h-[42vh]、-right-[15%]、bottom −4vh（放大于女、脚部沉进底栏、头部约在 Hero 高度 60%）；
                 外层 home-male-dock-clip 是 Hero 通高裁切台：Dock 顶边以下整段裁掉（腿不外露，视觉上被 Dock 遮挡），
-                裁切线与人物 bottom 解耦；≥1440px 裁切自动关闭，h-[86vh]、-right-[2%]、bottom −28vh 与左前同规格 */}
+                裁切线与人物 bottom 解耦；≥1440px 裁切自动关闭，h-[108vh]（比左前大一档，下沉同步加大以保持头部位置）、-right-[8%]、bottom −52vh */}
             <div aria-hidden="true" className="home-male-dock-clip pointer-events-none absolute inset-0 z-30">
               <m.div
-                className="absolute -right-[15%] -bottom-[4vh] min-[1440px]:-right-[2%] min-[1440px]:-bottom-[28vh]"
+                className="absolute -right-[15%] -bottom-[4vh] min-[1440px]:-right-[8%] min-[1440px]:-bottom-[52vh]"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: prefersReducedMotion ? 0 : 0.35, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -758,8 +758,8 @@ export default function HomeClient() {
                   alt=""
                   width={960}
                   height={1280}
-                  sizes="(min-width: 1440px) 41vw, 40vw"
-                  className="h-[42vh] min-[1440px]:h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                  sizes="(min-width: 1440px) 51vw, 40vw"
+                  className="h-[42vh] min-[1440px]:h-[108vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                   priority
                 />
               </m.div>
