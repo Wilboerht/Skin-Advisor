@@ -659,7 +659,7 @@ export default function HomeClient() {
                 替换图片须保持 960×1280 画幅，顶部透明边比例变化需同步 top 公式 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[12%] top-[calc(56px_-_min(1.88vh,1.25vw))] hidden pc:block"
+              className="home-char-back-left absolute z-10 left-[12%] top-[calc(56px_-_min(1.88vh,1.25vw))] hidden pc:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -733,7 +733,7 @@ export default function HomeClient() {
                 水平：right-[13%]（同左后，不随屏宽内收）；窄窗保护范围同左后 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 right-[13%] top-[calc(56px_-_min(2.62vh,1.75vw))] hidden pc:block"
+              className="home-char-back-right absolute z-10 right-[13%] top-[calc(56px_-_min(2.62vh,1.75vw))] hidden pc:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.25, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}

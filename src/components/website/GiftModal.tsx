@@ -106,14 +106,14 @@ export function GiftModal({ isOpen, onClose, onStartTest, onOpenSkinTypes }: Gif
                 肌智派送好礼
               </h2>
 
-              {/* 礼物盒插画：奶油色礼盒 + 蓝色丝带（素材自带透明底，已裁掉四周留白） */}
+              {/* 礼物盒插画：素材自带透明底，四周留白已裁掉（1195×1002） */}
               <div className="mb-6 sm:mb-7 flex justify-center">
                 <Image
                   src="/images/gift-package.webp"
                   alt=""
                   aria-hidden="true"
-                  width={1283}
-                  height={1093}
+                  width={1195}
+                  height={1002}
                   className="h-20 sm:h-24 w-auto object-contain"
                 />
               </div>
