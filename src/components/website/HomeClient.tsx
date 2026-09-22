@@ -536,7 +536,7 @@ export default function HomeClient() {
       {/* 顶部栏（设计稿版式）：左蓝色汉堡按钮 + 中肌智派徽章（相对顶栏整体居中，仅 ≥1440px）+ 右 NIHPLOD logo；
           淡奶油底固定定位（与底部栏同色），汉堡内收纳测肤有礼 / 常见问题 / 了解肌智派入口；
           <1440px 顶栏中央不放徽章，徽章移到 Hero 标题「觉醒」上方 */}
-      <header className="fixed inset-x-0 top-0 z-40 bg-[#FBF9F3] border-b border-black/[0.06]">
+      <header className="fixed inset-x-0 top-0 z-40 bg-[#FBF9F3] pt-[env(safe-area-inset-top,0px)] border-b border-black/[0.06]">
         <div className="relative flex items-center justify-between">
           {/* 左：汉堡按钮（宽度与右侧 logo 区一致：logo 96/128 + 右内边距 16/32 = 112/160） */}
           <button
@@ -778,7 +778,7 @@ export default function HomeClient() {
               {/* 文字区：顶部对齐——壳层（.home-shell）已为固定顶栏预留 72/88px，这里再叠加呼吸空间，
                   移动端 56px（收窄一档，文字更靠上）、PC 88px；
                   h-[55%] 仅作容器兜底，文字实际高度小于容器，不触及波浪线 */}
-              <div className="absolute inset-x-0 top-0 flex h-[55%] flex-col items-center justify-start px-6 pt-[56px] pc:pt-[88px] opacity-0 animate-fade-in-up">
+              <div className="home-hero-copy absolute inset-x-0 top-0 flex h-[55%] flex-col items-center justify-start px-6 pt-[56px] pc:pt-[88px] opacity-0 animate-fade-in-up">
                 {/* 肌智派徽章：<1440px 从顶栏中央移入此处（顶栏只留汉堡 + NIHPLOD）；≥1440px 隐藏避免与顶栏重复。
                     mt-2 与顶栏下缘留 8px 呼吸；mb-8 与标题留 32px，和「副标题 → 立刻体验」间距（mt-8）同档 */}
                 <Image
@@ -792,10 +792,11 @@ export default function HomeClient() {
                 />
                 <h1 className="leading-[1.12]">
                   {/* 移动端（<1440px）：觉醒 + 你的肌肤派系 同一行、同字号（clamp 24~28px 随屏宽自适应，小屏不换行），
+                      两段之间保留一个半角空格（{" "}，移动端同排可见；PC 两行分排时该空白被块级布局忽略）；
                       仅颜色区分（觉醒品牌蓝 / 其余深灰）；≥1440px 恢复两行大标题（觉醒 96px / 其余 44px）。
                       字距：两段同为 0.1em，但「觉醒」是粗体、后半段是 medium——同字距下浅字重观感偏松，
                       移动端把后半段收紧到 0.08em 做光学补偿（PC 两行分排无对比，保持 0.1em） */}
-                  <span className="text-[clamp(24px,7.4vw,28px)] pc:-mr-[0.1em] pc:block pc:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
+                  <span className="text-[clamp(24px,7.4vw,28px)] pc:-mr-[0.1em] pc:block pc:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>{" "}
                   <span className="pc:block pc:mt-2">
                     <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[clamp(24px,7.4vw,28px)] pc:text-[44px] font-medium tracking-[0.08em] pc:tracking-[0.1em] text-[#1c1c1c]">
                       你的肌肤派系
@@ -927,7 +928,7 @@ export default function HomeClient() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full max-w-[420px] bg-[#FDFBF7] rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
+              className="relative z-10 w-full max-w-[420px] max-h-[90dvh] bg-[#FDFBF7] rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               {/* Close Button：与全站弹层规范一致（移动端 44px 触达） */}
@@ -953,7 +954,7 @@ export default function HomeClient() {
               </div>
 
               {/* Content */}
-              <div className="px-10 pb-10 pt-2 flex flex-col items-center gap-6">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-10 pb-10 pt-2 flex flex-col items-center gap-6">
                 <div className="text-center space-y-2">
                   <h2 id="limit-modal-title" className="text-base font-semibold text-brand-charcoal">
                     {testLimitInfo?.quotaPeriod === 'lifetime' ? '免费测肤次数已用完' : '今日测试次数已用完'}

@@ -846,3 +846,24 @@ body.home-modal-open .dock-panel {
     clip-path: none;
   }
 }
+
+/* ========== 首页 Hero 矮屏压缩（<640px 高，仅移动版式） ========== */
+/* 文字区绝对定位不参与撑高，Dock 在首页上浮 128px（顶边约距视口底 192px）；
+   视口过矮时压缩顶部留白与各元素间距，避免 CTA「测肤有礼」链接被 Dock 遮挡。
+   不入层：需压过容器上的 Tailwind utilities（pt/mt/mb/h） */
+@media (max-height: 639px) and (max-width: 1439px) {
+  .home-hero-copy {
+    padding-top: 28px;
+  }
+  .home-hero-copy > img {
+    height: 36px;
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+  .home-hero-copy > p {
+    margin-top: 8px;
+  }
+  .home-hero-copy > div {
+    margin-top: 16px;
+  }
+}
