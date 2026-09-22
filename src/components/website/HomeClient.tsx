@@ -657,10 +657,10 @@ export default function HomeClient() {
                 viewBox 加高到 400 给峰顶留出头空间（贝塞尔控制点 -73 不出界，实际曲线最低点 >0）。
                 窄屏横向压缩约 3.7 倍会让同一曲线显得过陡，故 <1440px 用平缓路径（振幅约减半、蓝色面积与宽屏对齐），
                 ≥1440px 路径不变。蓝色面积 ≈ 内容区的 55~58%（SVG 高 60%）；
-                整体下移 12%（相对 SVG 自身高度，随视口等比缩放），让分界线更低、蓝区更大 */}
+                整体下移 7%（相对 SVG 自身高度，= 整屏高的约 3%，随视口等比缩放） */}
             <svg
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full translate-y-[12%]"
+              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full translate-y-[7%]"
               viewBox="0 0 1440 400"
               preserveAspectRatio="none"
             >
@@ -720,15 +720,17 @@ export default function HomeClient() {
             </m.div>
 
             {/* 中央文案：文字与按钮各自绝对定位、互不联动——
-                文字（主标题 + 副标题含蓝色问号 = 跳转「了解肌智派」）贴波浪上方（米色区下半部）；
+                文字（主标题 + 副标题含蓝色问号 = 跳转「了解肌智派」）在米色板块内顶部对齐；
                 CTA 按钮（硬投影白胶囊）定在蓝色区上部（内容区 62% 高处） */}
             <section className="relative z-40 flex-1 w-full text-center">
-              {/* 文字区：米色区下半部，底部对齐贴波浪上方（区高 48% ⇒ 波浪下移 7.2% 后同步放大到 55%，
-                  保持"文字紧贴分界线"的关系；底部留白 24/40px） */}
-              <div className="absolute inset-x-0 top-0 flex h-[55%] flex-col items-center justify-end px-6 pb-6 min-[1440px]:pb-10 opacity-0 animate-fade-in-up">
+              {/* 文字区：顶部对齐——顶部内边距抵消固定顶栏高度（72/88px），文字顶边紧贴顶栏下缘；
+                  h-[55%] 仅作容器兜底，文字实际高度小于容器，不触及波浪线 */}
+              <div className="absolute inset-x-0 top-0 flex h-[55%] flex-col items-center justify-start px-6 pt-[72px] min-[1440px]:pt-[88px] opacity-0 animate-fade-in-up">
                 <h1 className="leading-[1.12]">
-                  <span className="block -mr-[0.1em] text-[54px] min-[1440px]:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
-                  <span className="block mt-1.5 min-[1440px]:mt-2">
+                  {/* 移动端（<1440px）：觉醒 + 你的肌肤派系 同一行、同字号 26px，仅颜色区分（觉醒品牌蓝 / 其余深灰）；
+                      ≥1440px 恢复两行大标题（觉醒 96px / 其余 44px） */}
+                  <span className="text-[26px] min-[1440px]:-mr-[0.1em] min-[1440px]:block min-[1440px]:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
+                  <span className="min-[1440px]:block min-[1440px]:mt-2">
                     <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[26px] min-[1440px]:text-[44px] font-medium tracking-[0.1em] text-[#1c1c1c]">
                       你的肌肤派系
                       {/* 蓝色问号：打开「了解肌智派」弹窗（扩大触达区：移动端热区外扩 8px） */}
@@ -783,15 +785,15 @@ export default function HomeClient() {
                   <span>{isLoading ? "正在连接" : "立刻体验"}</span>
                 </button>
 
-                {/* 窄屏「测肤有礼」入口：≥1440px 有左下角宣传卡，窄屏在 CTA 下方给轻量文字入口
-                    （位于蓝色波浪区上方，用白字；≥1440px 隐藏避免与宣传卡重复） */}
+                {/* 「测肤有礼」活动入口：CTA 下方的轻量文字按钮（各宽度一致，位于蓝色波浪区内，用白字）。
+                    > 原 ≥1440px 的左下角宣传位已下线，故宽窄屏统一用这个入口 */}
                 <button
                   type="button"
                   onClick={openGiftModal}
                   aria-haspopup="dialog"
-                  className="min-[1440px]:hidden mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] tracking-[0.1em] text-white/85 transition-colors hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                  className="mt-4 min-[1440px]:mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] min-[1440px]:text-[13px] tracking-[0.1em] text-white/85 transition-colors hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                 >
-                  <Gift className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  <Gift className="w-3.5 h-3.5 min-[1440px]:w-4 min-[1440px]:h-4" strokeWidth={1.75} />
                   <span>测肤有礼 · 参与赢好礼</span>
                 </button>
               </div>
