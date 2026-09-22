@@ -867,3 +867,17 @@ body.home-modal-open .dock-panel {
     margin-top: 16px;
   }
 }
+
+/* ========== 首页 Hero：前排人物站位限宽（<1440px） ========== */
+/* 两人的 left/right 百分比原本相对整个视口，宽窗下会被甩到两端、中间大片留白。
+   改为相对"居中 440px 内容列"定位，且用 min() 保持与百分比定位在 ≤440px 时数学等价
+   （列左边 = 50% − min(50vw,220px)；女 left −8%×列宽 = min(8vw,35.2px)，男 right −15%×列宽 = min(15vw,66px)），
+   全宽度连续无跳变；≥1440px 由 pc: 版式接管。调整列宽只需同步 220/35.2/66 三个数 */
+@media (max-width: 1439px) {
+  .home-char-female {
+    left: calc(50% - min(50vw, 220px) - min(8vw, 35.2px));
+  }
+  .home-char-male {
+    right: calc(50% - min(50vw, 220px) - min(15vw, 66px));
+  }
+}

@@ -644,7 +644,9 @@ export default function HomeClient() {
       >
           {/* 首屏 Hero（设计稿版式）：米白上区 + 蓝灰波浪下区，四个 IP 形象两两夹峙中央文案——
               每侧一后一前：后排水小、没入波浪（波浪层之下）；前排高大、立于波浪之上、抵到底部栏。
-              <1440px 只显示前排两人（沙漠女左 / 沙漠男右成对站立）；≥1440px 四人同台 */}
+              <1440px 只显示前排两人（沙漠女左 / 沙漠男右成对站立）；≥1440px 四人同台。
+              背景（米色 + 波浪）始终通栏；前排两人的水平站位由 globals.css 的 home-char-* 规则
+              改为相对居中 440px 内容列定位（min() 公式，≤440px 与原百分比定位等价），避免宽窗下人物被甩到视口两端 */}
           <div className="relative flex flex-1 flex-col w-full overflow-hidden bg-[#EFE9DA]">
             {/* 左后：极简派男性（银灰西装）：仅 ≥1440px 显示（z-10，波浪层之下）。
                 PC 首页专属新素材 hero/back-left-male.webp（旧素材及其它页面不受影响）：
@@ -682,7 +684,7 @@ export default function HomeClient() {
                 素材：PC 首页专属新图 hero/front-left-female.webp（手机端同样使用，旧素材仅供派系弹窗） */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 pc:z-30 -left-[8%] pc:-left-[4%] bottom-[6vh] pc:-bottom-[min(44vh,29vw)]"
+              className="home-char-female absolute z-10 pc:z-30 -left-[8%] pc:-left-[4%] bottom-[6vh] pc:-bottom-[min(44vh,29vw)]"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -754,7 +756,7 @@ export default function HomeClient() {
                 bottom −min(52vh,34.6vw)（下沉量与图高成比例：52vh = 108vh×48%，与 72vw×48%≈34.6vw 同源，窄窗同步收缩） */}
             <div aria-hidden="true" className="home-male-dock-clip pointer-events-none absolute inset-0 z-30">
               <m.div
-                className="absolute -right-[15%] -bottom-[4vh] pc:-right-[8%] pc:-bottom-[min(52vh,34.6vw)]"
+                className="home-char-male absolute -right-[15%] -bottom-[4vh] pc:-right-[8%] pc:-bottom-[min(52vh,34.6vw)]"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: prefersReducedMotion ? 0 : 0.35, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
