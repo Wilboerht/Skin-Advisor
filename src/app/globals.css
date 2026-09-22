@@ -823,3 +823,19 @@ body.home-dock-raised .dock-panel {
 body.home-modal-open .dock-panel {
   display: none;
 }
+
+/* ========== 首页专用：右前男性在 Dock 覆盖线以下裁掉 ========== */
+/* 男人 z-30 站在波浪前面，若不裁切，Dock 胶囊下方那条蓝色带里会露出腿。
+   做法：外层套一个 Hero 通高的裁切台（absolute inset-0），在相对 Hero 底边
+   safe + 128px（= 上浮 128px + Dock 高 64px − 底栏高 64px）处裁掉，线以下整段不显示——
+   视觉上"被 Dock 遮挡"，且裁切线与人物自身的 bottom 解耦（改人物位置无需动这里）。
+   ≥1440px 布局不同（112/56 体系），不裁。 */
+.home-male-dock-clip {
+  clip-path: inset(0 0 calc(128px + env(safe-area-inset-bottom, 0px)) 0);
+}
+
+@media (min-width: 1440px) {
+  .home-male-dock-clip {
+    clip-path: none;
+  }
+}

@@ -505,7 +505,7 @@ export default function HomeClient() {
         className="mt-4 min-[1440px]:mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] tracking-[0.1em] text-[#00263E]/85 min-[1440px]:text-white/85 transition-colors hover:text-[#00263E] min-[1440px]:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 min-[1440px]:focus-visible:ring-white/50"
       >
         <Gift className="w-3.5 h-3.5 min-[1440px]:w-4 min-[1440px]:h-4" strokeWidth={1.75} />
-        <span>测肤有礼 · 参与赢好礼</span>
+        <span>测肤分享赢好礼</span>
       </button>
     </>
   );
@@ -643,7 +643,8 @@ export default function HomeClient() {
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
           {/* 首屏 Hero（设计稿版式）：米白上区 + 蓝灰波浪下区，四个 IP 形象两两夹峙中央文案——
-              每侧一后一前：后排水小、没入波浪（波浪层之下）；前排高大、立于波浪之上、抵到底部栏 */}
+              每侧一后一前：后排水小、没入波浪（波浪层之下）；前排高大、立于波浪之上、抵到底部栏。
+              <1440px 只显示前排两人（沙漠女左 / 沙漠男右成对站立）；≥1440px 四人同台 */}
           <div className="relative flex flex-1 flex-col w-full overflow-hidden bg-[#EFE9DA]">
             {/* 左后：极简派男性（银灰西装）：仅 ≥1440px 显示（z-10，波浪层之下）。
                 PC 首页专属新素材 hero/back-left-male.webp（旧素材及其它页面不受影响）：
@@ -670,35 +671,25 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 左前：沙漠派女性（金发蓝缕）：立于波浪之上（z-30），宽屏下沉 28vh——脚底没入底部栏，
-                允许被遮挡；底部栏 z-40 自然压盖。
-                <1440px 移动端用原素材 desert_female.webp：bottom = −5.5%×图高（底部透明边），脚底贴底部栏上缘；
-                ≥1440px 用 PC 专属新素材 hero/front-left-female.webp（底边留白 1.33%，脚底靠 28vh 下沉藏进底栏） */}
+            {/* 左前：沙漠派女性（金发蓝缕）：立于波浪之上（z-30），脚部藏进底部栏（底栏 z-40 自然压盖）。
+                手机端与右前沙漠男成对：保持 h-[36vh]，bottom-[6vh]，-left-[8%]，且 z-10 置于波浪层（z-20）之下——
+                分界线以下的腿部被蓝色遮住（没入波浪），露出的上身约在 Hero 高度 55%~69% 之间（文字层 z-40 再压在她上面）；
+                ≥1440px：z-30 站到波浪之上、h-[86vh]、bottom −28vh（宽屏下沉），与右前同规格。
+                素材：PC 首页专属新图 hero/front-left-female.webp（手机端同样使用，旧素材仅供派系弹窗） */}
             <m.div
               aria-hidden="true"
-              className="absolute z-30 -left-[6%] min-[1440px]:-left-[2%] -bottom-[1.9vh] min-[1440px]:-bottom-[28vh]"
+              className="absolute z-10 min-[1440px]:z-30 -left-[8%] min-[1440px]:-left-[2%] bottom-[6vh] min-[1440px]:-bottom-[28vh]"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
             >
-              {/* 移动端原素材 -->
-              <Image
-                src="/images/character/desert/desert_female.webp"
-                alt=""
-                width={960}
-                height={1280}
-                sizes="44vw"
-                className="h-[34vh] min-[1440px]:hidden w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
-                priority
-              />
-              {/* PC 专属新素材 */}
               <Image
                 src="/images/character/hero/front-left-female.webp"
                 alt=""
                 width={960}
                 height={1280}
-                sizes="41vw"
-                className="hidden min-[1440px]:block h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                sizes="(min-width: 1440px) 41vw, 44vw"
+                className="h-[36vh] min-[1440px]:h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                 priority
               />
             </m.div>
@@ -706,17 +697,18 @@ export default function HomeClient() {
             {/* 波浪分界：米白 → 蓝灰，单一明显缓弧（一上一下：峰更鼓、谷更凹），整体自左向右微微上扬。
                 viewBox 加高到 400 给峰顶留出头空间（贝塞尔控制点 -73 不出界，实际曲线最低点 >0）。
                 窄屏横向压缩约 3.7 倍会让同一曲线显得过陡，故 <1440px 用平缓路径（振幅约减半）。
-                蓝色区占 Hero 高度：<1440px 35%（下移 20%）、≥1440px 46%（下移 7%，相对 SVG 自身高度，随视口等比缩放） */}
+                蓝色区占 Hero 高度：<1440px 32%（下移 24%）、≥1440px 46%（下移 7%，相对 SVG 自身高度，随视口等比缩放） */}
             <svg
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full translate-y-[20%] min-[1440px]:translate-y-[7%]"
+              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full translate-y-[24%] min-[1440px]:translate-y-[7%]"
               viewBox="0 0 1440 400"
               preserveAspectRatio="none"
             >
-              {/* <1440px：平缓版 */}
+              {/* <1440px：平缓版（振幅约减半、控制点向端线收拢更平缓，均值不变故蓝色面积不变）
+                  + 方向为「先凹再突」：左侧先下凹、右侧再上突 */}
               <path
                 className="min-[1440px]:hidden"
-                d="M0,95 C480,35 960,145 1440,75 L1440,400 L0,400 Z"
+                d="M0,100 C480,125 960,55 1440,90 L1440,400 L0,400 Z"
                 fill="#93A5BE"
               />
               {/* ≥1440px：明显波幅版 */}
@@ -750,26 +742,28 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 右前：沙漠派男性：仅 ≥1440px 显示（z-30，立于波浪之上），
-                PC 首页专属新素材 hero/front-right-male.webp（旧素材及其它页面不受影响）；
-                与左前沙漠女完全同规格（同高 86vh、同下沉 28vh），两人视觉大小与基线一致 */}
-            <m.div
-              aria-hidden="true"
-              className="absolute z-30 -right-[2%] -bottom-[28vh] hidden min-[1440px]:block"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: prefersReducedMotion ? 0 : 0.35, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
-            >
-              <Image
-                src="/images/character/hero/front-right-male.webp"
-                alt=""
-                width={960}
-                height={1280}
-                sizes="41vw"
-                className="h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
-                priority
-              />
-            </m.div>
+            {/* 右前：沙漠派男性：立于波浪之上（z-30），与左前沙漠女成对（手机端两个人物同屏）。
+                手机端：h-[42vh]、-right-[15%]、bottom −4vh（放大于女、脚部沉进底栏、头部约在 Hero 高度 60%）；
+                外层 home-male-dock-clip 是 Hero 通高裁切台：Dock 顶边以下整段裁掉（腿不外露，视觉上被 Dock 遮挡），
+                裁切线与人物 bottom 解耦；≥1440px 裁切自动关闭，h-[86vh]、-right-[2%]、bottom −28vh 与左前同规格 */}
+            <div aria-hidden="true" className="home-male-dock-clip pointer-events-none absolute inset-0 z-30">
+              <m.div
+                className="absolute -right-[15%] -bottom-[4vh] min-[1440px]:-right-[2%] min-[1440px]:-bottom-[28vh]"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: prefersReducedMotion ? 0 : 0.35, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
+              >
+                <Image
+                  src="/images/character/hero/front-right-male.webp"
+                  alt=""
+                  width={960}
+                  height={1280}
+                  sizes="(min-width: 1440px) 41vw, 40vw"
+                  className="h-[42vh] min-[1440px]:h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                  priority
+                />
+              </m.div>
+            </div>
 
             {/* 中央文案：
                 <1440px：徽章 + 标题 + 副标题 + CTA（含测肤有礼）同处文字流，顶部对齐、整体居中；
@@ -779,20 +773,20 @@ export default function HomeClient() {
                   h-[55%] 仅作容器兜底，文字实际高度小于容器，不触及波浪线 */}
               <div className="absolute inset-x-0 top-0 flex h-[55%] flex-col items-center justify-start px-6 pt-[72px] min-[1440px]:pt-[88px] opacity-0 animate-fade-in-up">
                 {/* 肌智派徽章：<1440px 从顶栏中央移入此处（顶栏只留汉堡 + NIHPLOD）；≥1440px 隐藏避免与顶栏重复。
-                    mt-2 与顶栏下缘留 8px 呼吸，mb-4 与标题留 16px */}
+                    mt-2 与顶栏下缘留 8px 呼吸；mb-8 与标题留 32px，和「副标题 → 立刻体验」间距（mt-8）同档 */}
                 <Image
                   src="/images/jzp-eyebrow.png"
                   alt="肌智派"
                   width={256}
                   height={156}
-                  sizes="72px"
-                  className="mt-2 mb-4 h-11 w-auto object-contain min-[1440px]:hidden"
+                  sizes="80px"
+                  className="mt-2 mb-8 h-12 w-auto object-contain min-[1440px]:hidden"
                   priority
                 />
                 <h1 className="leading-[1.12]">
-                  {/* 移动端（<1440px）：觉醒，+ 你的肌肤派系 同一行、同字号（clamp 24~28px 随屏宽自适应，小屏不换行），
-                      仅颜色区分（觉醒品牌蓝 / 其余深灰）；≥1440px 恢复两行大标题（觉醒 96px / 其余 44px），并隐藏逗号 */}
-                  <span className="text-[clamp(24px,7.4vw,28px)] min-[1440px]:-mr-[0.1em] min-[1440px]:block min-[1440px]:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒<span className="min-[1440px]:hidden">，</span></span>
+                  {/* 移动端（<1440px）：觉醒 + 你的肌肤派系 同一行、同字号（clamp 24~28px 随屏宽自适应，小屏不换行），
+                      仅颜色区分（觉醒品牌蓝 / 其余深灰）；≥1440px 恢复两行大标题（觉醒 96px / 其余 44px） */}
+                  <span className="text-[clamp(24px,7.4vw,28px)] min-[1440px]:-mr-[0.1em] min-[1440px]:block min-[1440px]:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
                   <span className="min-[1440px]:block min-[1440px]:mt-2">
                     <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[clamp(24px,7.4vw,28px)] min-[1440px]:text-[44px] font-medium tracking-[0.1em] text-[#1c1c1c]">
                       你的肌肤派系

@@ -106,32 +106,35 @@ export function GiftModal({ isOpen, onClose, onStartTest, onOpenSkinTypes }: Gif
                 肌智派送好礼
               </h2>
 
-              {/* 玩法步骤 */}
-              <div className="flex flex-col items-center mb-8">
+              {/* 礼物盒插画：奶油色礼盒 + 蓝色丝带（素材自带透明底，已裁掉四周留白） */}
+              <div className="mb-6 sm:mb-7 flex justify-center">
                 <Image
-                  src="/images/gift-badge.webp"
-                  alt="肌智派送好礼"
-                  width={640}
-                  height={396}
-                  className="w-52 h-auto object-contain mb-8"
-                  unoptimized
+                  src="/images/gift-package.webp"
+                  alt=""
+                  aria-hidden="true"
+                  width={1283}
+                  height={1093}
+                  className="h-20 sm:h-24 w-auto object-contain"
                 />
-                <div className="w-full max-w-sm">
-                  {steps.map((item, i) => (
-                    <div key={i} className="flex items-start gap-4">
-                      <div className="flex flex-col items-center self-stretch">
-                        <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/[0.25] flex items-center justify-center text-sm font-light text-brand-charcoal/70">
-                          {i + 1}
-                        </span>
-                        {i < steps.length - 1 && <div className="w-px flex-1 bg-brand-charcoal/10 my-2" />}
-                      </div>
-                      <div className={`flex-1 text-left ${i < steps.length - 1 ? "pb-6" : ""}`}>
-                        <h3 className="text-sm font-light text-brand-charcoal tracking-[0.06em] mb-1">{item.title}</h3>
-                        <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
-                      </div>
+              </div>
+
+              {/* 玩法步骤 */}
+              <div className="w-full max-w-sm mx-auto mb-8">
+                {steps.map((item, i) => (
+                  <div key={i} className="flex items-start gap-4">
+                    <div className="flex flex-col items-center self-stretch">
+                      <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/[0.25] flex items-center justify-center text-sm font-light text-brand-charcoal/70">
+                        {i + 1}
+                      </span>
+                      {i < steps.length - 1 && <div className="w-px flex-1 bg-brand-charcoal/10 my-2" />}
                     </div>
-                  ))}
-                </div>
+                    {/* 文字列 mt-1 让标题行与 32px 序号圆心视觉对齐；标题行高 1.6、正文 1.8，中文阅读更稳 */}
+                    <div className={`flex-1 text-left mt-1 ${i < steps.length - 1 ? "pb-6" : ""}`}>
+                      <h3 className="text-sm leading-[1.6] font-light text-brand-charcoal tracking-[0.06em] mb-1.5">{item.title}</h3>
+                      <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* CTA */}
@@ -165,8 +168,8 @@ export function GiftModal({ isOpen, onClose, onStartTest, onOpenSkinTypes }: Gif
                 </button>
               </div>
 
-              {/* 官方声明 */}
-              <p className="text-center text-[11px] leading-relaxed text-brand-charcoal/55 font-light tracking-[0.06em]">
+              {/* 官方声明：脚注与小节间用细分割线区隔，行高 1.8 便于中文小字阅读 */}
+              <p className="border-t border-brand-charcoal/[0.08] pt-4 text-center text-[11px] leading-[1.8] text-brand-charcoal/55 font-light tracking-[0.06em]">
                 具体活动时间、奖品与规则以 NIHPLOD 官方媒体账号发布的实际活动内容为准
               </p>
             </div>
