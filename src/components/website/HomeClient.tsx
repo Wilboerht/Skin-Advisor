@@ -424,6 +424,12 @@ export default function HomeClient() {
         await refreshUser();
       }
 
+      // 未登录：打开「我的」账户弹层的登录引导，测肤必须先登录（不再走游客流程）
+      if (!userRef.current) {
+        setShowAccountModal(true);
+        return;
+      }
+
       // Check test limit first
       const limit = await checkTestLimit();
 
