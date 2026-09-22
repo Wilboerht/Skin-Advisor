@@ -645,59 +645,71 @@ export default function HomeClient() {
           {/* 首屏 Hero（设计稿版式）：米白上区 + 蓝灰波浪下区，四个 IP 形象两两夹峙中央文案——
               每侧一后一前：后排水小、没入波浪（波浪层之下）；前排高大、立于波浪之上、抵到底部栏 */}
           <div className="relative flex flex-1 flex-col w-full overflow-hidden bg-[#EFE9DA]">
-            {/* 左后：极简派男性（银灰西装 · 手持几何晶体）：仅 ≥1440px 显示（z-10，波浪层之下）。
-                与右后敏感女同规格：960×1280 画幅、顶部透明边占图高 10%（实测），
-                top = 56px − 10%×图高（图高 63vh）→ 头顶落在顶栏下 56px（= 底部栏高度）；
-                图高/定位/width/height/sizes 与右后完全一致，两人头顶同高、人物大小左右对称。
-                水平：left-[14%] / right-[15%]（相比原 12%/13% 各向内收 2%，再调需两人同步）。
-                替换人物图时须保持 960×1280 画幅，若顶部透明边比例变化需同步 top 公式 */}
+            {/* 左后：极简派男性（银灰西装）：仅 ≥1440px 显示（z-10，波浪层之下）。
+                PC 首页专属新素材 hero/back-left-male.webp（旧素材及其它页面不受影响）：
+                960×1280 画幅、顶部透明边占图高 2.19%（实测），
+                top = 56px − 2.19%×图高（图高 67vh）= calc(56px-1.47vh) → 头顶落在顶栏下 56px（= 底部栏高度）；
+                图高/width/height/sizes 与右后一致，两人头顶同高（顶部留白不同故 top 各自补偿）。
+                水平：left-[14%] / right-[15%]。
+                替换图片须保持 960×1280 画幅，顶部透明边比例变化需同步 top 公式 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 left-[14%] top-[calc(56px-6.3vh)] hidden min-[1440px]:block"
+              className="absolute z-10 left-[14%] top-[calc(56px-1.47vh)] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
             >
               <Image
-                src="/images/character/minimalist/minimalist_male.webp"
+                src="/images/character/hero/back-left-male.webp"
                 alt=""
                 width={960}
                 height={1280}
                 sizes="36vw"
-                className="h-[63vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[67vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
 
-            {/* 左前：沙漠派女性（金发蓝缕捧水滴）：立于波浪之上（z-30），
-                宽屏下沉 20vh——脚底没入底部栏，允许被遮挡；底部栏 z-40 自然压盖。
-                <1440px 移动端：bottom = −5.5%×图高（底部透明边），脚底贴底部栏上缘 */}
+            {/* 左前：沙漠派女性（金发蓝缕）：立于波浪之上（z-30），宽屏下沉 28vh——脚底没入底部栏，
+                允许被遮挡；底部栏 z-40 自然压盖。
+                <1440px 移动端用原素材 desert_female.webp：bottom = −5.5%×图高（底部透明边），脚底贴底部栏上缘；
+                ≥1440px 用 PC 专属新素材 hero/front-left-female.webp（底边留白 1.33%，脚底靠 28vh 下沉藏进底栏） */}
             <m.div
               aria-hidden="true"
-              className="absolute z-30 -left-[6%] min-[1440px]:-left-[2%] -bottom-[1.9vh] min-[1440px]:-bottom-[20vh]"
+              className="absolute z-30 -left-[6%] min-[1440px]:-left-[2%] -bottom-[1.9vh] min-[1440px]:-bottom-[28vh]"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.3, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
             >
+              {/* 移动端原素材 -->
               <Image
                 src="/images/character/desert/desert_female.webp"
                 alt=""
                 width={960}
                 height={1280}
-                sizes="(min-width: 1440px) 41vw, 44vw"
-                className="h-[34vh] min-[1440px]:h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                sizes="44vw"
+                className="h-[34vh] min-[1440px]:hidden w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
+                priority
+              />
+              {/* PC 专属新素材 */}
+              <Image
+                src="/images/character/hero/front-left-female.webp"
+                alt=""
+                width={960}
+                height={1280}
+                sizes="41vw"
+                className="hidden min-[1440px]:block h-[86vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.18)]"
                 priority
               />
             </m.div>
 
             {/* 波浪分界：米白 → 蓝灰，单一明显缓弧（一上一下：峰更鼓、谷更凹），整体自左向右微微上扬。
                 viewBox 加高到 400 给峰顶留出头空间（贝塞尔控制点 -73 不出界，实际曲线最低点 >0）。
-                窄屏横向压缩约 3.7 倍会让同一曲线显得过陡，故 <1440px 用平缓路径（振幅约减半、蓝色面积与宽屏对齐），
-                ≥1440px 路径不变。蓝色面积 ≈ 内容区的 55~58%（SVG 高 60%）；
-                整体下移 7%（相对 SVG 自身高度，= 整屏高的约 3%，随视口等比缩放） */}
+                窄屏横向压缩约 3.7 倍会让同一曲线显得过陡，故 <1440px 用平缓路径（振幅约减半）。
+                蓝色区占 Hero 高度：<1440px 35%（下移 20%）、≥1440px 46%（下移 7%，相对 SVG 自身高度，随视口等比缩放） */}
             <svg
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full translate-y-[7%]"
+              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full translate-y-[20%] min-[1440px]:translate-y-[7%]"
               viewBox="0 0 1440 400"
               preserveAspectRatio="none"
             >
@@ -716,37 +728,40 @@ export default function HomeClient() {
             </svg>
 
             {/* 右后：敏感派女性（紫发托腮）：仅 ≥1440px 显示（z-10，波浪层之下）。
-                960×1280 画幅、顶部透明边占图高 10%（实测），top = 56px − 10%×图高（图高 63vh）；
-                与左后极简男完全同规格（图高/顶部锚定/width/height/sizes 均一致），头顶同高、左右对称 */}
+                PC 首页专属新素材 hero/back-right-female.webp（派系弹窗仍用 sensitive/sensitive_female.webp 旧图）：
+                960×1280 画幅、顶部透明边占图高 3.36%（实测），
+                top = 56px − 3.36%×图高（图高 67vh）= calc(56px-2.25vh)；
+                与左后极简男图高/width/height/sizes 一致，头顶同高（top 按各自留白补偿）、左右对称 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-10 right-[15%] top-[calc(56px-6.3vh)] hidden min-[1440px]:block"
+              className="absolute z-10 right-[15%] top-[calc(56px-2.25vh)] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.25, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
             >
               <Image
-                src="/images/character/sensitive/sensitive_female.webp"
+                src="/images/character/hero/back-right-female.webp"
                 alt=""
                 width={960}
                 height={1280}
                 sizes="36vw"
-                className="h-[63vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[67vh] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
 
-            {/* 右前：沙漠派男性（捧水滴）：仅 ≥1440px 显示（z-30，立于波浪之上），
-                与左前沙漠女完全同规格（同高 86vh、同下沉 20vh），两人视觉大小与基线一致 */}
+            {/* 右前：沙漠派男性：仅 ≥1440px 显示（z-30，立于波浪之上），
+                PC 首页专属新素材 hero/front-right-male.webp（旧素材及其它页面不受影响）；
+                与左前沙漠女完全同规格（同高 86vh、同下沉 28vh），两人视觉大小与基线一致 */}
             <m.div
               aria-hidden="true"
-              className="absolute z-30 -right-[2%] -bottom-[20vh] hidden min-[1440px]:block"
+              className="absolute z-30 -right-[2%] -bottom-[28vh] hidden min-[1440px]:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.35, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
             >
               <Image
-                src="/images/character/desert/desert_male.webp"
+                src="/images/character/hero/front-right-male.webp"
                 alt=""
                 width={960}
                 height={1280}
