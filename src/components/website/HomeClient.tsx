@@ -473,7 +473,41 @@ export default function HomeClient() {
     safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, nickname.trim());
   };
 
+  // Hero CTA 组合（主按钮 + 「测肤有礼」入口）：由 <1440px 文字流与 ≥1440px 绝对定位区共用，
+  // 两处容器互斥显示，避免样式漂移；
+  // 「测肤有礼」保持文字链风格：移动端用品牌深蓝 #00263E（米色底），≥1440px 沿用蓝区白字
+  const heroCta = (
+    <>
+      <button
+        type="button"
+        onClick={handleStart}
+        disabled={isLoading || isNavigating}
+        className="relative inline-flex items-center justify-center gap-2 h-12 min-[1440px]:h-14 px-10 min-[1440px]:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] min-[1440px]:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+      >
+        {/* FREE 角标：按钮子元素，随按钮悬浮/点按位移一起动；纯装饰，不拦截点击 */}
+        <Image
+          src="/images/free.png"
+          alt=""
+          aria-hidden="true"
+          width={512}
+          height={512}
+          className="absolute -top-5 -right-3.5 min-[1440px]:-top-6 min-[1440px]:-right-5 w-10 min-[1440px]:w-12 h-auto rotate-12 pointer-events-none select-none drop-shadow-[0_4px_8px_rgba(0,38,62,0.18)]"
+        />
+        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+        <span>{isLoading ? "正在连接" : "立刻体验"}</span>
+      </button>
 
+      <button
+        type="button"
+        onClick={openGiftModal}
+        aria-haspopup="dialog"
+        className="mt-4 min-[1440px]:mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] min-[1440px]:text-[13px] tracking-[0.1em] text-[#00263E]/85 min-[1440px]:text-white/85 transition-colors hover:text-[#00263E] min-[1440px]:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 min-[1440px]:focus-visible:ring-white/50"
+      >
+        <Gift className="w-3.5 h-3.5 min-[1440px]:w-4 min-[1440px]:h-4" strokeWidth={1.75} />
+        <span>测肤有礼 · 参与赢好礼</span>
+      </button>
+    </>
+  );
 
   return (
     <LazyMotion features={domAnimation}>
@@ -498,8 +532,9 @@ export default function HomeClient() {
         )}
       </AnimatePresence>
 
-      {/* 顶部栏（设计稿版式）：左蓝色汉堡按钮 + 中肌智派徽章（相对顶栏整体居中）+ 右 NIHPLOD logo；
-          淡奶油底固定定位（与底部栏同色），汉堡内收纳测肤有礼 / 常见问题 / 了解肌智派入口 */}
+      {/* 顶部栏（设计稿版式）：左蓝色汉堡按钮 + 中肌智派徽章（相对顶栏整体居中，仅 ≥1440px）+ 右 NIHPLOD logo；
+          淡奶油底固定定位（与底部栏同色），汉堡内收纳测肤有礼 / 常见问题 / 了解肌智派入口；
+          <1440px 顶栏中央不放徽章，徽章移到 Hero 标题「觉醒」上方 */}
       <header className="fixed inset-x-0 top-0 z-40 bg-[#FBF9F3] border-b border-black/[0.06]">
         <div className="relative flex items-center justify-between">
           {/* 左：汉堡按钮（宽度与右侧 logo 区一致：logo 96/128 + 右内边距 16/32 = 112/160） */}
@@ -514,8 +549,8 @@ export default function HomeClient() {
           >
             {showMenu ? <X className="w-6 h-6" strokeWidth={2} /> : <Menu className="w-6 h-6" strokeWidth={2} />}
           </button>
-          {/* 中：肌智派徽章，绝对定位相对顶栏整体居中，不受左右两侧宽度影响 */}
-          <Link href="/" aria-label="回到首页" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center" onClick={() => setShowMenu(false)}>
+          {/* 中：肌智派徽章，绝对定位相对顶栏整体居中，不受左右两侧宽度影响；<1440px 隐藏（改放 Hero 标题上方） */}
+          <Link href="/" aria-label="回到首页" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden min-[1440px]:inline-flex items-center" onClick={() => setShowMenu(false)}>
             <Image
               src="/images/jzp-eyebrow.png"
               alt="肌智派"
@@ -719,17 +754,28 @@ export default function HomeClient() {
               />
             </m.div>
 
-            {/* 中央文案：文字与按钮各自绝对定位、互不联动——
-                文字（主标题 + 副标题含蓝色问号 = 跳转「了解肌智派」）在米色板块内顶部对齐；
-                CTA 按钮（硬投影白胶囊）定在蓝色区上部（内容区 62% 高处） */}
+            {/* 中央文案：
+                <1440px：徽章 + 标题 + 副标题 + CTA（含测肤有礼）同处文字流，顶部对齐、整体居中；
+                ≥1440px：CTA 独立绝对定位在内容区 69% 高处（蓝色区上部），与文字区互不联动 */}
             <section className="relative z-40 flex-1 w-full text-center">
               {/* 文字区：顶部对齐——顶部内边距抵消固定顶栏高度（72/88px），文字顶边紧贴顶栏下缘；
                   h-[55%] 仅作容器兜底，文字实际高度小于容器，不触及波浪线 */}
               <div className="absolute inset-x-0 top-0 flex h-[55%] flex-col items-center justify-start px-6 pt-[72px] min-[1440px]:pt-[88px] opacity-0 animate-fade-in-up">
+                {/* 肌智派徽章：<1440px 从顶栏中央移入此处（顶栏只留汉堡 + NIHPLOD）；≥1440px 隐藏避免与顶栏重复。
+                    mt-2 与顶栏下缘留 8px 呼吸，mb-4 与标题留 16px */}
+                <Image
+                  src="/images/jzp-eyebrow.png"
+                  alt="肌智派"
+                  width={256}
+                  height={156}
+                  sizes="72px"
+                  className="mt-2 mb-4 h-11 w-auto object-contain min-[1440px]:hidden"
+                  priority
+                />
                 <h1 className="leading-[1.12]">
-                  {/* 移动端（<1440px）：觉醒 + 你的肌肤派系 同一行、同字号 26px，仅颜色区分（觉醒品牌蓝 / 其余深灰）；
-                      ≥1440px 恢复两行大标题（觉醒 96px / 其余 44px） */}
-                  <span className="text-[26px] min-[1440px]:-mr-[0.1em] min-[1440px]:block min-[1440px]:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
+                  {/* 移动端（<1440px）：觉醒，+ 你的肌肤派系 同一行、同字号 26px，仅颜色区分（觉醒品牌蓝 / 其余深灰）；
+                      ≥1440px 恢复两行大标题（觉醒 96px / 其余 44px），并隐藏逗号 */}
+                  <span className="text-[26px] min-[1440px]:-mr-[0.1em] min-[1440px]:block min-[1440px]:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒<span className="min-[1440px]:hidden">，</span></span>
                   <span className="min-[1440px]:block min-[1440px]:mt-2">
                     <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[26px] min-[1440px]:text-[44px] font-medium tracking-[0.1em] text-[#1c1c1c]">
                       你的肌肤派系
@@ -763,39 +809,15 @@ export default function HomeClient() {
                   <br />
                   您口袋里的专属的护肤管家
                 </p>
+                {/* 移动端（<1440px）：CTA（主按钮 + 测肤有礼）接在副标题下方、随文字流居中对齐；
+                    ≥1440px 由下方 69% 高处的绝对定位区渲染（两处互斥显示） */}
+                <div className="mt-8 flex min-[1440px]:hidden flex-col items-center">
+                  {heroCta}
+                </div>
               </div>
-              {/* CTA 区：独立定位在内容区 69% 高处（随波浪下移 7.2% 同步下移，仍处于蓝色区上部、留有余量），与文字区互不联动 */}
-              <div className="absolute inset-x-0 top-[69%] -translate-y-1/2 flex flex-col items-center px-6 opacity-0 animate-fade-in-up">
-                <button
-                  type="button"
-                  onClick={handleStart}
-                  disabled={isLoading || isNavigating}
-                  className="relative inline-flex items-center justify-center gap-2 h-12 min-[1440px]:h-14 px-10 min-[1440px]:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] min-[1440px]:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {/* FREE 角标：按钮子元素，随按钮悬浮/点按位移一起动；纯装饰，不拦截点击 */}
-                  <Image
-                    src="/images/free.png"
-                    alt=""
-                    aria-hidden="true"
-                    width={512}
-                    height={512}
-                    className="absolute -top-5 -right-3.5 min-[1440px]:-top-6 min-[1440px]:-right-5 w-10 min-[1440px]:w-12 h-auto rotate-12 pointer-events-none select-none drop-shadow-[0_4px_8px_rgba(0,38,62,0.18)]"
-                  />
-                  {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>{isLoading ? "正在连接" : "立刻体验"}</span>
-                </button>
-
-                {/* 「测肤有礼」活动入口：CTA 下方的轻量文字按钮（各宽度一致，位于蓝色波浪区内，用白字）。
-                    > 原 ≥1440px 的左下角宣传位已下线，故宽窄屏统一用这个入口 */}
-                <button
-                  type="button"
-                  onClick={openGiftModal}
-                  aria-haspopup="dialog"
-                  className="mt-4 min-[1440px]:mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] min-[1440px]:text-[13px] tracking-[0.1em] text-white/85 transition-colors hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                >
-                  <Gift className="w-3.5 h-3.5 min-[1440px]:w-4 min-[1440px]:h-4" strokeWidth={1.75} />
-                  <span>测肤有礼 · 参与赢好礼</span>
-                </button>
+              {/* CTA 区（仅 ≥1440px）：独立定位在内容区 69% 高处（蓝色区上部、留有余量），与文字区互不联动 */}
+              <div className="absolute inset-x-0 top-[69%] -translate-y-1/2 hidden min-[1440px]:flex flex-col items-center px-6 opacity-0 animate-fade-in-up">
+                {heroCta}
               </div>
             </section>
           </div>

@@ -22,6 +22,7 @@ interface SkinTypeModalProps {
  * SkinTypeModal — 肌智派类型详情弹窗（替代原 /skin-types/[type] 独立页）
  * 容器/动效/关闭按钮与 GiftModal、FaqModal 对齐；
  * 内容保留：形象与简介、优势高光、护肤日常、护肤公式（不含成分产品表）
+ * 纵向节奏规范：板块间距 32、板块标题下 16、列表行 16（py-4）、「标题→正文」8、正文行高 1.8
  */
 export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeModalProps) {
   const isOpen = data !== null;
@@ -87,7 +88,7 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                   src={`/images/character/${data.ipKey}/${data.ipKey}_female.webp`}
                   alt={`${data.typeName} 形象`}
                   width={180}
-                  height={280}
+                  height={240}
                   className="h-36 md:h-44 w-auto object-contain mb-4"
                 />
                 <h2
@@ -110,8 +111,8 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                   </h3>
                   <div className="divide-y divide-brand-charcoal/[0.06]">
                     {data.m5!.advantages.map((adv, i) => (
-                      <div key={i} className="py-3.5">
-                        <div className="flex items-baseline gap-3 mb-1.5">
+                      <div key={i} className="py-4">
+                        <div className="flex items-baseline gap-3 mb-2">
                           <span className="text-lg font-serif font-light text-brand-charcoal/20 leading-none select-none">
                             {String(i + 1).padStart(2, "0")}
                           </span>
@@ -159,7 +160,7 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                     {data.m7.title || `${data.typeName}的精准护肤公式`}
                   </h3>
                   {data.m7.formulaCore && (
-                    <div className="flex flex-wrap gap-2 mb-5">
+                    <div className="flex flex-wrap gap-2 mb-4">
                       {data.m7.formulaCore.split(/\s*[·・]\s*/).filter(Boolean).map((keyword, i) => (
                         <span
                           key={i}
@@ -172,8 +173,8 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                   )}
                   <div className="divide-y divide-brand-charcoal/[0.06]">
                     {(data.m7.suggestions ?? []).map((sug, i) => (
-                      <div key={i} className="py-3.5">
-                        <div className="flex items-baseline gap-3 mb-1.5">
+                      <div key={i} className="py-4">
+                        <div className="flex items-baseline gap-3 mb-2">
                           <span className="text-lg font-serif font-light text-brand-charcoal/20 leading-none select-none">
                             {String(i + 1).padStart(2, "0")}
                           </span>
@@ -186,7 +187,7 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                     ))}
                   </div>
                   {data.m7.onlyOneSet && (
-                    <div className="mt-5 border-l-[3px] border-brand-charcoal/20 pl-4">
+                    <div className="mt-4 border-l-[3px] border-brand-charcoal/20 pl-4">
                       <span className="inline-block text-[11px] tracking-[0.15em] text-brand-charcoal/60 bg-brand-charcoal/[0.05] rounded-full px-3 py-1 mb-2">
                         极简之选
                       </span>

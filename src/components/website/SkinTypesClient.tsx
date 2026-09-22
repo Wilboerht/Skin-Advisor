@@ -232,7 +232,7 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
                       src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
                       alt=""
                       width={180}
-                      height={180}
+                      height={240}
                       loading="lazy"
                       fetchPriority={isCenter ? "high" : "auto"}
                       sizes="184px"
@@ -244,9 +244,10 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
                         <Icon className="w-4 h-4 md:w-5 md:h-5 text-brand-charcoal/60 shrink-0" strokeWidth={1.5} />
                         {type.typeName}
                       </h2>
-                      {/* 简介与入口常驻挂载，随聚焦状态淡入淡出：避免切换瞬间插入 DOM 导致图层重栅格化掉帧 */}
+                      {/* 简介与入口常驻挂载，随聚焦状态淡入淡出：避免切换瞬间插入 DOM 导致图层重栅格化掉帧；
+                          纵向节奏与移动端列表一致：名称→简介 8、简介行高 1.6 */}
                       <p
-                        className="mt-1.5 text-[12px] md:text-[13px] text-brand-charcoal/65 font-light leading-relaxed line-clamp-2 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                        className="mt-2 text-[12px] md:text-[13px] text-brand-charcoal/65 font-light leading-[1.6] line-clamp-2 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
                         style={{ opacity: isCenter ? 1 : 0 }}
                       >
                         {type.m1.persona}
