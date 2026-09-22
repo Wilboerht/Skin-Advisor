@@ -887,16 +887,22 @@ body.home-modal-open .dock-panel {
    改为相对"居中 1920px 内容列"（对应 --breakpoint-2k）定位，min() 公式在 1280~1920
    与原百分比定位数学等价（设计稿行为不变），>1920 冻结为 1920 构图居中：
    列左边 = 50% − min(50vw,960px)；各偏移 = min(pct×100vw, pct×1920)。
-   调整列宽只需同步 960 与各 pct×列宽 数值 */
+   调整列宽只需同步 960 与各 pct×列宽 数值。
+   后排两人的偏移再套一层 clamp 防撞：图高按 vh 定（不随屏宽收窄），固定 12%/13% 偏移下
+   人物内缘 = 87~88vw，而中央标题列（含问号按钮）右伸约 50vw+200px——约 21:9 以下
+   的屏宽必撞脸。clamp(1vw, 50vw − 人物宽(0.75×vh图高) − 200px, 原偏移) 让窄屏自动贴边
+   让出文字列，宽屏取回原偏移；全程连续无跳变（约 2.2:1 以上与旧公式完全一致）。
+   人物宽进一步收窄时（图高被 65.33vw−266.67px 上限截断，见 HomeClient），VAL 必小于
+   1vw，clamp 落回下限 1vw，与图高上限配合仍恰好清空文字列 */
 @media (min-width: 1280px) {
   .home-char-back-left {
-    left: calc(50% - min(50vw, 960px) + min(12vw, 230.4px));
+    left: calc(50% - min(50vw, 960px) + clamp(1vw, calc(50vw - 64.5vh - 200px), min(12vw, 230.4px)));
   }
   .home-char-female {
     left: calc(50% - min(50vw, 960px) - min(4vw, 76.8px));
   }
   .home-char-back-right {
-    right: calc(50% - min(50vw, 960px) + min(13vw, 249.6px));
+    right: calc(50% - min(50vw, 960px) + clamp(1vw, calc(50vw - 58.5vh - 200px), min(13vw, 249.6px)));
   }
   .home-char-male {
     right: calc(50% - min(50vw, 960px) - min(8vw, 153.6px));
