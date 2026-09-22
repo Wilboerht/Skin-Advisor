@@ -656,10 +656,11 @@ export default function HomeClient() {
             {/* 波浪分界：米白 → 蓝灰，单一明显缓弧（一上一下：峰更鼓、谷更凹），整体自左向右微微上扬。
                 viewBox 加高到 400 给峰顶留出头空间（贝塞尔控制点 -73 不出界，实际曲线最低点 >0）。
                 窄屏横向压缩约 3.7 倍会让同一曲线显得过陡，故 <1440px 用平缓路径（振幅约减半、蓝色面积与宽屏对齐），
-                ≥1440px 路径不变。蓝色面积 ≈ 内容区的 47~50%（SVG 高 60%） */}
+                ≥1440px 路径不变。蓝色面积 ≈ 内容区的 55~58%（SVG 高 60%）；
+                整体下移 12%（相对 SVG 自身高度，随视口等比缩放），让分界线更低、蓝区更大 */}
             <svg
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full"
+              className="absolute inset-x-0 bottom-0 z-20 h-[60%] w-full translate-y-[12%]"
               viewBox="0 0 1440 400"
               preserveAspectRatio="none"
             >
@@ -722,8 +723,9 @@ export default function HomeClient() {
                 文字（主标题 + 副标题含蓝色问号 = 跳转「了解肌智派」）贴波浪上方（米色区下半部）；
                 CTA 按钮（硬投影白胶囊）定在蓝色区上部（内容区 62% 高处） */}
             <section className="relative z-40 flex-1 w-full text-center">
-              {/* 文字区：米色区下半部，底部对齐贴波浪上方（区高 48%，底部留白 24/40px） */}
-              <div className="absolute inset-x-0 top-0 flex h-[48%] flex-col items-center justify-end px-6 pb-6 min-[1440px]:pb-10 opacity-0 animate-fade-in-up">
+              {/* 文字区：米色区下半部，底部对齐贴波浪上方（区高 48% ⇒ 波浪下移 7.2% 后同步放大到 55%，
+                  保持"文字紧贴分界线"的关系；底部留白 24/40px） */}
+              <div className="absolute inset-x-0 top-0 flex h-[55%] flex-col items-center justify-end px-6 pb-6 min-[1440px]:pb-10 opacity-0 animate-fade-in-up">
                 <h1 className="leading-[1.12]">
                   <span className="block -mr-[0.1em] text-[54px] min-[1440px]:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
                   <span className="block mt-1.5 min-[1440px]:mt-2">
@@ -760,8 +762,8 @@ export default function HomeClient() {
                   您口袋里的专属的护肤管家
                 </p>
               </div>
-              {/* CTA 区：独立定位在内容区 62% 高处（蓝色区上部，N 形谷底中点约 66%，留有余量），与文字区互不联动 */}
-              <div className="absolute inset-x-0 top-[62%] -translate-y-1/2 flex flex-col items-center px-6 opacity-0 animate-fade-in-up">
+              {/* CTA 区：独立定位在内容区 69% 高处（随波浪下移 7.2% 同步下移，仍处于蓝色区上部、留有余量），与文字区互不联动 */}
+              <div className="absolute inset-x-0 top-[69%] -translate-y-1/2 flex flex-col items-center px-6 opacity-0 animate-fade-in-up">
                 <button
                   type="button"
                   onClick={handleStart}
