@@ -792,10 +792,12 @@ export default function HomeClient() {
                 />
                 <h1 className="leading-[1.12]">
                   {/* 移动端（<1440px）：觉醒 + 你的肌肤派系 同一行、同字号（clamp 24~28px 随屏宽自适应，小屏不换行），
-                      仅颜色区分（觉醒品牌蓝 / 其余深灰）；≥1440px 恢复两行大标题（觉醒 96px / 其余 44px） */}
+                      仅颜色区分（觉醒品牌蓝 / 其余深灰）；≥1440px 恢复两行大标题（觉醒 96px / 其余 44px）。
+                      字距：两段同为 0.1em，但「觉醒」是粗体、后半段是 medium——同字距下浅字重观感偏松，
+                      移动端把后半段收紧到 0.08em 做光学补偿（PC 两行分排无对比，保持 0.1em） */}
                   <span className="text-[clamp(24px,7.4vw,28px)] pc:-mr-[0.1em] pc:block pc:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒</span>
                   <span className="pc:block pc:mt-2">
-                    <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[clamp(24px,7.4vw,28px)] pc:text-[44px] font-medium tracking-[0.1em] text-[#1c1c1c]">
+                    <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[clamp(24px,7.4vw,28px)] pc:text-[44px] font-medium tracking-[0.08em] pc:tracking-[0.1em] text-[#1c1c1c]">
                       你的肌肤派系
                       {/* 蓝色问号：打开「了解肌智派」弹窗（扩大触达区：移动端热区外扩 8px） */}
                       <button
