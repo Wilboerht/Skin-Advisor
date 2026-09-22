@@ -484,14 +484,15 @@ export default function HomeClient() {
         disabled={isLoading || isNavigating}
         className="relative inline-flex items-center justify-center gap-2 h-12 min-[1440px]:h-14 px-10 min-[1440px]:px-12 rounded-full bg-white border border-[#22304E]/10 text-[#22304E] text-[16px] min-[1440px]:text-[18px] font-bold tracking-[0.18em] shadow-[4px_5px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
-        {/* FREE 角标：按钮子元素，随按钮悬浮/点按位移一起动；纯装饰，不拦截点击 */}
+        {/* FREE 角标：按钮子元素，随按钮悬浮/点按位移一起动；纯装饰，不拦截点击。
+            移动端 32px 骑角：-top-4/-right-4（两轴各露一半），≥1440px 保持 48px */}
         <Image
           src="/images/free.png"
           alt=""
           aria-hidden="true"
           width={512}
           height={512}
-          className="absolute -top-5 -right-3.5 min-[1440px]:-top-6 min-[1440px]:-right-5 w-10 min-[1440px]:w-12 h-auto rotate-12 pointer-events-none select-none drop-shadow-[0_4px_8px_rgba(0,38,62,0.18)]"
+          className="absolute -top-4 -right-4 min-[1440px]:-top-6 min-[1440px]:-right-5 w-8 min-[1440px]:w-12 h-auto rotate-12 pointer-events-none select-none drop-shadow-[0_4px_8px_rgba(0,38,62,0.18)]"
         />
         {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
         <span>{isLoading ? "正在连接" : "立刻体验"}</span>
@@ -501,7 +502,7 @@ export default function HomeClient() {
         type="button"
         onClick={openGiftModal}
         aria-haspopup="dialog"
-        className="mt-4 min-[1440px]:mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] min-[1440px]:text-[13px] tracking-[0.1em] text-[#00263E]/85 min-[1440px]:text-white/85 transition-colors hover:text-[#00263E] min-[1440px]:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 min-[1440px]:focus-visible:ring-white/50"
+        className="mt-4 min-[1440px]:mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] tracking-[0.1em] text-[#00263E]/85 min-[1440px]:text-white/85 transition-colors hover:text-[#00263E] min-[1440px]:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 min-[1440px]:focus-visible:ring-white/50"
       >
         <Gift className="w-3.5 h-3.5 min-[1440px]:w-4 min-[1440px]:h-4" strokeWidth={1.75} />
         <span>测肤有礼 · 参与赢好礼</span>
@@ -574,7 +575,8 @@ export default function HomeClient() {
             />
           </div>
 
-          {/* 汉堡下拉菜单：遮罩点击关闭 */}
+          {/* 汉堡下拉菜单：遮罩点击关闭。<768px 为全宽贴边面板（上/左/右贴齐顶栏，仅底部 24px 圆角 + 下描边）；
+              ≥768px 保持贴顶栏悬挂面板（240px 宽、右下圆角、右/下描边） */}
           <AnimatePresence>
             {showMenu && (
               <m.div
@@ -592,7 +594,7 @@ export default function HomeClient() {
               <m.div
                 key="menu-panel"
                 id="home-menu"
-                className="absolute left-0 top-full z-50 w-60 origin-top-left rounded-br-2xl border-r border-b border-black/[0.06] bg-white p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)]"
+                className="absolute inset-x-0 top-full z-50 origin-top rounded-b-[24px] border-b border-black/[0.06] bg-[#F7F4EE] p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)] md:inset-x-auto md:left-0 md:w-60 md:origin-top-left md:rounded-bl-none md:rounded-br-2xl md:border-r"
                 initial={{ opacity: 0, y: -6, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
@@ -773,11 +775,11 @@ export default function HomeClient() {
                   priority
                 />
                 <h1 className="leading-[1.12]">
-                  {/* 移动端（<1440px）：觉醒，+ 你的肌肤派系 同一行、同字号 26px，仅颜色区分（觉醒品牌蓝 / 其余深灰）；
-                      ≥1440px 恢复两行大标题（觉醒 96px / 其余 44px），并隐藏逗号 */}
-                  <span className="text-[26px] min-[1440px]:-mr-[0.1em] min-[1440px]:block min-[1440px]:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒<span className="min-[1440px]:hidden">，</span></span>
+                  {/* 移动端（<1440px）：觉醒，+ 你的肌肤派系 同一行、同字号（clamp 24~28px 随屏宽自适应，小屏不换行），
+                      仅颜色区分（觉醒品牌蓝 / 其余深灰）；≥1440px 恢复两行大标题（觉醒 96px / 其余 44px），并隐藏逗号 */}
+                  <span className="text-[clamp(24px,7.4vw,28px)] min-[1440px]:-mr-[0.1em] min-[1440px]:block min-[1440px]:text-[96px] font-bold tracking-[0.1em] text-[#2E4D9E]">觉醒<span className="min-[1440px]:hidden">，</span></span>
                   <span className="min-[1440px]:block min-[1440px]:mt-2">
-                    <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[26px] min-[1440px]:text-[44px] font-medium tracking-[0.1em] text-[#1c1c1c]">
+                    <span className="relative inline-flex items-center justify-center -mr-[0.1em] text-[clamp(24px,7.4vw,28px)] min-[1440px]:text-[44px] font-medium tracking-[0.1em] text-[#1c1c1c]">
                       你的肌肤派系
                       {/* 蓝色问号：打开「了解肌智派」弹窗（扩大触达区：移动端热区外扩 8px） */}
                       <button
@@ -804,7 +806,7 @@ export default function HomeClient() {
                     </span>
                   </span>
                 </h1>
-                <p className="mt-4 min-[1440px]:mt-6 text-[13px] min-[1440px]:text-[16px] leading-[1.9] tracking-[0.05em] text-[#84817a]">
+                <p className="mt-4 min-[1440px]:mt-6 text-[14px] min-[1440px]:text-[16px] leading-[1.75] min-[1440px]:leading-[1.9] tracking-[0.05em] text-[#84817a]">
                   获得专业的面部分析报告
                   <br />
                   您口袋里的专属的护肤管家
