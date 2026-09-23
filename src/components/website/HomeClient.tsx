@@ -659,7 +659,8 @@ export default function HomeClient() {
                 960×1280 画幅、顶部透明边占图高 2.19%（实测），
                 top = 56px − 2.19%×图高（图高 86vh，比右后大一档）= calc(56px-1.88vh) → 头顶落在顶栏下 56px（= 底部栏高度）；
                 width/height/sizes 与右后同规格，两人头顶同高（顶部留白不同故 top 各自补偿）。
-                水平：left-[12%] / right-[13%]（与设计稿一致，不随屏宽内收）。
+                水平：left-[12%]（设计稿站位）；窄屏/超宽屏由 globals.css 的 home-char-back-left
+                规则叠加"文案防撞"约束自动外推——与中央文案块的重合不超过图宽 1/4。
                 超大屏/窄窗保护：图高 = min(86vh,57vw)、top 补偿同步 min(1.88vh,1.25vw)，
                 仅在竖屏/近方形窄窗生效（横屏宽高比 ≥1.55 时与 86vh 完全一致，不改变现有观感）。
                 替换图片须保持 960×1280 画幅，顶部透明边比例变化需同步 top 公式 */}
@@ -736,7 +737,8 @@ export default function HomeClient() {
                 960×1280 画幅、顶部透明边占图高 3.36%（实测），
                 top = 56px − 3.36%×图高（图高 min(78vh,52vw)）= calc(56px - min(2.62vh,1.75vw))；
                 与左后极简男 width/height/sizes 同规格，图高比左后小一档；两人头顶同高（top 按各自留白补偿）、左右对称。
-                水平：right-[13%]（同左后，不随屏宽内收）；窄窗保护范围同左后 */}
+                水平：right-[13%]（设计稿站位）；窄屏/超宽屏同左后，由 globals.css 防撞规则自动外推，
+                与中央文案块（含问号按钮，右半宽 ≈190px）的重合不超过图宽 1/4；窄窗保护范围同左后 */}
             <m.div
               aria-hidden="true"
               className="home-char-back-right absolute z-10 right-[13%] top-[calc(56px_-_min(2.62vh,1.75vw))] hidden pc:block"

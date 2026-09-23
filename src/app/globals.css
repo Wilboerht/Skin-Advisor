@@ -883,20 +883,33 @@ body.home-modal-open .dock-panel {
 }
 
 /* ========== 首页 Hero：PC 端四人站位限宽（≥1280px） ========== */
-/* 与移动端同理：四人的 left/right 百分比相对视口，超宽屏（>1920）会被甩到两端。
+/* 前排两人：与移动端同理，left/right 百分比相对视口，超宽屏（>1920）会被甩到两端，
    改为相对"居中 1920px 内容列"（对应 --breakpoint-2k）定位，min() 公式在 1280~1920
-   与原百分比定位数学等价（设计稿行为不变），>1920 冻结为 1920 构图居中：
+   与原百分比定位数学等价，>1920 冻结为 1920 构图居中：
    列左边 = 50% − min(50vw,960px)；各偏移 = min(pct×100vw, pct×1920)。
+   后排两人：在同样的限宽公式上再叠一条"文案防撞"约束——中央文案块
+   （觉醒 / 你的肌肤派系 + 尾部问号按钮，半宽左 ≈150px、右 ≈190px，右侧多 40px 即问号按钮）
+   与图片盒的重合最多为图宽的 1/4：left ≤ 50% − 文案半宽 − 0.75×图宽。
+   图宽 = 0.75×图高（960×1280 画幅），故 0.75×图宽 = 0.5625×图高 = 0.5625×min(vh档, vw档)
+   （左后 48.375vh/32.0625vw = 0.5625×86/57，右后 43.875vh/29.25vw = 0.5625×78/52，
+   需与 HomeClient 中两张图的 h-[min(...)] 同步修改）。
+   外层 min() 取两者较小值：中间宽度保持设计稿站位，窄屏/超高屏自动外推、超宽屏也不压字。
    调整列宽只需同步 960 与各 pct×列宽 数值 */
 @media (min-width: 1280px) {
   .home-char-back-left {
-    left: calc(50% - min(50vw, 960px) + min(12vw, 230.4px));
+    left: min(
+      calc(50% - min(50vw, 960px) + min(12vw, 230.4px)),
+      calc(50% - 150px - min(48.375vh, 32.0625vw))
+    );
   }
   .home-char-female {
     left: calc(50% - min(50vw, 960px) - min(4vw, 76.8px));
   }
   .home-char-back-right {
-    right: calc(50% - min(50vw, 960px) + min(13vw, 249.6px));
+    right: min(
+      calc(50% - min(50vw, 960px) + min(13vw, 249.6px)),
+      calc(50% - 190px - min(43.875vh, 29.25vw))
+    );
   }
   .home-char-male {
     right: calc(50% - min(50vw, 960px) - min(8vw, 153.6px));
