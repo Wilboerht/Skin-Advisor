@@ -659,17 +659,13 @@ export default function HomeClient() {
                 960×1280 画幅、顶部透明边占图高 2.19%（实测），
                 top = 56px − 2.19%×图高（图高 86vh，比右后大一档）= calc(56px-1.88vh) → 头顶落在顶栏下 56px（= 底部栏高度）；
                 width/height/sizes 与右后同规格，两人头顶同高（顶部留白不同故 top 各自补偿）。
-                水平：left-[12%] / right-[13%]（与设计稿一致，不随屏宽内收；窄屏防撞让位由
-                globals.css 的 clamp 规则接管，约 2.2:1 以下屏宽自动贴边、清空中央文字列）。
+                水平：left-[12%] / right-[13%]（与设计稿一致，不随屏宽内收）。
                 超大屏/窄窗保护：图高 = min(86vh,57vw)、top 补偿同步 min(1.88vh,1.25vw)，
                 仅在竖屏/近方形窄窗生效（横屏宽高比 ≥1.55 时与 86vh 完全一致，不改变现有观感）。
-                文字防撞上限：图高再加 min 项 65.33vw−266.67px（=(49vw−200px文字安全区)÷0.75 宽高比），
-                与 globals.css 的 1vw 下限配合，窄竖窗下人物内缘仍不越过 50vw−200px；
-                top 补偿同步加 2.19%×该上限 = 1.431vw−5.84px，头顶落点保持 56px 不变。
                 替换图片须保持 960×1280 画幅，顶部透明边比例变化需同步 top 公式 */}
             <m.div
               aria-hidden="true"
-              className="home-char-back-left absolute z-10 left-[12%] top-[calc(56px_-_min(1.88vh,1.25vw,calc(1.431vw-5.84px)))] hidden pc:block"
+              className="home-char-back-left absolute z-10 left-[12%] top-[calc(56px_-_min(1.88vh,1.25vw))] hidden pc:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -680,7 +676,7 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="36vw"
-                className="h-[min(86vh,57vw,calc(65.33vw-266.67px))] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[min(86vh,57vw)] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
@@ -740,12 +736,10 @@ export default function HomeClient() {
                 960×1280 画幅、顶部透明边占图高 3.36%（实测），
                 top = 56px − 3.36%×图高（图高 min(78vh,52vw)）= calc(56px - min(2.62vh,1.75vw))；
                 与左后极简男 width/height/sizes 同规格，图高比左后小一档；两人头顶同高（top 按各自留白补偿）、左右对称。
-                水平：right-[13%]（同左后，不随屏宽内收）；窄窗保护范围同左后，
-                文字防撞上限与窄屏贴边让位亦同左后（上限 65.33vw−266.67px，
-                top 补偿对应项 3.36%×上限 = 2.195vw−8.96px，头顶落点不变），详见左后注释与 globals.css */}
+                水平：right-[13%]（同左后，不随屏宽内收）；窄窗保护范围同左后 */}
             <m.div
               aria-hidden="true"
-              className="home-char-back-right absolute z-10 right-[13%] top-[calc(56px_-_min(2.62vh,1.75vw,calc(2.195vw-8.96px)))] hidden pc:block"
+              className="home-char-back-right absolute z-10 right-[13%] top-[calc(56px_-_min(2.62vh,1.75vw))] hidden pc:block"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: prefersReducedMotion ? 0 : 0.25, duration: prefersReducedMotion ? 0 : 0.5, ease: "easeOut" }}
@@ -756,7 +750,7 @@ export default function HomeClient() {
                 width={960}
                 height={1280}
                 sizes="36vw"
-                className="h-[min(78vh,52vw,calc(65.33vw-266.67px))] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
+                className="h-[min(78vh,52vw)] w-auto object-contain drop-shadow-[0_20px_30px_rgba(0,38,62,0.16)]"
                 priority
               />
             </m.div>
