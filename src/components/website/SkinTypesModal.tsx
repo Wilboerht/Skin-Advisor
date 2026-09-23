@@ -2,9 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ArrowRight, X } from "lucide-react";
+import { X } from "lucide-react";
 import { skinTypes, routeOrder, type SkinTypeData } from "@/lib/result-content";
 import { SkinTypesClient } from "@/components/website/SkinTypesClient";
 import { SkinTypesMobileList } from "@/components/website/SkinTypesMobileList";
@@ -26,8 +25,8 @@ const orderedTypes = routeOrder
 /**
  * SkinTypesModal — 肌智派类型总览弹窗（替代原 /skin-types 独立页）
  * 容器/动效/关闭按钮与 SkinTypeModal、GiftModal、FaqModal 对齐；
- * 内容仅保留：标题 + 测肤 CTA + 派系总览（移动端为单列横排卡列表，桌面端为 Cover Flow 轮播）；
- * 移动端 CTA 为抽屉底部吸附条（≥768px 回到标题下方文本框内，避免与轮播抢横向空间）
+ * 内容仅保留：标题 + 品牌副标题 + 派系总览（移动端为单列横排卡列表，桌面端为 Cover Flow 轮播）；
+ * hideTestCTA 仅用于向派系详情弹窗透传，隐藏详情内的测肤 CTA
  */
 export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTypesModalProps) {
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
@@ -84,9 +83,9 @@ export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTyp
                 <X size={17} strokeWidth={1.5} />
               </button>
 
-              {/* 可滚动内容区（移动端底部另有吸附底栏：CTA + 版权，滚动区底部留 24px 与之间隔） */}
+              {/* 可滚动内容区（移动端底部另有版权底栏，滚动区底部留 24px 与之间隔） */}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-6 sm:pb-8">
-                {/* 头部：肌智派徽标 + 标题（测肤 CTA 移动端移到底部吸附条，桌面端仍在标题下） */}
+                {/* 头部：肌智派徽标 + 标题 + 品牌副标题 */}
                 <div className="text-center mb-5 md:mb-6">
                   <div className="mb-3 md:mb-4 flex justify-center">
                     <Image
@@ -101,18 +100,11 @@ export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTyp
                     id="skin-types-modal-title"
                     className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em]"
                   >
-                    肌智派<sup className="text-[0.55em] align-super font-sans">™</sup>形象与护理方案
+                    派系速览
                   </h2>
-                  {!hideTestCTA && (
-                    <Link
-                      href="/?start=1"
-                      onClick={onClose}
-                      className="group mt-4 md:mt-5 hidden md:inline-flex items-center justify-center gap-2 px-6 h-11 rounded-full border border-[#00263E]/40 bg-transparent text-[#00263E] text-sm font-medium transition-colors duration-200 hover:border-[#00263E] hover:bg-[#00263E]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2"
-                    >
-                      <span>测一测，了解我的肤质类型</span>
-                      <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
-                    </Link>
-                  )}
+                  <p className="mt-2 md:mt-3 text-[12px] md:text-[13px] font-light text-brand-charcoal/55 tracking-[0.25em]">
+                    肌因觉醒 智成一派
+                  </p>
                 </div>
 
                 {/* 派系总览：移动端为单列横排卡列表，桌面端为 Cover Flow 轮播 */}
@@ -132,23 +124,12 @@ export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTyp
                 </p>
               </div>
 
-              {/* 移动端吸附底栏：固定在抽屉底部（安全区之上）——CTA（分析等待期复用时隐藏）+ 版权（始终显示）；
-                  与滚动区分离，不随内容滚走 */}
+              {/* 移动端底栏：仅版权，固定在抽屉底部（安全区之上） */}
               <div className="md:hidden shrink-0 border-t border-black/[0.06] px-6 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
-                {!hideTestCTA && (
-                  <Link
-                    href="/?start=1"
-                    onClick={onClose}
-                    className="group flex w-full items-center justify-center gap-2 h-12 rounded-full bg-[var(--color-brand-cocoa)] text-white text-sm font-medium tracking-[0.02em] transition-colors duration-200 hover:bg-[#4a3a2c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/30 focus-visible:ring-offset-2"
-                  >
-                    <span>测一测，了解我的肤质类型</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
-                  </Link>
-                )}
                 {/* 版权：窄屏用简写（与首页页脚一致），年份跨年瞬间 SSR/CSR 会不一致，抑制 hydration 告警 */}
                 <p
                   suppressHydrationWarning
-                  className={`text-center text-[10px] font-light tracking-[0.12em] text-brand-charcoal/50 select-none ${hideTestCTA ? "" : "mt-2"}`}
+                  className="text-center text-[10px] font-light tracking-[0.12em] text-brand-charcoal/50 select-none"
                 >
                   &copy; {new Date().getFullYear()} NIHPLOD
                 </p>
