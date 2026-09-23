@@ -13,6 +13,7 @@ import {
     awaitInflightRotation,
     poisonRefreshCache,
     revokeSsoToken,
+    markAccessTokenRevoked,
     REFRESH_TOKEN_COOKIE,
     ACCESS_TOKEN_COOKIE,
 } from "@/lib/sso-auth";
@@ -115,6 +116,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (rotated) {
       revocations.push(revokeSsoToken(rotated.refresh_token, "refresh_token"));
       revocations.push(revokeSsoToken(rotated.access_token, "access_token"));
+      // 本地撤销登记：掐掉新 access token 在本站的剩余有效窗口
+      markAccessTokenRevoked(rotated.access_token);
     }
   }
   // 同时撤销浏览器当前持有的 access token：否则轮换响应若已把新 token
@@ -122,6 +125,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const accessToken = req.cookies.get(ACCESS_TOKEN_COOKIE)?.value ?? null;
   if (accessToken) {
     revocations.push(revokeSsoToken(accessToken, "access_token"));
+    markAccessTokenRevoked(accessToken);
   }
   // 本地 refresh token 同步撤销（原实现只清 Cookie，DB 里哈希长期有效）
   const localRefreshToken = req.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value ?? null;

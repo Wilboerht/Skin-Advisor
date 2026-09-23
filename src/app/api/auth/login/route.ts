@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
     DEFAULT_STATE_COOKIE_NAME,
+    DEFAULT_NONCE_COOKIE_NAME,
     DEFAULT_RETURN_COOKIE_NAME,
     DEFAULT_VERIFIER_COOKIE_NAME,
     getHostCookieOptions,
@@ -55,6 +56,10 @@ export async function GET(req: NextRequest) {
     const returnTo = sanitizeReturnTo(req.nextUrl.searchParams.get("return_to"));
 
     const state = generateRandomString(32);
+    // OIDC nonce（43 字符，与 createSsoMiddleware 同一约定）：写入 nonce Cookie 后，
+    // SDK callback 检测到该 Cookie 会自动校验 id_token 的 nonce claim（防重放）。
+    // 补上后本入口与 middleware 触发的登录安全等级一致。
+    const nonce = generateRandomString(43);
     const verifier = generateRandomString(64);
     const challenge = await computeCodeChallenge(verifier);
 
@@ -64,6 +69,7 @@ export async function GET(req: NextRequest) {
         redirect_uri: SSO_REDIRECT_URI,
         scope: SSO_SCOPES,
         state,
+        nonce,
         code_challenge: challenge,
         code_challenge_method: "S256",
     });
@@ -76,6 +82,7 @@ export async function GET(req: NextRequest) {
 
     const response = NextResponse.redirect(`${SSO_BASE_URL}/api/oauth/authorize?${authorizeParams.toString()}`);
     response.cookies.set(cookieName(DEFAULT_STATE_COOKIE_NAME), state, getHostCookieOptions(600, secure));
+    response.cookies.set(cookieName(DEFAULT_NONCE_COOKIE_NAME), nonce, getHostCookieOptions(600, secure));
     response.cookies.set(cookieName(DEFAULT_VERIFIER_COOKIE_NAME), verifier, getSecureCookieOptions(600, CALLBACK_PATH, secure));
     response.cookies.set(cookieName(DEFAULT_RETURN_COOKIE_NAME), returnTo, getHostCookieOptions(600, secure));
     return response;

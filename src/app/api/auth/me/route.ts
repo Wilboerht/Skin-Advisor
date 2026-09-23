@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ssoVerifier, getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, normalizeSsoAvatarUrl, upsertLocalUser, SSO_BASE_URL, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokensSingleFlight } from "@/lib/sso-auth";
-import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
+import { ssoVerifier, getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, normalizeSsoAvatarUrl, upsertLocalUser, getLocalSessionDbUser, isAccessTokenRevoked, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokensSingleFlight } from "@/lib/sso-auth";
+import { SSO_INSECURE_LOCAL_DEV, SSO_SERVER_BASE_URL } from "@/lib/sso-config";
 import prisma from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { verifyCsrfToken } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
-import { UserRole, isDisabledUser } from "@/lib/permissions";
+import { isDisabledUser } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
     const ip = getClientIP(req);
@@ -35,7 +35,25 @@ export async function GET(req: NextRequest) {
     }
 
     if (!payload?.sub) {
-        return NextResponse.json({ user: null });
+        // 微信登录兜底：主站微信 exchange 流程不在主站域种 SSO 会话 Cookie，
+        // 微信用户仅持有本地 JWT（__Host-auth_token）。此处按本地会话返回用户，
+        // 保证前端显示已登录；tokenVersion 比对与禁用检查在 getLocalSessionDbUser 内完成
+        const localUser = await getLocalSessionDbUser();
+        if (!localUser) {
+            return NextResponse.json({ user: null });
+        }
+        return NextResponse.json({
+            user: {
+                id: localUser.id,
+                phone: localUser.phoneNumber || null,
+                name: localUser.name || "",
+                avatar: localUser.avatarUrl || null,
+                membershipLevel: localUser.membershipLevel || null,
+                totalSpent: localUser.totalSpent ?? null,
+                gender: localUser.gender ?? null,
+                role: localUser.role || "user",
+            },
+        });
     }
 
     // 顺带从 id_token 同步 nickname/avatar 到本地（introspect 的 access token 不含这些 claims）
@@ -127,6 +145,11 @@ export async function PUT(req: NextRequest) {
         return apiError(ErrorCode.UNAUTHORIZED, "请先登录", 401);
     }
 
+    // 登出撤销窗口：已撤销的 access token 在剩余有效期内不得再改资料
+    if (isAccessTokenRevoked(token)) {
+        return apiError(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录", 401);
+    }
+
     const payload = await ssoVerifier.verify(token);
     if (!payload?.sub) {
         return apiError(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录", 401);
@@ -143,7 +166,9 @@ export async function PUT(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const officialBody: { nickname?: string; avatar?: string } = {};
+        // 主站契约：PATCH /api/oauth/userinfo 仅接受 nickname/avatar/birthday/gender，
+        // 本端点透传昵称/头像/性别（生日走 /api/account/profile）
+        const officialBody: { nickname?: string; avatar?: string; gender?: "male" | "female" | null } = {};
         if (body.nickname !== undefined) {
             officialBody.nickname = body.nickname;
         } else if (body.name !== undefined) {
@@ -152,9 +177,18 @@ export async function PUT(req: NextRequest) {
         if (body.avatar !== undefined) {
             officialBody.avatar = body.avatar;
         }
+        if (body.gender !== undefined) {
+            if (body.gender !== null && body.gender !== "male" && body.gender !== "female") {
+                return apiError(ErrorCode.VALIDATION_ERROR, "gender 仅支持 male/female/null", 400);
+            }
+            officialBody.gender = body.gender;
+        }
 
-        const response = await fetch(`${SSO_BASE_URL}/api/user/profile`, {
-            method: "PUT",
+        // 主站 OIDC 资料修改端点（Bearer OAuth access token，需 profile:write scope）。
+        // 主站 PUT /api/user/profile 只认主站自有会话 JWT，子站 OAuth token 必被拒，
+        // 因此必须走 /api/oauth/userinfo；服务器间调用走内网地址（若配置）。
+        const response = await fetch(`${SSO_SERVER_BASE_URL}/api/oauth/userinfo`, {
+            method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`,
@@ -162,48 +196,49 @@ export async function PUT(req: NextRequest) {
             body: JSON.stringify(officialBody),
         });
 
-        if (response.status === 401 || response.status === 403) {
+        // 成功返回扁平 claims {sub, nickname, avatar, gender, birthday}；
+        // 失败返回 {error, error_description}
+        const data = (await response.json().catch(() => null)) as {
+            sub?: string;
+            nickname?: string;
+            avatar?: string;
+            gender?: "male" | "female" | null;
+            error?: string;
+            error_description?: string;
+        } | null;
+
+        if (response.status === 401) {
             return apiError(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录", 401);
         }
-
-        const data = (await response.json()) as { success?: boolean; data?: { user?: { id: string; phone: string; nickname: string | null; avatar: string | null } }; error?: { message?: string } };
-        if (!response.ok || !data.success || !data.data?.user) {
-            return apiError(
-                ErrorCode.UPSTREAM_ERROR,
-                data.error?.message || "更新失败",
-                response.status || 502
-            );
+        if (response.status === 403) {
+            if (data?.error === "insufficient_scope") {
+                // 多为 client 未放行 profile:write scope（主站后台 / NEXT_PUBLIC_SSO_SCOPES）
+                logger.error("[auth/me] PUT 主站拒绝：insufficient_scope（请检查 client scopes 配置）");
+                return apiError(ErrorCode.FORBIDDEN, "未授权资料修改", 403);
+            }
+            // birthday_locked / account_disabled 等：透传主站描述
+            return apiError(ErrorCode.FORBIDDEN, data?.error_description || "当前账号没有修改资料的权限", 403);
+        }
+        if (!response.ok || !data?.sub) {
+            logger.warn("[auth/me] PUT 主站响应异常", { status: response.status, error: data?.error });
+            return apiError(ErrorCode.UPSTREAM_ERROR, data?.error_description || "更新失败", 502);
         }
 
-        const user = data.data.user;
-        const avatarUrl = normalizeSsoAvatarUrl(user.avatar) ?? null;
-
-        // Sync the updated profile back to the local DB
-        await prisma.user.upsert({
-            where: { id: user.id },
-            update: {
-                phoneNumber: user.phone,
-                name: user.nickname || user.phone,
-                avatarUrl,
-            },
-            create: {
-                id: user.id,
-                phoneNumber: user.phone,
-                password: null,
-                name: user.nickname || user.phone,
-                avatarUrl,
-                role: UserRole.USER,
-                tokenVersion: 0,
-            },
+        // 同步本地副本（gender 三态：undefined 不动 / null 清除 / 值设定，与 sso-auth 口径一致）
+        const localUser = await upsertLocalUser(payload, {
+            nickname: data.nickname,
+            avatar: data.avatar,
+            gender: data.gender,
         });
 
         return apiSuccess({
             user: {
-                id: user.id,
-                phone: user.phone,
-                name: user.nickname || user.phone,
-                avatar: avatarUrl,
-                role: "user",
+                id: data.sub,
+                phone: localUser?.phoneNumber || payload.phone || null,
+                name: data.nickname || localUser?.name || "",
+                avatar: normalizeSsoAvatarUrl(data.avatar) ?? localUser?.avatarUrl ?? null,
+                gender: data.gender ?? null,
+                role: localUser?.role || "user",
             },
         });
     } catch (err) {

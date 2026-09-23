@@ -11,7 +11,8 @@ import { PUBLIC_PATHS } from "@/lib/public-paths";
 /**
  * Next.js 全局 Proxy (formerly Middleware)
  * 部署环境：云服务器（PM2 单实例常驻进程）
- * 注意：此 proxy 在 Edge Runtime 中运行，不使用 Node.js 原生 API
+ * 注意：Next 16 中 proxy 默认运行于 Node.js runtime（不再是 Edge Runtime），
+ * 但仍应保持轻量——重活（DB 查询等）留给 Route Handler。
  *
  * 公开路径清单位于 @/lib/public-paths（与 auth 回调的死循环防护共用）。
  */
@@ -24,6 +25,11 @@ const ssoMiddleware = createSsoMiddleware({
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   scopes: process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile phone membership birthday profile:write",
     publicPaths: PUBLIC_PATHS,
+    // 指向一个永不存在的 Cookie：SDK 默认检查 __Host-user_token（主站会话 JWT）
+    // 并拿去主站 introspect——主站 introspect 只接受 OAuth token，对该值恒
+    // active:false，白付一次回源；子站微信流程又会种同名 Cookie，必须绕开。
+    // Cookie 不存在时 SDK 跳过该项检查。
+    ssoCookieName: "__Host-nihplod_noop_session",
     // 本地 HTTP 开发模式：与 callback/logout/login 保持一致（生产被 SDK 强制忽略）
     insecureLocalDev: SSO_INSECURE_LOCAL_DEV,
     // 服务器间调用（introspect）的内网地址；未配置时走公网（SDK 默认行为）
@@ -99,8 +105,20 @@ export async function proxy(request: NextRequest) {
     }
 
     // ==================== SSO 一网通登录保护 ====================
-    const ssoResponse = await ssoMiddleware(request);
-    if (ssoResponse.headers.get("location") || (ssoResponse.status >= 300 && ssoResponse.status < 400)) {
+    // API 路径不走 SSO middleware：无 token 时 SDK 会 302 到主站 authorize，
+    // fetch 跨域跟随重定向必失败（应得 401）。API 的鉴权由各 route handler
+    // 内的 getSessionUser 完成，返回标准 401 JSON；下方 CSRF/Admin 检查照常执行。
+    const isApiPath = pathname.startsWith("/api/");
+    // 微信登录用户：持有有效本地 JWT（__Host-auth_token）但无 SSO Cookie
+    //（主站微信 exchange 流程不在主站域种会话 Cookie），被 SDK middleware
+    // 302 到主站会落到登录页、流程断裂，因此携带有效本地会话时跳过 SSO 检查。
+    // 注意：此处只做纯验签（proxy 层不查 DB），tokenVersion 撤销有最长 30min 窗口
+    //（本地 JWT TTL）；写操作仍由 route handler / CSRF 层二次校验。
+    const localAuthCookieVal = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+    const hasValidLocalSession = localAuthCookieVal ? Boolean(await verifyToken(localAuthCookieVal)) : false;
+
+    const ssoResponse = isApiPath || hasValidLocalSession ? null : await ssoMiddleware(request);
+    if (ssoResponse && (ssoResponse.headers.get("location") || (ssoResponse.status >= 300 && ssoResponse.status < 400))) {
         return ssoResponse;
     }
 
@@ -117,8 +135,7 @@ export async function proxy(request: NextRequest) {
         !isPublicPath(pathname)
     ) {
         const ssoTokenCookie = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
-        const localAuthCookieVal = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-        if (ssoTokenCookie && (!localAuthCookieVal || !(await verifyToken(localAuthCookieVal)))) {
+        if (ssoTokenCookie && !hasValidLocalSession) {
             // 重定向基准取站点公网 origin：standalone 部署下 request.url 是进程
             // 监听地址（如 http://0.0.0.0:3002），会把浏览器重定向到不可达地址
             const recoveryUrl = new URL("/api/auth/session-init", getPublicOrigin() || request.url);

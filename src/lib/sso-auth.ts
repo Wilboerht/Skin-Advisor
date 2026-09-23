@@ -7,9 +7,11 @@
 
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
+import { createHash } from "crypto";
 import { createTokenVerifier, type VerifiedTokenPayload } from "@nihplod/sso-verify";
 import { toInsecureCookieName } from "@nihplod/sso-sdk/next";
 import { SSO_INSECURE_LOCAL_DEV, SSO_SERVER_BASE_URL } from "@/lib/sso-config";
+import { AUTH_COOKIE_NAME, verifyToken } from "@/lib/auth-config";
 import { UserRole, isDisabledUser } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth";
@@ -116,11 +118,70 @@ export const ssoVerifier = createTokenVerifier({
     // introspect 是服务器间调用：走内网地址（若配置）；
     // issuer 校验仍用公网地址（token 中的 iss 按公网 origin 签发）
     introspectionEndpoint: `${SSO_SERVER_BASE_URL}/api/oauth/introspect`,
+    // RS256 本地验签（第一级）：主站 JWKS 发布 access/id/logout token 公钥，
+    // 命中时免去 introspect 回源；本地验签不感知撤销，revoked/HS256 等情况
+    // 仍由 introspectionEndpoint 兜底（sso-verify 验证顺序：HS256→RS256 本地→introspect）
+    jwksUri: `${SSO_SERVER_BASE_URL}/api/oauth/jwks`,
     clientId: SSO_CLIENT_ID,
     clientSecret: SSO_CLIENT_SECRET,
     audience: SSO_CLIENT_ID,
     issuer: SSO_BASE_URL,
 });
+
+/**
+ * 本地撤销集合：登出时已向主站撤销的 access token 在其剩余有效期内
+ * 仍可能通过本地 RS256 验签（JWKS 路径不感知撤销）或 introspect 缓存，
+ * 这里按 sha256(token) 记入进程内黑名单，verifySsoToken 命中即拒绝。
+ *
+ * 已知限制：进程内方案，多实例部署不同步（与上方单飞缓存同级）；
+ * 撤销窗口最长到 token 自然过期（主站 access token 15 分钟）。
+ */
+const revokedAccessTokenHashes = new Map<string, number>();
+const REVOKED_CACHE_CAPACITY = 1000;
+const DEFAULT_ACCESS_TOKEN_TTL_MS = 15 * 60 * 1000;
+
+function hashAccessToken(token: string): string {
+    return createHash("sha256").update(token).digest("hex");
+}
+
+/**
+ * 标记 access token 已撤销。expiresAtMs 缺省时按 token JWT 的 exp 解析，
+ * 解析失败按 15 分钟兜底（主站 access token 标准有效期）。
+ */
+export function markAccessTokenRevoked(token: string, expiresAtMs?: number): void {
+    let exp = expiresAtMs;
+    if (exp === undefined) {
+        try {
+            const part = token.split(".")[1];
+            const payload = JSON.parse(Buffer.from(part.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"));
+            exp = typeof payload.exp === "number" ? payload.exp * 1000 : undefined;
+        } catch {
+            exp = undefined;
+        }
+    }
+    const until = exp ?? Date.now() + DEFAULT_ACCESS_TOKEN_TTL_MS;
+    if (until <= Date.now()) return;
+    const now = Date.now();
+    for (const [key, expiry] of revokedAccessTokenHashes) {
+        if (expiry <= now) revokedAccessTokenHashes.delete(key);
+    }
+    while (revokedAccessTokenHashes.size >= REVOKED_CACHE_CAPACITY) {
+        const oldest = revokedAccessTokenHashes.keys().next().value;
+        if (oldest === undefined) break;
+        revokedAccessTokenHashes.delete(oldest);
+    }
+    revokedAccessTokenHashes.set(hashAccessToken(token), until);
+}
+
+export function isAccessTokenRevoked(token: string): boolean {
+    const until = revokedAccessTokenHashes.get(hashAccessToken(token));
+    if (until === undefined) return false;
+    if (until <= Date.now()) {
+        revokedAccessTokenHashes.delete(hashAccessToken(token));
+        return false;
+    }
+    return true;
+}
 
 /** refresh_token 轮换后主站返回的 token 集 */
 export interface RefreshedTokens {
@@ -292,6 +353,8 @@ export async function getAccessToken(req?: NextRequest): Promise<string | null> 
 export async function verifySsoToken(req?: NextRequest): Promise<VerifiedTokenPayload | null> {
     const token = await getAccessToken(req);
     if (!token) return null;
+    // 登出撤销窗口：本地黑名单命中直接拒绝（JWKS 本地验签不感知撤销）
+    if (isAccessTokenRevoked(token)) return null;
     return ssoVerifier.verify(token);
 }
 
@@ -325,55 +388,107 @@ export async function upsertLocalUser(
             ? Math.max(0, Math.floor(profile.totalSpent))
             : undefined;
 
-    const dbUser = await prisma.user.upsert({
-        where: { id: payload.sub },
-        update: {
-            phoneNumber: phone,
-            name,
-            ...(avatarUrl ? { avatarUrl } : {}),
-            ...(membershipLevel ? { membershipLevel } : {}),
-            ...(totalSpent !== undefined ? { totalSpent } : {}),
-            // gender 三态：undefined 不动；null 清除；male/female 设定（见 SsoProfileClaims）
-            ...(profile?.gender !== undefined ? { gender: profile.gender } : {}),
-            // userinfo 回源成功时由调用方传入当前时间，标记资料已同步（/api/auth/me 据此做 6 小时强制刷新）
-            ...(options?.profileSyncedAt ? { profileSyncedAt: options.profileSyncedAt } : {}),
-        },
-        create: {
-            id: payload.sub,
-            phoneNumber: phone || null,
-            name: name || "",
-            avatarUrl: avatarUrl || null,
-            membershipLevel: membershipLevel || null,
-            totalSpent: totalSpent ?? 0,
-            gender: profile?.gender ?? null,
-            profileSyncedAt: options?.profileSyncedAt ?? null,
-            password: null,
-            role: UserRole.USER,
-            tokenVersion: 0,
-        },
-        select: {
-            id: true,
-            email: true,
-            phoneNumber: true,
-            name: true,
-            avatarUrl: true,
-            membershipLevel: true,
-            totalSpent: true,
-            gender: true,
-            profileSyncedAt: true,
-            role: true,
-            dailyTestLimit: true,
-            tokenVersion: true,
-        },
-    });
+    const select = {
+        id: true,
+        email: true,
+        phoneNumber: true,
+        name: true,
+        avatarUrl: true,
+        membershipLevel: true,
+        totalSpent: true,
+        gender: true,
+        profileSyncedAt: true,
+        role: true,
+        dailyTestLimit: true,
+        tokenVersion: true,
+    } as const;
 
-    return dbUser;
+    try {
+        return await prisma.user.upsert({
+            where: { id: payload.sub },
+            update: {
+                phoneNumber: phone,
+                name,
+                ...(avatarUrl ? { avatarUrl } : {}),
+                ...(membershipLevel ? { membershipLevel } : {}),
+                ...(totalSpent !== undefined ? { totalSpent } : {}),
+                // gender 三态：undefined 不动；null 清除；male/female 设定（见 SsoProfileClaims）
+                ...(profile?.gender !== undefined ? { gender: profile.gender } : {}),
+                // userinfo 回源成功时由调用方传入当前时间，标记资料已同步（/api/auth/me 据此做 6 小时强制刷新）
+                ...(options?.profileSyncedAt ? { profileSyncedAt: options.profileSyncedAt } : {}),
+            },
+            create: {
+                id: payload.sub,
+                phoneNumber: phone || null,
+                name: name || "",
+                avatarUrl: avatarUrl || null,
+                membershipLevel: membershipLevel || null,
+                totalSpent: totalSpent ?? 0,
+                gender: profile?.gender ?? null,
+                profileSyncedAt: options?.profileSyncedAt ?? null,
+                password: null,
+                role: UserRole.USER,
+                tokenVersion: 0,
+            },
+            select,
+        });
+    } catch (err) {
+        // P2002 唯一键冲突：并发首登时两个请求同时走 create 分支，只有一个成功；
+        // 冲突方重读已存在的记录返回即可（重读不到说明是其他唯一键问题，继续抛）
+        if ((err as { code?: string })?.code === "P2002") {
+            const existing = await prisma.user.findUnique({ where: { id: payload.sub }, select });
+            if (existing) return existing;
+        }
+        throw err;
+    }
+}
+
+/**
+ * 本地会话兜底（微信登录用户）：主站微信 exchange 流程不在 nihplod.cn 域
+ * 种 SSO 会话 Cookie，微信用户仅持有本站本地 JWT（__Host-auth_token，30min）。
+ * SSO token 验证全部失败（含静默轮换失败）后用本地 JWT 定位 DB 用户。
+ * 不做 upsert（微信回调流程已落库）；JWT 内嵌 tokenVersion 与 DB 不一致
+ * 视为已撤销（管理员强制下线/改密即时生效）；被禁用用户返回 null。
+ */
+export async function getLocalSessionDbUser() {
+    try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+        if (!token) return null;
+        const payload = await verifyToken(token);
+        if (!payload) return null;
+        const sub = typeof payload.sub === "string" ? payload.sub : null;
+        if (!sub) return null;
+        const dbUser = await prisma.user.findUnique({
+            where: { id: sub },
+            select: {
+                id: true,
+                email: true,
+                phoneNumber: true,
+                name: true,
+                avatarUrl: true,
+                membershipLevel: true,
+                totalSpent: true,
+                gender: true,
+                role: true,
+                dailyTestLimit: true,
+                tokenVersion: true,
+            },
+        });
+        if (!dbUser) return null;
+        if (typeof payload.tokenVersion === "number" && payload.tokenVersion !== dbUser.tokenVersion) return null;
+        if (isDisabledUser(dbUser.role)) return null;
+        return dbUser;
+    } catch {
+        return null;
+    }
 }
 
 /**
  * 兼容旧 getSession() 的 SSO 版实现。
  * 通过 access_token 验证主站身份后，返回本地 User 表的完整会话信息。
  * 若本地不存在该用户则自动创建（保留肤质测试等业务关联）。
+ * SSO 验证失败时兜底本地会话（微信登录用户无 SSO Cookie）。
  */
 export async function getSessionUser(req?: NextRequest): Promise<SessionUser | null> {
     let payload = await verifySsoToken(req);
@@ -382,7 +497,22 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
     if (!payload?.sub) {
         payload = await refreshSessionFromCookie();
     }
-    if (!payload?.sub) return null;
+    if (!payload?.sub) {
+        // 微信登录兜底：仅本地 JWT 会话（无 SSO Cookie），不 upsert
+        const localUser = await getLocalSessionDbUser();
+        if (!localUser) return null;
+        return {
+            id: localUser.id,
+            email: localUser.email,
+            phone: localUser.phoneNumber || undefined,
+            name: localUser.name || undefined,
+            role: localUser.role,
+            tokenVersion: localUser.tokenVersion,
+            dailyTestLimit: localUser.dailyTestLimit,
+            membershipLevel: localUser.membershipLevel,
+            totalSpent: localUser.totalSpent,
+        };
+    }
 
     const dbUser = await upsertLocalUser(payload);
     if (!dbUser) return null;

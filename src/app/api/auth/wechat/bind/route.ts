@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 微信绑定手机号（子站）
  * POST /api/auth/wechat/bind
  *
@@ -20,6 +20,7 @@ import {
     USER_REFRESH_COOKIE_NAME,
     USER_ACCESS_COOKIE_OPTIONS,
     USER_REFRESH_COOKIE_OPTIONS,
+    WECHAT_BIND_COOKIE_NAME,
 } from "@/lib/wechat-constants";
 import { logger } from "@/lib/logger";
 
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
 
         // 优先从 httpOnly Cookie 读取 exchange token（安全），回退到 body 参数（向后兼容）
-        const wechatExchangeToken = req.cookies.get("__Host-wechat_bind_token")?.value || body.wechatExchangeToken;
+        const wechatExchangeToken = req.cookies.get(WECHAT_BIND_COOKIE_NAME)?.value || body.wechatExchangeToken;
         if (!wechatExchangeToken) {
             return apiError(ErrorCode.VALIDATION_ERROR, "缺少微信授权凭证", 400);
         }
@@ -116,23 +117,31 @@ export async function POST(req: NextRequest) {
         }
 
         // Upsert user into local database
-        const localUser = await prisma.user.upsert({
-            where: { id: userPayload.id },
-            update: {
-                phoneNumber: userPayload.phone,
-                name: userPayload.nickname || userPayload.phone,
-                avatarUrl: userPayload.avatar || null,
-            },
-            create: {
-                id: userPayload.id,
-                phoneNumber: userPayload.phone,
-                password: null,
-                name: userPayload.nickname || userPayload.phone,
-                avatarUrl: userPayload.avatar || null,
-                role: UserRole.USER,
-                tokenVersion: 0
-            }
-        });
+        let localUser;
+        try {
+            localUser = await prisma.user.upsert({
+                where: { id: userPayload.id },
+                update: {
+                    phoneNumber: userPayload.phone,
+                    name: userPayload.nickname || userPayload.phone,
+                    avatarUrl: userPayload.avatar || null,
+                },
+                create: {
+                    id: userPayload.id,
+                    phoneNumber: userPayload.phone,
+                    password: null,
+                    name: userPayload.nickname || userPayload.phone,
+                    avatarUrl: userPayload.avatar || null,
+                    role: UserRole.USER,
+                    tokenVersion: 0
+                }
+            });
+        } catch (err) {
+            // P2002：并发绑定同时走 create 分支时只有一个成功，冲突方重读即可
+            if ((err as { code?: string })?.code !== "P2002") throw err;
+            localUser = await prisma.user.findUnique({ where: { id: userPayload.id } });
+            if (!localUser) throw err;
+        }
 
         const response = NextResponse.json({
             user: {
@@ -148,7 +157,7 @@ export async function POST(req: NextRequest) {
         response.cookies.set(USER_COOKIE_NAME, result.accessToken, USER_ACCESS_COOKIE_OPTIONS);
         response.cookies.set(USER_REFRESH_COOKIE_NAME, result.refreshToken, USER_REFRESH_COOKIE_OPTIONS);
         // 清除临时绑定 token Cookie
-        response.cookies.delete("__Host-wechat_bind_token");
+        response.cookies.delete(WECHAT_BIND_COOKIE_NAME);
 
         const sessionOk = await signLocalSession(response, {
             id: localUser.id,

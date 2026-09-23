@@ -17,6 +17,7 @@ import {
     USER_REFRESH_COOKIE_NAME,
     USER_ACCESS_COOKIE_OPTIONS,
     USER_REFRESH_COOKIE_OPTIONS,
+    WECHAT_BIND_COOKIE_NAME,
 } from "@/lib/wechat-constants";
 import prisma from "@/lib/prisma";
 import { UserRole } from "@/lib/permissions";
@@ -139,9 +140,9 @@ export async function GET(req: NextRequest) {
             const bindUrl = new URL("/auth/wechat-bind", siteOrigin);
             bindUrl.searchParams.set("redirect", redirect);
             const bindResponse = NextResponse.redirect(bindUrl, 302);
-            bindResponse.cookies.set("__Host-wechat_bind_token", exchangeToken, {
+            bindResponse.cookies.set(WECHAT_BIND_COOKIE_NAME, exchangeToken, {
                 httpOnly: true,
-                secure: true,
+                secure: USER_ACCESS_COOKIE_OPTIONS.secure,
                 sameSite: "lax" as const,
                 path: "/",
                 maxAge: 5 * 60, // 5 分钟有效
@@ -169,23 +170,31 @@ export async function GET(req: NextRequest) {
             });
         }
 
-        const localUser = await prisma.user.upsert({
-            where: { id: userPayload.id },
-            update: {
-                phoneNumber: userPayload.phone,
-                name: userPayload.nickname || userPayload.phone,
-                avatarUrl: userPayload.avatar || null,
-            },
-            create: {
-                id: userPayload.id,
-                phoneNumber: userPayload.phone,
-                password: null,
-                name: userPayload.nickname || userPayload.phone,
-                avatarUrl: userPayload.avatar || null,
-                role: UserRole.USER,
-                tokenVersion: 0
-            }
-        });
+        let localUser;
+        try {
+            localUser = await prisma.user.upsert({
+                where: { id: userPayload.id },
+                update: {
+                    phoneNumber: userPayload.phone,
+                    name: userPayload.nickname || userPayload.phone,
+                    avatarUrl: userPayload.avatar || null,
+                },
+                create: {
+                    id: userPayload.id,
+                    phoneNumber: userPayload.phone,
+                    password: null,
+                    name: userPayload.nickname || userPayload.phone,
+                    avatarUrl: userPayload.avatar || null,
+                    role: UserRole.USER,
+                    tokenVersion: 0
+                }
+            });
+        } catch (err) {
+            // P2002：并发回调同时走 create 分支时只有一个成功，冲突方重读即可
+            if ((err as { code?: string })?.code !== "P2002") throw err;
+            localUser = await prisma.user.findUnique({ where: { id: userPayload.id } });
+            if (!localUser) throw err;
+        }
 
         const successUrl = new URL(redirect, siteOrigin);
         successUrl.searchParams.set("wechat_auth", "success");

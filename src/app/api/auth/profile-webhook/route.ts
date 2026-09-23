@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createRemoteJWKSet, decodeProtectedHeader, jwtVerify } from "jose";
 import prisma from "@/lib/prisma";
 import { normalizeSsoAvatarUrl, SSO_BASE_URL } from "@/lib/sso-auth";
+import { SSO_SERVER_BASE_URL } from "@/lib/sso-config";
 import { logger } from "@/lib/logger";
 
 /**
@@ -28,8 +29,42 @@ const SSO_ISSUER = SSO_BASE_URL.replace(/\/+$/, "");
 const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID;
 const PROFILE_EVENT_TYPE = "profile_event";
 
-// JWKS 首次拉取后由 jose 内部缓存（含自动刷新），无需自行实现缓存
-const jwks = createRemoteJWKSet(new URL(`${SSO_ISSUER}/api/oauth/jwks`));
+// JWKS 首次拉取后由 jose 内部缓存（含自动刷新），无需自行实现缓存。
+// JWKS 拉取是服务器间调用：走内网地址（若配置）；issuer 校验仍用公网地址
+//（event_token 的 iss 按公网 origin 签发）
+const jwks = createRemoteJWKSet(new URL(`${SSO_SERVER_BASE_URL}/api/oauth/jwks`));
+
+/**
+ * jti 内存防重放（参考 SDK backchannel logout 的 recordJti 实现）：
+ * 已成功处理且在有效期内的 jti 再次到达即拒绝；容量上限 1000，超出淘汰最旧。
+ * 仅在事件处理成功后登记——处理失败（返回 500）时主站会用同一 token 重投，
+ * 提前登记会误拒合法重试。进程内方案，多实例不共享（与全站单飞缓存同级）。
+ */
+const JTI_CACHE_CAPACITY = 1000;
+const seenJti = new Map<string, number>();
+
+function hasSeenJti(jti: string): boolean {
+    const exp = seenJti.get(jti);
+    if (exp === undefined) return false;
+    if (exp <= Date.now()) {
+        seenJti.delete(jti);
+        return false;
+    }
+    return true;
+}
+
+function markJtiSeen(jti: string, expiresAtMs: number): void {
+    const now = Date.now();
+    for (const [key, exp] of seenJti) {
+        if (exp <= now) seenJti.delete(key);
+    }
+    while (seenJti.size >= JTI_CACHE_CAPACITY) {
+        const oldest = seenJti.keys().next().value;
+        if (oldest === undefined) break;
+        seenJti.delete(oldest);
+    }
+    seenJti.set(jti, expiresAtMs);
+}
 
 /** 验签失败 / claims 不符的统一响应（不区分具体原因，避免泄露校验细节） */
 function unauthorized(reason: string, context?: Record<string, unknown>) {
@@ -71,6 +106,10 @@ export async function POST(request: NextRequest) {
         ({ payload } = await jwtVerify(eventToken, jwks, {
             issuer: SSO_ISSUER,
             audience: SSO_CLIENT_ID,
+            // 主站 event_token exp=5min：maxTokenAge 让 5 分钟窗口真正生效
+            //（iat 距今超过窗口即拒绝），clockTolerance 容忍两端时钟偏差
+            maxTokenAge: "5m",
+            clockTolerance: 60,
         }));
     } catch (error) {
         return unauthorized("验签失败", { error: String(error) });
@@ -84,6 +123,17 @@ export async function POST(request: NextRequest) {
     if (!userId) {
         return unauthorized("缺少 sub");
     }
+
+    // jti 防重放：已成功处理过的 event_token 重复投递直接拒绝。
+    // 处理失败（下方返回 500）的 token 不登记，主站可用同一 token 合法重投
+    const jti = typeof payload.jti === "string" ? payload.jti : "";
+    if (!jti) {
+        return unauthorized("缺少 jti");
+    }
+    if (hasSeenJti(jti)) {
+        return unauthorized("jti 重放", { jti });
+    }
+    const jtiExpiresAt = (typeof payload.exp === "number" ? payload.exp * 1000 : Date.now()) + 60_000;
 
     // ---------- 更新本地用户 ----------
     // membershipLevel/totalSpent 来自验签后的 token，是除 userinfo 回源外
@@ -118,6 +168,7 @@ export async function POST(request: NextRequest) {
         // updateMany 而非 update：用户可能尚未登录过子站（本地无记录），此时空操作返回 200，
         // 让主站视为投递成功（用户首次登录时会通过 userinfo 回源拿到最新资料）
         const result = await prisma.user.updateMany({ where: { id: userId }, data });
+        markJtiSeen(jti, jtiExpiresAt);
         if (result.count === 0) {
             logger.info("[profile-webhook] 本地无此用户，跳过更新", { userId });
         } else {

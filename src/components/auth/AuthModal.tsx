@@ -78,7 +78,7 @@ export function AuthModal() {
     useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
     const handleCancelWechatBind = () => {
-        // 微信绑定凭证由 httpOnly Cookie (__Host-wechat_bind_token) 管理，前端 JS 无法清除；
+        // 微信绑定凭证由 httpOnly Cookie（见 @/lib/wechat-constants）管理，前端 JS 无法清除；
         // 这里仅关闭弹窗、放弃本次绑定流程，Cookie 到期后由后端自动失效
         toast.info("已退出微信登录，您可以使用手机号登录。");
         closeAuthModal();
