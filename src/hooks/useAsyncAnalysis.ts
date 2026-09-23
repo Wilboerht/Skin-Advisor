@@ -4,6 +4,7 @@ import { useAdvisorAnalytics } from './useAdvisorAnalytics';
 import { useAuth } from './useAuth';
 import { fetchWithCsrf } from '@/lib/fetch-client';
 import { preprocessFaceImage } from '@/lib/image-processing';
+import { useToast } from '@/components/ui/Toast';
 
 import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
 import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from '@/lib/storage-keys';
@@ -145,6 +146,7 @@ export function useAsyncAnalysis() {
     });
     const { trackAnalysisStart, trackAnalysisComplete } = useAdvisorAnalytics();
     const { user } = useAuth();
+    const toast = useToast();
 
     const isRunningRef = useRef(false);
 
@@ -344,6 +346,18 @@ export function useAsyncAnalysis() {
                 right: processedImages?.right || rawImages.right,
                 chin: processedImages?.chin || rawImages.chin,
             } : processedImages;
+
+            // 扫脸照片已过本地保留期被清除：用户做过扫脸（IndexedDB 标记仍在）但取不到照片时，
+            // 分析会静默降级为纯问卷——显式提示，避免用户误以为本次报告使用了扫脸数据
+            if (!images?.front) {
+                let hadSavedFaceImages = false;
+                try {
+                    hadSavedFaceImages = localStorage.getItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB) === "true";
+                } catch { /* ignore */ }
+                if (hadSavedFaceImages) {
+                    toast.warning("扫脸照片已超过保留期限，本次报告仅基于问卷结果生成");
+                }
+            }
 
             // if (imagesStr) { -> Handled by checking if images is not null
             if (images) {
@@ -652,7 +666,7 @@ export function useAsyncAnalysis() {
                 }
             }
         }
-    }, [trackAnalysisStart, trackAnalysisComplete, pollSessionResult, user]);
+    }, [trackAnalysisStart, trackAnalysisComplete, pollSessionResult, user, toast]);
 
     // Fake progress animation to fill the gaps between milestones
     useEffect(() => {

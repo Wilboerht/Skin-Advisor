@@ -33,9 +33,9 @@ export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
         {[
-          { icon: ScanFace, label: "免费测肤" },
-          { icon: TrendingUp, label: "肌肤变化记录" },
-          { icon: CalendarCheck, label: "护肤跟踪" },
+          { icon: ScanFace, label: "专业在线测肤" },
+          { icon: TrendingUp, label: "护肤档案" },
+          { icon: CalendarCheck, label: "专属顾问" },
         ].map((f) => {
           const Icon = f.icon;
           return (

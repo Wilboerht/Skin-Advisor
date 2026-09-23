@@ -215,6 +215,9 @@ export async function proxy(request: NextRequest) {
         // 主站资料/会员变更 webhook：服务端到服务端调用，无浏览器 Cookie，
         // 无法通过 CSRF 校验；安全性由路由内 event_token 的 RS256 验签保证
         "/api/auth/profile-webhook",
+        // 主站账号状态变更 webhook：同为服务端到服务端调用，无浏览器 Cookie；
+        // 安全性由路由内 X-Webhook-Signature 的 HMAC-SHA256 验签保证
+        "/api/auth/status-webhook",
         // 主站 backchannel logout 推送：同为服务端到服务端调用，无浏览器 Cookie；
         // 安全性由路由内 logout_token 的 RS256 验签（SDK）保证
         "/api/auth/backchannel-logout",

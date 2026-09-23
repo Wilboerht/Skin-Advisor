@@ -56,7 +56,7 @@ const TABS: DockTab[] = [
 
 export function BottomDock() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, isInitialized } = useUser();
   const { openDiaryModal, isOpen: diaryOpen } = useDiaryModal();
   // 「我的」账户弹层（未登录时弹层内展示登录引导）
   const [showAccountModal, setShowAccountModal] = useState(false);
@@ -124,7 +124,11 @@ export function BottomDock() {
 
   const renderContent = (tab: DockTab, active: boolean) => (
     <>
-      {tab.panel === "account" && user?.avatar ? (
+      {tab.panel === "account" && !isInitialized ? (
+        // 会话初始化期间渲染骨架占位（参考 UserBadge）：避免先渲染通用图标
+        // 再切换成头像造成 pop-in 闪烁
+        <span aria-hidden="true" className="block w-[22px] h-[22px] rounded-full bg-brand-charcoal/5 animate-pulse" />
+      ) : tab.panel === "account" && user?.avatar ? (
         <span className="relative block w-[22px] h-[22px] rounded-full overflow-hidden">
           <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
         </span>

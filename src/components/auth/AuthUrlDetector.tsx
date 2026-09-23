@@ -8,6 +8,21 @@ import { useToast } from "@/components/ui/Toast";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { isSafeInternalPath } from "@/lib/url-utils";
 
+/**
+ * session-init / SSO 回调失败重定向（/?error=...&return_to=...）的错误码文案。
+ * 只消费这些由本站认证链路产出的枚举值，其他来源的 error 参数原样保留。
+ * 与 src/app/api/auth/session-init/route.ts 的 fail() 错误码、
+ * src/app/api/auth/callback/route.ts 的 cookies_disabled 保持一致。
+ */
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+    no_session: "登录状态创建失败，请重试",
+    rate_limited: "操作过于频繁，请稍后再试",
+    db_error: "登录状态创建失败，请重试",
+    session_sign_failed: "登录状态创建失败，请重试",
+    session_init_failed: "登录状态创建失败，请重试",
+    cookies_disabled: "请开启浏览器 Cookie 后再登录",
+};
+
 export function AuthUrlDetector() {
     const searchParams = useSearchParams();
     const { openAuthModal } = useAuthModal();
@@ -109,6 +124,20 @@ export function AuthUrlDetector() {
                 url.searchParams.delete("message");
                 window.history.replaceState({}, "", url.toString());
             }
+        }
+    }, [searchParams, toast]);
+
+    // 消费认证链路的失败重定向错误码（session-init 302 到 /?error=...），
+    // toast 提示后清掉 URL 参数（error 与随之附带的 return_to 一并清理）
+    useEffect(() => {
+        const error = searchParams.get("error");
+        if (!error || !(error in AUTH_ERROR_MESSAGES)) return;
+        toast.error(AUTH_ERROR_MESSAGES[error]);
+        if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("error");
+            url.searchParams.delete("return_to");
+            window.history.replaceState({}, "", url.toString());
         }
     }, [searchParams, toast]);
 

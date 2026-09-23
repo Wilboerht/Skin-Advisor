@@ -7,8 +7,8 @@ import { useSearchParams } from "next/navigation";
  * 微信授权回调 fallback 页面。
  *
  * 正常流程下，官网会直接 302 到 /api/auth/wechat/callback（API Route），
- * 不会进入此页面。保留该页面作为用户手动访问 /auth/wechat/callback 时的
- * 兼容入口，它会将参数原样转发到 API Route 完成登录/绑定。
+ * 不会进入此页面。保留该页面作为用户手动访问 /wechat/callback 时的
+ * 兼容入口（route group (auth) 不进 URL），它会将参数原样转发到 API Route 完成登录/绑定。
  */
 export default function WechatCallbackPage() {
     const searchParams = useSearchParams();

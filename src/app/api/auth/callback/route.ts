@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   createCallbackRouteHandler,
   DEFAULT_RETURN_COOKIE_NAME,
+  DEFAULT_STATE_COOKIE_NAME,
   toInsecureCookieName,
 } from "@nihplod/sso-sdk/next";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
@@ -51,6 +52,18 @@ export async function GET(req: NextRequest) {
     const returnPath = new URL(returnTo, siteOrigin).pathname;
     const safeTarget = isPublicPath(returnPath) ? returnTo : "/";
     return NextResponse.redirect(new URL(safeTarget, siteOrigin));
+  }
+
+  // Cookie 全禁探测：主站带 code 回跳，但登录发起时写入的 state Cookie 读不到——
+  // Cookie 被禁用时 SDK 验签必失败、后续会话 Cookie 也种不进来，
+  // 直接回首页带明确错误码，由 AuthUrlDetector toast 提示用户开启 Cookie
+  if (req.nextUrl.searchParams.has("code")) {
+    const stateCookieName = SSO_INSECURE_LOCAL_DEV
+      ? toInsecureCookieName(DEFAULT_STATE_COOKIE_NAME)
+      : DEFAULT_STATE_COOKIE_NAME;
+    if (!req.cookies.get(stateCookieName)?.value) {
+      return NextResponse.redirect(new URL("/?error=cookies_disabled", siteOrigin));
+    }
   }
 
   const response = await ssoCallback(req);

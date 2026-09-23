@@ -47,7 +47,8 @@ export async function GET(req: NextRequest) {
     };
 
     const ip = getClientIP(req);
-    const limit = await rateLimit(`session-init-ip-${ip}`, "login", { maxRequests: 10, windowMs: 60 * 1000 });
+    // 30/min/IP：多标签页同时恢复会话、企业/校园共享出口 IP 场景下 10/min 易误伤
+    const limit = await rateLimit(`session-init-ip-${ip}`, "login", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!limit.success) {
         return fail("rate_limited", 429);
     }
@@ -85,6 +86,8 @@ export async function GET(req: NextRequest) {
             phone: profileClaims?.phone,
             membershipLevel: userinfo?.membershipLevel,
             totalSpent: userinfo?.totalSpent,
+            // gender 三态透传（undefined 不动 / null 清除 / 值设定，见 sso-auth.ts SsoProfileClaims）
+            gender: userinfo?.gender,
         }, {
             // 登录路径全量同步：userinfo 回源成功才标记同步时间，失败则留给 /api/auth/me 重试
             profileSyncedAt: userinfo ? new Date() : undefined,

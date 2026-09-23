@@ -12,8 +12,9 @@ const STORES = {
     results: "results",
 };
 
-// 人脸照片与分析结果属于敏感数据，默认仅保留 1 小时，避免长期留存本地
-const MAX_STORAGE_AGE_MS = 60 * 60 * 1000;
+// 人脸照片与分析结果属于敏感数据，默认保留 6 小时（覆盖「白天扫脸、晚上完成报告」
+// 的使用间隔），过期后自动视为不存在，避免长期留存本地
+const MAX_STORAGE_AGE_MS = 6 * 60 * 60 * 1000;
 
 let dbInstance: IDBDatabase | null = null;
 
@@ -230,7 +231,7 @@ export async function clearAllData(): Promise<boolean> {
 /**
  * Clear expired data (older than specified hours)
  */
-export async function clearExpiredData(maxAgeHours: number = 1): Promise<void> {
+export async function clearExpiredData(maxAgeHours: number = 6): Promise<void> {
     try {
         const db = await getDB();
         const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
@@ -276,7 +277,7 @@ export const advisorStorage = {
                 const success = await saveFaceImages(images);
                 if (success) {
                     // Also save a marker in localStorage for quick check
-                    localStorage.setItem("advisor_face_images_idb", "true");
+                    localStorage.setItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB, "true");
                     // Remove legacy localStorage data
                     localStorage.removeItem("advisor_face_images");
                     return true;
@@ -289,7 +290,7 @@ export const advisorStorage = {
         // Fallback to localStorage
         try {
             localStorage.setItem("advisor_face_images", JSON.stringify(images));
-            localStorage.removeItem("advisor_face_images_idb");
+            localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB);
             return true;
         } catch {
             console.error("localStorage save failed too");
@@ -299,7 +300,7 @@ export const advisorStorage = {
 
     async getFaceImages(): Promise<{ front?: string; left?: string; right?: string; chin?: string } | null> {
         // Check if we have IndexedDB data
-        if (localStorage.getItem("advisor_face_images_idb") && isIndexedDBAvailable()) {
+        if (localStorage.getItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB) && isIndexedDBAvailable()) {
             try {
                 const images = await getFaceImages();
                 if (images) return images;
@@ -431,7 +432,7 @@ export const advisorStorage = {
             }
         }
         localStorage.removeItem("advisor_face_images");
-        localStorage.removeItem("advisor_face_images_idb");
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB);
         localStorage.removeItem("advisor_processed_images");
         // 不清除 result / step / answers，保留问卷进度
     },

@@ -63,7 +63,7 @@ export function fetchWithTimeout(
  * httpOnly Cookie，document.cookie 读不到，不能用它判断重建结果。
  *
  * 单飞：并发 401 的多个写请求共享同一次重建，避免重复打 session-init
- * 触发其 10 次/分钟/IP 限流，也避免并发签发导致 CSRF cookie 互相覆盖。
+ * 触发其 30 次/分钟/IP 限流，也避免并发签发导致 CSRF cookie 互相覆盖。
  */
 let rebuildInflight: Promise<boolean> | null = null;
 

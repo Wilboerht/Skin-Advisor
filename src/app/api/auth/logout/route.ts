@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { createLogoutRouteHandler } from "@nihplod/sso-sdk/next";
 import { clearLocalSession, revokeLocalRefreshToken } from "@/lib/auth";
 import { AUTH_REFRESH_COOKIE_NAME } from "@/lib/auth-config";
+import { verifyCsrfToken } from "@/lib/csrf";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
 import {
     USER_COOKIE_NAME,
@@ -77,10 +78,24 @@ function isSameOriginRequest(req: NextRequest): boolean {
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!isSameOriginRequest(req)) {
-    return NextResponse.json(
-      { error: "Forbidden: cross-origin logout not allowed", code: "FORBIDDEN_ORIGIN" },
-      { status: 403 }
-    );
+    // 部分浏览器/隐私模式下 Origin 与 Referer 都被剥离：此时回退校验
+    // CSRF token（前端 logout 走 fetchWithCsrf，带 X-CSRF-Token 头）。
+    // Origin/Referer 存在但不匹配是明确的跨站信号，直接 403 不降级；
+    // 两者皆缺失且 CSRF 校验也失败才 403。
+    const hasOriginHeaders = Boolean(req.headers.get("origin") || req.headers.get("referer"));
+    if (hasOriginHeaders) {
+      return NextResponse.json(
+        { error: "Forbidden: cross-origin logout not allowed", code: "FORBIDDEN_ORIGIN" },
+        { status: 403 }
+      );
+    }
+    const csrfResult = await verifyCsrfToken(req);
+    if (!csrfResult.valid) {
+      return NextResponse.json(
+        { error: "Forbidden: cross-origin logout not allowed", code: "FORBIDDEN_ORIGIN" },
+        { status: 403 }
+      );
+    }
   }
 
   // 退出范围：自家前端以 JSON 提交 { scope: "local" | "global" }（默认 local）。

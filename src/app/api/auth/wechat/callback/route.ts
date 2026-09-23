@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import { parseOfficialResponse } from "@/lib/official-api";
+import { fetchOfficialMembershipLevel } from "@/lib/official-membership";
 import { signLocalSession } from "@/lib/auth";
 import {
     USER_COOKIE_NAME,
@@ -137,7 +138,7 @@ export async function GET(req: NextRequest) {
 
         // 需要绑定手机号：将 exchange token 存入 httpOnly 临时 Cookie（避免 URL 泄露），重定向到绑定页
         if (result?.bindingRequired) {
-            const bindUrl = new URL("/auth/wechat-bind", siteOrigin);
+            const bindUrl = new URL("/wechat-bind", siteOrigin);
             bindUrl.searchParams.set("redirect", redirect);
             const bindResponse = NextResponse.redirect(bindUrl, 302);
             bindResponse.cookies.set(WECHAT_BIND_COOKIE_NAME, exchangeToken, {
@@ -160,6 +161,9 @@ export async function GET(req: NextRequest) {
 
         const userPayload = result.user;
 
+        // 会员等级回源（微信用户无 SSO userinfo 通道）：尽力而为，失败不阻断登录
+        const membershipLevel = await fetchOfficialMembershipLevel(userPayload.phone);
+
         // 同步到本地数据库
         const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
         if (existingByPhone && existingByPhone.id !== userPayload.id) {
@@ -178,6 +182,8 @@ export async function GET(req: NextRequest) {
                     phoneNumber: userPayload.phone,
                     name: userPayload.nickname || userPayload.phone,
                     avatarUrl: userPayload.avatar || null,
+                    // 会员等级仅在有回源结果时覆盖（无结果不动本地值，避免回源失败洗掉已有等级）
+                    ...(membershipLevel ? { membershipLevel } : {}),
                 },
                 create: {
                     id: userPayload.id,
@@ -185,6 +191,7 @@ export async function GET(req: NextRequest) {
                     password: null,
                     name: userPayload.nickname || userPayload.phone,
                     avatarUrl: userPayload.avatar || null,
+                    membershipLevel: membershipLevel || null,
                     role: UserRole.USER,
                     tokenVersion: 0
                 }

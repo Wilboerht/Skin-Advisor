@@ -9,6 +9,9 @@ export const STORAGE_KEYS = {
     ADVISOR_ANSWERS: 'advisor_answers',
     ADVISOR_PRIVACY_CONSENT: 'advisor_privacy_consent',
     ADVISOR_FACE_IMAGES: 'advisor_face_images',
+    // 人脸照片已存 IndexedDB 的标记（扫脸完成即写入；照片过保留期被清除后标记可能仍在，
+    // 用于区分"没扫过脸"与"扫过但照片已过期"两种降级场景）
+    ADVISOR_FACE_IMAGES_IDB: 'advisor_face_images_idb',
     ADVISOR_NICKNAME: 'advisor_nickname',
     ADVISOR_GENDER: 'advisor_gender',
     ADVISOR_STEP: 'advisor_step',

@@ -15,7 +15,8 @@ import { logger } from "@/lib/logger";
  * event_token claims（与主站约定）：
  *   type: "profile_event"，iss = 主站 base url，aud = 本站 client_id，
  *   sub = 本站 User.id，exp ≤ 5 分钟，
- *   profile?: { nickname, avatar, birthday }，
+ *   profile?: { nickname, avatar, birthday, gender }（gender 三态：缺省键=不动，
+ *   null=主站明确未设置则清除本地值，male/female=设定值；旧版主站无此字段，保持兼容），
  *   membership?: { level, totalSpent }（纯资料变更时可能缺省）
  *
  * 安全说明：
@@ -146,6 +147,12 @@ export async function POST(request: NextRequest) {
 
         if (typeof profile.nickname === "string" && profile.nickname) {
             data.name = profile.nickname;
+        }
+        // gender 三态（与 sso-auth.ts 口径一致）：键存在才处理——
+        // male/female 设定；null 或其他值视为主站明确未设置，清除本地值；
+        // 旧版 payload 无 gender 键时不触碰本地值（向后兼容）
+        if ("gender" in profile) {
+            data.gender = profile.gender === "male" || profile.gender === "female" ? profile.gender : null;
         }
         const avatarUrl = normalizeSsoAvatarUrl(
             typeof profile.avatar === "string" ? profile.avatar : undefined

@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { advisorStorage } from '@/lib/advisor-storage';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
 import { getModalHistory } from '@/lib/modal-history';
-import { SESSION_EXPIRED_EVENT } from '@/lib/fetch-client';
+import { SESSION_EXPIRED_EVENT, fetchWithCsrf } from '@/lib/fetch-client';
 import { useToast } from '@/components/ui/Toast';
 
 // --- Types ---
@@ -226,11 +226,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setIsLoggingOut(true);
 
         // POST-only + 同源校验；服务端会清除 SSO Cookie、撤销 refresh_token 并清本地会话
+        // fetchWithCsrf 携带 X-CSRF-Token：浏览器剥离 Origin/Referer（隐私模式）时
+        // 服务端据此放行（见 logout 路由的 CSRF 降级校验）
         // 必须确认成功：失败时 Cookie 仍在，若照常跳首页，下一次 /api/auth/me 会把会话复活
         // scope=global 时服务端返回 ssoLogoutUrl（主站 end-session），local 时仅 { ok: true }
         let ssoLogoutUrl: string | null = null;
         try {
-            const res = await fetch("/api/auth/logout", {
+            const res = await fetchWithCsrf("/api/auth/logout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ scope: options?.global ? "global" : "local" }),

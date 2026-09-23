@@ -14,6 +14,7 @@ import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { UserRole } from "@/lib/permissions";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import { parseOfficialResponse } from "@/lib/official-api";
+import { fetchOfficialMembershipLevel } from "@/lib/official-membership";
 import { signLocalSession } from "@/lib/auth";
 import {
     USER_COOKIE_NAME,
@@ -106,6 +107,9 @@ export async function POST(req: NextRequest) {
 
         const userPayload = result.user;
 
+        // 会员等级回源（微信用户无 SSO userinfo 通道）：尽力而为，失败不阻断绑定
+        const membershipLevel = await fetchOfficialMembershipLevel(userPayload.phone);
+
         // Prevent unique constraint collision if the phone exists on a different ID locally
         const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
         if (existingByPhone && existingByPhone.id !== userPayload.id) {
@@ -125,6 +129,8 @@ export async function POST(req: NextRequest) {
                     phoneNumber: userPayload.phone,
                     name: userPayload.nickname || userPayload.phone,
                     avatarUrl: userPayload.avatar || null,
+                    // 会员等级仅在有回源结果时覆盖（无结果不动本地值，避免回源失败洗掉已有等级）
+                    ...(membershipLevel ? { membershipLevel } : {}),
                 },
                 create: {
                     id: userPayload.id,
@@ -132,6 +138,7 @@ export async function POST(req: NextRequest) {
                     password: null,
                     name: userPayload.nickname || userPayload.phone,
                     avatarUrl: userPayload.avatar || null,
+                    membershipLevel: membershipLevel || null,
                     role: UserRole.USER,
                     tokenVersion: 0
                 }

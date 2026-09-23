@@ -55,3 +55,38 @@ export function SsoRedirectScreen({ message }: { message: string }) {
         </div>
     );
 }
+
+/**
+ * Cookie 全禁时的拦截界面：SSO 登录依赖 Cookie 种会话，禁用状态下跳转
+ * 只会在回调时失败兜圈，直接提示用户开启 Cookie（login/register 壳页共用）。
+ */
+export function SsoCookiesDisabledScreen() {
+    return (
+        // 注意：不能用 <main>——layout 已提供唯一 <main id="main-content"> 地标
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#FDFBF7] px-6 text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/NIHPLOD-logo.svg" alt="NIHPLOD" className="h-[52px] object-contain" />
+            <p className="mt-10 text-sm tracking-wide text-brand-charcoal/70" role="alert">
+                请开启浏览器 Cookie 后再登录
+            </p>
+            <p className="mt-3 text-xs tracking-wide text-brand-charcoal/50">
+                登录状态需要通过 Cookie 保存，开启后刷新本页即可继续
+            </p>
+            <div className="mt-6 flex items-center gap-4">
+                <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="h-10 px-6 rounded-full bg-brand-charcoal text-white text-[13px] tracking-[0.08em] font-light transition-opacity hover:opacity-90 cursor-pointer"
+                >
+                    已开启，刷新继续
+                </button>
+                <Link
+                    href="/"
+                    className="h-10 px-6 inline-flex items-center rounded-full border border-brand-charcoal/25 text-brand-charcoal text-[13px] tracking-[0.08em] font-light transition-colors hover:border-brand-charcoal/60"
+                >
+                    返回首页
+                </Link>
+            </div>
+        </div>
+    );
+}

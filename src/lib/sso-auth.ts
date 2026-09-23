@@ -376,9 +376,11 @@ export async function upsertLocalUser(
 
     // 昵称优先取 id_token 的 nickname，其次手机号；access token introspect 不含 nickname
     const name = profile?.nickname || payload.phone || undefined;
-    // userinfo 返回的 phone 可能是掩码格式，掩码值不落库（避免污染真实手机号）
+    // 主站 phone（access token claim 与 userinfo）都可能是掩码格式（138****1234），
+    // 掩码值一律不落库——落库后会被当真实手机号查询主站积分等内部接口（zod 校验必 400）
     const claimsPhone = profile?.phone && !profile.phone.includes("*") ? profile.phone : undefined;
-    const phone = payload.phone || claimsPhone || undefined;
+    const tokenPhone = payload.phone && !payload.phone.includes("*") ? payload.phone : undefined;
+    const phone = tokenPhone || claimsPhone || undefined;
     const avatarUrl = normalizeSsoAvatarUrl(profile?.avatar);
     // membershipLevel 仅来自服务端验证过的 userinfo（见 SsoProfileClaims 注释）
     const membershipLevel = profile?.membershipLevel || undefined;

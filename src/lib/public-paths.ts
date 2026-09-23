@@ -11,6 +11,8 @@ export const PUBLIC_PATHS = [
     "/register",               // SSO 注册跳转页
     "/forgot-password",        // 密码重置弹窗页
     "/reset-password",         // 密码重置弹窗页
+    "/wechat-bind",            // 微信绑定壳页（绑定中的用户还没有任何会话 Cookie，弹去主站会断流程）
+    "/wechat/callback",        // 微信授权回调 fallback 页（同上，无会话 Cookie）
     "/questions",              // 问卷页（页面公开，实际测肤需登录）
     "/face-scan",              // 面部扫描页（页面公开，实际测肤需登录）
     "/result",                 // 结果页（页面公开，报告数据需登录）
@@ -34,6 +36,7 @@ export const PUBLIC_PATHS = [
     "/api/auth/logout",
     "/api/auth/session-init",
     "/api/auth/profile-webhook", // 主站资料/会员变更 webhook（服务端到服务端，RS256 JWT 验签，无用户会话）
+    "/api/auth/status-webhook",  // 主站账号状态变更 webhook（服务端到服务端，HMAC 验签，无用户会话）
     "/api/auth/backchannel-logout", // 主站 backchannel logout 推送（服务端到服务端，logout_token 验签，无用户会话）
     "/api/auth/send-code",        // 注册/登录/重置 短信验证码
     "/api/auth/reset-password",   // 密码重置执行
