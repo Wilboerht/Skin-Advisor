@@ -9,14 +9,29 @@
  * phoneNumber 一律置为 null（不影响登录，手机号会在下次 SSO 登录时
  * 由 userinfo 回源重新写入真实值——若主站仍只给掩码则保持 null）。
  *
- * 使用方法（不会自动运行）：
+ * 使用方法（不会自动运行；需在项目根目录执行）：
  *   npx tsx scripts/cleanup-masked-phones.ts
  */
 
-import prisma from "../src/lib/prisma";
+// 脚本不经 Next.js 启动，需手动加载环境变量（与 scripts/prepare-production.js
+// 同一约定：优先 .env.production，已存在的进程环境变量不覆盖）。
+// 注意：必须先配好 env 再导入 prisma 客户端，因此这里用动态 import。
+import fs from "node:fs";
+import path from "node:path";
+import dotenv from "dotenv";
+
+for (const name of [".env.production", ".env.local", ".env"]) {
+    const p = path.resolve(process.cwd(), name);
+    if (fs.existsSync(p)) {
+        dotenv.config({ path: p, override: false });
+    }
+}
 
 async function main() {
-    console.log("🧹 开始清洗掩码手机号（phoneNumber 含 *）...\n");
+    // prisma 客户端初始化时读取 DATABASE_URL，必须在 dotenv 加载后动态导入
+    const { default: prisma } = await import("../src/lib/prisma");
+    try {
+        console.log("🧹 开始清洗掩码手机号（phoneNumber 含 *）...\n");
 
     const affected = await prisma.user.findMany({
         where: { phoneNumber: { contains: "*" } },
@@ -38,7 +53,10 @@ async function main() {
         data: { phoneNumber: null },
     });
 
-    console.log(`\n🎉 完成，已置空 ${result.count} 条记录的 phoneNumber`);
+        console.log(`\n🎉 完成，已置空 ${result.count} 条记录的 phoneNumber`);
+    } finally {
+        await prisma.$disconnect();
+    }
 }
 
-main().catch((e) => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());
+main().catch((e) => { console.error(e); process.exit(1); });

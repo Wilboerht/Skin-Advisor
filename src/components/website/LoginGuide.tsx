@@ -33,8 +33,8 @@ export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
         {[
-          { icon: ScanFace, label: "专业在线测肤" },
           { icon: TrendingUp, label: "护肤档案" },
+          { icon: ScanFace, label: "专业在线测肤" },
           { icon: CalendarCheck, label: "专属顾问" },
         ].map((f) => {
           const Icon = f.icon;
