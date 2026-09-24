@@ -25,14 +25,10 @@ import { uploadImage } from "@/lib/upload-client";
 import type { User } from "@/components/auth/UserProvider";
 import type { HistorySession } from "@/components/website/TestHistoryList";
 
-/** GET /api/account/profile 响应（birthday 不在契约内，兼容返回则展示） */
+/** GET /api/account/profile 响应（仅取昵称/头像展示，其余字段不需要） */
 interface AccountProfile {
   nickname: string | null;
   avatar: string | null;
-  gender: "male" | "female" | null;
-  phone: string | null;
-  membershipLevel: string | null;
-  birthday?: string | null;
 }
 
 /** /api/advisor/test-limit 的 usage 字段（登录用户） */
@@ -44,12 +40,6 @@ interface TestUsage {
   unlimited: boolean;
 }
 
-function maskPhone(phone?: string | null) {
-  if (!phone) return "—";
-  if (phone.length <= 7) return phone;
-  return phone.slice(0, 3) + "****" + phone.slice(-4);
-}
-
 interface AccountRootViewProps {
   user: User;
   onClose: () => void;
@@ -59,9 +49,9 @@ interface AccountRootViewProps {
 }
 
 /**
- * 「个人信息」面板（用户中心默认视图）：身份与资料 + 功能入口。
- * 头像/昵称/性别可编辑（BFF /api/account/profile，性别供问卷预填；生日只读展示）；
- * 入口：护肤档案（全局档案弹层）。退出登录仅移动端展示（桌面端在侧边栏）。
+ * 「个人信息」面板（用户中心默认视图）：头像/昵称（BFF /api/account/profile 可编辑）
+ * + 测肤状态 + 护肤档案入口。手机号/生日/性别不在此展示（会员中心已承载）。
+ * 退出登录仅移动端展示（桌面端在侧边栏）。
  */
 export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin }: AccountRootViewProps) {
   const { openDiaryModal } = useDiaryModal();
@@ -227,10 +217,6 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
   // 空串（历史脏数据/无昵称）同样回退，避免面板标题显示空白
   const displayName = profile?.nickname || user.name || "朋友";
   const displayAvatar = profile?.avatar ?? user.avatar;
-  const displayPhone = profile?.phone ?? maskPhone(user.phone);
-  const birthdayValue = profile?.birthday ? profile.birthday.slice(0, 10) : "";
-  const genderValue = profile?.gender ?? user.gender ?? null;
-  const genderLabel = genderValue === "male" ? "男" : genderValue === "female" ? "女" : "保密";
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -329,22 +315,6 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
           </span>
         </p>
       )}
-
-      {/* 资料卡：手机号 / 生日 / 性别（主站已掩码；回退值本地掩码）——带标签三列，窄屏不换行 */}
-      <div className={`w-full ${ACCOUNT_CARD} mb-3 grid grid-cols-3 divide-x divide-brand-charcoal/[0.06]`}>
-        <div className="flex min-w-0 flex-col items-center gap-1 px-2 py-3">
-          <span className="text-[11px] font-light tracking-[0.08em] text-brand-charcoal/45">手机号</span>
-          <span className="max-w-full truncate text-[12px] sm:text-[13px] text-brand-charcoal">{displayPhone}</span>
-        </div>
-        <div className="flex min-w-0 flex-col items-center gap-1 px-2 py-3">
-          <span className="text-[11px] font-light tracking-[0.08em] text-brand-charcoal/45">生日</span>
-          <span className="max-w-full truncate text-[12px] sm:text-[13px] text-brand-charcoal">{birthdayValue || "未设置"}</span>
-        </div>
-        <div className="flex min-w-0 flex-col items-center gap-1 px-2 py-3">
-          <span className="text-[11px] font-light tracking-[0.08em] text-brand-charcoal/45">性别</span>
-          <span className="max-w-full truncate text-[12px] sm:text-[13px] text-brand-charcoal">{genderLabel}</span>
-        </div>
-      </div>
 
       {/* 状态卡：最新测肤派系 + 测肤用量（左对齐两行；加载中骨架占位，避免下方内容跳动） */}
       {!metaLoaded ? (
