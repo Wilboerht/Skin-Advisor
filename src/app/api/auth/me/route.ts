@@ -92,7 +92,8 @@ export async function GET(req: NextRequest) {
         user: {
             id: payload.sub,
             phone: localUser?.phoneNumber || payload.phone || profileClaims?.phone || maskedPhone,
-            name: localUser?.name || payload.phone || "",
+            // 不再回退手机号：手机号只用于 phone 字段，昵称缺失时前端自行展示默认文案
+            name: localUser?.name || "",
             avatar: localUser?.avatarUrl || null,
             membershipLevel: localUser?.membershipLevel || null,
             totalSpent: localUser?.totalSpent ?? null,

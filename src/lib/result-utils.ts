@@ -74,29 +74,28 @@ const IP_DEFINITIONS: CharacterIP[] = [
         key: "desert",
         name: "沙漠派",
         priority: 4,
-        match: ({ score, skinType }) =>
-            score >= 71 && score <= 89 && skinType === "dry",
+        match: ({ skinType }) => skinType === "dry",
     },
     {
         key: "oily",
         name: "油条派",
         priority: 4,
-        match: ({ score, skinType }) =>
-            score >= 71 && score <= 89 && skinType === "oily",
+        match: ({ skinType }) => skinType === "oily",
     },
     {
         key: "combination",
         name: "混合派",
         priority: 4,
-        match: ({ score, skinType }) =>
-            score >= 71 && score <= 89 &&
-            ["combination_dry", "combination_oily", "combination", "normal"].includes(skinType),
+        match: ({ skinType }) =>
+            ["combination_dry", "combination_oily", "combination"].includes(skinType),
     },
     {
         key: "guardian",
         name: "守护派",
         priority: 5,
-        match: ({ score }) => score <= 70, // 含 <60 兜底
+        // 2026-09 派系文案改版：守护派定位为「底子稳定 · 预防维稳」，与稳定均衡的 normal 肤质对应；
+        // 低分（≤70）不再统一归守护派，而是按肤质落到各自派系（干→沙漠、油→油条、混→混合、敏感→敏敏）
+        match: ({ skinType }) => skinType === "normal",
     },
 ];
 
@@ -134,10 +133,9 @@ export function matchCharacterIP(params: IPMatchParams): CharacterIP {
             return ip;
         }
     }
-    // 肤质未命中任何派系时按分数兜底：高分落入中性的混合派，避免误给修护定位的守护派
-    return params.score >= 70
-        ? IP_DEFINITIONS.find((ip) => ip.key === "combination")!
-        : IP_DEFINITIONS.find((ip) => ip.key === "guardian")!;
+    // 肤质无法识别时兜底到最普遍的中性类型（混合派），不按分数分档：
+    // 守护派已改为「底子稳定 · 预防维稳」定位，不再承接低分兜底
+    return IP_DEFINITIONS.find((ip) => ip.key === "combination")!;
 }
 
 /**

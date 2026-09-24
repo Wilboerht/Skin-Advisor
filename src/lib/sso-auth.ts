@@ -374,8 +374,9 @@ export async function upsertLocalUser(
 ) {
     if (!payload.sub) return null;
 
-    // 昵称优先取 id_token 的 nickname，其次手机号；access token introspect 不含 nickname
-    const name = profile?.nickname || payload.phone || undefined;
+    // 昵称只取 profile.nickname（id_token/userinfo），绝不回退手机号：
+    // getSessionUser 等高频繁调用不携带 profile，一旦回退手机会把已存昵称覆盖成手机号
+    const nickname = profile?.nickname?.trim() || undefined;
     // 主站 phone（access token claim 与 userinfo）都可能是掩码格式（138****1234），
     // 掩码值一律不落库——落库后会被当真实手机号查询主站积分等内部接口（zod 校验必 400）
     const claimsPhone = profile?.phone && !profile.phone.includes("*") ? profile.phone : undefined;
@@ -410,7 +411,8 @@ export async function upsertLocalUser(
             where: { id: payload.sub },
             update: {
                 phoneNumber: phone,
-                name,
+                // 仅在本次拿到昵称时覆盖，避免无 profile 的调用（getSessionUser）洗掉已有昵称
+                ...(nickname ? { name: nickname } : {}),
                 ...(avatarUrl ? { avatarUrl } : {}),
                 ...(membershipLevel ? { membershipLevel } : {}),
                 ...(totalSpent !== undefined ? { totalSpent } : {}),
@@ -422,7 +424,7 @@ export async function upsertLocalUser(
             create: {
                 id: payload.sub,
                 phoneNumber: phone || null,
-                name: name || "",
+                name: nickname || "",
                 avatarUrl: avatarUrl || null,
                 membershipLevel: membershipLevel || null,
                 totalSpent: totalSpent ?? 0,

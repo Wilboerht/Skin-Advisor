@@ -99,7 +99,7 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                   {data.typeName}
                 </h2>
                 <p className="text-[13px] md:text-sm text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em] max-w-3xl mx-auto">
-                  {data.m1.persona}
+                  {data.m1.intro || data.m1.persona}
                 </p>
               </div>
 
@@ -150,6 +150,12 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                       ) : null
                     )}
                   </div>
+                  {/* 节奏备注：与晨/夜文本左对齐（序号圆 32 + 间距 12 = pl-11） */}
+                  {data.m4?.note && (
+                    <p className="mt-3 pl-11 text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
+                      {data.m4.note}
+                    </p>
+                  )}
                 </section>
               )}
 
@@ -189,7 +195,7 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                   {data.m7.onlyOneSet && (
                     <div className="mt-4 border-l-[3px] border-brand-charcoal/20 pl-4">
                       <span className="inline-block text-[11px] tracking-[0.15em] text-brand-charcoal/60 bg-brand-charcoal/[0.05] rounded-full px-3 py-1 mb-2">
-                        极简之选
+                        参考护理组合
                       </span>
                       <p className="text-[13px] text-brand-charcoal/90 font-light leading-[1.8] tracking-[0.06em]">
                         {data.m7.onlyOneSet}
@@ -207,7 +213,7 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                     onClick={onClose}
                     className="group inline-flex items-center justify-center gap-2 h-11 px-8 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#4a3a2c]"
                   >
-                    <span>开始测肤，解锁你的专属形象</span>
+                    <span>完成肌肤状态检测，查看你的专属肌肤派系</span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                   </Link>
                 </div>

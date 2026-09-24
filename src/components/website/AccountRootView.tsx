@@ -12,8 +12,8 @@ import {
   LogOut,
   NotebookPen,
   Pencil,
-  Settings2,
   Smartphone,
+  VenusAndMars,
   X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,15 +21,12 @@ import { useToast } from "@/components/ui/Toast";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { getFactionIcon } from "@/components/website/faction-icons";
 import { getMemberBadge } from "@/components/website/member-badges";
-import { ACCOUNT_CARD, ACCOUNT_ENTRY_ROW, ACCOUNT_AVATAR_SHADOW } from "@/components/website/account-styles";
+import { ACCOUNT_ENTRY_ROW, ACCOUNT_AVATAR_SHADOW } from "@/components/website/account-styles";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { uploadImage } from "@/lib/upload-client";
 import type { User } from "@/components/auth/UserProvider";
 import type { HistorySession } from "@/components/website/TestHistoryList";
-
-// 主站 origin（安全中心等站外链接）：取值口径与 AccountMallTab 一致，本地/预发可随环境变量切换
-const SSO_BASE_URL = (process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn").replace(/\/+$/, "");
 
 /** GET /api/account/profile 响应（birthday 不在契约内，兼容返回则展示） */
 interface AccountProfile {
@@ -68,7 +65,7 @@ interface AccountRootViewProps {
 /**
  * 用户面板根视图：身份与资料 + 功能入口。
  * 头像/昵称/性别可编辑（BFF /api/account/profile，性别供问卷预填；生日只读展示）；
- * 入口：护肤档案（全局档案弹层）、会员中心（等级/积分/权益 + 积分商城）、安全中心（主站账号管理）。
+ * 入口：护肤档案（全局档案弹层）、会员中心（等级/积分/权益 + 积分商城）。
  */
 export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, onRequestLogin }: AccountRootViewProps) {
   const { openDiaryModal } = useDiaryModal();
@@ -118,8 +115,6 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
   // 昵称行内编辑
   const [editingNickname, setEditingNickname] = useState(false);
   const [nicknameDraft, setNicknameDraft] = useState("");
-  // 性别编辑非常态展开：默认只展示当前值，点击进入编辑态（三态分段控件）
-  const [editingGender, setEditingGender] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -213,7 +208,7 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
   };
 
   const startEditNickname = () => {
-    setNicknameDraft(profile?.nickname ?? user.name ?? "");
+    setNicknameDraft(profile?.nickname || user.name || "");
     setEditingNickname(true);
   };
 
@@ -223,7 +218,7 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
       toast.warning("昵称不能为空");
       return;
     }
-    if (nickname === (profile?.nickname ?? user.name ?? "")) {
+    if (nickname === (profile?.nickname || user.name || "")) {
       setEditingNickname(false);
       return;
     }
@@ -233,7 +228,8 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
 
   const badge = getMemberBadge(user.membershipLevel);
   const latestPersonaType = latestPersona ? getSkinTypeByIpKey(latestPersona) : null;
-  const displayName = profile?.nickname ?? user.name ?? "朋友";
+  // 空串（历史脏数据/无昵称）同样回退，避免面板标题显示空白
+  const displayName = profile?.nickname || user.name || "朋友";
   const displayAvatar = profile?.avatar ?? user.avatar;
   const displayPhone = profile?.phone ?? maskPhone(user.phone);
   const birthdayValue = profile?.birthday ? profile.birthday.slice(0, 10) : "";
@@ -338,10 +334,20 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
         </p>
       )}
 
-      {/* 手机号（主站已掩码；回退值本地掩码） */}
-      <div className="flex items-center gap-1.5 text-[13px] text-brand-charcoal/60 mb-1.5">
-        <Smartphone className="w-3.5 h-3.5" />
-        <span>{displayPhone}</span>
+      {/* 手机号 / 生日 / 性别（主站已掩码；回退值本地掩码） */}
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] text-brand-charcoal/60 mb-1.5">
+        <span className="inline-flex items-center gap-1.5">
+          <Smartphone className="w-3.5 h-3.5" />
+          {displayPhone}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Cake className="w-3.5 h-3.5" />
+          {birthdayValue || "生日未设置"}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <VenusAndMars className="w-3.5 h-3.5" />
+          {genderLabel}
+        </span>
       </div>
 
       {/* 最新测肤派系 + 测肤用量：加载中骨架占位，避免下方内容跳动 */}
@@ -373,76 +379,6 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
         </>
       )}
 
-      {/* 资料：生日只读展示（设置/修改在主站或客服）；性别可编辑但非常态展开，
-          默认只显示当前值，点击进入编辑态（供问卷预填） */}
-      <div className={`w-full ${ACCOUNT_CARD} mb-4 divide-y divide-brand-charcoal/[0.06]`}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-brand-charcoal/60">
-            <Cake className="w-4 h-4" />
-            生日
-          </span>
-          <span className="text-[13px] text-brand-charcoal">{birthdayValue || "未设置"}</span>
-        </div>
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-brand-charcoal/60">
-            <Pencil className="w-4 h-4" />
-            性别
-          </span>
-          {editingGender ? (
-            <div className="flex items-center gap-1.5">
-              <div className="inline-flex rounded-full border border-brand-charcoal/[0.12] bg-white p-0.5" role="group" aria-label="性别">
-                {([
-                  { value: "male", label: "男" },
-                  { value: "female", label: "女" },
-                  { value: null, label: "保密" },
-                ] as const).map((opt) => (
-                  <button
-                    key={opt.label}
-                    type="button"
-                    disabled={saving !== null}
-                    aria-pressed={genderValue === opt.value}
-                    onClick={async () => {
-                      if (genderValue === opt.value) {
-                        setEditingGender(false);
-                        return;
-                      }
-                      const ok = await patchProfile({ gender: opt.value }, "gender");
-                      if (ok) setEditingGender(false);
-                    }}
-                    className={`inline-flex h-6 items-center rounded-full px-2.5 text-[12px] transition-colors cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
-                      genderValue === opt.value
-                        ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
-                        : "text-brand-charcoal/60 hover:text-brand-charcoal"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingGender(false)}
-                disabled={saving !== null}
-                aria-label="取消编辑"
-                className="w-6 h-6 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/5 transition-colors cursor-pointer disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
-              >
-                {saving === "gender" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setEditingGender(true)}
-              aria-label="修改性别"
-              className="inline-flex items-center gap-1.5 text-[13px] text-brand-charcoal transition-colors cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
-            >
-              {genderLabel}
-              <Pencil className="w-3 h-3 text-brand-charcoal/40" />
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* 护肤档案入口：打开全局护肤档案弹层 */}
       <button
         onClick={() => {
@@ -458,10 +394,10 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
         <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
       </button>
 
-      {/* 会员中心入口：淡入会员中心视图（会员 / 积分商城） */}
+      {/* 会员中心入口：淡入会员中心视图（会员 / 积分商城）；最后一个入口，下方留出更大间距 */}
       <button
         onClick={onOpenCenter}
-        className={`${ACCOUNT_ENTRY_ROW} mb-3`}
+        className={`${ACCOUNT_ENTRY_ROW} mb-6`}
       >
         <span className="inline-flex items-center gap-2">
           <Crown className="w-4 h-4" />
@@ -469,20 +405,6 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
         </span>
         <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
       </button>
-
-      {/* 安全中心：主站账号中心（设备与授权管理），新窗口打开 */}
-      <a
-        href={`${SSO_BASE_URL}/account`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${ACCOUNT_ENTRY_ROW} mb-6`}
-      >
-        <span className="inline-flex items-center gap-2">
-          <Settings2 className="w-4 h-4" />
-          安全中心（设备与授权管理）
-        </span>
-        <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
-      </a>
 
       {/* 退出登录 */}
       <button

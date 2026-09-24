@@ -180,7 +180,8 @@ export async function GET(req: NextRequest) {
                 where: { id: userPayload.id },
                 update: {
                     phoneNumber: userPayload.phone,
-                    name: userPayload.nickname || userPayload.phone,
+                    // 仅在本次拿到昵称时覆盖，避免微信未返回昵称时把已存昵称洗成手机号
+                    ...(userPayload.nickname ? { name: userPayload.nickname } : {}),
                     avatarUrl: userPayload.avatar || null,
                     // 会员等级仅在有回源结果时覆盖（无结果不动本地值，避免回源失败洗掉已有等级）
                     ...(membershipLevel ? { membershipLevel } : {}),
@@ -189,7 +190,7 @@ export async function GET(req: NextRequest) {
                     id: userPayload.id,
                     phoneNumber: userPayload.phone,
                     password: null,
-                    name: userPayload.nickname || userPayload.phone,
+                    name: userPayload.nickname || "",
                     avatarUrl: userPayload.avatar || null,
                     membershipLevel: membershipLevel || null,
                     role: UserRole.USER,

@@ -344,6 +344,10 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
                             )}
                         </div>
                     )}
+                    {/* 节奏备注：派系文案的周期护理/禁忌提示（如敏敏状态暂停酸类） */}
+                    {hasRoutine && personaData!.m4.note && (
+                        <p className="mb-4 text-[13px] leading-[1.85] text-brand-charcoal/60">{personaData!.m4.note}</p>
+                    )}
                     {hasFormula && (
                         <div className="rounded-xl border border-brand-charcoal/[0.08] bg-white/80 p-5">
                             {personaData!.m7.formulaCore && (

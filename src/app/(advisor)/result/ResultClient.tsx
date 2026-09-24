@@ -719,7 +719,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         if (window.matchMedia("(hover: none)").matches) return;
 
         const avatarUrl = getCharacterImage({
-            // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派（与封面页一致）
+            // 纯问卷场景无评分：传中性分 80；matchCharacterIP 按 skinType 匹配派系（评分不再影响肤质派系命中，与封面页一致）
             score: faceAnalysis?.overallScore ?? 80,
             skinType: result?.skinProfile?.type || 'combination',
             budget: ipBudget,
@@ -1901,7 +1901,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 skinTypeName={personaLabel}
                                 skinAge={result?.skinProfile?.skinAge}
                                 avatar={socialGender ? getCharacterImage({
-                                    // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派（与封面页一致）
+                                    // 纯问卷场景无评分：传中性分 80；matchCharacterIP 按 skinType 匹配派系（评分不再影响肤质派系命中，与封面页一致）
                                     score: faceAnalysis?.overallScore ?? 80,
                                     skinType: result?.skinProfile?.type || 'combination',
                                     budget: ipBudget,

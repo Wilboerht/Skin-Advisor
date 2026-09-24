@@ -3,7 +3,10 @@ import resultContent from "./result-content.json";
 export interface M1Data {
   typeName: string;
   ipKey: string;
+  /** 卡片/列表用的一句话简介 */
   persona: string;
+  /** 详情弹窗用的完整解读段落（缺省时回退 persona） */
+  intro?: string;
 }
 
 // m2 区块当前 JSON 结构无固定字段，用宽泛对象类型代替空 interface
@@ -14,6 +17,8 @@ export interface M4Data {
   scene?: string;
   morning?: string;
   night?: string;
+  /** 节奏备注（如敏感期禁忌、周期护理/项目建议），详情弹窗在晨/夜下方展示 */
+  note?: string;
 }
 
 export interface Advantage {

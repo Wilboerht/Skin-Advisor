@@ -85,7 +85,7 @@ export default function ShareCardPage({
     isReturning = false,
 }: ShareCardPageProps) {
     const reduceMotion = useReducedMotion();
-    // 纯问卷场景无评分：传中性分 80 落入 71-89 档，让 matchCharacterIP 按 skinType 匹配派系而非兜底守护派
+    // 纯问卷场景无评分：传中性分 80；matchCharacterIP 按 skinType 匹配派系（评分不再影响肤质派系命中）
     const ipParams: IPMatchParams = { score: score ?? 80, skinType, budget, skincareFrequency };
     const characterReady = gender === "male" || gender === "female";
     const characterImage = getCharacterImage({ ...ipParams, gender });
