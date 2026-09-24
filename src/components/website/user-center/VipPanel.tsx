@@ -5,7 +5,7 @@
  *
  * 数据来源（子站 BFF）：
  * - /api/account/membership：等级/累计消费/权益配置（与主站 getMembershipView 同源）
- * - /api/account/points：积分余额
+ * - /api/account/points/overview：积分余额（与积分商城同源，OAuth 按登录态取数）
  * - /api/advisor/test-limit：AI 测肤用量
  *
  * 主视图两栏排版（与主站一致）：
@@ -225,13 +225,19 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
     }
   }, [showError, onRequestLogin, user, refresh]);
 
+  // 积分余额：与积分商城同源（OAuth /api/oauth/points，按登录态取数）。
+  // 不用 /api/account/points（HMAC 内部接口按手机号查）：手机号缺失/掩码时它会
+  // 降级成 available:null，导致会员卡显示 "—" 而积分商城正常，数据口径不一致。
   const loadPointsData = useCallback(async () => {
     try {
-      const res = await fetch("/api/account/points");
+      const res = await fetch("/api/account/points/overview");
       if (!res.ok) return;
-      const data = (await res.json()) as { available?: number | null } | null;
-      if (typeof data?.available === "number") {
-        setPointsData({ available: data.available });
+      const data = (await res.json()) as {
+        success?: boolean;
+        data?: { available?: number | null } | null;
+      } | null;
+      if (data?.success && typeof data.data?.available === "number") {
+        setPointsData({ available: data.data.available });
       }
     } catch {
       // 积分加载失败静默（不影响会员卡片主信息展示）

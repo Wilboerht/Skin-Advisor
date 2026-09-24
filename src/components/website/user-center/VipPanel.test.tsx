@@ -96,7 +96,7 @@ function mockApi() {
             return Promise.resolve(jsonResponse(membership));
         }
         if (url.includes("/api/account/points")) {
-            return Promise.resolve(jsonResponse({ available: 100 }));
+            return Promise.resolve(jsonResponse({ success: true, data: { available: 100 } }));
         }
         if (url.includes("/api/advisor/test-limit")) {
             return Promise.resolve(
