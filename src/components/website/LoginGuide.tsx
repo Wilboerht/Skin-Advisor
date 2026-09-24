@@ -27,14 +27,14 @@ export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }
         登录肌智派
       </h3>
       <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] text-center mb-6">
-        登录后同步你的测肤记录与护肤档案
+        肌肤的现在和未来
         <br />
-        随时随地延续你的护肤旅程
+        我们与您同在
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
         {[
-          { icon: TrendingUp, label: "护肤档案" },
-          { icon: ScanFace, label: "专业在线测肤" },
+          { icon: ScanFace, label: "在线测肤" },
+          { icon: TrendingUp, label: "个性化护肤档案" },
           { icon: CalendarCheck, label: "专属顾问" },
         ].map((f) => {
           const Icon = f.icon;
