@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import {
   CalendarCheck,
@@ -9,7 +8,6 @@ import {
   Flame,
   NotebookPen,
   RefreshCw,
-  ScanFace,
   TrendingUp,
   Trophy,
 } from "lucide-react";
@@ -515,17 +513,27 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
   return (
     <LazyMotion features={domAnimation}>
       <div className="flex h-full flex-col">
-        {/* 桌面端标题栏（移动端标题由账户弹层头部显示）：视图切换时标题随视图变化 */}
-        <div className="hidden shrink-0 items-center border-b border-stone-200/60 px-6 pb-6 pt-10 md:flex md:px-16">
+        {/* 桌面端标题栏（移动端标题由账户弹层头部显示）：视图切换时标题随视图变化；
+            全部测肤记录为整面板级视图切换，入口固定在标题栏（不再埋在左列中部） */}
+        <div className="hidden shrink-0 items-center justify-between border-b border-stone-200/60 px-6 pb-6 pt-10 md:flex md:px-16 lg:px-10">
           <h2 className="text-xl font-medium tracking-wide text-stone-800">
             {historyView ? "测肤记录" : "护肤档案"}
           </h2>
+          {!historyView && (
+            <button
+              type="button"
+              onClick={() => setHistoryView(true)}
+              className="shrink-0 h-9 inline-flex items-center px-4 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
+            >
+              全部测肤记录 →
+            </button>
+          )}
         </div>
 
         {/* 内容区（可滚动）：两视图淡出/淡入切换，同一面板内完成 */}
         <div
           ref={scrollRef}
-          className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-6 md:px-16"
+          className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-6 md:px-16 lg:px-10"
         >
                 {/* 登录过期：GET 401 的统一提示（与各接口的错误条区分，指向重新登录） */}
                 {sessionExpired && (
@@ -583,11 +591,23 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.18 }}
                     >
-                {/* ===== 登录：趋势 + 时间线 ===== */}
-                {/* PC 端（lg+）双列：左「肌肤变化」sticky，右「护肤历程」；移动端单列堆叠 */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-10">
-                    {/* 肌肤变化：标题行承载时间窗切换与全部记录入口 */}
-                    <section className="mb-8 lg:mb-0 lg:self-start lg:sticky lg:top-0">
+                {/* 移动端：整面板级入口（桌面端在标题栏），随主视图淡入淡出 */}
+                <div className="mb-4 flex justify-end md:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setHistoryView(true)}
+                    className="shrink-0 h-9 inline-flex items-center px-4 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
+                  >
+                    全部测肤记录 →
+                  </button>
+                </div>
+
+                {/* ===== 登录：概览（肌肤变化 + 打卡）+ 时间线 ===== */}
+                {/* PC 端（lg+）非对称双列（5:7，把宽度让给时间线）；左列 sticky 且限高内部滚动，
+                    避免左列高于视口时 pin 住后底部内容不可达；移动端单列堆叠 */}
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-10">
+                    {/* 左列：肌肤变化（趋势）+ 打卡（色带/连续性统计），语义分组 */}
+                    <section className="mb-8 lg:mb-0 lg:self-start lg:sticky lg:top-0 lg:max-h-[min(576px,calc(100dvh_-_9.5rem))] lg:overflow-y-auto lg:scrollbar-hide lg:pr-1">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />
@@ -658,95 +678,73 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                               </p>
                             </div>
                           )}
-
-                          {/* 打卡色带与测肤时间窗无关：有打卡数据即始终展示 */}
-                          {recentCheckInCount >= 2 && (
-                            <div className="mt-4">
-                              <CheckInTrend entries={entries} todayStr={todayStr} />
-                            </div>
-                          )}
-                          {/* 全部记录入口：图表板块收尾，居中 */}
-                          <div className="mt-6 flex justify-center">
-                            <button
-                              type="button"
-                              onClick={() => setHistoryView(true)}
-                              className="shrink-0 h-9 inline-flex items-center px-4 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
-                            >
-                              全部测肤记录 →
-                            </button>
-                          </div>
-                        </div>
-                      ) : recentCheckInCount >= 2 ? (
-                        <div>
-                          <CheckInTrend entries={entries} todayStr={todayStr} />
-                          <p className="mt-4 text-[11px] text-brand-charcoal/60 font-light text-center">
-                            完成两次不同日期的测肤后，可叠加查看测肤评分趋势
-                          </p>
                         </div>
                       ) : (
-                        /* 解锁引导：极简居中（无框），CTA 按钮承载行动感 */
+                        /* 解锁引导：以说明为主；操作入口统一在右列空态，避免同屏重复 CTA */
                         <div className="py-6 text-center">
                           <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em] mb-2">
                             完成两次不同日期的测肤后解锁肌肤变化
                           </p>
-                          <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] mb-4">
+                          <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                             定期测肤，看见肌肤的真实变化
                           </p>
-                          <Link
-                            href="/questions"
-                            className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium tracking-[0.05em] transition-colors hover:bg-brand-cocoa-dark"
-                          >
-                            去测肤 →
-                          </Link>
                         </div>
                       )}
 
-                      {/* 里程碑统计：数据概览，与趋势图同属左列；独立于趋势分支（仅有打卡无趋势时仍展示）。
-                          列数跟随实际项数（最长连续为 0 时不占列），避免 3 项摊在 4 列里偏左 */}
-                      {summary && (summary.totalCheckins > 0 || summary.testCount > 0) && (
-                        <div className={`grid ${summary.longestStreak > 0 ? "grid-cols-4" : "grid-cols-3"} mt-6 pt-4 border-t border-brand-espresso/[0.06]`}>
-                          <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
-                            <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
-                              {summary.currentStreak}
-                              <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">天</span>
-                            </p>
-                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
-                              <Flame className="w-3 h-3 text-brand-ember" strokeWidth={1.8} />
-                              连续打卡
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
-                            <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
-                              {summary.totalCheckins}
-                              <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">次</span>
-                            </p>
-                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
-                              <CalendarCheck className="w-3 h-3 text-brand-charcoal/65" strokeWidth={1.8} />
-                              累计打卡
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
-                            <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
-                              {summary.testCount}
-                              <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">次</span>
-                            </p>
-                            <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
-                              <ScanFace className="w-3 h-3 text-brand-charcoal/65" strokeWidth={1.8} />
-                              已测肤
-                            </p>
-                          </div>
-                          {summary.longestStreak > 0 && (
+                      {/* 测肤次数并入「肌肤变化」语境，不再混进打卡统计 */}
+                      {summary && summary.testCount > 0 && (
+                        <p className="mt-4 text-center text-[11px] text-brand-charcoal/60 font-light tracking-[0.06em]">
+                          累计测肤 {summary.testCount} 次
+                        </p>
+                      )}
+
+                      {/* 打卡：与测肤趋势语义分离的独立子区块（色带 + 连续性统计）。
+                          列数跟随实际项数（最长连续为 0 时不占列） */}
+                      {summary && summary.totalCheckins > 0 && (
+                        <div className="mt-8 border-t border-brand-espresso/[0.06] pt-6">
+                          <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2 mb-4">
+                            <Flame className="w-4 h-4 text-[var(--color-brand-ember)]" strokeWidth={1.5} />
+                            打卡
+                          </h3>
+                          {recentCheckInCount >= 2 && (
+                            <div className="mb-4">
+                              <CheckInTrend entries={entries} todayStr={todayStr} />
+                            </div>
+                          )}
+                          <div className={`grid ${summary.longestStreak > 0 ? "grid-cols-3" : "grid-cols-2"} pt-4 border-t border-brand-espresso/[0.06]`}>
                             <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                               <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
-                                {summary.longestStreak}
+                                {summary.currentStreak}
                                 <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">天</span>
                               </p>
                               <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
-                                <Trophy className="w-3 h-3 text-brand-gold" strokeWidth={1.8} />
-                                最长连续
+                                <Flame className="w-3 h-3 text-brand-ember" strokeWidth={1.8} />
+                                连续打卡
                               </p>
                             </div>
-                          )}
+                            <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                              <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
+                                {summary.totalCheckins}
+                                <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">次</span>
+                              </p>
+                              <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
+                                <CalendarCheck className="w-3 h-3 text-brand-charcoal/65" strokeWidth={1.8} />
+                                累计打卡
+                              </p>
+                            </div>
+                            {summary.longestStreak > 0 && (
+                              <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
+                                <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
+                                  {summary.longestStreak}
+                                  <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">天</span>
+                                </p>
+                                <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
+                                  <Trophy className="w-3 h-3 text-brand-gold" strokeWidth={1.8} />
+                                  最长连续
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </section>
