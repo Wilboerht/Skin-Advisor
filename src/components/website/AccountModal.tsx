@@ -1,19 +1,21 @@
 "use client";
 
-import { Component, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ArrowLeft, Crown, Gift, X } from "lucide-react";
+import { AnimatePresence, LazyMotion, domMax, m, useDragControls, useReducedMotion } from "framer-motion";
+import Image from "next/image";
+import { Crown, Gift, LogOut, User, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useModalBackClose } from "@/hooks/use-modal-back-close";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 import { LoginGuide } from "@/components/website/LoginGuide";
 import { ACCOUNT_SHELL } from "@/components/website/account-styles";
 import { AccountRootView } from "@/components/website/AccountRootView";
-import { AccountMembershipTab } from "@/components/website/AccountMembershipTab";
 import { AccountMallTab } from "@/components/website/AccountMallTab";
+import { VipPanel } from "@/components/website/user-center/VipPanel";
 
 /** 弹层内容错误边界：单个 tab 渲染异常只降级本区域，不波及整页（结果页/弹层外壳仍可用） */
 class AccountPanelErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -51,98 +53,73 @@ interface AccountModalProps {
   onClose: () => void;
 }
 
-type AccountTab = "my" | "mall";
+type AccountTab = "profile" | "vip" | "mall";
 
-const ACCOUNT_TABS: { key: AccountTab; label: string }[] = [
-  { key: "my", label: "会员" },
-  { key: "mall", label: "积分商城" },
+/** 侧边栏 / 底部 Tab 的一级菜单（不含安全中心） */
+const MENU_ITEMS: { key: AccountTab; label: string; icon: typeof Crown }[] = [
+  { key: "profile", label: "个人信息", icon: User },
+  { key: "vip", label: "会员中心", icon: Crown },
+  { key: "mall", label: "积分商城", icon: Gift },
 ];
 
-/** 移动端底部 Tab 栏图标（与主站用户中心的底部导航形态对齐） */
-const TAB_ICONS: Record<AccountTab, typeof Crown> = {
-  my: Crown,
-  mall: Gift,
+/** 侧边栏等级徽标样式（四档，与主站用户中心一致） */
+const LEVEL_PILL_STYLES: Record<string, string> = {
+  REGULAR: "border-stone-200 bg-stone-100 text-stone-500",
+  SILVER: "border-zinc-200 bg-zinc-50 text-zinc-600",
+  GOLD: "border-amber-200 bg-amber-50 text-amber-700",
+  DIAMOND: "border-indigo-200 bg-indigo-50 text-indigo-700",
+  ADVANCED: "border-amber-200 bg-amber-50 text-amber-700",
 };
 
-/** 移动端断点与 Tailwind sm（640px）一致：<640 用底部 Tab 栏，≥640 用顶部胶囊 tab */
-const MOBILE_QUERY = "(max-width: 639px)";
+/** 侧边栏等级文案（钻石档统一为「钻石卡会员」，与主站口径一致） */
+const LEVEL_LABELS: Record<string, string> = {
+  REGULAR: "普通会员",
+  SILVER: "银卡会员",
+  GOLD: "金卡会员",
+  DIAMOND: "钻石卡会员",
+  ADVANCED: "金卡会员",
+};
 
 /**
- * AccountModal — 用户面板弹层（替代原 /profile 独立页），两级视图：
- * 根视图：身份与资料（头像/昵称/生日/性别可编辑，BFF /api/account/profile）
- * +「护肤档案」「会员中心」「安全中心」入口 + 退出登录；
- * 会员中心视图：「会员 / 积分商城」两个 tab（会员=等级卡（含积分余额/升级进度）
- * + 全档权益（/api/account/membership）；积分商城=官网 embed iframe），
- * 根视图 ⇄ 会员中心保持挂载淡入切换（中心视图首次进入后不卸载），返回键/Escape 先回根视图。
+ * AccountModal — 用户面板弹层（样式对齐主站用户中心）：
+ * 登录后为「左侧边栏 + 右侧内容区」：
+ * - 侧边栏：头像/昵称/等级徽标 + 菜单（个人信息/会员中心/积分商城）+ 退出登录
+ * - 移动端：顶部 Header + 底部 Tab 栏（无侧边栏）
+ * 内容面板：个人信息 = AccountRootView；会员中心 = VipPanel（主站同款）；积分商城 = 官网 embed iframe。
  * 未登录：登录引导视图，点击按钮走 SSO 统一登录。
- * 容器/动效/关闭按钮与 GiftModal 等全站模态框对齐。
  */
 export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const { user, logout } = useAuth();
   const { openAuthModal } = useAuthModal();
+  const isMobile = useIsMobile();
+  const reduceMotion = useReducedMotion();
+  // 移动端 sheet 下滑关闭：手势只在头部触发（内容滚动不受影响）
+  const dragControls = useDragControls();
 
-  // 两级视图：root = 根视图（简洁入口），center = 会员中心（两个 tab）
-  const [view, setView] = useState<"root" | "center">("root");
-  // 中心视图首次进入后保持挂载（仅用 hidden 切换）：root ⇄ center 往返、切 tab 不再重载
-  // iframe/会员数据/折叠状态；账号切换时重置卸载，避免残留上一账号内容
-  const [centerVisited, setCenterVisited] = useState(false);
-  useEffect(() => {
-    if (view === "center") setCenterVisited(true);
-  }, [view]);
+  // 一级菜单状态：首次进入后保持挂载（仅隐藏），iframe/会员数据不重载
+  const [activeTab, setActiveTab] = useState<AccountTab>("profile");
+  const [visitedTabs, setVisitedTabs] = useState<AccountTab[]>(["profile"]);
 
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
-  // 返回分层：会员中心视图先回根视图，根视图才关闭弹层
-  const handleBackRequest = view === "center" ? () => setView("root") : onClose;
-  // 移动端返回键/返回手势
-  useModalBackClose(isOpen, handleBackRequest);
+  // 移动端返回键/返回手势：单级视图，直接关闭弹层
+  useModalBackClose(isOpen, onClose);
 
-  // tab 状态（会员中心内）：关闭弹层后复位到「会员」，但已激活过的 tab 保持挂载（避免商城
-  // iframe 与会员数据每次重开都重新加载）；账号切换时全部重置，防止展示上一账号的残留数据
-  const [activeTab, setActiveTab] = useState<AccountTab>("my");
-  const [visitedTabs, setVisitedTabs] = useState<AccountTab[]>(["my"]);
   useEffect(() => {
     if (!isOpen) {
-      setView("root");
-      setActiveTab("my");
-      // 关闭时复位：下次打开先进入根视图，中心视图内容保持懒挂载（不在隐藏态提前拉取/加载 iframe）
-      setCenterVisited(false);
+      setActiveTab("profile");
+      setVisitedTabs(["profile"]);
     }
   }, [isOpen]);
   useEffect(() => {
-    setView("root");
-    setActiveTab("my");
-    setVisitedTabs(["my"]);
-    setCenterVisited(false);
+    setActiveTab("profile");
+    setVisitedTabs(["profile"]);
   }, [user?.id]);
 
   const activateTab = (tab: AccountTab) => {
     setActiveTab(tab);
     setVisitedTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]));
   };
-
-  // WAI-ARIA tabs 键盘模式：左右方向键在 tab 间移动并聚焦（Home/End 可选，暂不启用）
-  const handleTabListKeyDown = (e: KeyboardEvent) => {
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    e.preventDefault();
-    const idx = ACCOUNT_TABS.findIndex((t) => t.key === activeTab);
-    const step = e.key === "ArrowRight" ? 1 : -1;
-    const next = ACCOUNT_TABS[(idx + step + ACCOUNT_TABS.length) % ACCOUNT_TABS.length];
-    activateTab(next.key);
-    document.getElementById(`account-tab-${next.key}`)?.focus();
-  };
-
-  // 移动端形态：底部 Tab 栏（桌面端为顶部胶囊 tab）；用 matchMedia 条件渲染保证按钮 id 唯一
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia(MOBILE_QUERY).matches : false
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(MOBILE_QUERY);
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
 
   // 遮罩防误触：记录打开时刻，打开后 350ms 内忽略遮罩点击关闭——
   // 入口双击的第二下会穿透到遮罩上，若不设保护会"打开即被关闭"
@@ -165,10 +142,10 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [logoutGlobal, setLogoutGlobal] = useState(false);
 
-  // Escape 分层：确认框打开时优先关确认框，其次会员中心回根视图，最后才关主弹层
+  // Escape 分层：确认框打开时优先关确认框，否则关闭弹层
   const modalRef = useFocusTrap<HTMLDivElement>(
     isOpen,
-    showLogoutConfirm ? () => setShowLogoutConfirm(false) : handleBackRequest
+    showLogoutConfirm ? () => setShowLogoutConfirm(false) : onClose
   );
 
   const handleLogout = () => {
@@ -193,13 +170,12 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
 
   if (!mounted) return null;
 
-  // 会员中心视图使用固定壳尺寸（移动端 86dvh / 桌面端与护肤档案弹层同规格：1100 宽 /
-  // min(680, dvh-3rem) 高，内容区独立滚动），避免切换 tab 时弹层高度随内容跳变；
-  // 根视图/登录引导保持原有内容自适应样式（窄卡片）
-  const shellFixed = !!user && view === "center";
+  const levelLabel = LEVEL_LABELS[user?.membershipLevel ?? ""] ?? "普通会员";
+  const levelPillClass = LEVEL_PILL_STYLES[user?.membershipLevel ?? "REGULAR"] ?? LEVEL_PILL_STYLES.REGULAR;
+  const displayName = user?.name?.trim() || (user?.phone ? `用户${user.phone.slice(-4)}` : "用户");
 
   return createPortal(
-    <LazyMotion features={domAnimation}>
+    <LazyMotion features={domMax}>
       <AnimatePresence>
         {isOpen && (
           <div
@@ -208,7 +184,9 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
             aria-modal="true"
             aria-labelledby="account-modal-title"
             tabIndex={-1}
-            className="fixed inset-0 z-[var(--z-modal)] flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className={`fixed inset-0 z-[var(--z-modal)] flex items-end justify-center p-0 ${
+              user ? "md:items-center md:p-4" : "sm:items-center sm:p-4"
+            }`}
           >
             {/* 背景遮罩 */}
             <m.div
@@ -216,259 +194,397 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleBackdropClick}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+              className="absolute inset-0 bg-black/40 backdrop-blur-md"
             />
 
-            {/* 弹窗主体：移动端底部升起，桌面端居中 */}
+            {/* 弹窗主体：登录后为主站同款「侧边栏 + 内容」壳；未登录为窄卡片 */}
             <m.div
               initial={{ opacity: 0, scale: 0.96, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className={`relative z-10 w-full ${ACCOUNT_SHELL} overflow-hidden flex flex-col ${
-                shellFixed
-                  ? "h-[86dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-[1100px]"
-                  : "sm:max-w-sm max-h-[85vh] sm:max-h-[80vh]"
+              transition={
+                isMobile
+                  ? { type: "spring", damping: 25, stiffness: 300 }
+                  : { duration: 0.25, ease: "easeOut" }
+              }
+              drag={isMobile ? "y" : false}
+              dragListener={false}
+              dragControls={dragControls}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.35 }}
+              onDragEnd={(_, info) => {
+                if (isMobile && (info.offset.y > 120 || info.velocity.y > 700)) {
+                  onClose();
+                }
+              }}
+              className={`relative z-10 w-full outline-none ${
+                user
+                  ? "flex h-[calc(100vh-4rem)] items-stretch overflow-hidden rounded-t-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] md:h-[min(680px,calc(100dvh-3rem))] md:max-w-[1100px] md:rounded-[2.5rem] md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)]"
+                  : `${ACCOUNT_SHELL} flex flex-col overflow-hidden sm:max-w-sm max-h-[85vh] sm:max-h-[80vh]`
               }`}
+              style={
+                user && isMobile
+                  ? {
+                      height: "calc(100dvh - max(4rem, env(safe-area-inset-top) + 0.75rem))",
+                      // 不支持 dvh 的浏览器回退到 100vh
+                      minHeight: 0,
+                    }
+                  : undefined
+              }
               onClick={(e) => e.stopPropagation()}
             >
-              {/* 关闭按钮：桌面端会员中心视图并入下方顶栏，其余场景悬浮右上角 */}
-              {!(shellFixed && !isMobile) && (
-                <button
-                  onClick={onClose}
-                  aria-label="关闭"
-                  className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
-                >
-                  <X size={16} strokeWidth={2.5} />
-                </button>
-              )}
+              {user ? (
+                <>
+                  {/* 底层基础色 */}
+                  <div className="absolute inset-0 z-0 bg-[#FBF8F0]" />
 
-              {/* 会员中心视图：左上角返回根视图（桌面端并入下方顶栏） */}
-              {user && view === "center" && !(shellFixed && !isMobile) && (
-                <button
-                  onClick={() => setView("root")}
-                  aria-label="返回"
-                  className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] left-3 sm:top-5 sm:left-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
-                >
-                  <ArrowLeft size={16} strokeWidth={2.5} />
-                </button>
-              )}
-
-              {/* 桌面端固定 tab 栏（会员中心视图）：壳内顶栏（返回 / tab / 关闭），位于滚动区外，
-                  不遮挡内容；三组元素在栏内统一垂直居中（items-center） */}
-              {shellFixed && !isMobile && (
-                <div className="shrink-0 w-full px-6 md:px-8 py-4 border-b border-brand-espresso/[0.08] grid grid-cols-[1fr_auto_1fr] items-center">
-                  <button
-                    onClick={() => setView("root")}
-                    aria-label="返回"
-                    className="justify-self-start w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
-                  >
-                    <ArrowLeft size={16} strokeWidth={2.5} />
-                  </button>
-                  <div
-                    role="tablist"
-                    aria-label="会员中心"
-                    onKeyDown={handleTabListKeyDown}
-                    className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1"
-                  >
-                    {ACCOUNT_TABS.map((t) => (
-                      <button
-                        key={t.key}
-                        type="button"
-                        role="tab"
-                        id={`account-tab-${t.key}`}
-                        aria-controls={`account-tabpanel-${t.key}`}
-                        aria-selected={activeTab === t.key}
-                        tabIndex={activeTab === t.key ? 0 : -1}
-                        onClick={() => activateTab(t.key)}
-                        className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
-                          activeTab === t.key
-                            ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
-                            : "text-brand-charcoal/60 hover:text-brand-charcoal"
-                        }`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
+                  {/* 背景动态装饰层（仅桌面端，移动端纯色底保低端机性能） */}
+                  <div className="pointer-events-none absolute inset-0 z-10 hidden overflow-hidden md:block">
+                    <m.div
+                      animate={
+                        reduceMotion
+                          ? undefined
+                          : {
+                              x: ["-30%", "40%", "10%", "-30%"],
+                              y: ["-30%", "20%", "40%", "-30%"],
+                              rotate: [0, 180, 360],
+                              scale: [1, 1.4, 1.2, 1],
+                            }
+                      }
+                      transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                      style={{ willChange: "transform" }}
+                      className="absolute h-[120%] w-[120%] rounded-full bg-brand-charcoal/10 blur-[150px]"
+                    />
+                    <m.div
+                      animate={
+                        reduceMotion
+                          ? undefined
+                          : {
+                              x: ["40%", "-20%", "30%", "40%"],
+                              y: ["40%", "10%", "-30%", "40%"],
+                              rotate: [0, -180, -360],
+                              scale: [1, 1.3, 1.1, 1],
+                            }
+                      }
+                      transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
+                      style={{ willChange: "transform" }}
+                      className="absolute h-[110%] w-[110%] rounded-full bg-stone-400/15 blur-[130px]"
+                    />
                   </div>
+
+                  {/* 模糊盖层（其下内容被模糊，仅桌面端） */}
+                  <div className="absolute inset-0 z-20 hidden bg-white/5 backdrop-blur-[40px] md:block" />
+
+                  {/* 内容区域容器：桌面 flex-row（侧边栏 + 内容），移动 flex-col（头 + 内容 + 底部 Tab） */}
+                  <div className="relative z-30 flex h-full w-full flex-col items-stretch md:flex-row">
+                    {/* 桌面侧边栏（移动端由底部 Tab 栏替代） */}
+                    {!isMobile && (
+                      <div className="flex w-full shrink-0 flex-col border-r border-stone-200/60 md:w-72">
+                        {/* 用户头像区域 */}
+                        <div className="px-16 pb-4 pt-12">
+                          <div className="flex flex-col items-start gap-4 text-left">
+                            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FBF8F0]/40">
+                              {user.avatar ? (
+                                <Image
+                                  src={user.avatar}
+                                  alt="Avatar"
+                                  fill
+                                  unoptimized
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <User className="h-6 w-6 text-stone-500" strokeWidth={1.5} />
+                              )}
+                            </div>
+                            <div className="flex flex-col justify-center">
+                              <p className="truncate text-[15px] font-medium text-stone-800">
+                                {displayName}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => activateTab("vip")}
+                                className={`mt-1.5 inline-flex w-fit cursor-pointer items-center rounded-full border px-2 py-0.5 text-[11px] font-light transition-colors hover:opacity-80 ${levelPillClass}`}
+                              >
+                                {levelLabel}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 菜单列表 */}
+                        <nav className="scrollbar-hide relative flex w-full flex-1 flex-col items-start justify-start space-y-1 overflow-y-auto px-16 py-2">
+                          {MENU_ITEMS.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = activeTab === item.key;
+                            return (
+                              <button
+                                key={item.key}
+                                type="button"
+                                onClick={() => activateTab(item.key)}
+                                className={`group relative -mx-4 flex w-full items-center justify-start gap-5 rounded-2xl px-4 py-3.5 transition-all cursor-pointer ${
+                                  isActive
+                                    ? "font-medium text-stone-800"
+                                    : "font-light text-stone-400 hover:bg-white/30 hover:text-stone-800"
+                                }`}
+                              >
+                                {isActive && (
+                                  <div className="pointer-events-none absolute inset-y-0 left-0 hidden items-center md:flex">
+                                    <m.div
+                                      layoutId="activeSideMenu"
+                                      className="h-[18px] w-[2px] rounded-full bg-stone-800"
+                                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                    />
+                                  </div>
+                                )}
+                                <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.5} />
+                                <span className="text-[13px] font-light">{item.label}</span>
+                              </button>
+                            );
+                          })}
+                        </nav>
+
+                        <div className="mt-auto px-12 py-8">
+                          <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="group -mx-4 flex w-full items-center justify-start gap-5 rounded-2xl px-4 py-3.5 text-stone-600 transition-all hover:bg-white/40 hover:text-stone-900 cursor-pointer"
+                          >
+                            <LogOut className="h-[18px] w-[18px] transition-colors" strokeWidth={1.5} />
+                            <span className="text-[13px] font-medium tracking-wide">退出登录</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 右侧内容区（移动端：Header + 面板 + 底部 Tab） */}
+                    <div className="relative flex h-full min-w-0 flex-1 flex-col">
+                      {/* 移动端 Header：把手 + 标题 + 关闭；header 为下滑关闭手势触发区 */}
+                      {isMobile && (
+                        <div
+                          onPointerDown={(e) => {
+                            if (e.button !== undefined && e.button !== 0) return;
+                            dragControls.start(e);
+                          }}
+                          className="shrink-0 select-none border-b border-stone-200/40 bg-[#FBF8F0] md:hidden"
+                        >
+                          <div aria-hidden className="flex justify-center pt-2">
+                            <div className="h-1 w-9 rounded-full bg-stone-300/70" />
+                          </div>
+                          <div className="grid h-14 grid-cols-[3.5rem_1fr_3.5rem] items-center">
+                            <div aria-hidden />
+                            <h2 className="truncate text-center text-[15px] font-medium tracking-wide text-stone-800">
+                              {MENU_ITEMS.find((i) => i.key === activeTab)?.label || "个人信息"}
+                            </h2>
+                            <div className="flex h-full w-full items-center justify-center">
+                              <button
+                                type="button"
+                                onClick={onClose}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                aria-label="关闭用户中心"
+                                className="flex h-11 w-11 items-center justify-center text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                              >
+                                <X className="h-5 w-5" strokeWidth={1.5} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <h2 id="account-modal-title" className="sr-only">
+                        我的账户
+                      </h2>
+
+                      <div className="min-h-0 flex-1 overflow-hidden">
+                        <AccountPanelErrorBoundary>
+                          {visitedTabs.includes("profile") && (
+                            <div
+                              role="tabpanel"
+                              id="account-tabpanel-profile"
+                              hidden={activeTab !== "profile"}
+                              className="h-full"
+                            >
+                              <div className="flex h-full flex-col pt-4 md:pt-10">
+                                <div className="hidden flex-shrink-0 border-b border-stone-200/60 px-6 pb-6 md:flex md:px-16">
+                                  <h2 className="text-xl font-medium tracking-wide text-stone-800">
+                                    个人信息
+                                  </h2>
+                                </div>
+                                <div
+                                  data-account-scroll
+                                  className="scrollbar-hide flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-16"
+                                >
+                                  <div className="w-full max-w-xl mx-auto">
+                                    <AccountRootView
+                                      user={user}
+                                      onClose={onClose}
+                                      onRequestLogout={handleLogout}
+                                      onRequestLogin={requestLogin}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {visitedTabs.includes("vip") && (
+                            <div
+                              role="tabpanel"
+                              id="account-tabpanel-vip"
+                              hidden={activeTab !== "vip"}
+                              className="h-full"
+                            >
+                              <VipPanel
+                                onRequestLogin={requestLogin}
+                                onNavigateMall={() => activateTab("mall")}
+                              />
+                            </div>
+                          )}
+
+                          {visitedTabs.includes("mall") && (
+                            <div
+                              role="tabpanel"
+                              id="account-tabpanel-mall"
+                              hidden={activeTab !== "mall"}
+                              className="h-full"
+                            >
+                              <div className="flex h-full flex-col pt-4 md:pt-10">
+                                <div className="hidden flex-shrink-0 border-b border-stone-200/60 px-6 pb-6 md:flex md:px-16">
+                                  <h2 className="text-xl font-medium tracking-wide text-stone-800">
+                                    积分商城
+                                  </h2>
+                                </div>
+                                <div
+                                  data-account-scroll
+                                  className="scrollbar-hide flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-16"
+                                >
+                                  <AccountMallTab onClose={onClose} />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </AccountPanelErrorBoundary>
+                      </div>
+
+                      {/* 移动端底部 Tab 栏（safe-area 适配手势条） */}
+                      {isMobile && (
+                        <nav
+                          aria-label="用户中心导航"
+                          className="shrink-0 border-t border-stone-200/40 bg-[#FBF8F0]/95 backdrop-blur-md md:hidden"
+                          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+                        >
+                          <div className="grid h-16 grid-cols-3">
+                            {MENU_ITEMS.map(({ key, label, icon: Icon }) => {
+                              const isActive = activeTab === key;
+                              return (
+                                <button
+                                  key={key}
+                                  type="button"
+                                  onClick={() => activateTab(key)}
+                                  aria-current={isActive ? "page" : undefined}
+                                  className={`flex flex-col items-center justify-center gap-1 transition-colors active:opacity-60 cursor-pointer ${
+                                    isActive
+                                      ? "text-[#00263e]"
+                                      : "text-stone-400 hover:text-stone-800"
+                                  }`}
+                                >
+                                  <Icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.5} />
+                                  <span className="text-[11px] leading-none">{label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </nav>
+                      )}
+                    </div>
+
+                    {/* 桌面端关闭按钮 */}
+                    {!isMobile && (
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="关闭用户中心"
+                        className="absolute right-10 top-10 z-50 hidden h-9 w-9 items-center justify-center text-stone-400 transition-colors hover:text-stone-800 md:flex cursor-pointer"
+                      >
+                        <X className="h-5 w-5" strokeWidth={1} />
+                      </button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="relative flex h-full w-full flex-col items-center overflow-y-auto px-6 pt-[calc(3rem+env(safe-area-inset-top,0px))] pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pt-10 sm:pb-8">
                   <button
                     onClick={onClose}
                     aria-label="关闭"
-                    className="justify-self-end w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
+                    className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
                   >
                     <X size={16} strokeWidth={2.5} />
                   </button>
+                  <h2 id="account-modal-title" className="sr-only">
+                    我的账户
+                  </h2>
+                  <LoginGuide onNavigateLogin={onClose} />
                 </div>
               )}
-
-              <div
-                data-account-scroll
-                className={`flex-1 min-h-0 overflow-y-auto px-6 md:px-8 flex flex-col items-center ${
-                  shellFixed && !isMobile
-                    ? "pt-3"
-                    : "pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10"
-                } ${
-                  shellFixed && isMobile
-                    ? "pb-6"
-                    : "pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8"
-                }`}
-              >
-                <h2 id="account-modal-title" className="sr-only">
-                  我的账户
-                </h2>
-
-                {!user ? (
-                  <LoginGuide onNavigateLogin={onClose} />
-                ) : (
-                  <AccountPanelErrorBoundary>
-                    {/* 根视图：轻量入口，常驻挂载（从中心返回时数据即时呈现） */}
-                    <m.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={view === "root" ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
-                      transition={{ duration: 0.18 }}
-                      className={`w-full sm:max-w-md sm:mx-auto flex flex-col items-center ${view === "root" ? "" : "hidden"}`}
-                    >
-                      <AccountRootView
-                        user={user}
-                        onClose={onClose}
-                        onOpenCenter={() => setView("center")}
-                        onRequestLogout={handleLogout}
-                        onRequestLogin={requestLogin}
-                      />
-                    </m.div>
-
-                    {/* 会员中心视图：首次进入后保持挂载（仅隐藏），iframe/会员数据/折叠状态不重载 */}
-                    {centerVisited && (
-                      <m.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={view === "center" ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
-                        transition={{ duration: 0.18 }}
-                        className={`w-full flex flex-col items-center ${view === "center" ? "" : "hidden"}`}
-                      >
-                        {/* tab 面板：首次激活才挂载，之后保持挂载仅隐藏；aria-labelledby 随端切换指向可见 tab */}
-                        {visitedTabs.includes("my") && (
-                          <div
-                            role="tabpanel"
-                            id="account-tabpanel-my"
-                            aria-labelledby={isMobile ? "account-tab-mobile-my" : "account-tab-my"}
-                            hidden={activeTab !== "my"}
-                            className="w-full"
-                          >
-                            {/* 会员内容单列居中：等级卡（含积分/升级进度）+ 全档权益；
-                                资料编辑已并入根视图，不再双列并排 */}
-                            <div className="w-full max-w-xl mx-auto">
-                              <AccountMembershipTab onRequestLogin={requestLogin} />
-                            </div>
-                          </div>
-                        )}
-                        {visitedTabs.includes("mall") && (
-                          <div
-                            role="tabpanel"
-                            id="account-tabpanel-mall"
-                            aria-labelledby={isMobile ? "account-tab-mobile-mall" : "account-tab-mall"}
-                            hidden={activeTab !== "mall"}
-                            className="w-full"
-                          >
-                            <AccountMallTab onClose={onClose} />
-                          </div>
-                        )}
-                      </m.div>
-                    )}
-                  </AccountPanelErrorBoundary>
-                )}
-              </div>
-
-              {/* 移动端底部 Tab 栏（会员中心视图）：拇指可达，safe-area 适配 */}
-              {shellFixed && isMobile && (
-                <nav
-                  aria-label="会员中心导航"
-                  className="shrink-0 border-t border-brand-espresso/[0.08] bg-[#FDFBF7] px-3 pt-1.5"
-                  style={{ paddingBottom: "calc(0.375rem + env(safe-area-inset-bottom, 0px))" }}
-                >
-                  <div className="grid grid-cols-2">
-                    {ACCOUNT_TABS.map((t) => {
-                      const Icon = TAB_ICONS[t.key];
-                      const active = activeTab === t.key;
-                      return (
-                        <button
-                          key={t.key}
-                          type="button"
-                          id={`account-tab-mobile-${t.key}`}
-                          onClick={() => activateTab(t.key)}
-                          aria-current={active ? "page" : undefined}
-                          className={`flex flex-col items-center justify-center gap-1 rounded-xl py-1.5 transition-colors cursor-pointer ${
-                            active ? "text-brand-espresso" : "text-brand-charcoal/45 hover:text-brand-charcoal"
-                          }`}
-                        >
-                          <Icon className="h-5 w-5" strokeWidth={active ? 2 : 1.5} />
-                          <span className="text-[11px] leading-none">{t.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </nav>
-              )}
             </m.div>
 
-            {/* 退出登录确认框：默认仅退出本站，勾选后同时退出所有 NIHPLOD 平台（global）。
-                渲染在 focus-trap 容器内（fixed 定位不受嵌套影响），键盘焦点可达 */}
+            {/* 退出登录确认框：默认仅退出本站，勾选后同时退出所有 NIHPLOD 平台（global） */}
             <AnimatePresence>
-        {showLogoutConfirm && (
-          <div
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="logout-confirm-title"
-            className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4"
-          >
-            <m.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowLogoutConfirm(false)}
-              className="absolute inset-0 bg-slate-900/50 backdrop-blur-md"
-            />
-            <m.div
-              initial={{ opacity: 0, scale: 0.96, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 10 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full max-w-xs bg-[#F7F4EE] rounded-[24px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 id="logout-confirm-title" className="text-base font-semibold text-brand-charcoal mb-2">
-                退出登录
-              </h3>
-              <p className="text-[13px] font-light text-brand-charcoal/60 leading-relaxed mb-4">
-                默认仅退出本站；勾选后将同时退出主站及所有 NIHPLOD 平台。
-              </p>
-              <label className="flex items-center gap-2 mb-6 cursor-pointer select-none text-[13px] text-brand-charcoal/70 tracking-[0.03em]">
-                <input
-                  type="checkbox"
-                  checked={logoutGlobal}
-                  onChange={(e) => setLogoutGlobal(e.target.checked)}
-                  className="w-4 h-4 accent-brand-charcoal"
-                />
-                同时退出所有 NIHPLOD 平台
-              </label>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowLogoutConfirm(false)}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/5 text-[13px] tracking-[0.05em] text-brand-charcoal/70 hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
+              {showLogoutConfirm && (
+                <div
+                  role="alertdialog"
+                  aria-modal="true"
+                  aria-labelledby="logout-confirm-title"
+                  className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4"
                 >
-                  取消
-                </button>
-                <button
-                  type="button"
-                  onClick={handleLogoutConfirm}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-[var(--color-brand-danger)] text-white text-[13px] tracking-[0.05em] transition-opacity hover:opacity-90 cursor-pointer"
-                >
-                  {logoutGlobal ? "退出所有平台" : "退出本站"}
-                </button>
-              </div>
-            </m.div>
-          </div>
-        )}
+                  <m.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="absolute inset-0 bg-slate-900/50 backdrop-blur-md"
+                  />
+                  <m.div
+                    initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: 10 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    className="relative z-10 w-full max-w-xs bg-[#F7F4EE] rounded-[24px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <h3 id="logout-confirm-title" className="text-base font-semibold text-brand-charcoal mb-2">
+                      退出登录
+                    </h3>
+                    <p className="text-[13px] font-light text-brand-charcoal/60 leading-relaxed mb-4">
+                      默认仅退出本站；勾选后将同时退出主站及所有 NIHPLOD 平台。
+                    </p>
+                    <label className="flex items-center gap-2 mb-6 cursor-pointer select-none text-[13px] text-brand-charcoal/70 tracking-[0.03em]">
+                      <input
+                        type="checkbox"
+                        checked={logoutGlobal}
+                        onChange={(e) => setLogoutGlobal(e.target.checked)}
+                        className="w-4 h-4 accent-brand-charcoal"
+                      />
+                      同时退出所有 NIHPLOD 平台
+                    </label>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowLogoutConfirm(false)}
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/5 text-[13px] tracking-[0.05em] text-brand-charcoal/70 hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
+                      >
+                        取消
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLogoutConfirm}
+                        className="flex-1 px-4 py-2.5 rounded-xl bg-[var(--color-brand-danger)] text-white text-[13px] tracking-[0.05em] transition-opacity hover:opacity-90 cursor-pointer"
+                      >
+                        {logoutGlobal ? "退出所有平台" : "退出本站"}
+                      </button>
+                    </div>
+                  </m.div>
+                </div>
+              )}
             </AnimatePresence>
           </div>
         )}

@@ -7,7 +7,6 @@ import {
   Camera,
   Check,
   ChevronRight,
-  Crown,
   Loader2,
   LogOut,
   NotebookPen,
@@ -56,18 +55,17 @@ function maskPhone(phone?: string | null) {
 interface AccountRootViewProps {
   user: User;
   onClose: () => void;
-  onOpenCenter: () => void;
   onRequestLogout: () => void;
   /** 会话过期时的登录引导：由 AccountModal 统一处理（先关弹层再开 AuthModal，避免层级/焦点冲突） */
   onRequestLogin: () => void;
 }
 
 /**
- * 用户面板根视图：身份与资料 + 功能入口。
+ * 「个人信息」面板（用户中心默认视图）：身份与资料 + 功能入口。
  * 头像/昵称/性别可编辑（BFF /api/account/profile，性别供问卷预填；生日只读展示）；
- * 入口：护肤档案（全局档案弹层）、会员中心（等级/积分/权益 + 积分商城）。
+ * 入口：护肤档案（全局档案弹层）。退出登录仅移动端展示（桌面端在侧边栏）。
  */
-export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, onRequestLogin }: AccountRootViewProps) {
+export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin }: AccountRootViewProps) {
   const { openDiaryModal } = useDiaryModal();
   const { refresh } = useAuth();
   const toast = useToast();
@@ -385,7 +383,7 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
           onClose();
           openDiaryModal();
         }}
-        className={`${ACCOUNT_ENTRY_ROW} mb-3`}
+        className={`${ACCOUNT_ENTRY_ROW} mb-6`}
       >
         <span className="inline-flex items-center gap-2">
           <NotebookPen className="w-4 h-4" />
@@ -394,22 +392,10 @@ export function AccountRootView({ user, onClose, onOpenCenter, onRequestLogout, 
         <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
       </button>
 
-      {/* 会员中心入口：淡入会员中心视图（会员 / 积分商城）；最后一个入口，下方留出更大间距 */}
-      <button
-        onClick={onOpenCenter}
-        className={`${ACCOUNT_ENTRY_ROW} mb-6`}
-      >
-        <span className="inline-flex items-center gap-2">
-          <Crown className="w-4 h-4" />
-          会员中心
-        </span>
-        <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
-      </button>
-
-      {/* 退出登录 */}
+      {/* 退出登录：仅移动端展示（桌面端在用户中心侧边栏底部） */}
       <button
         onClick={onRequestLogout}
-        className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 rounded-md"
+        className="md:hidden inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 rounded-md"
       >
         <LogOut className="w-4 h-4" strokeWidth={1.5} />
         退出登录
