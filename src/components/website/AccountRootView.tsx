@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { createElement, useEffect, useRef, useState } from "react";
 import {
-  Cake,
   Camera,
   Check,
   ChevronRight,
@@ -11,8 +10,7 @@ import {
   LogOut,
   NotebookPen,
   Pencil,
-  Smartphone,
-  VenusAndMars,
+  ScanFace,
   X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,7 +18,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { getFactionIcon } from "@/components/website/faction-icons";
 import { getMemberBadge } from "@/components/website/member-badges";
-import { ACCOUNT_ENTRY_ROW, ACCOUNT_AVATAR_SHADOW } from "@/components/website/account-styles";
+import { ACCOUNT_CARD, ACCOUNT_ENTRY_ROW, ACCOUNT_AVATAR_SHADOW } from "@/components/website/account-styles";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { uploadImage } from "@/lib/upload-client";
@@ -282,7 +280,7 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
 
       {/* 昵称（点击进入行内编辑，≤20 字符）+ 会员徽章 */}
       {editingNickname ? (
-        <div className="flex items-center gap-2 mb-1.5">
+        <div className="flex items-center gap-2 mb-3">
           <input
             autoFocus
             value={nicknameDraft}
@@ -316,7 +314,7 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
           </button>
         </div>
       ) : (
-        <p className="text-xl font-semibold text-brand-charcoal mb-1.5 flex items-center gap-2">
+        <p className="text-xl font-semibold text-brand-charcoal mb-3 flex items-center justify-center flex-wrap gap-2">
           {displayName}
           <button
             type="button"
@@ -332,49 +330,54 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
         </p>
       )}
 
-      {/* 手机号 / 生日 / 性别（主站已掩码；回退值本地掩码） */}
-      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] text-brand-charcoal/60 mb-1.5">
-        <span className="inline-flex items-center gap-1.5">
-          <Smartphone className="w-3.5 h-3.5" />
-          {displayPhone}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Cake className="w-3.5 h-3.5" />
-          {birthdayValue || "生日未设置"}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <VenusAndMars className="w-3.5 h-3.5" />
-          {genderLabel}
-        </span>
+      {/* 资料卡：手机号 / 生日 / 性别（主站已掩码；回退值本地掩码）——带标签三列，窄屏不换行 */}
+      <div className={`w-full ${ACCOUNT_CARD} mb-3 grid grid-cols-3 divide-x divide-brand-charcoal/[0.06]`}>
+        <div className="flex min-w-0 flex-col items-center gap-1 px-2 py-3">
+          <span className="text-[11px] font-light tracking-[0.08em] text-brand-charcoal/45">手机号</span>
+          <span className="max-w-full truncate text-[12px] sm:text-[13px] text-brand-charcoal">{displayPhone}</span>
+        </div>
+        <div className="flex min-w-0 flex-col items-center gap-1 px-2 py-3">
+          <span className="text-[11px] font-light tracking-[0.08em] text-brand-charcoal/45">生日</span>
+          <span className="max-w-full truncate text-[12px] sm:text-[13px] text-brand-charcoal">{birthdayValue || "未设置"}</span>
+        </div>
+        <div className="flex min-w-0 flex-col items-center gap-1 px-2 py-3">
+          <span className="text-[11px] font-light tracking-[0.08em] text-brand-charcoal/45">性别</span>
+          <span className="max-w-full truncate text-[12px] sm:text-[13px] text-brand-charcoal">{genderLabel}</span>
+        </div>
       </div>
 
-      {/* 最新测肤派系 + 测肤用量：加载中骨架占位，避免下方内容跳动 */}
+      {/* 状态卡：最新测肤派系 + 测肤用量（左对齐两行；加载中骨架占位，避免下方内容跳动） */}
       {!metaLoaded ? (
-        <>
-          <div aria-hidden="true" className="h-[22px] w-36 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-2" />
-          <div aria-hidden="true" className="h-5 w-40 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-4" />
-        </>
+        <div className={`w-full ${ACCOUNT_CARD} mb-4 px-4 py-3`} aria-busy="true">
+          <div className="h-[18px] w-36 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-2" />
+          <div className="h-[18px] w-44 rounded-full bg-brand-charcoal/[0.05] animate-pulse" />
+        </div>
       ) : (
-        <>
-          {latestPersonaType && (
-            <span className="mb-2 inline-flex h-[22px] px-2 items-center gap-1 rounded-full border border-brand-charcoal/[0.1] bg-white/60 text-[11px] font-light tracking-[0.04em] text-brand-charcoal/70 whitespace-nowrap">
-              {createElement(getFactionIcon(latestPersonaType.ipKey), {
-                className: "w-3 h-3 text-brand-charcoal/60 shrink-0",
-                strokeWidth: 1.5,
-              })}
-              我的肌智派形象 · {latestPersonaType.typeName}
-            </span>
-          )}
+        (latestPersonaType || testUsage) && (
+          <div className={`w-full ${ACCOUNT_CARD} mb-4 flex flex-col gap-2.5 px-4 py-3`}>
+            {latestPersonaType && (
+              <div className="flex items-center gap-2 text-[12px] font-light tracking-[0.04em] text-brand-charcoal/70">
+                {createElement(getFactionIcon(latestPersonaType.ipKey), {
+                  className: "w-3.5 h-3.5 shrink-0 text-brand-charcoal/55",
+                  strokeWidth: 1.5,
+                })}
+                <span className="min-w-0 truncate">我的肌智派形象 · {latestPersonaType.typeName}</span>
+              </div>
+            )}
 
-          {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量 */}
-          {testUsage && (
-            <p className="text-[12px] text-brand-charcoal/55 font-light tracking-[0.05em] mb-4">
-              {testUsage.unlimited
-                ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
-                : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
-            </p>
-          )}
-        </>
+            {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量 */}
+            {testUsage && (
+              <div className="flex items-center gap-2 text-[12px] font-light tracking-[0.04em] text-brand-charcoal/60">
+                <ScanFace className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/45" strokeWidth={1.5} />
+                <span className="min-w-0 truncate">
+                  {testUsage.unlimited
+                    ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
+                    : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
+                </span>
+              </div>
+            )}
+          </div>
+        )
       )}
 
       {/* 护肤档案入口：打开全局护肤档案弹层 */}
