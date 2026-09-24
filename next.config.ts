@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
       },
       {
+        // 官网商品/礼品图片（本地存储模式为 nihplod.cn/uploads/...；
+        // 子站经 /api/account/* BFF 取回后由 officialImageSrc 补全为绝对地址）
+        protocol: 'https',
+        hostname: 'nihplod.cn',
+      },
+      {
         protocol: 'https',
         hostname: 'wp-cdn.4ce.cn',
       },

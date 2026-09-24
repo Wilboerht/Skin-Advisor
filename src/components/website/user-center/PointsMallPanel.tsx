@@ -32,6 +32,7 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, m } from "framer-motion";
 import { useToast } from "@/components/ui/Toast";
 import type { ProductData } from "@/components/website/ProductDrawer";
+import { officialImageSrc } from "@/lib/official-assets";
 import { POINTS_CHANGED_EVENT, SESSION_EXPIRED_EVENT, fetchWithCsrf } from "@/lib/fetch-client";
 
 /** 与官网 api-client 同语义的轻量封装：非 2xx / success=false 抛错（message 取服务端文案） */
@@ -238,6 +239,28 @@ function stripHtml(html: string): string {
 }
 
 /**
+ * 礼品图片归一化：官网返回的是主站站内相对路径（/uploads/...），
+ * 子站直接渲染会 404，统一补全官网 origin 后再进 state
+ * （详情抽屉收到的 detail.images 也已是可直接访问的地址）。
+ */
+function normalizeGiftImages(data: GiftsData): GiftsData {
+  return {
+    ...data,
+    gifts: data.gifts.map((gift) => ({
+      ...gift,
+      image: officialImageSrc(gift.image),
+      detail: {
+        ...gift.detail,
+        images: gift.detail.images.flatMap((img) => {
+          const url = officialImageSrc(img.url);
+          return url ? [{ ...img, url }] : [];
+        }),
+      },
+    })),
+  };
+}
+
+/**
  * 计算 30 天内即将过期的积分（加载时调用，避免渲染期取当前时间）
  * 仅统计仍有剩余（remaining>0）的发放类流水：FIFO 消耗后仍有效的部分才是真实可损失积分。
  */
@@ -303,7 +326,7 @@ export function PointsMallPanel() {
       const res = await fetchWithCsrf("/api/account/points/gifts");
       const data = await res.json();
       if (data.success) {
-        setGiftsData(data.data);
+        setGiftsData(normalizeGiftImages(data.data as GiftsData));
       }
     } catch {
       // 加载失败静默（面板展示失败态，可刷新重试）

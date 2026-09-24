@@ -240,7 +240,7 @@ export function ProductDrawer({
   const brandLogo = (
     <div className="relative h-[28px] w-[100px]">
       <Image
-        src="/images/NIHPLOD-logo.svg"
+        src="/NIHPLOD-logo.svg"
         alt="NIHPLOD Logo"
         fill
         className="object-contain"
