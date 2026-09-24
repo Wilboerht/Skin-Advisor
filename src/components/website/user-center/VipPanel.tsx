@@ -39,6 +39,7 @@ import { AnimatePresence, m } from "framer-motion";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
 import { POINTS_CHANGED_EVENT } from "@/lib/fetch-client";
+import { SpentAdjustmentPanel, type SpentPanelView } from "@/components/website/user-center/SpentAdjustmentPanel";
 
 // 会员卡背景图（四档）：会员卡铺满作卡面底色，等级对比卡做虚化淡化处理
 const CARD_BG_IMAGES: Partial<Record<string, string>> = {
@@ -137,11 +138,8 @@ interface PointsData {
   available: number;
 }
 
-// 内容整版视图：主视图 / 等级对比，互斥整版切换（淡入淡出）
-type VipView = "main" | "levels";
-
-// 子站暂无消费补录接口：按钮保留，点击统一提示
-const SPENT_UNAVAILABLE_TEXT = "消费补录暂不可用，请前往官网会员中心操作";
+// 内容整版视图：主视图 / 等级对比 / 消费补录表单 · 录入历史，互斥整版切换（淡入淡出）
+type VipView = "main" | "levels" | "spent-form" | "spent-history";
 
 interface VipPanelProps {
   /** 会话过期（BFF 401）时的登录引导 */
@@ -162,7 +160,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
   const [benefitsScroll, setBenefitsScroll] = useState({ overflowing: false, atBottom: false });
   const scrollRef = useRef<HTMLDivElement>(null);
   const benefitsScrollRef = useRef<HTMLDivElement>(null);
-  const { error: showError, warning: showWarning } = useToast();
+  const { error: showError } = useToast();
   const { user, refresh } = useAuth();
 
   const updateBenefitsScroll = useCallback(() => {
@@ -276,6 +274,12 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
     return () => window.removeEventListener(POINTS_CHANGED_EVENT, onPointsChanged);
   }, [loadPointsData]);
 
+  // 补录申请提交/刷新后：重拉会员卡与积分（审核通过后的等级/消费/积分变化即时体现）
+  const handleApplicationsLoaded = useCallback(() => {
+    void loadVIPData();
+    void loadPointsData();
+  }, [loadVIPData, loadPointsData]);
+
   // 视图切换时回到顶部：整版内容淡入淡出后高度变化，避免停留在旧滚动位置
   useEffect(() => {
     scrollRef.current?.scrollTo?.({ top: 0 });
@@ -321,7 +325,18 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
   const { currentLevel, nextLevel, totalSpent, allLevels, memberId } = vipData;
   const tierStyle = TIER_CARD_STYLES[currentLevel.level] ?? TIER_CARD_STYLES.REGULAR;
   const cardBgImage = CARD_BG_IMAGES[currentLevel.level];
-  const showSpentUnavailable = () => showWarning(SPENT_UNAVAILABLE_TEXT);
+
+  // 切换整版视图到消费补录表单/录入历史（与官网 VipPanel 一致）
+  const focusSpentForm = () => {
+    setView("spent-form");
+  };
+
+  // 消费补录内部视图变化 → 整版视图映射
+  const handleSpentViewChange = (v: SpentPanelView) => {
+    if (v === "form") setView("spent-form");
+    else if (v === "history") setView("spent-history");
+    else setView("main");
+  };
 
   return (
     <div className="flex h-full flex-col pt-4 md:pt-10" data-testid="panel-vip">
@@ -498,7 +513,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                       <div className="mt-4 flex items-center gap-4">
                         <button
                           type="button"
-                          onClick={showSpentUnavailable}
+                          onClick={focusSpentForm}
                           className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[#00263e]/30 bg-white/40 px-5 py-2 text-xs text-[#00263e] transition-colors hover:border-[#00263e]/60 hover:bg-[#00263e]/5 active:opacity-70"
                         >
                           录入消费
@@ -506,7 +521,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={showSpentUnavailable}
+                          onClick={() => setView("spent-history")}
                           className="py-1.5 text-xs text-stone-500 transition-colors hover:text-stone-800 active:opacity-60"
                         >
                           查看录入历史
@@ -568,7 +583,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                               </p>
                               <button
                                 type="button"
-                                onClick={showSpentUnavailable}
+                                onClick={focusSpentForm}
                                 className="mt-3 inline-flex items-center gap-1 rounded-full bg-[#00263e] px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80"
                               >
                                 了解会员升级
@@ -780,7 +795,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                               </p>
                               <button
                                 type="button"
-                                onClick={showSpentUnavailable}
+                                onClick={focusSpentForm}
                                 className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#00263e] px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80"
                               >
                                 补录消费记录
@@ -814,7 +829,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                             </div>
                             <button
                               type="button"
-                              onClick={showSpentUnavailable}
+                              onClick={focusSpentForm}
                               className="mt-3 inline-flex items-center gap-1 rounded-full bg-[#00263e] px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80"
                             >
                               补录消费记录
@@ -826,6 +841,40 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                   );
                 })}
               </div>
+            </m.div>
+          )}
+
+          {view === "spent-form" && (
+            <m.div
+              key="spent-form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <SpentAdjustmentPanel
+                view="form"
+                onViewChange={handleSpentViewChange}
+                onApplicationsLoaded={handleApplicationsLoaded}
+                onRequestLogin={onRequestLogin}
+              />
+            </m.div>
+          )}
+
+          {view === "spent-history" && (
+            <m.div
+              key="spent-history"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <SpentAdjustmentPanel
+                view="history"
+                onViewChange={handleSpentViewChange}
+                onApplicationsLoaded={handleApplicationsLoaded}
+                onRequestLogin={onRequestLogin}
+              />
             </m.div>
           )}
         </AnimatePresence>

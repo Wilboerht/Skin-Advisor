@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Clock, ScanFace } from "lucide-react";
 
 /**
  * TestHistoryList — 测肤记录列表（含数据拉取与分页）
- * 使用方：护肤档案弹层（DiaryModal）测肤记录模态框
+ * 使用方：账户弹层「护肤档案」面板（DiaryPanel）的测肤记录视图
  * 数据源：/api/advisor/history（分页、排除冷层归档）
  * 条目为一行紧凑式：日期 · 肤质 · 分数，点击进入报告详情
  */
@@ -83,7 +83,7 @@ export function TestHistoryList({
   }, [page, pageSize, onDataChange]);
 
   useEffect(() => {
-    // 已提供首屏数据：跳过初始拉取，避免与父级（DiaryModal 时间线）重复请求
+    // 已提供首屏数据：跳过初始拉取，避免与父级（DiaryPanel 时间线）重复请求
     if (hasInitial) return;
     fetchHistory();
   }, [fetchHistory, hasInitial]);

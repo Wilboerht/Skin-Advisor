@@ -8,7 +8,7 @@ import { useLazyOpen } from "@/hooks/use-lazy-open";
 const LegalDocModal = dynamic(() => import("@/components/website/LegalDocModal").then((mod) => mod.LegalDocModal), { ssr: false });
 
 /**
- * LegalDocModalGate — LegalDocModal 的懒挂载门卫（与 DiaryModalGate 同构）
+ * LegalDocModalGate — LegalDocModal 的懒挂载门卫（与 AuthModalGate 同构）
  *
  * 挂在根 layout（LegalDocModalProvider 内），首次打开前不渲染真实弹窗。
  */

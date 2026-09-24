@@ -16,6 +16,7 @@ import {
     type TokenVerificationError,
 } from '@/lib/auth-config';
 import { generateCsrfToken, CSRF_COOKIE_NAME } from '@/lib/csrf';
+import { SSO_INSECURE_LOCAL_DEV } from '@/lib/sso-config';
 import { logger } from '@/lib/logger';
 
 export {
@@ -150,11 +151,24 @@ export async function signLocalSession(
 
 /**
  * 清除子站本地 session Cookie（双 token + CSRF）。
+ *
+ * 不能用 response.cookies.delete()：其序列化结果不含 Secure 属性，
+ * 而浏览器对 __Host- 前缀 Cookie 的删除指令同样强制校验前缀规则
+ *（Secure + Path=/ + 无 Domain），缺 Secure 的删除会被静默拒绝，
+ * 导致登出后本地 JWT 存活、被 /api/auth/me 的本地会话兜底"复活"登录态。
+ * 删除属性必须与签发侧（signLocalSession）保持一致。
  */
 export function clearLocalSession(response: NextResponse): void {
-    response.cookies.delete(AUTH_COOKIE_NAME);
-    response.cookies.delete(AUTH_REFRESH_COOKIE_NAME);
-    response.cookies.delete(CSRF_COOKIE_NAME);
+    const secure = !SSO_INSECURE_LOCAL_DEV;
+    response.cookies.set(AUTH_COOKIE_NAME, "", { ...accessCookieOptions(secure), maxAge: 0 });
+    response.cookies.set(AUTH_REFRESH_COOKIE_NAME, "", { ...refreshCookieOptions(secure), maxAge: 0 });
+    response.cookies.set(CSRF_COOKIE_NAME, "", {
+        httpOnly: false,
+        secure,
+        sameSite: "strict" as const,
+        path: "/",
+        maxAge: 0,
+    });
 }
 
 /**

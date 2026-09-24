@@ -4,7 +4,6 @@ import { m } from "framer-motion";
 import { ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
 import type { PreviousTestSummary } from "@/lib/analysis-result";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
-import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { cn } from "@/lib/utils";
 
 interface ComparisonCardProps {
@@ -14,6 +13,8 @@ interface ComparisonCardProps {
     persona?: string;
     /** 本次分析完成时间（ISO），用于与 prev.at 计算间隔 */
     at?: string;
+    /** 护肤档案入口：打开「我的」账户弹层的档案 tab（由 ResultClient 统一提供） */
+    onOpenDiary?: () => void;
 }
 
 function formatDate(iso?: string | null): string | null {
@@ -61,8 +62,7 @@ function DeltaFigure({ delta, unit, goodWhenNegative = false }: { delta?: number
     );
 }
 
-export default function ComparisonCard({ prev, score, skinAge, persona, at }: ComparisonCardProps) {
-    const { openDiaryModal } = useDiaryModal();
+export default function ComparisonCard({ prev, score, skinAge, persona, at, onOpenDiary }: ComparisonCardProps) {
     const scoreDelta = score !== undefined && typeof prev.score === "number"
         ? Math.round(score - prev.score)
         : undefined;
@@ -111,9 +111,9 @@ export default function ComparisonCard({ prev, score, skinAge, persona, at }: Co
                                 : "与上次测肤对比"}
                     </span>
                 </div>
-                {/* 护肤档案入口：历史测肤趋势的完整档案（未登录由弹层展示登录引导） */}
+                {/* 护肤档案入口：历史测肤趋势的完整档案（打开「我的」账户弹层的档案 tab；未登录展示登录引导） */}
                 <button
-                    onClick={openDiaryModal}
+                    onClick={() => onOpenDiary?.()}
                     className="inline-flex items-center gap-0.5 text-[12px] font-light tracking-[0.06em] text-[var(--color-brand-cocoa)]/70 hover:text-[var(--color-brand-cocoa)] transition-colors"
                     aria-label="打开护肤档案"
                 >

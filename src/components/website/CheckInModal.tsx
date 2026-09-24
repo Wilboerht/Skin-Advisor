@@ -60,7 +60,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
-  // 移动端返回键：优先关打卡弹层（档案弹层由 DiaryModal 自身注册，逐层关闭）
+  // 移动端返回键：优先关打卡弹层（外层账户弹层由 AccountModal 注册 back-close，逐层关闭）
   useModalBackClose(isOpen, onClose);
 
   // 打开时初始化表单（编辑带入旧值；新建重置）

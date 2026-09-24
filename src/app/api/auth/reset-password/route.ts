@@ -9,6 +9,12 @@ import { validatePasswordStrength } from "@/lib/password";
 import { cookies } from "next/headers";
 import { logger } from "@/lib/logger";
 import { PHONE_REGEX } from "@/lib/validation";
+import {
+    USER_COOKIE_NAME,
+    USER_REFRESH_COOKIE_NAME,
+    USER_ACCESS_COOKIE_OPTIONS,
+    USER_REFRESH_COOKIE_OPTIONS,
+} from "@/lib/wechat-constants";
 
 export async function POST(req: NextRequest) {
     try {
@@ -74,8 +80,10 @@ export async function POST(req: NextRequest) {
         const response = NextResponse.json({ success: true, data: { message: responseData.data?.message || "密码已重置" } });
 
         clearLocalSession(response);
-        response.cookies.delete("__Host-user_token");
-        response.cookies.delete("__Host-user_refresh_token");
+        // __Host- 前缀 Cookie 的删除必须带 Secure（cookies.delete() 不带会被浏览器拒绝），
+        // 且名字必须与写入侧常量一致（本地 HTTP 开发下去前缀）
+        response.cookies.set(USER_COOKIE_NAME, "", { ...USER_ACCESS_COOKIE_OPTIONS, maxAge: 0 });
+        response.cookies.set(USER_REFRESH_COOKIE_NAME, "", { ...USER_REFRESH_COOKIE_OPTIONS, maxAge: 0 });
 
         return response;
 

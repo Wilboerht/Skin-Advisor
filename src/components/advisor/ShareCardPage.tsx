@@ -297,7 +297,7 @@ export default function ShareCardPage({
                 {onOpenReport && (
                     <button
                         onClick={onOpenReport}
-                        className="group inline-flex w-full sm:w-auto sm:min-w-[224px] items-center justify-center gap-2 h-11 px-8 rounded-full border border-brand-cocoa/25 bg-brand-cocoa/[0.07] text-brand-cocoa text-[14px] font-medium tracking-[0.08em] transition-colors duration-200 hover:border-brand-cocoa/40 hover:bg-brand-cocoa/[0.12] active:bg-brand-cocoa/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] lg:pointer-fine:hidden cursor-pointer"
+                        className="group inline-flex w-full sm:w-auto sm:min-w-[224px] items-center justify-center gap-2 h-11 px-8 rounded-full border border-brand-cocoa/25 bg-brand-cocoa/[0.07] text-brand-cocoa text-[14px] font-medium tracking-[0.08em] transition-colors duration-200 hover:border-brand-cocoa/40 hover:bg-brand-cocoa/[0.12] active:bg-brand-cocoa/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] cursor-pointer"
                     >
                         查看完整报告
                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />

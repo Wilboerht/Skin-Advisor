@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useRef, useMemo, Suspense } from "rea
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { ArrowUp, House, AlertCircle, Sparkles, X, ScanFace, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUp, House, AlertCircle, Sparkles, X, ScanFace, Info } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -41,10 +41,41 @@ import { useLazyOpen } from "@/hooks/use-lazy-open";
 
 // 首屏包体优化：完整报告 / 产品推荐 / 版式选择都只在"翻到报告页"或"点击保存"后才需要，
 // 改为动态加载；html-to-image / qrcode 在对应动作里 await import（见下方实现）。
-const ReportPage = dynamic(() => import("@/components/advisor/ReportPage"), { ssr: false });
+// loading 骨架：分包下载期间先占位，避免翻页/首屏出现空白。
+function ReportPanelSkeleton() {
+    return (
+        <div className="w-full space-y-5" aria-busy="true" aria-label="完整报告加载中">
+            <div className="h-6 w-40 rounded-lg bg-brand-charcoal/[0.06] animate-pulse" />
+            <div className="h-52 rounded-2xl bg-brand-charcoal/[0.05] animate-pulse" />
+            <div className="h-36 rounded-2xl bg-brand-charcoal/[0.04] animate-pulse" />
+            <div className="h-36 rounded-2xl bg-brand-charcoal/[0.04] animate-pulse" />
+        </div>
+    );
+}
+
+function ProductSectionSkeleton() {
+    return (
+        <div className="w-full pt-6 lg:pt-10" aria-busy="true" aria-label="产品推荐加载中">
+            <div className="mx-auto mb-6 h-6 w-44 rounded-lg bg-brand-charcoal/[0.05] animate-pulse" />
+            <div className="flex flex-col lg:flex-row lg:justify-center gap-3">
+                {[0, 1, 2].map((i) => (
+                    <div
+                        key={i}
+                        className="w-full lg:flex-1 lg:min-w-[220px] lg:max-w-[290px] h-[380px] rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/[0.06] animate-pulse"
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+const ReportPage = dynamic(() => import("@/components/advisor/ReportPage"), {
+    ssr: false,
+    loading: () => <ReportPanelSkeleton />,
+});
 const ProductRecommendationSection = dynamic(
     () => import("@/components/advisor/ProductRecommendationSection").then((mod) => mod.ProductRecommendationSection),
-    { ssr: false }
+    { ssr: false, loading: () => <ProductSectionSkeleton /> }
 );
 const PosterTemplatePicker = dynamic(
     () => import("@/components/advisor/poster/PosterTemplatePicker").then((mod) => mod.PosterTemplatePicker),
@@ -80,50 +111,6 @@ function preloadImage(url: string | undefined): void {
     if (!url) return;
     const img = new globalThis.Image();
     img.src = url;
-}
-
-/** 两页版式的侧边翻页箭头：只在可悬停的 lg+ 设备浮出（触屏/小屏继续用页面内按钮，避免纯图标丢失语义） */
-function PageEdgeArrow({
-    side,
-    label,
-    onClick,
-}: {
-    side: "left" | "right";
-    label: string;
-    onClick: () => void;
-}) {
-    const reduceMotion = useReducedMotion();
-    const isRight = side === "right";
-    const enterX = isRight ? 16 : -16;
-    const nudgeX = isRight ? 5 : -5;
-    return (
-        <m.button
-            type="button"
-            onClick={onClick}
-            aria-label={label}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: enterX }}
-            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, x: [enterX, 0, nudgeX, 0] }}
-            transition={reduceMotion ? { duration: 0 } : { duration: 1.5, delay: 0.5, times: [0, 0.3, 0.65, 1], ease: "easeInOut" }}
-            className={`group fixed top-1/2 -mt-6 z-40 hidden lg:pointer-fine:flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#E8E2D9] ${isRight ? "right-20" : "left-20"}`}
-        >
-            <span
-                className={`inline-flex h-12 items-center rounded-full border border-brand-espresso/25 bg-[#F5F2ED]/90 backdrop-blur-sm shadow-[0_8px_24px_rgba(61,47,37,0.16)] transition-colors group-hover:border-brand-espresso/45 group-hover:bg-[#F5F2ED] ${isRight ? "" : "flex-row-reverse"}`}
-            >
-                <span
-                    className={`max-w-0 overflow-hidden whitespace-nowrap text-[13px] font-light tracking-[0.08em] text-brand-espresso/85 opacity-0 transition-all duration-300 ease-out group-hover:max-w-[200px] group-hover:opacity-100 group-focus-visible:max-w-[200px] group-focus-visible:opacity-100 ${isRight ? "group-hover:pl-4 group-focus-visible:pl-4" : "group-hover:pr-4 group-focus-visible:pr-4"}`}
-                >
-                    {label}
-                </span>
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center">
-                    {isRight ? (
-                        <ChevronRight className="h-6 w-6 text-brand-espresso/90 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.25} />
-                    ) : (
-                        <ChevronLeft className="h-6 w-6 text-brand-espresso/90 transition-transform duration-300 group-hover:-translate-x-0.5" strokeWidth={2.25} />
-                    )}
-                </span>
-            </span>
-        </m.button>
-    );
 }
 
 async function waitForImages(container: HTMLElement): Promise<void> {
@@ -462,6 +449,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const shouldRenderSkinTypesModal = useLazyOpen(showSkinTypesModal);
     // 重新测试入口额度预检：无额度/需登录时改展示原因，避免点进去到问卷页才发现走不通
     const [reTestBlockedReason, setReTestBlockedReason] = useState<"login" | "daily" | "lifetime" | null>(null);
+    // 「护肤档案」入口（趋势对比卡）：递增请求序号，触发 UserBadge 内的账户弹层打开到档案 tab
+    const [accountOpenSeq, setAccountOpenSeq] = useState(0);
     const userId = user?.id;
     useEffect(() => {
         if (isMock) return;
@@ -1450,6 +1439,20 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         });
     }, [analysisState.status, searchParams, router, isMock]);
 
+    // Enhanced Loading State（防抖）：本地缓存恢复通常在数十毫秒内完成，
+    // 延迟 250ms 再显示全屏分析遮罩，避免"闪现一下全屏 loading"；期间已出结果则完全不显示
+    const isAsyncAnalyzing = (searchParams.get('status') === 'analyzing' && searchParams.get('mock') !== 'true') || !['idle', 'completed', 'error'].includes(analysisState.status);
+    const showLoading = loading || (!result && isAsyncAnalyzing);
+    const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
+    useEffect(() => {
+        if (!showLoading) {
+            setShowLoadingOverlay(false);
+            return;
+        }
+        const timer = setTimeout(() => setShowLoadingOverlay(true), 250);
+        return () => clearTimeout(timer);
+    }, [showLoading]);
+
     // 入口守卫判定未就绪（SSR 或挂载前）：渲染加载态，避免水合不一致（React #418）
     if (accessDenied === null) {
         return (
@@ -1572,10 +1575,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         );
     }
 
-    // Enhanced Loading State
-    const isAsyncAnalyzing = (searchParams.get('status') === 'analyzing' && searchParams.get('mock') !== 'true') || !['idle', 'completed', 'error'].includes(analysisState.status);
-    const showLoading = loading || (!result && isAsyncAnalyzing);
-
     // Fallback if truly nothing to show (not loading, no result)
     if (!result && !showLoading) {
         return (
@@ -1606,7 +1605,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         <ResultErrorBoundary resetKeys={[id, sessionId]}>
             <>
             <AnimatePresence mode="wait">
-                {showLoading && (
+                {showLoadingOverlay && (
                     <AnalyzingOverlay
                         key="analyzing-overlay"
                         progress={analysisState.progress}
@@ -1672,7 +1671,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 <div className="hidden md:block">
                                     <ResultPageTabs pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
                                 </div>
-                                <UserBadge />
+                                <UserBadge accountOpenSeq={accountOpenSeq} accountOpenTab="diary" />
                             </div>
                         </div>
                     </header>
@@ -1720,9 +1719,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 <div className="w-full max-w-[900px] mx-auto px-6 md:px-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
                                     <ResultFooter />
                                 </div>
-
-                                {/* PC 侧边翻页箭头（可悬停 lg+）：查看完整报告，替代操作区的实心按钮 */}
-                                <PageEdgeArrow side="right" label="查看完整报告" onClick={handleFlipToReport} />
                             </m.div>
                         )}
 
@@ -1791,6 +1787,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             focusProblems={focusProblems}
                                             onOpenLab={() => setShowLabData(true)}
                                             onUnlock={() => openAuthModal("login")}
+                                            onOpenDiary={() => setAccountOpenSeq((n) => n + 1)}
                                         />
                                     </section>
 
@@ -1828,9 +1825,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         <ResultFooter />
                                     </footer>
                                 </div>
-
-                                {/* PC 侧边返回箭头（可悬停 lg+）：闭环回到证书面 */}
-                                <PageEdgeArrow side="left" label="返回证书" onClick={handleOpenCover} />
                             </m.div>
                         )}
                     </AnimatePresence>

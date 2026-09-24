@@ -62,12 +62,20 @@ export async function GET(req: NextRequest) {
     if (res.status === 401) {
         return NextResponse.json({ error: "unauthorized", message: "登录已过期，请重新登录" }, { status: 401 });
     }
-    if (!res.ok) {
-        logger.warn("[account/membership] 官网响应异常", { status: res.status });
-        return NextResponse.json({ error: "upstream_error", message: "官网服务暂时不可用，请稍后再试" }, { status: 502 });
-    }
 
     const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+        // 保留官网状态码与错误码（如 403 insufficient_scope / account_disabled），
+        // 不再统一折叠成 502——否则 scope 缺失等问题会被"官网服务暂时不可用"掩盖，排障困难
+        const body = (data ?? {}) as { error?: string; error_description?: string };
+        const code = body.error ? body.error.toUpperCase() : "UPSTREAM_ERROR";
+        logger.warn("[account/membership] 官网响应异常", { status: res.status, code });
+        return NextResponse.json(
+            { error: code, message: body.error_description || "官网服务暂时不可用，请稍后再试" },
+            { status: res.status }
+        );
+    }
     if (!data) {
         return NextResponse.json({ error: "upstream_error", message: "官网服务暂时不可用，请稍后再试" }, { status: 502 });
     }

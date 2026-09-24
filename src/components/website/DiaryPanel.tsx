@@ -1,9 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import {
   CalendarCheck,
@@ -14,13 +12,8 @@ import {
   ScanFace,
   TrendingUp,
   Trophy,
-  X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useAuthModal } from "@/components/auth/AuthModalContext";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
-import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import type { HistorySession } from "@/components/website/TestHistoryList";
 import { TestHistoryList } from "@/components/website/TestHistoryList";
 import { DiaryTimeline, STATE_META, type DiaryEntry } from "@/components/website/DiaryTimeline";
@@ -28,14 +21,10 @@ import { DiaryCalendar } from "@/components/website/DiaryCalendar";
 import { TrendChart, type TrendsData } from "@/components/website/TrendChart";
 import { CheckInTrend } from "@/components/website/CheckInTrend";
 import { CheckInModal } from "@/components/website/CheckInModal";
-import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { useToast } from "@/components/ui/Toast";
 import { fetchWithCsrf, fetchWithTimeout } from "@/lib/fetch-client";
 import { localDateStr } from "@/lib/local-date";
 import { parseClientDate, isAutoDiaryEntry } from "@/lib/diary-utils";
-
-// 未登录分支才需要账户弹层：动态加载，避免登录用户打开档案时连带下载其整串子组件
-const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
 
 /** 登录状态过期（GET 401）：与网络错误区分，统一走登录引导而非"重试" */
 class AuthExpiredError extends Error {
@@ -96,39 +85,23 @@ function daysAgoCutoff(days: number): number {
   return Date.now() - days * 24 * 60 * 60 * 1000;
 }
 
+interface DiaryPanelProps {
+  /** 面板激活（可见）状态：由账户弹层 tab 驱动，替代原弹层的 isOpen */
+  active: boolean;
+  /** 登录过期统一引导（弹层职责：关弹层 + 打开 AuthModal） */
+  onRequestLogin: () => void;
+}
+
 /**
- * DiaryModal — 「护肤档案」弹层（原独立页 /diary，2026-09 改为全局弹层）
- * 未登录：紧凑登录引导视图（示意曲线 + 功能胶囊 + CTA）；
- * 已登录：肌肤变化 + 护肤历程时间线；「全部记录」为弹层内视图切换（原内容淡出 → 记录淡入），
- * 打卡保持二级弹层。容器/动效与 AccountModal 全站模态框对齐。
+ * DiaryPanel — 「护肤档案」面板（2026-09 由独立 DiaryModal 合并进「我的」账户弹层的「护肤档案」tab）
+ * 肌肤变化 + 护肤历程时间线；「全部记录」为面板内视图切换（原内容淡出 → 记录淡入），
+ * 打卡保持二级弹层。弹层外壳/滚动锁/Escape/未登录引导由 AccountModal 统一负责；本面板自带标题与滚动区。
  */
-export function DiaryModal() {
-  const { isOpen, closeDiaryModal } = useDiaryModal();
+export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
   const { user } = useAuth();
   // 短缓存/请求的用户隔离标识：依赖 user?.id 而非 user 引用（定时续期返回同内容新对象不应触发重置）
   const userId = user?.id;
   const toast = useToast();
-  const pathname = usePathname();
-  const { openAuthModal } = useAuthModal();
-
-  // 移动端返回键/返回手势：先关档案弹层（再按返回才离开页面）
-  useModalBackClose(isOpen, closeDiaryModal);
-
-  // 登录过期引导：先关档案弹层再开 AuthModal（AuthModal 层级低于 --z-modal，叠加会被遮挡）
-  const requestLogin = useCallback(() => {
-    closeDiaryModal();
-    openAuthModal("login");
-  }, [closeDiaryModal, openAuthModal]);
-
-  // 路由变化（如点击时间线/测肤记录跳转 /reports/:id、去测肤等）时自动关闭面板：
-  // 弹层是 context 状态，客户端导航不会卸载组件，不处理会盖在新页面上
-  const prevPathnameRef = useRef(pathname);
-  useEffect(() => {
-    if (pathname !== prevPathnameRef.current) {
-      prevPathnameRef.current = pathname;
-      if (isOpen) closeDiaryModal();
-    }
-  }, [pathname, isOpen, closeDiaryModal]);
 
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [entriesLoaded, setEntriesLoaded] = useState(false);
@@ -234,9 +207,6 @@ export function DiaryModal() {
     const scores = aggregatedTrends.scores.slice(idx);
     return dates.length >= 2 ? { dates, scores } : null;
   }, [aggregatedTrends, rangeCutoff]);
-
-  const modalRef = useFocusTrap<HTMLDivElement>(isOpen && !checkIn.open, closeDiaryModal);
-  useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
   // 切换视图时内容区回到顶部
   useEffect(() => {
@@ -369,7 +339,7 @@ export function DiaryModal() {
   // 依赖 userId 而非 user 引用：定时续期（/api/auth/me）返回内容相同的新对象时，
   // 不应触发本 effect 重置面板数据造成"刷新抖动"
   useEffect(() => {
-    if (!isOpen || !userId) return;
+    if (!active || !userId) return;
     let cancelled = false;
     // 时序守卫自增：切号/重开时作废所有在途请求的写回（配合各回调里的 seq 比对）
     requestSeqRef.current += 1;
@@ -382,6 +352,8 @@ export function DiaryModal() {
     entriesCursorRef.current = null;
     // 每次打开刷新"今天"快照：跨午夜后重开弹层，今日打卡/日历描边等口径保持正确
     setTodayStr(localDateStr(new Date()));
+    // 切换 tab 回到档案时回到顶部：面板保持挂载（仅隐藏），不同原独立弹层那样每次重挂载复位滚动
+    scrollRef.current?.scrollTo({ top: 0 });
     setSummary(null);
     setTrends(null);
     setTrendsLoaded(false);
@@ -428,12 +400,12 @@ export function DiaryModal() {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, userId, fetchBootstrap, applyBootstrap, loadTests]);
+  }, [active, userId, fetchBootstrap, applyBootstrap, loadTests]);
 
   // 趋势加载独立成 effect（带 60s 短缓存，重复开关弹层不重复请求）：
   // 失败可单独重试，不牵连条目/测肤列表；错误态与"测肤不足 2 次"的解锁引导区分开
   useEffect(() => {
-    if (!isOpen || !userId) return;
+    if (!active || !userId) return;
     let cancelled = false;
     setTrendsError(false);
     setTrendsLoaded(false);
@@ -454,7 +426,7 @@ export function DiaryModal() {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, userId, trendsRefreshKey]);
+  }, [active, userId, trendsRefreshKey]);
 
   const retryTrends = useCallback(() => {
     bustShortCache();
@@ -463,7 +435,7 @@ export function DiaryModal() {
 
   // 日历热力图：切换视图/月份时按需拉取该月条目；打卡保存/删除后随 refreshKey 重拉
   useEffect(() => {
-    if (!isOpen || !userId || !calendarView) return;
+    if (!active || !userId || !calendarView) return;
     let cancelled = false;
     setCalendarLoading(true);
     setCalendarError(false);
@@ -485,7 +457,7 @@ export function DiaryModal() {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, userId, calendarView, calendarMonth, calendarRefreshKey]);
+  }, [active, userId, calendarView, calendarMonth, calendarRefreshKey]);
 
   // 时间线「加载更早」：游标分页追加更早的测肤记录（before = 当前最旧一条的完成时间），
   // 分页期间新增测肤不会像 offset 页码推导那样漂移；sessionId 去重兜底，无新增时置 exhausted
@@ -540,63 +512,21 @@ export function DiaryModal() {
     }
   }, [deletingId, refreshEntries, toast]);
 
-  // 未登录：直接复用「我的」账户弹层的未登录视图（同一紧凑壳 + LoginGuide），保持全站一致性
-  if (!user) {
-    return <AccountModal isOpen={isOpen} onClose={closeDiaryModal} />;
-  }
-
   return (
     <LazyMotion features={domAnimation}>
-      <AnimatePresence>
-        {isOpen && (
-          <div
-            ref={modalRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="diary-modal-title"
-            tabIndex={-1}
-            className="fixed inset-0 z-[var(--z-modal)] flex items-end sm:items-center justify-center p-0 sm:p-4"
-          >
-            {/* 背景遮罩 */}
-            <m.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={closeDiaryModal}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
-            />
+      <div className="flex h-full flex-col">
+        {/* 桌面端标题栏（移动端标题由账户弹层头部显示）：视图切换时标题随视图变化 */}
+        <div className="hidden shrink-0 items-center border-b border-stone-200/60 px-6 pb-6 pt-10 md:flex md:px-16">
+          <h2 className="text-xl font-medium tracking-wide text-stone-800">
+            {historyView ? "测肤记录" : "护肤档案"}
+          </h2>
+        </div>
 
-            {/* 弹窗主体：移动端底部升起，桌面端居中 */}
-            <m.div
-              initial={{ opacity: 0, scale: 0.96, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 10 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full max-h-[86dvh] sm:max-h-none sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-[1100px] bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* 标题栏（视图切换时标题随视图变化） */}
-              <div className="flex items-center justify-between shrink-0 px-5 sm:px-6 md:px-8 pt-[calc(1.25rem+env(safe-area-inset-top,0px))] sm:pt-6 pb-4 border-b border-brand-espresso/[0.08] bg-[#F7F4EE]/95">
-                <h2
-                  id="diary-modal-title"
-                  className="text-xl font-serif font-light text-brand-charcoal tracking-[0.08em]"
-                >
-                  {historyView ? "测肤记录" : "护肤档案"}
-                </h2>
-                <button
-                  onClick={closeDiaryModal}
-                  aria-label="关闭"
-                  className="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors"
-                >
-                  <X size={17} strokeWidth={1.5} />
-                </button>
-              </div>
-
-              {/* 内容区（可滚动）：两视图淡出/淡入切换，同一弹层内完成 */}
-              <div
-                ref={scrollRef}
-                className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-5 sm:px-6 md:px-8 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
-              >
+        {/* 内容区（可滚动）：两视图淡出/淡入切换，同一面板内完成 */}
+        <div
+          ref={scrollRef}
+          className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-6 md:px-16"
+        >
                 {/* 登录过期：GET 401 的统一提示（与各接口的错误条区分，指向重新登录） */}
                 {sessionExpired && (
                   <div
@@ -606,7 +536,7 @@ export function DiaryModal() {
                     <span>登录状态已过期，请重新登录后查看护肤档案</span>
                     <button
                       type="button"
-                      onClick={requestLogin}
+                      onClick={onRequestLogin}
                       className="shrink-0 h-7 px-3 rounded-full border border-amber-300 bg-white/70 text-[12px] hover:bg-white transition-colors cursor-pointer"
                     >
                       重新登录
@@ -942,21 +872,18 @@ export function DiaryModal() {
                   </m.div>
                 )}
                 </AnimatePresence>
-              </div>
-            </m.div>
+        </div>
+      </div>
 
-            {/* 二级弹层：打卡/补打卡（sheet 叠 sheet，DOM 在后自然置顶）；全部记录已改为同弹层内视图切换 */}
-            <CheckInModal
-              isOpen={checkIn.open && !!user}
-              existing={checkIn.existing}
-              dateStr={checkIn.dateStr ?? undefined}
-              onClose={() => setCheckIn((s) => ({ ...s, open: false }))}
-              onSaved={refreshEntries}
-              onAuthExpired={requestLogin}
-            />
-          </div>
-        )}
-      </AnimatePresence>
+      {/* 二级弹层：打卡/补打卡（DOM 顺序在弹层主体之后，AccountModal Portal 内自然置顶）；全部记录已改为同面板内视图切换 */}
+      <CheckInModal
+        isOpen={checkIn.open && !!user}
+        existing={checkIn.existing}
+        dateStr={checkIn.dateStr ?? undefined}
+        onClose={() => setCheckIn((s) => ({ ...s, open: false }))}
+        onSaved={refreshEntries}
+        onAuthExpired={onRequestLogin}
+      />
     </LazyMotion>
   );
 }

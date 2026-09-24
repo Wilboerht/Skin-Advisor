@@ -2,9 +2,11 @@
 
 import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, LazyMotion, domMax, m, useDragControls, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { Crown, Gift, LogOut, User, X } from "lucide-react";
+import { Crown, Gift, LogOut, NotebookPen, User, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -16,6 +18,9 @@ import { ACCOUNT_SHELL } from "@/components/website/account-styles";
 import { AccountRootView } from "@/components/website/AccountRootView";
 import { AccountMallTab } from "@/components/website/AccountMallTab";
 import { VipPanel } from "@/components/website/user-center/VipPanel";
+
+// 护肤档案面板：合并进账户弹层后按需加载（首次切到档案 tab 才下载其整串子组件）
+const DiaryPanel = dynamic(() => import("@/components/website/DiaryPanel").then((mod) => mod.DiaryPanel), { ssr: false });
 
 /** 弹层内容错误边界：单个 tab 渲染异常只降级本区域，不波及整页（结果页/弹层外壳仍可用） */
 class AccountPanelErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -48,16 +53,21 @@ class AccountPanelErrorBoundary extends Component<{ children: ReactNode }, { has
   }
 }
 
+export type AccountTab = "profile" | "diary" | "vip" | "mall";
+
 interface AccountModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** 打开瞬间定位的 tab（默认个人信息）；仅在打开时生效，中途变化不触发复位 */
+  initialTab?: AccountTab;
+  /** tab 切换上报（外部入口如底部 Dock 的高亮状态用） */
+  onTabChange?: (tab: AccountTab) => void;
 }
-
-type AccountTab = "profile" | "vip" | "mall";
 
 /** 侧边栏 / 底部 Tab 的一级菜单（不含安全中心） */
 const MENU_ITEMS: { key: AccountTab; label: string; icon: typeof Crown }[] = [
   { key: "profile", label: "个人信息", icon: User },
+  { key: "diary", label: "护肤档案", icon: NotebookPen },
   { key: "vip", label: "会员中心", icon: Crown },
   { key: "mall", label: "积分商城", icon: Gift },
 ];
@@ -83,12 +93,13 @@ const LEVEL_LABELS: Record<string, string> = {
 /**
  * AccountModal — 用户面板弹层（样式对齐主站用户中心）：
  * 登录后为「左侧边栏 + 右侧内容区」：
- * - 侧边栏：头像/昵称/等级徽标 + 菜单（个人信息/会员中心/积分商城）+ 退出登录
- * - 移动端：顶部 Header + 底部 Tab 栏（无侧边栏）
- * 内容面板：个人信息 = AccountRootView；会员中心 = VipPanel（主站同款）；积分商城 = 官网 embed iframe。
- * 未登录：登录引导视图，点击按钮走 SSO 统一登录。
+ * - 侧边栏：头像/昵称/等级徽标 + 菜单（个人信息/护肤档案/会员中心/积分商城）+ 退出登录
+ * - 移动端：顶部 Header + 底部 Tab 栏（4 项，无侧边栏）
+ * 内容面板：个人信息 = AccountRootView；护肤档案 = DiaryPanel（2026-09 由独立弹层合并，dynamic 按需加载）；
+ * 会员中心 = VipPanel（主站同款）；积分商城 = 官网 embed iframe。
+ * 未登录：登录引导视图，点击按钮走 SSO 统一登录（原护肤档案弹层的未登录态也由这里承接）。
  */
-export function AccountModal({ isOpen, onClose }: AccountModalProps) {
+export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: AccountModalProps) {
   const { user, logout } = useAuth();
   const { openAuthModal } = useAuthModal();
   const isMobile = useIsMobile();
@@ -97,21 +108,31 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const dragControls = useDragControls();
 
   // 一级菜单状态：首次进入后保持挂载（仅隐藏），iframe/会员数据不重载
-  const [activeTab, setActiveTab] = useState<AccountTab>("profile");
-  const [visitedTabs, setVisitedTabs] = useState<AccountTab[]>(["profile"]);
+  const [activeTab, setActiveTab] = useState<AccountTab>(initialTab ?? "profile");
+  const [visitedTabs, setVisitedTabs] = useState<AccountTab[]>(initialTab ? [initialTab] : ["profile"]);
 
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
   // 移动端返回键/返回手势：单级视图，直接关闭弹层
   useModalBackClose(isOpen, onClose);
 
+  // 打开瞬间的目标 tab：用 ref 捕获（打开时先更新 ref 再应用），避免 initialTab 变化引发中途复位
+  const initialTabOnOpenRef = useRef(initialTab);
   useEffect(() => {
-    if (!isOpen) {
-      setActiveTab("profile");
-      setVisitedTabs(["profile"]);
+    initialTabOnOpenRef.current = initialTab;
+  }, [initialTab]);
+  useEffect(() => {
+    if (isOpen) {
+      const target = initialTabOnOpenRef.current ?? "profile";
+      setActiveTab(target);
+      setVisitedTabs([target]);
     }
   }, [isOpen]);
+  // 账号切换：回到个人信息（跳过首次挂载，避免覆盖 initialTab）
+  const prevUserIdRef = useRef(user?.id);
   useEffect(() => {
+    if (prevUserIdRef.current === user?.id) return;
+    prevUserIdRef.current = user?.id;
     setActiveTab("profile");
     setVisitedTabs(["profile"]);
   }, [user?.id]);
@@ -119,6 +140,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const activateTab = (tab: AccountTab) => {
     setActiveTab(tab);
     setVisitedTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]));
+    onTabChange?.(tab);
   };
 
   // 遮罩防误触：记录打开时刻，打开后 350ms 内忽略遮罩点击关闭——
@@ -138,13 +160,26 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // 路由变化（如档案内点击报告/去测肤等跳转）时自动关闭弹层：
+  // 弹层是页面组件状态，客户端导航不会卸载组件，不处理会盖在新页面上（原 DiaryModal 同款保护）
+  const pathname = usePathname();
+  const prevPathnameRef = useRef(pathname);
+  useEffect(() => {
+    if (pathname !== prevPathnameRef.current) {
+      prevPathnameRef.current = pathname;
+      if (isOpen) onClose();
+    }
+  }, [pathname, isOpen, onClose]);
+
   // 退出确认框状态：global = 勾选「同时退出所有 NIHPLOD 平台」
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [logoutGlobal, setLogoutGlobal] = useState(false);
 
-  // Escape 分层：确认框打开时优先关确认框，否则关闭弹层
+  // Escape 分层：确认框打开时优先关确认框，否则关闭弹层。
+  // 注意必须带上 mounted：首次打开时 Portal 内容尚未渲染（mounted=false → 提前 return null），
+  // 若此时注册 focus trap 会因容器为空而失败，且 hook 以传入值为依赖不会自动补注册（首开 Esc 失效的历史 bug）
   const modalRef = useFocusTrap<HTMLDivElement>(
-    isOpen,
+    isOpen && mounted,
     showLogoutConfirm ? () => setShowLogoutConfirm(false) : onClose
   );
 
@@ -406,8 +441,22 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                               {/* 面板自带标题与滚动区（与官网 ProfilePanel 同构） */}
                               <AccountRootView
                                 user={user}
-                                onClose={onClose}
                                 onRequestLogout={handleLogout}
+                                onRequestLogin={requestLogin}
+                                onOpenDiary={() => activateTab("diary")}
+                              />
+                            </div>
+                          )}
+
+                          {visitedTabs.includes("diary") && (
+                            <div
+                              role="tabpanel"
+                              id="account-tabpanel-diary"
+                              hidden={activeTab !== "diary"}
+                              className="h-full"
+                            >
+                              <DiaryPanel
+                                active={activeTab === "diary"}
                                 onRequestLogin={requestLogin}
                               />
                             </div>
@@ -459,7 +508,7 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                           className="shrink-0 border-t border-stone-200/40 bg-[#FBF8F0]/95 backdrop-blur-md md:hidden"
                           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
                         >
-                          <div className="grid h-16 grid-cols-3">
+                          <div className="grid h-16 grid-cols-4">
                             {MENU_ITEMS.map(({ key, label, icon: Icon }) => {
                               const isActive = activeTab === key;
                               return (

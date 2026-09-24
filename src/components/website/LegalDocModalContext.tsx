@@ -14,7 +14,7 @@ interface LegalDocModalContextType {
 const LegalDocModalContext = createContext<LegalDocModalContextType | undefined>(undefined);
 
 /**
- * LegalDocModalProvider — 「隐私政策/服务条款」阅读弹层的全局开关（与 DiaryModalContext 同构）
+ * LegalDocModalProvider — 「隐私政策/服务条款」阅读弹层的全局开关（与 AuthModalContext 同构）
  * 入口：引导弹窗授权屏、隐私授权、扫码引导、登录弹窗等；
  * 弹层本体经 LegalDocModalGate 懒挂载于根 layout。
  */

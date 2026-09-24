@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 import { ScanFace, NotebookPen, MessageCircleHeart, CircleUserRound } from "lucide-react";
 import { useUser } from "@/components/auth/UserProvider";
 import { useLazyOpen } from "@/hooks/use-lazy-open";
-import { useDiaryModal } from "@/components/website/DiaryModalContext";
+import type { AccountTab } from "@/components/website/AccountModal";
 
 // 账户弹层懒加载：挂在全站 Dock 上，但只有用户点「我的」才需要
 const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
@@ -43,7 +43,7 @@ interface DockTab {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   /** 首页需精确匹配，其余前缀匹配 */
   exact?: boolean;
-  /** 拦截跳转、改为打开弹层：account=账户弹层（未登录引导登录），diary=护肤档案弹层，advisor=专属顾问弹层 */
+  /** 拦截跳转、改为打开弹层：account=账户弹层（未登录引导登录，含护肤档案 tab），advisor=专属顾问弹层 */
   panel?: "account" | "diary" | "advisor";
 }
 
@@ -57,19 +57,24 @@ const TABS: DockTab[] = [
 export function BottomDock() {
   const pathname = usePathname();
   const { user, isInitialized } = useUser();
-  const { openDiaryModal, isOpen: diaryOpen } = useDiaryModal();
-  // 「我的」账户弹层（未登录时弹层内展示登录引导）
+  // 账户弹层（未登录时弹层内展示登录引导；护肤档案已合并为该弹层的 tab）
   const [showAccountModal, setShowAccountModal] = useState(false);
+  // 打开瞬间定位的 tab（护肤档案 = 从 Dock 档案 tab 进入；我的 = 个人信息）
+  const [accountInitialTab, setAccountInitialTab] = useState<AccountTab>("profile");
+  // 弹层内当前激活 tab（onTabChange 上报；仅用于 Dock 高亮）
+  const [accountActiveTab, setAccountActiveTab] = useState<AccountTab>("profile");
   // 「专属顾问」弹层（银卡及以上展示二维码，普通会员展示升级引导）
   const [showAdvisorModal, setShowAdvisorModal] = useState(false);
   // 账户弹层入口防抖：250ms 内忽略重复打开（前缘节流，双击第二下会被遮罩防误触拦截）
   const accountLastOpenRef = useRef(0);
-  const openAccountModal = () => {
+  const openAccountModal = (tab: AccountTab = "profile") => {
     // 仅在点击事件中调用（非渲染期），Date.now 用于前缘节流
     // eslint-disable-next-line react-hooks/purity
     const now = Date.now();
     if (now - accountLastOpenRef.current < 250) return;
     accountLastOpenRef.current = now;
+    setAccountInitialTab(tab);
+    setAccountActiveTab(tab);
     setShowAccountModal(true);
   };
   // Portal 需等客户端挂载（SSR 期无 document）
@@ -87,10 +92,11 @@ export function BottomDock() {
   const isActive = (tab: DockTab) => {
     // 面板 tab：弹层打开期间也视为激活（dock 在弹层打开时会随滚动锁下移隐藏，
     // 这里主要用于 aria/状态正确性与过渡阶段的高亮）
-    if (tab.panel === "diary") return diaryOpen || pathname.startsWith(tab.href);
+    // 护肤档案/我的同属账户弹层：按弹层内当前激活 tab 区分高亮
+    if (tab.panel === "diary") return showAccountModal && accountActiveTab === "diary";
     // 专属顾问无独立路由，仅弹层打开期间激活
     if (tab.panel === "advisor") return showAdvisorModal;
-    if (tab.panel === "account") return showAccountModal || pathname.startsWith(tab.href);
+    if (tab.panel === "account") return showAccountModal && accountActiveTab !== "diary";
     return tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
   };
 
@@ -101,16 +107,20 @@ export function BottomDock() {
         : "text-brand-charcoal/60 hover:text-brand-charcoal/90 active:text-brand-charcoal"
     }`;
 
-  // 打开面板类 tab 对应的弹层
+  // 打开面板类 tab 对应的弹层（护肤档案 = 账户弹层的档案 tab）
   const openPanel = (panel: DockTab["panel"]) => {
-    if (panel === "diary") openDiaryModal();
+    if (panel === "diary") openAccountModal("diary");
     else if (panel === "advisor") setShowAdvisorModal(true);
-    else if (panel === "account") openAccountModal();
+    else if (panel === "account") openAccountModal("profile");
   };
 
   // 面板弹层是否已打开（aria-expanded）
   const isPanelOpen = (panel: DockTab["panel"]) =>
-    panel === "diary" ? diaryOpen : panel === "advisor" ? showAdvisorModal : showAccountModal;
+    panel === "diary"
+      ? showAccountModal && accountActiveTab === "diary"
+      : panel === "advisor"
+        ? showAdvisorModal
+        : showAccountModal;
 
   // 点击当前已激活 tab：不重复导航；仅移动端保留"平滑回顶部"习惯（PC 端点击不产生滚动副作用）
   const handleActiveClick = (active: boolean) => (e: React.MouseEvent) => {
@@ -185,7 +195,12 @@ export function BottomDock() {
 
       {/* 账户弹层：Portal 到 body，避免受 Dock 容器样式影响；首次打开才加载 chunk */}
       {mounted && shouldRenderAccountModal && createPortal(
-        <AccountModal isOpen={showAccountModal} onClose={() => setShowAccountModal(false)} />,
+        <AccountModal
+          isOpen={showAccountModal}
+          onClose={() => setShowAccountModal(false)}
+          initialTab={accountInitialTab}
+          onTabChange={setAccountActiveTab}
+        />,
         document.body
       )}
 

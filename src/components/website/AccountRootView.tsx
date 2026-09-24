@@ -5,7 +5,6 @@ import { createElement, useEffect, useRef, useState } from "react";
 import { Camera, ChevronRight, Loader2, LogOut, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
-import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { getFactionIcon } from "@/components/website/faction-icons";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { fetchWithCsrf } from "@/lib/fetch-client";
@@ -30,10 +29,11 @@ interface TestUsage {
 
 interface AccountRootViewProps {
   user: User;
-  onClose: () => void;
   onRequestLogout: () => void;
   /** 会话过期时的登录引导：由 AccountModal 统一处理（先关弹层再开 AuthModal，避免层级/焦点冲突） */
   onRequestLogin: () => void;
+  /** 护肤档案入口：切到账户弹层的「护肤档案」tab（原独立弹层已合并） */
+  onOpenDiary?: () => void;
 }
 
 /**
@@ -42,8 +42,7 @@ interface AccountRootViewProps {
  * 肌智派形象 / 测肤用量 / 护肤档案入口）+ 移动端退出登录。
  * 手机号/生日/性别由会员中心承载，此处不展示。
  */
-export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin }: AccountRootViewProps) {
-  const { openDiaryModal } = useDiaryModal();
+export function AccountRootView({ user, onRequestLogout, onRequestLogin, onOpenDiary }: AccountRootViewProps) {
   const { refresh } = useAuth();
   const toast = useToast();
 
@@ -388,13 +387,10 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
 
           <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
 
-          {/* 护肤档案入口 */}
+          {/* 护肤档案入口：切到账户弹层的档案 tab（原独立弹层已合并） */}
           <button
             type="button"
-            onClick={() => {
-              onClose();
-              openDiaryModal();
-            }}
+            onClick={() => onOpenDiary?.()}
             className="group -mx-6 flex w-full items-center justify-between rounded-2xl px-6 py-4 text-left transition-all hover:bg-white/40 cursor-pointer"
           >
             <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">

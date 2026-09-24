@@ -25,6 +25,8 @@ interface ReportPageProps {
     /** 打开定制化分析数据详情弹窗（v1 报告） */
     onOpenLab: () => void;
     onUnlock: () => void;
+    /** 护肤档案入口（趋势对比卡内）：打开「我的」账户弹层的档案 tab */
+    onOpenDiary?: () => void;
 }
 
 export default function ReportPage({
@@ -37,6 +39,7 @@ export default function ReportPage({
     focusProblems,
     onOpenLab,
     onUnlock,
+    onOpenDiary,
 }: ReportPageProps) {
     // 板块 2 专家护肤建议：默认只显示前 3 条，其余折叠
     const [showAllRecommendations, setShowAllRecommendations] = useState(false);
@@ -56,6 +59,7 @@ export default function ReportPage({
                     skinAge={result?.skinProfile?.skinAge}
                     persona={result?.persona}
                     at={result?.analyzedAt}
+                    onOpenDiary={onOpenDiary}
                 />
             )}
 

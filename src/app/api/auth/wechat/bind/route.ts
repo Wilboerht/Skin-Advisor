@@ -164,8 +164,15 @@ export async function POST(req: NextRequest) {
         // 设置官网同款登录 Cookie
         response.cookies.set(USER_COOKIE_NAME, result.accessToken, USER_ACCESS_COOKIE_OPTIONS);
         response.cookies.set(USER_REFRESH_COOKIE_NAME, result.refreshToken, USER_REFRESH_COOKIE_OPTIONS);
-        // 清除临时绑定 token Cookie
-        response.cookies.delete(WECHAT_BIND_COOKIE_NAME);
+        // 清除临时绑定 token Cookie（__Host- 前缀 Cookie 的删除必须带 Secure 且属性
+        // 与写入侧一致，cookies.delete() 不带 Secure 会被浏览器静默拒绝）
+        response.cookies.set(WECHAT_BIND_COOKIE_NAME, "", {
+            httpOnly: true,
+            secure: USER_ACCESS_COOKIE_OPTIONS.secure,
+            sameSite: "lax" as const,
+            path: "/",
+            maxAge: 0,
+        });
 
         const sessionOk = await signLocalSession(response, {
             id: localUser.id,
