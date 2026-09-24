@@ -2,23 +2,11 @@
 
 import Image from "next/image";
 import { createElement, useEffect, useRef, useState } from "react";
-import {
-  Camera,
-  Check,
-  ChevronRight,
-  Loader2,
-  LogOut,
-  NotebookPen,
-  Pencil,
-  ScanFace,
-  X,
-} from "lucide-react";
+import { Camera, ChevronRight, Loader2, LogOut, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { getFactionIcon } from "@/components/website/faction-icons";
-import { getMemberBadge } from "@/components/website/member-badges";
-import { ACCOUNT_CARD, ACCOUNT_ENTRY_ROW, ACCOUNT_AVATAR_SHADOW } from "@/components/website/account-styles";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { uploadImage } from "@/lib/upload-client";
@@ -49,9 +37,10 @@ interface AccountRootViewProps {
 }
 
 /**
- * 「个人信息」面板（用户中心默认视图）：头像/昵称（BFF /api/account/profile 可编辑）
- * + 测肤状态 + 护肤档案入口。手机号/生日/性别不在此展示（会员中心已承载）。
- * 退出登录仅移动端展示（桌面端在侧边栏）。
+ * 「个人信息」面板（排版对齐官网 ProfilePanel）：
+ * 左对齐头像区（头像 + 昵称 + 点击更换头像）+ 行式信息列表（昵称可编辑 /
+ * 肌智派形象 / 测肤用量 / 护肤档案入口）+ 移动端退出登录。
+ * 手机号/生日/性别由会员中心承载，此处不展示。
  */
 export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin }: AccountRootViewProps) {
   const { openDiaryModal } = useDiaryModal();
@@ -91,7 +80,7 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
 
   // 主站资料（BFF）：拉取失败时回退展示 UserProvider 的会话字段
   const [profile, setProfile] = useState<AccountProfile | null>(null);
-  // 保存进行态（防重复提交）：avatar / nickname / gender
+  // 保存进行态（防重复提交）：avatar / nickname
   const [saving, setSaving] = useState<string | null>(null);
   // 保存互斥锁用 ref：state 闭包在连续事件里可能读到旧值，ref 才是可靠锁
   const savingRef = useRef(false);
@@ -125,12 +114,9 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
     // 账号切换（user.id 变化）时重新拉取，避免展示上一账号的残留数据
   }, [user.id]);
 
-  /**
-   * PATCH /api/account/profile 的请求本体（不含互斥锁）；成功后刷新会话用户态。
-   * 调用方负责持锁与 saving 态展示。（生日为只读展示，不走 PATCH）
-   */
+  /** PATCH /api/account/profile 的请求本体（不含互斥锁）；成功后刷新会话用户态 */
   const requestProfilePatch = async (
-    body: { nickname?: string; avatar?: string; gender?: "male" | "female" | null }
+    body: { nickname?: string; avatar?: string }
   ): Promise<boolean> => {
     try {
       const res = await fetchWithCsrf("/api/account/profile", {
@@ -150,7 +136,7 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
       const data = (await res.json().catch(() => null)) as AccountProfile | null;
       if (data) setProfile(data);
       toast.success("已保存");
-      // 同步 UserProvider 会话用户态（昵称/头像/会员徽章全站可见）
+      // 同步 UserProvider 会话用户态（昵称/头像全站可见）
       await refresh();
       return true;
     } catch {
@@ -161,7 +147,7 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
 
   /** 带互斥锁的保存入口（ref 锁：state 闭包在连续事件里可能读到旧值） */
   const patchProfile = async (
-    body: { nickname?: string; avatar?: string; gender?: "male" | "female" | null },
+    body: { nickname?: string; avatar?: string },
     field: string
   ): Promise<boolean> => {
     if (savingRef.current) return false;
@@ -212,167 +198,229 @@ export function AccountRootView({ user, onClose, onRequestLogout, onRequestLogin
     if (ok) setEditingNickname(false);
   };
 
-  const badge = getMemberBadge(user.membershipLevel);
   const latestPersonaType = latestPersona ? getSkinTypeByIpKey(latestPersona) : null;
   // 空串（历史脏数据/无昵称）同样回退，避免面板标题显示空白
   const displayName = profile?.nickname || user.name || "朋友";
   const displayAvatar = profile?.avatar ?? user.avatar;
 
   return (
-    <div className="w-full flex flex-col items-center">
-      {/* 会话过期（BFF 401）：本地 user 态未同步时的兜底引导 */}
-      {sessionExpired && (
-        <div
-          role="alert"
-          className="w-full mb-4 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-900"
-        >
-          <span>登录状态已过期，资料信息可能不是最新</span>
-          <button
-            type="button"
-            onClick={onRequestLogin}
-            className="shrink-0 h-7 px-3 rounded-full border border-amber-300 bg-white/70 text-[12px] hover:bg-white transition-colors cursor-pointer"
-          >
-            重新登录
-          </button>
-        </div>
-      )}
+    <div className="flex h-full flex-col pt-4 md:pt-10">
+      {/* 标题 - 移动端由弹窗全局 Header 管理 */}
+      <div className="hidden flex-shrink-0 border-b-0 border-stone-200/60 px-6 pb-6 md:flex md:border-b md:px-16">
+        <h2 className="text-xl font-medium tracking-wide text-stone-800">个人信息</h2>
+      </div>
 
-      {/* 头像：点击更换（上传 OSS 后 PATCH 主站资料） */}
-      <button
-        type="button"
-        onClick={() => avatarInputRef.current?.click()}
-        disabled={saving !== null}
-        aria-label="更换头像"
-        className={`group relative w-24 h-24 rounded-full overflow-hidden bg-[#ECEBE6] ${ACCOUNT_AVATAR_SHADOW} mb-4 cursor-pointer disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2`}
-      >
-        {displayAvatar ? (
-          <Image src={displayAvatar} alt="" fill unoptimized className="object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl font-medium text-[#6B5E50]">
-            {(displayName[0] || "?").toUpperCase()}
+      <div className="scrollbar-hide flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-16">
+        {/* 会话过期（BFF 401）：本地 user 态未同步时的兜底引导 */}
+        {sessionExpired && (
+          <div
+            role="alert"
+            className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-900"
+          >
+            <span>登录状态已过期，资料信息可能不是最新</span>
+            <button
+              type="button"
+              onClick={onRequestLogin}
+              className="shrink-0 h-7 px-3 rounded-full border border-amber-300 bg-white/70 text-[12px] hover:bg-white transition-colors cursor-pointer"
+            >
+              重新登录
+            </button>
           </div>
         )}
-        <span className="absolute inset-x-0 bottom-0 h-7 flex items-center justify-center bg-black/35 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-          {saving === "avatar" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-        </span>
-      </button>
-      <input
-        ref={avatarInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        className="hidden"
-        onChange={handleAvatarChange}
-      />
 
-      {/* 昵称（点击进入行内编辑，≤20 字符）+ 会员徽章 */}
-      {editingNickname ? (
-        <div className="flex items-center gap-2 mb-3">
-          <input
-            autoFocus
-            value={nicknameDraft}
-            maxLength={20}
-            onChange={(e) => setNicknameDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") saveNickname();
-              if (e.key === "Escape") setEditingNickname(false);
-            }}
-            disabled={saving === "nickname"}
-            aria-label="昵称"
-            className="w-40 text-center text-lg font-semibold text-brand-charcoal bg-white border border-brand-charcoal/20 rounded-xl px-3 py-1 focus:outline-none focus:border-brand-charcoal/50"
-          />
-          <button
-            type="button"
-            onClick={saveNickname}
-            disabled={saving !== null}
-            aria-label="保存昵称"
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/[0.08] text-brand-charcoal hover:bg-brand-charcoal/15 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            {saving === "nickname" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-4 h-4" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditingNickname(false)}
-            disabled={saving !== null}
-            aria-label="取消编辑"
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      ) : (
-        <p className="text-xl font-semibold text-brand-charcoal mb-3 flex items-center justify-center flex-wrap gap-2">
-          {displayName}
-          <button
-            type="button"
-            onClick={startEditNickname}
-            aria-label="修改昵称"
-            className="w-6 h-6 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/5 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
-          >
-            <Pencil className="w-3 h-3" />
-          </button>
-          <span className={`text-[11px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border ${badge.className}`}>
-            {badge.label}
-          </span>
-        </p>
-      )}
-
-      {/* 状态卡：最新测肤派系 + 测肤用量（左对齐两行；加载中骨架占位，避免下方内容跳动） */}
-      {!metaLoaded ? (
-        <div className={`w-full ${ACCOUNT_CARD} mb-4 px-4 py-3`} aria-busy="true">
-          <div className="h-[18px] w-36 rounded-full bg-brand-charcoal/[0.05] animate-pulse mb-2" />
-          <div className="h-[18px] w-44 rounded-full bg-brand-charcoal/[0.05] animate-pulse" />
-        </div>
-      ) : (
-        (latestPersonaType || testUsage) && (
-          <div className={`w-full ${ACCOUNT_CARD} mb-4 flex flex-col gap-2.5 px-4 py-3`}>
-            {latestPersonaType && (
-              <div className="flex items-center gap-2 text-[12px] font-light tracking-[0.04em] text-brand-charcoal/70">
-                {createElement(getFactionIcon(latestPersonaType.ipKey), {
-                  className: "w-3.5 h-3.5 shrink-0 text-brand-charcoal/55",
-                  strokeWidth: 1.5,
-                })}
-                <span className="min-w-0 truncate">我的肌智派形象 · {latestPersonaType.typeName}</span>
-              </div>
-            )}
-
-            {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量 */}
-            {testUsage && (
-              <div className="flex items-center gap-2 text-[12px] font-light tracking-[0.04em] text-brand-charcoal/60">
-                <ScanFace className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/45" strokeWidth={1.5} />
-                <span className="min-w-0 truncate">
-                  {testUsage.unlimited
-                    ? `测肤不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
-                    : `测肤已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`}
-                </span>
-              </div>
-            )}
+        {/* 头像区域：点击更换头像（上传 OSS 后 PATCH 主站资料） */}
+        <div className="mb-5 flex items-center gap-4 md:mb-10 md:gap-6">
+          <div className="group relative">
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={saving !== null}
+              aria-label="更换头像"
+              className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-[#FBF8F0]/20 transition-all group-hover:border-stone-300 md:h-20 md:w-20 cursor-pointer disabled:cursor-wait"
+            >
+              {displayAvatar ? (
+                <Image src={displayAvatar} alt="" fill unoptimized className="object-cover" />
+              ) : (
+                <UserIcon className="h-7 w-7 text-stone-400 md:h-8 md:w-8" strokeWidth={1} />
+              )}
+              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition-all group-hover:bg-black/30">
+                {saving === "avatar" ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                ) : (
+                  <Camera className="h-6 w-6 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+                )}
+              </span>
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
           </div>
-        )
-      )}
+          <div>
+            <p className="text-sm font-medium text-stone-800">{displayName}</p>
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={saving !== null}
+              className="mt-1 text-xs text-stone-400 transition-colors hover:text-stone-800 cursor-pointer disabled:opacity-50"
+            >
+              {saving === "avatar" ? "上传中..." : "点击更换头像"}
+            </button>
+          </div>
+        </div>
 
-      {/* 护肤档案入口：打开全局护肤档案弹层 */}
-      <button
-        onClick={() => {
-          onClose();
-          openDiaryModal();
-        }}
-        className={`${ACCOUNT_ENTRY_ROW} mb-6`}
-      >
-        <span className="inline-flex items-center gap-2">
-          <NotebookPen className="w-4 h-4" />
-          护肤档案
-        </span>
-        <ChevronRight className="w-4 h-4 text-brand-charcoal/65 transition-transform duration-300 group-hover:translate-x-0.5" />
-      </button>
+        {/* 信息行列表（行式排版：左侧字段名 + 值，右侧操作；移动端行间细分隔线） */}
+        <div className="flex flex-col gap-1">
+          {/* 昵称 */}
+          <div className="group -mx-6 flex items-center justify-between rounded-2xl px-6 py-4 transition-all hover:bg-white/40">
+            <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
+              <div className="w-[4.5rem] shrink-0 md:w-20">
+                <p className="text-[13px] text-stone-400 md:text-sm md:font-light">昵称</p>
+              </div>
+              <div className="flex w-full min-w-0 flex-1 items-center gap-2">
+                {editingNickname ? (
+                  <input
+                    type="text"
+                    value={nicknameDraft}
+                    maxLength={20}
+                    autoFocus
+                    aria-label="昵称"
+                    onChange={(e) => setNicknameDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveNickname();
+                      if (e.key === "Escape") {
+                        e.stopPropagation();
+                        setEditingNickname(false);
+                      }
+                    }}
+                    className="w-full border-b border-stone-400 bg-transparent py-1 text-base font-medium text-stone-800 outline-none transition-colors placeholder:text-stone-300 md:w-56"
+                  />
+                ) : (
+                  <p className="truncate text-[15px] font-medium text-stone-800 md:text-sm">{displayName}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {editingNickname ? (
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingNickname(false)}
+                    disabled={saving !== null}
+                    className="text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer disabled:opacity-50"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveNickname}
+                    disabled={saving !== null}
+                    className="text-xs font-medium text-stone-800 transition-colors hover:text-stone-500 disabled:opacity-50 cursor-pointer"
+                  >
+                    {saving === "nickname" ? "保存中..." : "保存"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startEditNickname}
+                  className="group -my-2 flex items-center gap-1.5 py-2 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                >
+                  <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100">修改</span>
+                  <ChevronRight className="h-3.5 w-3.5 text-stone-300 md:hidden" />
+                </button>
+              )}
+            </div>
+          </div>
 
-      {/* 退出登录：仅移动端展示（桌面端在用户中心侧边栏底部） */}
-      <button
-        onClick={onRequestLogout}
-        className="md:hidden inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 rounded-md"
-      >
-        <LogOut className="w-4 h-4" strokeWidth={1.5} />
-        退出登录
-      </button>
+          <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
+
+          {/* 肌智派形象（最新一次测肤派系） */}
+          <div className="group -mx-6 flex items-center justify-between rounded-2xl px-6 py-4 transition-all hover:bg-white/40">
+            <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
+              <div className="w-[4.5rem] shrink-0 md:w-20">
+                <p className="text-[13px] text-stone-400 md:text-sm md:font-light">肌智派形象</p>
+              </div>
+              <div className="flex w-full min-w-0 flex-1 items-center gap-2">
+                {!metaLoaded ? (
+                  <div aria-hidden className="h-4 w-24 rounded-full bg-stone-200/60 animate-pulse" />
+                ) : latestPersonaType ? (
+                  <p className="flex items-center gap-2 truncate text-[15px] font-medium text-stone-800 md:text-sm">
+                    {createElement(getFactionIcon(latestPersonaType.ipKey), {
+                      className: "h-4 w-4 shrink-0 text-stone-400",
+                      strokeWidth: 1.5,
+                    })}
+                    {latestPersonaType.typeName}
+                  </p>
+                ) : (
+                  <p className="text-[15px] text-stone-400 md:text-sm">尚未测肤</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
+
+          {/* 测肤用量：普通/银卡显示终身用量，金卡/钻石不限次显示当日用量 */}
+          <div className="group -mx-6 flex items-center justify-between rounded-2xl px-6 py-4 transition-all hover:bg-white/40">
+            <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
+              <div className="w-[4.5rem] shrink-0 md:w-20">
+                <p className="text-[13px] text-stone-400 md:text-sm md:font-light">测肤用量</p>
+              </div>
+              <div className="flex w-full min-w-0 flex-1 items-center gap-2">
+                {!metaLoaded ? (
+                  <div aria-hidden className="h-4 w-32 rounded-full bg-stone-200/60 animate-pulse" />
+                ) : (
+                  <p className="truncate text-[15px] font-medium text-stone-800 md:text-sm">
+                    {testUsage
+                      ? testUsage.unlimited
+                        ? `不限次（今日已用 ${testUsage.todayUsed}/${testUsage.dailyLimit ?? 10}）`
+                        : `已用 ${testUsage.totalUsed} / 共 ${testUsage.lifetimeLimit ?? 10} 次`
+                      : "—"}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
+
+          {/* 护肤档案入口 */}
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              openDiaryModal();
+            }}
+            className="group -mx-6 flex w-full items-center justify-between rounded-2xl px-6 py-4 text-left transition-all hover:bg-white/40 cursor-pointer"
+          >
+            <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
+              <div className="w-[4.5rem] shrink-0 md:w-20">
+                <p className="text-[13px] text-stone-400 md:text-sm md:font-light">护肤档案</p>
+              </div>
+              <div className="flex w-full min-w-0 flex-1 items-center gap-2">
+                <p className="truncate text-[15px] font-medium text-stone-800 md:text-sm">测肤记录与每日打卡</p>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-stone-300 transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
+
+        {/* 移动端退出登录（桌面端在用户中心侧边栏） */}
+        <div className="mt-8 md:hidden">
+          <button
+            type="button"
+            onClick={onRequestLogout}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white/40 py-3 text-sm text-stone-500 transition-colors hover:bg-white/70 hover:text-stone-700 active:opacity-70 cursor-pointer"
+          >
+            <LogOut className="h-4 w-4" strokeWidth={1.5} />
+            退出登录
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

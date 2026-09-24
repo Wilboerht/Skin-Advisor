@@ -403,26 +403,13 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                               hidden={activeTab !== "profile"}
                               className="h-full"
                             >
-                              <div className="flex h-full flex-col pt-4 md:pt-10">
-                                <div className="hidden flex-shrink-0 border-b border-stone-200/60 px-6 pb-6 md:flex md:px-16">
-                                  <h2 className="text-xl font-medium tracking-wide text-stone-800">
-                                    个人信息
-                                  </h2>
-                                </div>
-                                <div
-                                  data-account-scroll
-                                  className="scrollbar-hide flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-16"
-                                >
-                                  <div className="w-full max-w-xl mx-auto">
-                                    <AccountRootView
-                                      user={user}
-                                      onClose={onClose}
-                                      onRequestLogout={handleLogout}
-                                      onRequestLogin={requestLogin}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
+                              {/* 面板自带标题与滚动区（与官网 ProfilePanel 同构） */}
+                              <AccountRootView
+                                user={user}
+                                onClose={onClose}
+                                onRequestLogout={handleLogout}
+                                onRequestLogin={requestLogin}
+                              />
                             </div>
                           )}
 
