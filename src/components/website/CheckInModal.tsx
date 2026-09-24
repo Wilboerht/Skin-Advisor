@@ -11,8 +11,8 @@ import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { localDateStr } from "@/lib/local-date";
 import { STATE_META, type DiaryEntry } from "./DiaryTimeline";
 
-/** 预置标签（多选，与服务端 tags 上限一致）：肌肤表现 + 情境因素 两类 */
-const SKIN_TAGS = ["出油", "干燥", "暗沉", "泛红", "痘痘", "闭口"];
+/** 预置标签（多选，与服务端 tags 上限一致）：肌肤表现 + 其他因素 两类 */
+const SKIN_TAGS = ["出油", "干燥", "暗沉", "泛红", "痘痘", "闭口", "局部受损"];
 const SITUATION_TAGS = ["熬夜", "换季", "姨妈期", "压力", "医美", "醉酒", "暴晒"];
 const STATE_KEYS = ["great", "good", "normal", "bad", "terrible"] as const;
 
@@ -164,7 +164,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full sm:max-w-sm bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden"
+            className="relative z-10 flex w-full max-h-[86dvh] flex-col overflow-hidden bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] sm:max-w-sm sm:max-h-[85vh] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮 */}
@@ -176,7 +176,8 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
               <X size={17} strokeWidth={1.5} />
             </button>
 
-            <div className="px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
+            {/* 内容区：移动端小屏/键盘弹起时限高内滚，保存按钮始终可达 */}
+            <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
               <h2
                 id="checkin-modal-title"
                 className="text-xl font-serif font-light text-brand-charcoal tracking-[0.08em] text-center mb-6"
@@ -186,8 +187,8 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
                   : isToday ? "今日打卡" : `补打卡 · ${targetLabel}`}
               </h2>
 
-              {/* 肌肤状态（单选） */}
-              <div className="flex justify-between gap-1 mb-6">
+              {/* 肌肤状态（单选）：选中态描边 + 底色，未选中保留透明边保持尺寸稳定 */}
+              <div className="flex justify-between gap-1 mb-5">
                 {STATE_KEYS.map((key) => {
                   const meta = STATE_META[key];
                   const Icon = meta.icon;
@@ -198,9 +199,13 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
                       type="button"
                       onClick={() => setSkinState(key)}
                       aria-pressed={selected}
-                      style={selected ? { backgroundColor: `${meta.color}1A` } : undefined}
-                      className={`flex flex-col items-center gap-1.5 flex-1 py-2 rounded-xl transition-colors cursor-pointer ${
-                        selected ? "" : "hover:bg-brand-charcoal/[0.03]"
+                      style={
+                        selected
+                          ? { backgroundColor: `${meta.color}14`, borderColor: `${meta.color}59` }
+                          : undefined
+                      }
+                      className={`flex flex-col items-center gap-1.5 flex-1 py-2.5 rounded-2xl border transition-colors cursor-pointer ${
+                        selected ? "" : "border-transparent hover:bg-brand-charcoal/[0.03]"
                       }`}
                     >
                       <span style={{ color: selected ? meta.color : "#6B5E50" }}>
@@ -217,11 +222,11 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
                 })}
               </div>
 
-              {/* 标签（多选，两类：肌肤表现 / 情境因素） */}
-              <div className="mb-6 space-y-3">
+              {/* 标签（多选，两类：肌肤表现 / 其他因素） */}
+              <div className="mb-5 space-y-3">
                 {[
                   { caption: "肌肤表现", list: SKIN_TAGS },
-                  { caption: "情境因素", list: SITUATION_TAGS },
+                  { caption: "其他因素", list: SITUATION_TAGS },
                 ].map((group) => (
                   <div key={group.caption}>
                     <p className="text-[11px] text-brand-charcoal/60 font-light mb-1.5 tracking-[0.08em]">
@@ -257,14 +262,14 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
                 onChange={(e) => setNote(e.target.value.slice(0, 200))}
                 rows={3}
                 placeholder="今天用了什么、肌肤有什么变化…（选填）"
-                className="w-full mb-6 px-4 py-3 text-[13px] font-light text-[var(--color-text-primary)] bg-white/60 border border-brand-espresso/[0.12] rounded-2xl resize-none focus:outline-none focus:border-[var(--color-brand-cocoa)]/50 placeholder:text-brand-charcoal/60"
+                className="w-full mb-5 px-4 py-3 text-[13px] font-light text-brand-charcoal bg-white/70 border border-brand-espresso/[0.12] rounded-2xl resize-none focus:outline-none focus:border-[var(--color-brand-cocoa)]/50 focus:ring-1 focus:ring-[var(--color-brand-cocoa)]/15 placeholder:text-brand-charcoal/50"
               />
 
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] tracking-[0.12em] font-medium cursor-pointer transition-colors duration-300 hover:bg-brand-cocoa-dark disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] tracking-[0.12em] font-medium cursor-pointer transition-colors duration-300 hover:bg-brand-cocoa-dark disabled:opacity-50"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {existing ? "保存修改" : "完成打卡"}

@@ -27,9 +27,7 @@ export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }
         登录肌智派
       </h3>
       <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] text-center mb-6">
-        肌肤的现在和未来
-        <br />
-        我们与您同在
+        肌肤的现在和未来，我们与您同在
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
         {[
