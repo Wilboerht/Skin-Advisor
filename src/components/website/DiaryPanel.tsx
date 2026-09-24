@@ -515,7 +515,7 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
       <div className="flex h-full flex-col">
         {/* 桌面端标题栏（移动端标题由账户弹层头部显示）：视图切换时标题随视图变化；
             全部测肤记录为整面板级视图切换，入口固定在标题栏（不再埋在左列中部） */}
-        <div className="hidden shrink-0 items-center justify-between border-b border-stone-200/60 px-6 pb-6 pt-10 md:flex md:px-16 lg:px-10">
+        <div className="hidden shrink-0 items-center justify-between border-b border-stone-200/60 px-6 pb-6 pt-10 md:flex md:px-16">
           <h2 className="text-xl font-medium tracking-wide text-stone-800">
             {historyView ? "测肤记录" : "护肤档案"}
           </h2>
@@ -533,7 +533,7 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
         {/* 内容区（可滚动）：两视图淡出/淡入切换，同一面板内完成 */}
         <div
           ref={scrollRef}
-          className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-6 md:px-16 lg:px-10"
+          className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-6 md:px-16"
         >
                 {/* 登录过期：GET 401 的统一提示（与各接口的错误条区分，指向重新登录） */}
                 {sessionExpired && (

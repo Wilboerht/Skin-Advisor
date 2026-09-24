@@ -314,9 +314,9 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                   <div className="relative z-30 flex h-full w-full flex-col items-stretch md:flex-row">
                     {/* 桌面侧边栏（移动端由底部 Tab 栏替代） */}
                     {!isMobile && (
-                      <div className="flex w-full shrink-0 flex-col border-r border-stone-200/60 md:w-72">
+                      <div className="flex w-full shrink-0 flex-col border-r border-stone-200/60 md:w-64">
                         {/* 用户头像区域 */}
-                        <div className="px-16 pb-4 pt-12">
+                        <div className="px-12 pb-4 pt-12">
                           <div className="flex flex-col items-start gap-4 text-left">
                             <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FBF8F0]/40">
                               {user.avatar ? (
@@ -347,7 +347,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                         </div>
 
                         {/* 菜单列表 */}
-                        <nav className="scrollbar-hide relative flex w-full flex-1 flex-col items-start justify-start space-y-1 overflow-y-auto px-16 py-2">
+                        <nav className="scrollbar-hide relative flex w-full flex-1 flex-col items-start justify-start space-y-1 overflow-y-auto px-12 py-2">
                           {MENU_ITEMS.map((item) => {
                             const Icon = item.icon;
                             const isActive = activeTab === item.key;
@@ -378,7 +378,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                           })}
                         </nav>
 
-                        <div className="mt-auto px-12 py-8">
+                        <div className="mt-auto px-10 py-8">
                           <button
                             type="button"
                             onClick={handleLogout}
