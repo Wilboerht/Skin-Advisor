@@ -275,12 +275,12 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
                 {existing ? "保存修改" : "完成打卡"}
               </button>
 
-              {/* 积分规则说明：新建打卡展示规则，编辑态说明不重复发放，避免用户困惑 */}
-              <p className="mt-3 text-center text-[11px] font-light tracking-[0.04em] text-brand-charcoal/55">
-                {existing
-                  ? "编辑已有记录不重复发放积分"
-                  : "手动打卡得积分：连续第 1 / 2 / 3+ 天分别 +1 / +2 / +3 分"}
-              </p>
+              {/* 编辑态说明不重复发放，避免用户困惑 */}
+              {existing && (
+                <p className="mt-3 text-center text-[11px] font-light tracking-[0.04em] text-brand-charcoal/55">
+                  编辑已有记录不重复发放积分
+                </p>
+              )}
             </div>
           </m.div>
         </div>

@@ -12,7 +12,8 @@
  * - 左栏：当前等级会员卡（四档背景图）+ 当前等级权益列表（超出卡片内滚动）
  * - 右栏：提升引导卡（升级进度/如何提升三步）+ AI 测肤用量卡
  * 「全部等级」入口进入四档对比页（当前/已解锁/未解锁）。
- * 子站暂无消费补录接口：录入按钮保留，点击提示前往官网会员中心操作。
+ * 消费补录（录入表单 / 录入历史）为站内实现，经子站 BFF 代理官网 OAuth 端点；
+ * 面板首次进入后常驻挂载、以 hidden 切换可见性，草稿在视图间保留。
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
@@ -98,7 +99,7 @@ function benefitIcon(title: string): typeof Check {
 
 // 官方渠道说明文案（点击问号整版切换，避免与步骤列表文案漂移）
 const CHANNEL_TIP_TEXT =
-  "官方渠道指 NIHPLOD 在天猫国际、抖音商城、小红书、快手、微信小店等平台开设的官方旗舰店，以及经品牌正式授权的其他线上经销商与线下实体门店。";
+  "官方渠道指 NIHPLOD 在天猫国际、抖音商城、小红书、快手、微信小铺等平台开设的官方旗舰店，以及经品牌正式授权的其他线上经销商与线下实体门店。";
 
 interface LevelInfo {
   level: string;
@@ -156,6 +157,10 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
   const [view, setView] = useState<VipView>("main");
   const [refreshingUsage, setRefreshingUsage] = useState(false);
   const [showChannelTip, setShowChannelTip] = useState(false);
+  // 消费补录面板：首次进入后常驻挂载（hidden 切换可见性），保留表单草稿与已传凭证
+  const [spentMounted, setSpentMounted] = useState(false);
+  // 主视图退出动画完成后才显示补录面板，保持「先出后进」、避免两版叠加
+  const [spentRevealed, setSpentRevealed] = useState(false);
   // 权益卡内部滚动状态：溢出且未滚到底时显示底部渐隐遮罩
   const [benefitsScroll, setBenefitsScroll] = useState({ overflowing: false, atBottom: false });
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -191,13 +196,20 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
   const loadVIPData = useCallback(async () => {
     try {
       const res = await fetch("/api/account/membership");
-      if (res.status === 401) {
-        showError("登录已过期，请重新登录");
+      const data = (await res.json().catch(() => null)) as
+        | (VIPData & { error?: { code?: string } })
+        | null;
+      const errorCode = data?.error?.code;
+      // 会话失效 / scope 缺失（旧 token 未含 membership）：统一走登录引导
+      if (
+        res.status === 401 ||
+        (!res.ok && (errorCode === "UNAUTHORIZED" || errorCode === "INSUFFICIENT_SCOPE"))
+      ) {
+        showError("登录状态已更新，请重新登录");
         onRequestLogin();
         return;
       }
       if (!res.ok) throw new Error(`membership ${res.status}`);
-      const data = (await res.json()) as VIPData | null;
       if (data?.membershipLevel) {
         setVipData(data);
         if (user && data.membershipLevel !== user.membershipLevel) {
@@ -306,6 +318,12 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
     }, 400);
   }, []);
 
+  // 消费补录面板可见性；挂载后 view 映射为面板内部视图（default 即隐藏态）
+  const spentActive = view === "spent-form" || view === "spent-history";
+  const spentVisible = spentActive && spentRevealed;
+  const spentView: SpentPanelView =
+    view === "spent-form" ? "form" : view === "spent-history" ? "history" : "default";
+
   if (!vipData && loading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -326,15 +344,22 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
   const tierStyle = TIER_CARD_STYLES[currentLevel.level] ?? TIER_CARD_STYLES.REGULAR;
   const cardBgImage = CARD_BG_IMAGES[currentLevel.level];
 
-  // 切换整版视图到消费补录表单/录入历史（与官网 VipPanel 一致）
-  const focusSpentForm = () => {
-    setView("spent-form");
+  /** 进入补录视图：从主视图/等级对比进入时需等退出动画完成再显示（onExitComplete 揭示） */
+  const enterSpentView = (target: "spent-form" | "spent-history") => {
+    setSpentMounted(true);
+    if (!spentActive) setSpentRevealed(false);
+    setView(target);
   };
+
+  // 切换整版视图到消费补录表单/录入历史（与官网 VipPanel 一致）
+  const focusSpentForm = () => enterSpentView("spent-form");
+
+  const openSpentHistory = () => enterSpentView("spent-history");
 
   // 消费补录内部视图变化 → 整版视图映射
   const handleSpentViewChange = (v: SpentPanelView) => {
-    if (v === "form") setView("spent-form");
-    else if (v === "history") setView("spent-history");
+    if (v === "form") enterSpentView("spent-form");
+    else if (v === "history") enterSpentView("spent-history");
     else setView("main");
   };
 
@@ -349,7 +374,34 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
         ref={scrollRef}
         className="scrollbar-hide flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-16"
       >
-        <AnimatePresence mode="wait" initial={false}>
+        {/* 消费补录面板：首次进入后常驻挂载（hidden 切换可见性），
+            避免返回主视图时卸载导致草稿与已传凭证丢失 */}
+        {spentMounted && (
+          <m.div
+            key="spent"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: spentVisible ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+            hidden={!spentVisible}
+          >
+            <SpentAdjustmentPanel
+              view={spentView}
+              onViewChange={handleSpentViewChange}
+              onApplicationsLoaded={handleApplicationsLoaded}
+              onRequestLogin={onRequestLogin}
+            />
+          </m.div>
+        )}
+
+        {/* 主视图 / 等级对比：退出动画完成后（onExitComplete）才揭示补录面板 */}
+        <AnimatePresence
+          mode="wait"
+          initial={false}
+          onExitComplete={() => {
+            // 回调取自最新一次渲染，闭包内 spentActive 即当前视图状态
+            if (spentActive) setSpentRevealed(true);
+          }}
+        >
           {view === "main" && (
             <m.div
               key="main"
@@ -521,7 +573,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setView("spent-history")}
+                          onClick={openSpentHistory}
                           className="py-1.5 text-xs text-stone-500 transition-colors hover:text-stone-800 active:opacity-60"
                         >
                           查看录入历史
@@ -779,7 +831,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                           })}
                         </div>
 
-                        {/* 未达档等级：解锁进度 + 补录引导（子站暂无补录，按钮提示） */}
+                        {/* 未达档等级：解锁进度 + 补录引导（直达录入表单） */}
                         {isLocked && (
                           <div className="-mx-5 -mb-5 mt-4 border-t border-stone-200/60 bg-stone-500/[0.04] px-5 py-4">
                             <div className="flex items-center justify-between gap-3">
@@ -844,39 +896,6 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
             </m.div>
           )}
 
-          {view === "spent-form" && (
-            <m.div
-              key="spent-form"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <SpentAdjustmentPanel
-                view="form"
-                onViewChange={handleSpentViewChange}
-                onApplicationsLoaded={handleApplicationsLoaded}
-                onRequestLogin={onRequestLogin}
-              />
-            </m.div>
-          )}
-
-          {view === "spent-history" && (
-            <m.div
-              key="spent-history"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <SpentAdjustmentPanel
-                view="history"
-                onViewChange={handleSpentViewChange}
-                onApplicationsLoaded={handleApplicationsLoaded}
-                onRequestLogin={onRequestLogin}
-              />
-            </m.div>
-          )}
         </AnimatePresence>
       </div>
     </div>

@@ -6,8 +6,9 @@
  * 官网管理员人工审核后累加历史消费金额，自动重算会员等级。
  * 申请列表展示审核状态与审核备注。
  *
- * 视图由父组件（VipPanel）控制：录入表单 / 录入历史（default 仅作返回目标），
- * 互斥、由父组件整版淡入淡出单独显示；本组件仅按 view 渲染对应区块。
+ * 视图由父组件（VipPanel）控制：录入表单 / 录入历史（default 为隐藏态），
+ * 父组件首次进入后常驻挂载（hidden 切换可见性），草稿与已传凭证在视图间保留；
+ * 本组件仅按 view 渲染对应区块。
  * 数据经子站 BFF（/api/account/spent-adjustments*）代理官网 OAuth 资源端点，
  * 校验与存储全部在官网侧执行（与官网会员中心同一实现）。
  */
@@ -36,7 +37,12 @@ import {
   SPENT_STATUS_LABELS,
   MAX_PENDING_PER_USER,
   MAX_IMAGES,
+  MAX_ORDER_NO_LENGTH,
   MAX_DEALER_NAME_LENGTH,
+  MAX_NOTE_LENGTH,
+  MIN_AMOUNT,
+  MAX_AMOUNT,
+  validateSpentDraft,
   receiptImageSrc,
 } from "@/lib/spent-adjustments";
 
@@ -158,20 +164,27 @@ export function SpentAdjustmentPanel({
   const pendingCount = applications.filter((a) => a.status === "PENDING").length;
   const reachedPendingLimit = pendingCount >= MAX_PENDING_PER_USER;
 
-  const handleUnauthorized = useCallback(() => {
-    showError("登录已过期，请重新登录");
-    onRequestLogin();
-  }, [showError, onRequestLogin]);
+  /** 会话失效 / scope 缺失（旧 token）统一走登录引导；返回是否已处理 */
+  const handleAuthError = useCallback(
+    (status: number, code?: string) => {
+      if (status === 401 || code === "UNAUTHORIZED" || code === "INSUFFICIENT_SCOPE") {
+        showError("登录状态已更新，请重新登录");
+        onRequestLogin();
+        return true;
+      }
+      return false;
+    },
+    [showError, onRequestLogin]
+  );
 
   const loadApplications = useCallback(async () => {
     try {
       const res = await fetch("/api/account/spent-adjustments", { cache: "no-store" });
-      if (res.status === 401) {
-        handleUnauthorized();
+      const data = await res.json().catch(() => null);
+      if (handleAuthError(res.status, data?.error?.code)) {
         return;
       }
-      const data = await res.json();
-      if (data.success) {
+      if (data?.success) {
         setApplications(data.data.applications);
         // 非首次加载（提交后/展开历史）时通知父组件重拉会员卡与积分
         if (loadedOnceRef.current) {
@@ -179,14 +192,14 @@ export function SpentAdjustmentPanel({
         }
         loadedOnceRef.current = true;
       } else {
-        showError(data.error?.message || "加载申请记录失败");
+        showError(data?.error?.message || "加载申请记录失败");
       }
     } catch {
       showError("加载申请记录失败");
     } finally {
       setLoading(false);
     }
-  }, [handleUnauthorized, onApplicationsLoaded, showError]);
+  }, [handleAuthError, onApplicationsLoaded, showError]);
 
   useEffect(() => {
     void loadApplications();
@@ -210,11 +223,10 @@ export function SpentAdjustmentPanel({
           { method: "POST", body: formData },
           { timeoutMs: 60000 }
         );
-        if (res.status === 401) {
-          handleUnauthorized();
+        const data = await res.json().catch(() => null);
+        if (handleAuthError(res.status, data?.error?.code)) {
           return;
         }
-        const data = await res.json().catch(() => null);
         if (data?.success) {
           setImages((prev) => [...prev, data.data.url]);
           // 本地预览：立即展示且不受私有 bucket 归属校验影响
@@ -234,12 +246,9 @@ export function SpentAdjustmentPanel({
   };
 
   const handleSubmit = async () => {
-    if (!orderNo.trim()) {
-      showError("请填写订单号或小票号");
-      return;
-    }
-    if (channel === "DEALER" && !dealerName.trim()) {
-      showError("请填写经销商名称");
+    const validationError = validateSpentDraft({ channel, orderNo, dealerName, amountClaimed });
+    if (validationError) {
+      showError(validationError);
       return;
     }
     setSubmitting(true);
@@ -257,11 +266,10 @@ export function SpentAdjustmentPanel({
           note: note.trim() || undefined,
         }),
       });
-      if (res.status === 401) {
-        handleUnauthorized();
+      const data = await res.json().catch(() => null);
+      if (handleAuthError(res.status, data?.error?.code)) {
         return;
       }
-      const data = await res.json().catch(() => null);
       if (data?.success) {
         showSuccess("申请已提交，等待审核");
         onViewChange("default");
@@ -327,6 +335,7 @@ export function SpentAdjustmentPanel({
                         key={c}
                         type="button"
                         onClick={() => setChannel(c)}
+                        aria-pressed={selected}
                         className={`relative inline-flex items-center rounded-full border px-3.5 py-2 text-xs transition-colors active:opacity-70 ${
                           selected
                             ? "border-[#00263e]/40 font-medium text-[#00263e]"
@@ -381,11 +390,13 @@ export function SpentAdjustmentPanel({
                     <label htmlFor="spent-other-note" className="text-xs text-stone-600">
                       说明 <span className="font-normal text-stone-400">（选填）</span>
                     </label>
-                    <span className="text-[11px] text-stone-400">{note.length}/500</span>
+                    <span className="text-[11px] text-stone-400">
+                      {note.length}/{MAX_NOTE_LENGTH}
+                    </span>
                   </div>
                   <textarea
                     id="spent-other-note"
-                    maxLength={500}
+                    maxLength={MAX_NOTE_LENGTH}
                     rows={2}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
@@ -400,12 +411,14 @@ export function SpentAdjustmentPanel({
                   <label htmlFor="spent-order-no" className="text-xs text-stone-600">
                     订单号 / 小票号 <span className="text-[#00263e]">*</span>
                   </label>
-                  <span className="text-[11px] text-stone-400">{orderNo.length}/64</span>
+                  <span className="text-[11px] text-stone-400">
+                    {orderNo.length}/{MAX_ORDER_NO_LENGTH}
+                  </span>
                 </div>
                 <input
                   id="spent-order-no"
                   type="text"
-                  maxLength={64}
+                  maxLength={MAX_ORDER_NO_LENGTH}
                   value={orderNo}
                   onChange={(e) => setOrderNo(e.target.value)}
                   placeholder="如：天猫订单号 / 线下小票号"
@@ -427,8 +440,8 @@ export function SpentAdjustmentPanel({
                   <input
                     id="spent-amount"
                     type="number"
-                    min={1}
-                    max={1000000}
+                    min={MIN_AMOUNT}
+                    max={MAX_AMOUNT}
                     value={amountClaimed}
                     onChange={(e) => setAmountClaimed(e.target.value)}
                     placeholder="1280"
@@ -520,11 +533,13 @@ export function SpentAdjustmentPanel({
                   <label htmlFor="spent-note" className="text-xs font-medium text-stone-600">
                     备注 <span className="font-normal text-stone-400">（选填）</span>
                   </label>
-                  <span className="text-[11px] text-stone-400">{note.length}/500</span>
+                  <span className="text-[11px] text-stone-400">
+                    {note.length}/{MAX_NOTE_LENGTH}
+                  </span>
                 </div>
                 <textarea
                   id="spent-note"
-                  maxLength={500}
+                  maxLength={MAX_NOTE_LENGTH}
                   rows={2}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}

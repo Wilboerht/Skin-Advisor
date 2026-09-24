@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/useMediaQuery";
 import { LoginGuide } from "@/components/website/LoginGuide";
 import { ACCOUNT_SHELL } from "@/components/website/account-styles";
 import { AccountRootView } from "@/components/website/AccountRootView";
-import { AccountMallTab } from "@/components/website/AccountMallTab";
+import { PointsMallPanel } from "@/components/website/user-center/PointsMallPanel";
 import { VipPanel } from "@/components/website/user-center/VipPanel";
 
 // 护肤档案面板：合并进账户弹层后按需加载（首次切到档案 tab 才下载其整串子组件）
@@ -96,7 +96,7 @@ const LEVEL_LABELS: Record<string, string> = {
  * - 侧边栏：头像/昵称/等级徽标 + 菜单（个人信息/护肤档案/会员中心/积分商城）+ 退出登录
  * - 移动端：顶部 Header + 底部 Tab 栏（4 项，无侧边栏）
  * 内容面板：个人信息 = AccountRootView；护肤档案 = DiaryPanel（2026-09 由独立弹层合并，dynamic 按需加载）；
- * 会员中心 = VipPanel（主站同款）；积分商城 = 官网 embed iframe。
+ * 会员中心 = VipPanel（主站同款）；积分商城 = PointsMallPanel（原生，BFF 代理官网 OAuth 资源端点）。
  * 未登录：登录引导视图，点击按钮走 SSO 统一登录（原护肤档案弹层的未登录态也由这里承接）。
  */
 export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: AccountModalProps) {
@@ -483,19 +483,8 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                               hidden={activeTab !== "mall"}
                               className="h-full"
                             >
-                              <div className="flex h-full flex-col pt-4 md:pt-10">
-                                <div className="hidden flex-shrink-0 border-b border-stone-200/60 px-6 pb-6 md:flex md:px-16">
-                                  <h2 className="text-xl font-medium tracking-wide text-stone-800">
-                                    积分商城
-                                  </h2>
-                                </div>
-                                <div
-                                  data-account-scroll
-                                  className="scrollbar-hide flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-16"
-                                >
-                                  <AccountMallTab onClose={onClose} />
-                                </div>
-                              </div>
+                              {/* 面板自带标题与滚动区（与官网 PointsMallPanel 同构） */}
+                              <PointsMallPanel />
                             </div>
                           )}
                         </AccountPanelErrorBoundary>

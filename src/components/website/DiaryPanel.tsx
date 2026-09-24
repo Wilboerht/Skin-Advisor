@@ -595,17 +595,17 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                         </h3>
                         <div className="flex items-center gap-3">
                           {aggregatedTrends && (
-                            <div className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1" role="group" aria-label="趋势时间范围">
+                            <div className="flex items-center gap-2" role="group" aria-label="趋势时间范围">
                               {([7, 30] as const).map((r) => (
                                 <button
                                   key={r}
                                   type="button"
                                   onClick={() => switchTrendRange(r)}
                                   aria-pressed={trendRange === r}
-                                  className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
+                                  className={`inline-flex items-center rounded-full border px-4 py-2 text-xs transition-colors active:opacity-70 cursor-pointer ${
                                     trendRange === r
-                                      ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
-                                      : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                                      ? "border-brand-charcoal/40 bg-brand-charcoal/10 font-medium text-brand-charcoal"
+                                      : "border-brand-charcoal/30 bg-white/40 text-brand-charcoal hover:border-brand-charcoal/60 hover:bg-brand-charcoal/5"
                                   }`}
                                 >
                                   近 {r} 天
@@ -758,8 +758,8 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                           <NotebookPen className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />
                           护肤历程
                         </h3>
-                        {/* 视图切换：胶囊分段（与全站 tabs 规范一致） */}
-                        <div className="inline-flex rounded-full border border-brand-espresso/[0.12] bg-white p-1" role="group" aria-label="历程视图切换">
+                        {/* 视图切换：独立胶囊（风格对齐会员中心「录入消费」/渠道选择） */}
+                        <div className="flex items-center gap-2" role="group" aria-label="历程视图切换">
                           {([
                             { key: false, label: "时间线" },
                             { key: true, label: "日历" },
@@ -769,10 +769,10 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                               type="button"
                               onClick={() => setCalendarView(v.key)}
                               aria-pressed={calendarView === v.key}
-                              className={`inline-flex h-7 items-center rounded-full px-3 text-[12px] transition-colors cursor-pointer ${
+                              className={`inline-flex items-center rounded-full border px-4 py-2 text-xs transition-colors active:opacity-70 cursor-pointer ${
                                 calendarView === v.key
-                                  ? "bg-brand-charcoal/[0.08] text-brand-charcoal font-medium"
-                                  : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                                  ? "border-brand-charcoal/40 bg-brand-charcoal/10 font-medium text-brand-charcoal"
+                                  : "border-brand-charcoal/30 bg-white/40 text-brand-charcoal hover:border-brand-charcoal/60 hover:bg-brand-charcoal/5"
                               }`}
                             >
                               {v.label}

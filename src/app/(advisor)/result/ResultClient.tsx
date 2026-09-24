@@ -222,8 +222,8 @@ function ResultHeader({
                     </span>
                 )}
             </p>
-            {/* 两页切换 tab：仅移动端位于标题下方（PC 端已移至顶部栏） */}
-            <div className="mb-4 md:hidden">
+            {/* 两页切换 tab：PC 与移动端统一置于标题下方；上下间距由标题 mb 与页头 pb 控制 */}
+            <div className="mb-4">
                 <ResultPageTabs pageIndex={pageIndex} onSwitchPage={onSwitchPage} />
             </div>
         </div>
@@ -1667,10 +1667,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             />
 
                             <div className="justify-self-end flex items-center gap-3 md:gap-4">
-                                {/* 两页切换 tab：PC 端置于顶部栏右侧（用户身份区左侧），移动端在标题下方 */}
-                                <div className="hidden md:block">
-                                    <ResultPageTabs pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
-                                </div>
                                 <UserBadge accountOpenSeq={accountOpenSeq} accountOpenTab="diary" />
                             </div>
                         </div>

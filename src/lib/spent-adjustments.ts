@@ -11,12 +11,16 @@ export const MAX_PENDING_PER_USER = 2; // 同一用户同时最多待审申请�
 export const MAX_IMAGES = 3; // 凭证截图上限
 export const MAX_ORDER_NO_LENGTH = 64;
 export const MAX_DEALER_NAME_LENGTH = 50; // 经销商名称长度上限
+export const MAX_NOTE_LENGTH = 500; // 备注/说明长度上限
+export const MIN_AMOUNT = 1; // 申报金额下限（元）
+export const MAX_AMOUNT = 1_000_000; // 申报金额上限（元）
 
 // 提交渠道白名单（用户表单，按官网业务顺序）
 export const SPENT_CHANNELS = [
   "TMALL",
   "DOUYIN",
   "XIAOHONGSHU",
+  "WECHAT_SHOP",
   "OFFLINE",
   "DEALER",
   "OTHER",
@@ -29,6 +33,7 @@ export const SPENT_CHANNEL_LABELS: Record<string, string> = {
   TMALL: "天猫国际",
   DOUYIN: "抖音商城",
   XIAOHONGSHU: "小红书",
+  WECHAT_SHOP: "微信小铺",
   OFFLINE: "线下专柜",
   DEALER: "经销渠道",
   OTHER: "其它",
@@ -43,6 +48,37 @@ export const SPENT_STATUS_LABELS: Record<string, string> = {
   REJECTED: "已驳回",
 };
 
+/** 表单草稿（本地前置校验入参，均为原始输入值） */
+export interface SpentDraftInput {
+  channel: string;
+  orderNo: string;
+  dealerName: string;
+  amountClaimed: string;
+}
+
+/**
+ * 表单本地前置校验：返回错误文案，通过时返回 null。
+ * 与官网校验同口径，仅用于提交前即时反馈；权威校验仍在官网侧执行。
+ */
+export function validateSpentDraft(input: SpentDraftInput): string | null {
+  const orderNo = input.orderNo.trim();
+  if (!orderNo) return "请填写订单号或小票号";
+  if (orderNo.length > MAX_ORDER_NO_LENGTH) {
+    return `订单号不能超过 ${MAX_ORDER_NO_LENGTH} 个字符`;
+  }
+  if (input.channel === "DEALER" && !input.dealerName.trim()) {
+    return "请填写经销商名称";
+  }
+  const amount = input.amountClaimed.trim();
+  if (amount) {
+    const value = Number(amount);
+    if (!Number.isFinite(value)) return "消费金额格式不正确";
+    if (value < MIN_AMOUNT) return `消费金额不能小于 ¥${MIN_AMOUNT.toLocaleString()}`;
+    if (value > MAX_AMOUNT) return `消费金额不能超过 ¥${MAX_AMOUNT.toLocaleString()}`;
+  }
+  return null;
+}
+
 /**
  * 凭证图片取值规则（与官网一致）：
  * - 以 http(s):// 开头的值是可直接访问的绝对 URL；
@@ -50,9 +86,6 @@ export const SPENT_STATUS_LABELS: Record<string, string> = {
  *   在子站必须补全为官网 origin，否则会错误地指向子站域名；
  * - 其余值视为官网私有 bucket 的 objectName，经子站 BFF 鉴权签名端点访问。
  */
-export function isDirectImageUrl(value: string): boolean {
-  return /^https?:\/\//.test(value) || value.startsWith("/");
-}
 
 /** 官网 origin（本地 http 开发兼容，未配置时等于线上主站） */
 const OFFICIAL_ORIGIN = (process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn").replace(/\/+$/, "");

@@ -80,6 +80,7 @@ describe("GET /api/account/profile", () => {
             phone: "138****1234",
             membershipLevel: "GOLD",
             birthday: "1995-06-01",
+            hasPassword: null,
         });
         const [url, init] = mocks.fetch.mock.calls[0];
         expect(String(url)).toContain("/api/oauth/userinfo");
@@ -114,7 +115,17 @@ describe("GET /api/account/profile", () => {
             phone: null,
             membershipLevel: null,
             birthday: null,
+            hasPassword: null,
         });
+    });
+
+    it("官网返回 has_password 时透传（密码已设置）", async () => {
+        mocks.findUnique.mockResolvedValue(null);
+        mocks.fetch.mockResolvedValue(jsonResponse(200, { sub: "u1", has_password: true }));
+        const res = await GET(fakeReq());
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.hasPassword).toBe(true);
     });
 });
 

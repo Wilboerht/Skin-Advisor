@@ -7,7 +7,7 @@ import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useLegalDocModal, type LegalDoc } from "@/components/website/LegalDocModalContext";
 
-// 主站 origin：与 AccountMallTab 同口径，本地/预发可随环境变量切换
+// 主站 origin：与用户面板 BFF 同口径，本地/预发可随环境变量切换
 const SSO_BASE_URL = (process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn").replace(/\/+$/, "");
 
 const DOC_META: Record<LegalDoc, { title: string; embedPath: string; pagePath: string }> = {

@@ -135,7 +135,8 @@ describe("GET /api/account/spent-adjustments/image", () => {
         const res = await imageGET(imageReq());
         expect(res.status).toBe(404);
         const body = await res.json();
-        expect(body.error).toBe("NOT_FOUND");
+        expect(body.success).toBe(false);
+        expect(body.error.code).toBe("NOT_FOUND");
     });
 
     it("缺少 key 返回 400", async () => {

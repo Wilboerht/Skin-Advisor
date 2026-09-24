@@ -9,7 +9,7 @@ import { logger } from "@/lib/logger";
 const OFFICIAL_USERINFO_TIMEOUT_MS = 8000;
 
 // GET: 读本地 DB 用户副本返回资料（phone 打码展示）。
-// birthday 本地 DB 无字段，回源官网 userinfo 获取（需 token 含 birthday scope）；
+// birthday/hasPassword 本地 DB 无字段，回源官网 userinfo 获取（需 token 含 birthday scope / profile scope）；
 // 官网不可达或 scope 未授权时降级为 null，不影响其他字段。
 export async function GET(req: NextRequest) {
     const user = await getSessionUser(req);
@@ -24,13 +24,13 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // 本地 DB 查询与官网 birthday 回源并行（回源最坏 8s 超时，串行会拖慢整个 GET）
-        const [local, birthday] = await Promise.all([
+        // 本地 DB 查询与官网回源并行（回源最坏 8s 超时，串行会拖慢整个 GET）
+        const [local, official] = await Promise.all([
             prisma.user.findUnique({
                 where: { id: user.id },
                 select: { name: true, avatarUrl: true, gender: true, phoneNumber: true, membershipLevel: true },
             }),
-            fetchBirthdayFromOfficial(req),
+            fetchOfficialProfile(req),
         ]);
 
         return NextResponse.json({
@@ -39,7 +39,8 @@ export async function GET(req: NextRequest) {
             gender: local?.gender ?? null,
             phone: maskPhone(local?.phoneNumber),
             membershipLevel: local?.membershipLevel ?? null,
-            birthday,
+            birthday: official.birthday,
+            hasPassword: official.hasPassword,
         });
     } catch (err) {
         logger.error("[account/profile] GET error:", err);
@@ -47,20 +48,28 @@ export async function GET(req: NextRequest) {
     }
 }
 
-/** 回源官网 userinfo 取生日；任何失败都降级为 null（不阻断资料主流程） */
-async function fetchBirthdayFromOfficial(req: NextRequest): Promise<string | null> {
+/** 回源官网 userinfo 取生日与「是否已设置密码」；任何失败都降级为 null（不阻断资料主流程） */
+async function fetchOfficialProfile(
+    req: NextRequest
+): Promise<{ birthday: string | null; hasPassword: boolean | null }> {
     const token = await resolveOfficialAccessToken(req);
-    if (!token) return null;
+    if (!token) return { birthday: null, hasPassword: null };
     try {
         const res = await fetch(`${OFFICIAL_BASE_URL}/api/oauth/userinfo`, {
             headers: { Authorization: `Bearer ${token}` },
             signal: AbortSignal.timeout(OFFICIAL_USERINFO_TIMEOUT_MS),
         });
-        if (!res.ok) return null;
-        const data = (await res.json().catch(() => null)) as { birthday?: string | null } | null;
-        return typeof data?.birthday === "string" ? data.birthday : null;
+        if (!res.ok) return { birthday: null, hasPassword: null };
+        const data = (await res.json().catch(() => null)) as {
+            birthday?: string | null;
+            has_password?: boolean;
+        } | null;
+        return {
+            birthday: typeof data?.birthday === "string" ? data.birthday : null,
+            hasPassword: typeof data?.has_password === "boolean" ? data.has_password : null,
+        };
     } catch {
-        return null;
+        return { birthday: null, hasPassword: null };
     }
 }
 

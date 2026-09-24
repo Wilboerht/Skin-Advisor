@@ -875,7 +875,6 @@ export default function HomeClient() {
             setShowGiftModal(false);
             handleStart();
           }}
-          onOpenSkinTypes={openSkinTypesModal}
         />
       )}
       {shouldRenderSkinTypes && (
