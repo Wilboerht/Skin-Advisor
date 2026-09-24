@@ -1326,13 +1326,14 @@ export function PointsMallPanel() {
         </AnimatePresence>
       </div>
 
-      {/* 产品详情抽屉：Portal 到 body 并提高层级，覆盖在用户中心弹窗之上；
+      {/* 产品详情抽屉：Portal 到 body；层级必须高于账户弹层（--z-modal 100100），
+          与 LegalDocModal 同层（100110），否则会被用户中心盖住；
           商城场景不展示三方购买入口，底部操作区改为「兑换」 */}
       <ProductDrawer
         isOpen={detailGift !== null}
         onClose={() => setDetailGift(null)}
         product={detailGift?.detail ?? null}
-        zIndexClassName="z-[10000]"
+        zIndexClassName="z-[100110]"
         brandLinkEnabled={false}
         actionArea={
           detailGift ? (

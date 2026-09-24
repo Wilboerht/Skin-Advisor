@@ -1,19 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { createElement, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, ChevronDown, ChevronRight, Loader2, Lock, LogOut, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
-import { getFactionIcon } from "@/components/website/faction-icons";
 import { PasswordSection } from "@/components/website/account-sections/PasswordSection";
 import { AddressSection } from "@/components/website/account-sections/AddressSection";
-import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { localDateStr } from "@/lib/local-date";
 import { uploadImage } from "@/lib/upload-client";
 import type { User } from "@/components/auth/UserProvider";
-import type { HistorySession } from "@/components/website/TestHistoryList";
 
 /** 手机号打码：BFF 未返回时回退会话字段，避免在面板上展示完整号码；
  *  已是掩码则原样返回，非手机号格式（如微信占位号 wx_ 前缀）视为未绑定 */
@@ -52,45 +49,18 @@ interface AccountRootViewProps {
   onRequestLogout: () => void;
   /** 会话过期时的登录引导：由 AccountModal 统一处理（先关弹层再开 AuthModal，避免层级/焦点冲突） */
   onRequestLogin: () => void;
-  /** 护肤档案入口：切到账户弹层的「护肤档案」tab（原独立弹层已合并） */
-  onOpenDiary?: () => void;
 }
 
 /**
  * 「个人信息」面板（排版对齐官网 ProfilePanel）：
  * 左对齐头像区（头像 + 昵称 + 点击更换头像）+ 行式信息列表
- * （昵称/性别/生日可编辑，绑定手机号打码展示，密码可设置/修改，收货地址可增删改，
- *  / 肌智派形象 / 护肤档案入口）+ 移动端退出登录。
+ * （昵称/性别/生日可编辑，绑定手机号打码展示，密码可设置/修改，收货地址可增删改）+ 移动端退出登录。
  * 昵称/头像/性别/生日经 BFF（/api/account/profile）转发主站修改；手机号仅打码展示（换绑在主站）；
  * 密码经 BFF 转发主站；收货地址经 BFF 代理主站 OAuth 地址簿（单一数据源）。
  */
-export function AccountRootView({ user, onRequestLogout, onRequestLogin, onOpenDiary }: AccountRootViewProps) {
+export function AccountRootView({ user, onRequestLogout, onRequestLogin }: AccountRootViewProps) {
   const { refresh } = useAuth();
   const toast = useToast();
-
-  // 最新测肤派系（接口失败静默不展示）；账号切换时重新拉取
-  const [latestPersona, setLatestPersona] = useState<string | null>(null);
-  // 静默接口结束（含失败）才收起骨架，避免"加载完才出现"导致下方内容跳动
-  const [metaLoaded, setMetaLoaded] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLatestPersona(null);
-    setMetaLoaded(false);
-    fetch("/api/advisor/history?page=1&limit=1&lite=1")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled) return;
-        const latest = (data?.history as HistorySession[] | undefined)?.[0];
-        const persona = (latest?.analysisResult as { persona?: string } | undefined)?.persona;
-        setLatestPersona(persona ?? null);
-      })
-      .catch(() => { /* 接口失败静默：展示"尚未测肤" */ })
-      .finally(() => {
-        if (!cancelled) setMetaLoaded(true);
-      });
-    return () => { cancelled = true; };
-  }, [user.id]);
 
   // 主站资料（BFF）：拉取失败时回退展示 UserProvider 的会话字段
   const [profile, setProfile] = useState<AccountProfile | null>(null);
@@ -301,7 +271,6 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin, onOpenD
     }
   };
 
-  const latestPersonaType = latestPersona ? getSkinTypeByIpKey(latestPersona) : null;
   // 空串（历史脏数据/无昵称）同样回退，避免面板标题显示空白
   const displayName = profile?.nickname || user.name || "朋友";
   const displayAvatar = profile?.avatar ?? user.avatar;
@@ -673,51 +642,6 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin, onOpenD
               </div>
             )}
           </div>
-
-          <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
-
-          {/* 肌智派形象（最新一次测肤派系） */}
-          <div className="group -mx-6 flex items-center justify-between rounded-2xl px-6 py-4 transition-all hover:bg-white/40">
-            <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
-              <div className="w-[4.5rem] shrink-0 md:w-20">
-                <p className="text-[13px] text-stone-400 md:text-sm md:font-light">肌智派形象</p>
-              </div>
-              <div className="flex w-full min-w-0 flex-1 items-center gap-2">
-                {!metaLoaded ? (
-                  <div aria-hidden className="h-4 w-24 rounded-full bg-stone-200/60 animate-pulse" />
-                ) : latestPersonaType ? (
-                  <p className="flex items-center gap-2 truncate text-[15px] font-medium text-stone-800 md:text-sm">
-                    {createElement(getFactionIcon(latestPersonaType.ipKey), {
-                      className: "h-4 w-4 shrink-0 text-stone-400",
-                      strokeWidth: 1.5,
-                    })}
-                    {latestPersonaType.typeName}
-                  </p>
-                ) : (
-                  <p className="text-[15px] text-stone-400 md:text-sm">尚未测肤</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
-
-          {/* 护肤档案入口：切到账户弹层的档案 tab（原独立弹层已合并） */}
-          <button
-            type="button"
-            onClick={() => onOpenDiary?.()}
-            className="group -mx-6 flex w-full items-center justify-between rounded-2xl px-6 py-4 text-left transition-all hover:bg-white/40 cursor-pointer"
-          >
-            <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
-              <div className="w-[4.5rem] shrink-0 md:w-20">
-                <p className="text-[13px] text-stone-400 md:text-sm md:font-light">护肤档案</p>
-              </div>
-              <div className="flex w-full min-w-0 flex-1 items-center gap-2">
-                <p className="truncate text-[15px] font-medium text-stone-800 md:text-sm">测肤记录与每日打卡</p>
-              </div>
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-stone-300 transition-transform group-hover:translate-x-0.5" />
-          </button>
         </div>
 
         {/* 移动端退出登录（桌面端在用户中心侧边栏） */}

@@ -443,7 +443,6 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                                 user={user}
                                 onRequestLogout={handleLogout}
                                 onRequestLogin={requestLogin}
-                                onOpenDiary={() => activateTab("diary")}
                               />
                             </div>
                           )}

@@ -48,8 +48,9 @@ interface ProductDrawerProps {
   /** 产品数据 */
   product: ProductData | null;
   /**
-   * 最外层层级类名（默认 z-[210]）。
-   * 在用户中心弹窗（z-[9999]）等更高层级内打开时传入更大值（如 z-[10000]）。
+   * 最外层层级类名（默认 z-[210]，用于普通页面）。
+   * 在账户弹层等更高层级内打开时，必须传入高于 --z-modal（100100）的值，
+   * 本项目惯例用 z-[100110]（与 LegalDocModal 同层），否则会被弹层盖在下面。
    */
   zIndexClassName?: string;
   /**
