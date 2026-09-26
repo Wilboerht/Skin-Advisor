@@ -29,13 +29,12 @@ import {
 } from "@/components/advisor/poster/poster-templates";
 import ShareCardPage from "@/components/advisor/ShareCardPage";
 import UserBadge from "@/components/advisor/UserBadge";
-import { GenderMismatchModal, LabDataModal, PosterSaveModal } from "@/components/advisor/result-modals";
+import { GenderMismatchModal, PosterSaveModal } from "@/components/advisor/result-modals";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
-import { buildFocusProblems, type LifestyleAnswers } from "@/lib/problem-solutions";
 import { SKIN_STATE_LABELS, isMakeupState } from "@/lib/skin-state";
 import { useLazyOpen } from "@/hooks/use-lazy-open";
 
@@ -400,9 +399,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
     const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
 
-    // 重点问题关注板块：问卷生活方式答案（睡眠/压力/护肤频率）
-    const [lifestyleAnswers, setLifestyleAnswers] = useState<LifestyleAnswers>({});
-
     // UI State
     const [loading, setLoading] = useState(!initialData);
     // 首次客户端数据恢复是否完成：analysis effect 据此等待 loadClientData，
@@ -420,7 +416,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // New State for interactivity
 
-    const [showLabData, setShowLabData] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     // 微信内嵌浏览器无法可靠触发下载，生成后改用「长按/右键保存」引导弹窗
@@ -506,12 +501,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // 原"超越全国 X% 用户"固定公式伪统计已下线（v2 报告与分享海报不再使用）；
     // 封面证书卡改为展示 /api/advisor/score-percentile 的真实聚合百分位（见 scorePercentile）
-
-    // 重点问题关注：暗沉/黑头/痘痘等具体问题（维度分数 <70 或 AI 症状检测），按严重程度排序
-    const focusProblems = useMemo(
-        () => buildFocusProblems(faceAnalysis?.dimensions, lifestyleAnswers, faceAnalysis?.skinConditions),
-        [faceAnalysis?.dimensions, faceAnalysis?.skinConditions, lifestyleAnswers]
-    );
 
     // 证书日期：分析完成时间。缺失（老缓存/历史数据未携带）时不展示日期，避免把"查看时间"伪造成"测肤时间"
     const certDate = result?.analyzedAt;
@@ -820,6 +809,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_SKIN_STATE);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS);
         try {
             sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
             sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
@@ -829,18 +819,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // 历史报告页（/reports/:id）：initialData.answers 为 DB 传入的该次测肤问卷答案。
     // loadClientData 对已有结果会短路，localStorage 恢复不会执行，因此这里单独恢复
-    // 重点问题关注所需的生活方式数据（睡眠/压力/护肤频率）与 IP 匹配数据（预算/护肤频率）。
+    // IP 匹配数据（预算/护肤频率）。
     useEffect(() => {
         const answers = initialData?.answers;
         if (!answers) return;
-        if (typeof answers.sleepQuality === "string") {
-            setLifestyleAnswers(prev => ({ ...prev, sleepQuality: answers.sleepQuality as string }));
-        }
-        if (typeof answers.stressLevel === "string") {
-            setLifestyleAnswers(prev => ({ ...prev, stressLevel: answers.stressLevel as string }));
-        }
         if (typeof answers.skincareFrequency === "string") {
-            setLifestyleAnswers(prev => ({ ...prev, skincareFrequency: answers.skincareFrequency as string }));
             setIpSkincareFrequency(answers.skincareFrequency as string);
         }
         if (typeof answers.budget === "string") {
@@ -881,11 +864,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         const answers = JSON.parse(answersStr);
                         if (answers.budget) setIpBudget(answers.budget);
                         if (answers.skincareFrequency) setIpSkincareFrequency(answers.skincareFrequency);
-                        setLifestyleAnswers({
-                            sleepQuality: typeof answers.sleepQuality === "string" ? answers.sleepQuality : undefined,
-                            stressLevel: typeof answers.stressLevel === "string" ? answers.stressLevel : undefined,
-                            skincareFrequency: typeof answers.skincareFrequency === "string" ? answers.skincareFrequency : undefined,
-                        });
                     } catch { /* ignore parse errors */ }
                 }
             } catch (e) {
@@ -1780,8 +1758,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             previousSummary={prevSum || null}
                                             authInitialized={authInitialized}
                                             isLoggedIn={!!user}
-                                            focusProblems={focusProblems}
-                                            onOpenLab={() => setShowLabData(true)}
                                             onUnlock={() => openAuthModal("login")}
                                             onOpenDiary={() => setAccountOpenSeq((n) => n + 1)}
                                         />
@@ -1844,14 +1820,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             </m.button>
                         )}
                     </AnimatePresence>
-
-                    {/* 定制化分析数据详情 Modal - Page Level */}
-                    <LabDataModal
-                        open={showLabData}
-                        onClose={() => setShowLabData(false)}
-                        faceAnalysis={faceAnalysis}
-                        skinState={skinStateValue}
-                    />
 
                     {posterError && (
                         <div

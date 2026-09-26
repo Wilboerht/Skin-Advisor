@@ -11,9 +11,13 @@
  *   与白皮书群体统计（肤质 × 年龄段 × 地域）使用。
  *
  * 注意：faceAnalysis 的字段形状与 skin-trends 读取逻辑保持兼容
- * （overallScore / dimensions.{wrinkles,waterOil,spots,texture}.score），
- * 修改结构时同步检查 src/app/api/user/skin-trends/route.ts。
+ * （overallScore / dimensions.{wrinkles,waterOil,spots,texture}.score）；
+ * 归档时会用区域纹理均值补齐 dimensions.texture（十维中无该维度），
+ * 保证超过热层保留条数后趋势线仍连续。修改结构时同步检查
+ * src/lib/skin-trends.ts 与 src/app/api/user/skin-trends/route.ts。
  */
+
+import { resolveTrendDimensions, resolveTrendDimensionScore } from "@/lib/trend-dimensions";
 
 export interface ArchivedSessionSummary {
     archived: true;
@@ -72,7 +76,6 @@ export function extractSessionStats(
     const skinAnalysis = result?.skinAnalysis as Record<string, unknown> | undefined;
     // 冷层摘要：白名单字段在 analysisResult.profile 下
     const profile = result?.profile as Record<string, unknown> | undefined;
-    const dims = faceAnalysis?.dimensions as Record<string, { score?: number } | undefined> | undefined;
 
     const pick = (key: (typeof ANSWERS_WHITELIST)[number]): unknown =>
         ans?.[key] ?? profile?.[key === "skinType" ? "selfSkinType" : key] ?? null;
@@ -84,14 +87,8 @@ export function extractSessionStats(
         persona: (result?.persona as string | undefined) ?? null,
         skinTypeLabel: (skinAnalysis?.typeLabel as string | undefined) ?? null,
         overallScore: (faceAnalysis?.overallScore as number | undefined) ?? null,
-        dimensions: dims
-            ? {
-                wrinkles: dims.wrinkles?.score ?? null,
-                waterOil: dims.waterOil?.score ?? null,
-                spots: dims.spots?.score ?? null,
-                texture: dims.texture?.score ?? null,
-            }
-            : null,
+        // texture 缺失时由区域均值派生（热层有 zoneAnalysis；冷层已在归档时固化）
+        dimensions: faceAnalysis ? resolveTrendDimensions(faceAnalysis) : null,
         ageRange: asStringList(pick("ageRange")),
         budget: asStringList(pick("budget")),
         selfSkinType: asStringList(pick("skinType")),
@@ -115,6 +112,18 @@ export function buildArchivedSummary(
 
     const hasProfile = ans !== null && ANSWERS_WHITELIST.some((k) => ans[k] !== undefined);
 
+    // 归档时固化派生纹理分：冷层不再保留 zoneAnalysis，若不在此写回，
+    // 超过热层保留条数后趋势的 texture 线会整段断掉
+    const rawDimensions = faceAnalysis?.dimensions;
+    const derivedTexture = faceAnalysis ? resolveTrendDimensionScore(faceAnalysis, "texture") : null;
+    const dimensions =
+        derivedTexture !== null
+            ? {
+                ...(rawDimensions && typeof rawDimensions === "object" ? rawDimensions as Record<string, unknown> : {}),
+                texture: { score: derivedTexture },
+            }
+            : rawDimensions ?? null;
+
     return {
         archived: true,
         persona: (result?.persona as string | undefined) ?? null,
@@ -125,7 +134,7 @@ export function buildArchivedSummary(
         faceAnalysis: faceAnalysis
             ? {
                 overallScore: (faceAnalysis.overallScore as number | undefined) ?? null,
-                dimensions: faceAnalysis.dimensions ?? null,
+                dimensions,
             }
             : null,
         profile: hasProfile

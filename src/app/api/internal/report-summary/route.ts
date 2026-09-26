@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { extractReportSummary } from "@/lib/internal-report";
+import { getScoreDistribution } from "@/lib/score-percentile-db";
+import { percentileFromDistribution } from "@/lib/score-percentile";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { authorizeInternalRequest } from "@/lib/internal-api";
 import { logger } from "@/lib/logger";
@@ -44,7 +46,19 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ found: false }, { status: 404 });
         }
 
-        const summary = extractReportSummary(session.analysisResult, sessionId, session.answers);
+        // 真实聚合百分位（与前端证书口径一致）；聚合失败不阻断主流程
+        let percentile: number | null = null;
+        try {
+            const faceAnalysis = (session.analysisResult as Record<string, unknown>).faceAnalysis as { overallScore?: unknown } | undefined;
+            if (typeof faceAnalysis?.overallScore === "number") {
+                const dist = await getScoreDistribution();
+                percentile = percentileFromDistribution(dist, Math.round(faceAnalysis.overallScore));
+            }
+        } catch (e) {
+            logger.warn("report-summary percentile aggregate failed", { error: String(e) });
+        }
+
+        const summary = extractReportSummary(session.analysisResult, sessionId, session.answers, percentile);
         if (!summary.found) {
             return NextResponse.json({ found: false }, { status: 404 });
         }

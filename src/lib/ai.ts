@@ -1,17 +1,11 @@
 import OpenAI from "openai";
 import prisma from "./prisma";
 import { aiLogger } from "./logger";
-import { TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import { circuitBreaker } from "./circuit-breaker";
 import { checkAIBudget, recordAIUsage, releasePendingReservation, isBudgetSafeForRetry } from "./ai-budget";
 import { filterHealthyKeys, recordKeyResult } from "./ai-key-health";
 import {
     extractJsonFromResponse,
-    getDefaultFaceAnalysisResult,
-    getSkinTypeLabel,
-    identifyConcerns,
-    type QuestionnaireAnswers,
-    type FaceAnalysisResult
 } from "./advisor-utils";
 
 // ============================================================================
@@ -47,31 +41,84 @@ export interface AISettings {
     visionProvider: AIProvider;
     model: string;
     visionModel: string;
-    textSystemPrompt: string;
-    visionSystemPrompt: string;
     maxTokens: number;
     temperature: number;
     apiKeys?: ApiKeys;
 }
 
 // 默认设置
-// Helper to determine default models based on provider env
-// qwen-turbo 全天价格最低（含 DeepSeek 峰谷定价后），视觉用 qwen
-const envProvider = process.env.AI_PROVIDER || "qwen";
-const envVisionProvider = process.env.AI_VISION_PROVIDER || "qwen";
+// v2 顾问报告需要 3-6K 输出 tokens，默认 6000；AI_MAX_TOKENS 可显式覆盖
+export const TEXT_REPORT_MIN_TOKENS = 6000;
+
+/** 环境变量显式指定的输出上限（唯一可把 maxTokens 调低到 6000 以下的入口） */
+function getEnvMaxTokens(): number | null {
+    const envMax = Number(process.env.AI_MAX_TOKENS);
+    return Number.isInteger(envMax) && envMax >= 1000 && envMax <= 8000 ? envMax : null;
+}
+
+/** provider 内置默认模型（白名单内；env/DB 均非法时兜底） */
+function getHardDefaultModel(provider: AIProvider, kind: "model" | "visionModel"): string {
+    if (provider === "qwen") return kind === "model" ? "qwen-plus" : "qwen-vl-plus";
+    return kind === "model" ? "deepseek-chat" : "deepseek-vl";
+}
+
+/**
+ * provider 取值优先级：显式环境变量 > DB 配置 > 内置默认（均需通过白名单）。
+ * 环境变量是部署侧的唯一权威配置，DB 里的历史值（如旧 seed）不再压制它。
+ */
+export function resolveAIProvider(
+    envValue: string | undefined,
+    dbValue: string | undefined,
+    fallback: AIProvider
+): AIProvider {
+    const env = envValue?.trim();
+    if (env && ALLOWED_AI_PROVIDERS.includes(env as AIProvider)) return env as AIProvider;
+    if (env) aiLogger.warn(`[AISettings] Rejected illegal AI_PROVIDER: ${env}, fallback to ${fallback}`);
+
+    const db = dbValue?.trim();
+    if (db && ALLOWED_AI_PROVIDERS.includes(db as AIProvider)) return db as AIProvider;
+    if (db) aiLogger.warn(`[AISettings] Rejected illegal provider from DB: ${db}, fallback to ${fallback}`);
+
+    return fallback;
+}
+
+/**
+ * 模型取值优先级：显式环境变量 > DB 配置 > provider 内置默认（均需通过成本白名单）。
+ * 典型问题：生产 env 配了便宜的 qwen-vl-plus，但 DB 里是旧 seed 的 qwen-vl-max，
+ * 旧实现 DB 优先导致 env 失效、账单升高。
+ */
+export function resolveModelPreference(
+    envValue: string | undefined,
+    dbValue: string | undefined,
+    provider: AIProvider,
+    kind: "model" | "visionModel"
+): string {
+    const hardDefault = getHardDefaultModel(provider, kind);
+
+    const env = envValue?.trim();
+    if (env) {
+        if (isAllowedAIModel(provider, env)) return env;
+        aiLogger.warn(`[AISettings] Rejected illegal env AI_${kind === "model" ? "MODEL" : "VISION_MODEL"}: ${provider}/${env}, fallback to ${hardDefault}`);
+    }
+
+    const db = dbValue?.trim();
+    if (db) {
+        if (isAllowedAIModel(provider, db)) return db;
+        aiLogger.warn(`[AISettings] Rejected illegal ${kind} from DB: ${provider}/${db}, fallback to ${hardDefault}`);
+    }
+
+    return hardDefault;
+}
+
+const defaultProvider = resolveAIProvider(process.env.AI_PROVIDER, undefined, "qwen");
+const defaultVisionProvider = resolveAIProvider(process.env.AI_VISION_PROVIDER, undefined, "qwen");
 
 const DEFAULT_AI_SETTINGS: AISettings = {
-    provider: envProvider as AIProvider,
-    visionProvider: envVisionProvider as AIProvider,
-    model: process.env.AI_MODEL || (envProvider === "qwen" ? "qwen-turbo" : "deepseek-chat"),
-    visionModel: process.env.AI_VISION_MODEL || (envVisionProvider === "qwen" ? "qwen-vl-plus" : "deepseek-vl"),
-    textSystemPrompt: TEXT_ANALYSIS_SYSTEM_PROMPT,
-    visionSystemPrompt: "",
-    // AI_MAX_TOKENS 环境变量可覆盖默认值（顾问叙事报告 v2 需要 5000-6000）
-    maxTokens: (() => {
-        const envMax = Number(process.env.AI_MAX_TOKENS);
-        return Number.isInteger(envMax) && envMax > 0 && envMax <= 8000 ? envMax : 2000;
-    })(),
+    provider: defaultProvider,
+    visionProvider: defaultVisionProvider,
+    model: resolveModelPreference(process.env.AI_MODEL, undefined, defaultProvider, "model"),
+    visionModel: resolveModelPreference(process.env.AI_VISION_MODEL, undefined, defaultVisionProvider, "visionModel"),
+    maxTokens: getEnvMaxTokens() ?? TEXT_REPORT_MIN_TOKENS,
     temperature: 0.3,
     apiKeys: {
         deepseek: process.env.DEEPSEEK_API_KEY,
@@ -110,48 +157,25 @@ export function invalidateAISettingsCache(): void {
 function sanitizeAISettings(dbSettings: Partial<AISettings>): AISettings {
     const base = { ...DEFAULT_AI_SETTINGS };
 
-    // 校验 provider
-    const provider = (dbSettings.provider || base.provider) as AIProvider;
-    if (!ALLOWED_AI_PROVIDERS.includes(provider)) {
-        aiLogger.warn(`[AISettings] Rejected illegal provider from DB: ${provider}, fallback to ${base.provider}`);
-    } else {
-        base.provider = provider;
-    }
-
-    const visionProvider = (dbSettings.visionProvider || base.visionProvider) as AIProvider;
-    if (!ALLOWED_AI_PROVIDERS.includes(visionProvider)) {
-        aiLogger.warn(`[AISettings] Rejected illegal visionProvider from DB: ${visionProvider}, fallback to ${base.visionProvider}`);
-    } else {
-        base.visionProvider = visionProvider;
-    }
-
-    // 校验 model：非法模型回退到该 provider 的默认模型
-    const model = dbSettings.model || base.model;
-    if (!isAllowedAIModel(base.provider, model)) {
-        aiLogger.warn(`[AISettings] Rejected illegal/unknown model from DB: ${base.provider}/${model}, fallback to ${base.model}`);
-    } else {
-        base.model = model;
-    }
-
-    const visionModel = dbSettings.visionModel || base.visionModel;
-    if (!isAllowedAIModel(base.visionProvider, visionModel)) {
-        aiLogger.warn(`[AISettings] Rejected illegal/unknown visionModel from DB: ${base.visionProvider}/${visionModel}, fallback to ${base.visionModel}`);
-    } else {
-        base.visionModel = visionModel;
-    }
+    // provider/model 一律 env > DB > 内置默认，且都必须通过白名单校验
+    base.provider = resolveAIProvider(process.env.AI_PROVIDER, dbSettings.provider, defaultProvider);
+    base.visionProvider = resolveAIProvider(process.env.AI_VISION_PROVIDER, dbSettings.visionProvider, defaultVisionProvider);
+    base.model = resolveModelPreference(process.env.AI_MODEL, dbSettings.model, base.provider, "model");
+    base.visionModel = resolveModelPreference(process.env.AI_VISION_MODEL, dbSettings.visionModel, base.visionProvider, "visionModel");
 
     // 数值边界保护
-    if (typeof dbSettings.maxTokens === "number" && dbSettings.maxTokens > 0 && dbSettings.maxTokens <= 8000) {
-        base.maxTokens = dbSettings.maxTokens;
+    // maxTokens 优先级：显式环境变量 > DB 配置（不低于 v2 报告下限） > 默认 6000。
+    // 存量 DB 里的 2000 是 v1 时代配置，直接沿用会截断 v2 JSON 导致整报告失败。
+    const envMaxTokens = getEnvMaxTokens();
+    if (envMaxTokens !== null) {
+        base.maxTokens = envMaxTokens;
+    } else if (typeof dbSettings.maxTokens === "number" && dbSettings.maxTokens > 0 && dbSettings.maxTokens <= 8000) {
+        base.maxTokens = Math.min(Math.max(dbSettings.maxTokens, TEXT_REPORT_MIN_TOKENS), 8000);
+    } else {
+        base.maxTokens = Math.max(base.maxTokens, TEXT_REPORT_MIN_TOKENS);
     }
     if (typeof dbSettings.temperature === "number" && dbSettings.temperature >= 0 && dbSettings.temperature <= 2) {
         base.temperature = dbSettings.temperature;
-    }
-    if (typeof dbSettings.textSystemPrompt === "string" && dbSettings.textSystemPrompt.length > 0) {
-        base.textSystemPrompt = dbSettings.textSystemPrompt;
-    }
-    if (typeof dbSettings.visionSystemPrompt === "string") {
-        base.visionSystemPrompt = dbSettings.visionSystemPrompt;
     }
 
     // apiKeys 永远只从环境变量读取，禁止 DB 覆盖
@@ -186,13 +210,10 @@ export async function getAISettings(): Promise<AISettings> {
         cacheTimestamp = Date.now();
         return cachedSettings;
     } catch (error) {
-        // DB 不可用时使用最便宜的默认配置（qwen-turbo 全天最低价）
-        aiLogger.warn("Failed to fetch settings from DB, using cost-optimized defaults", { error: String(error) });
-        return {
-            ...DEFAULT_AI_SETTINGS,
-            provider: "qwen",
-            model: "qwen-turbo",
-        };
+        // DB 不可用时使用环境变量/内置默认（v2 报告需要 qwen-plus 级别的长 JSON 能力，
+        // 不再回退 qwen-turbo：省下的单价抵不过报告失败率）
+        aiLogger.warn("Failed to fetch settings from DB, using env/default settings", { error: String(error) });
+        return { ...DEFAULT_AI_SETTINGS };
     }
 }
 
@@ -490,14 +511,25 @@ async function callProviderInternal(
         throw new Error(`[CircuitBreaker] Text AI service ${provider} is temporarily unavailable (circuit open)`);
     }
 
-    // 输入长度保护：防止超长 prompt 导致高额 token 费用或 413
-    const MAX_TOTAL_PROMPT_CHARS = 12000;
+    // 输入长度保护：防止超长 prompt 导致高额 token 费用或 413。
+    // 截断必须保留 user prompt 的尾部（输出 JSON 结构说明在最末尾），
+    // 否则模型收不到输出格式约束，必然解析失败导致整报告报错。
+    const MAX_TOTAL_PROMPT_CHARS = 16000;
+    const TAIL_RESERVE_CHARS = 2500;
     let safeUserPrompt = userPrompt;
     const totalPromptLength = systemPrompt.length + userPrompt.length;
     if (totalPromptLength > MAX_TOTAL_PROMPT_CHARS) {
         const maxUserChars = Math.max(1000, MAX_TOTAL_PROMPT_CHARS - systemPrompt.length);
-        safeUserPrompt = userPrompt.slice(0, maxUserChars) + "\n\n[提示：输入内容过长，已截断以控制成本]";
-        aiLogger.warn(`Prompt truncated: ${totalPromptLength} -> ${systemPrompt.length + safeUserPrompt.length} chars`);
+        if (maxUserChars > TAIL_RESERVE_CHARS + 500) {
+            const headChars = maxUserChars - TAIL_RESERVE_CHARS;
+            safeUserPrompt =
+                userPrompt.slice(0, headChars) +
+                "\n\n[提示：输入内容过长，中段已截断以控制成本]\n\n" +
+                userPrompt.slice(-TAIL_RESERVE_CHARS);
+        } else {
+            safeUserPrompt = userPrompt.slice(-maxUserChars);
+        }
+        aiLogger.warn(`Prompt truncated (head+tail kept): ${totalPromptLength} -> ${systemPrompt.length + safeUserPrompt.length} chars`);
     }
 
     aiLogger.info(`Calling AI: ${provider} (${model})`, { promptLength: safeUserPrompt.length, totalPromptLength });
@@ -544,8 +576,14 @@ async function callProviderInternal(
                     { role: "user", content: safeUserPrompt }
                 ],
                 temperature: settings.temperature,
-                // 顾问叙事报告（v2）推理链输出约需 3-5K tokens，硬顶从 3000 提高到 6000
-                max_tokens: Math.min(settings.maxTokens, 6000)
+                // 顾问叙事报告（v2）推理链输出约需 3-6K tokens：低于 6000 有截断风险。
+                // 只有显式设置 AI_MAX_TOKENS 才能调低，此时告警提示降级风险
+                max_tokens: (() => {
+                    if (settings.maxTokens < TEXT_REPORT_MIN_TOKENS) {
+                        aiLogger.warn(`[AISettings] maxTokens=${settings.maxTokens} 低于 v2 报告建议值 ${TEXT_REPORT_MIN_TOKENS}，存在 JSON 截断风险`);
+                    }
+                    return Math.min(settings.maxTokens, TEXT_REPORT_MIN_TOKENS);
+                })()
             },
             { signal: controller.signal }
         );
@@ -620,64 +658,6 @@ function getModelForProvider(provider: string): string {
 
 export function extractJson(content: string) {
     return extractJsonFromResponse(content);
-}
-
-/**
- * 降级分析 (当 AI 服务不可用时)
- * 使用规则引擎生成近似结果
- */
-export function fallbackAnalysis(answers: QuestionnaireAnswers): FaceAnalysisResult {
-    aiLogger.warn("Using fallback analysis (Rule Engine)");
-
-    // 基础模板
-    const result = getDefaultFaceAnalysisResult();
-
-    // 1. 肤质推断
-    result.skinType.type = answers.skinType || "combination";
-    result.skinType.description = "根据您的问卷反馈，初步推测为" + (getSkinTypeLabel(answers.skinType || "") || "混合性") + "肌肤。";
-
-    // 2. 关注点映射
-    const concerns = identifyConcerns(answers);
-
-    // 3. 维度调整
-    concerns.forEach(c => {
-        if (c === "wrinkles" || c === "aging") {
-            result.dimensions.wrinkles.score = 65;
-            result.dimensions.wrinkles.grade = "average";
-            result.dimensions.wrinkles.details = "需关注细纹生成";
-        }
-        if (c === "acne") {
-            result.dimensions.acne.score = 60;
-            result.dimensions.acne.grade = "average";
-            result.dimensions.waterOil.score = 60;
-            result.dimensions.waterOil.grade = "average";
-        }
-        if (c === "dullness" || c === "spots") {
-            result.dimensions.spots.score = 65;
-            result.dimensions.radiance.score = 65;
-        }
-        if (c === "sensitivity") {
-            result.dimensions.sensitivity.score = 60;
-            result.dimensions.sensitivity.grade = "average";
-            result.skinType.type = "sensitive";
-        }
-    });
-
-    // 4. 水分推断
-    result.hydration = {
-        level: answers.skinType === "dry" ? "low" : "medium",
-        description: answers.skinType === "dry" ? "肌肤水分含量偏低，需加强保湿" : "肌肤水分含量尚可，注意维持水油平衡"
-    };
-
-    // 5. 建议生成
-    result.recommendations = [
-        "保持良好的作息习惯",
-        "注意防晒，避免紫外线损伤",
-        "根据肤质选择适合的洁面产品",
-        "如果是敏感肌，请避免使用刺激性成分"
-    ];
-
-    return result;
 }
 
 

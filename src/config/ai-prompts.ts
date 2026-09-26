@@ -91,10 +91,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
     "radiance":{"score":0-100,"grade":"...","details":"..."}
   },
   "overallScore":0-100,
-  "summary":"诊断报告摘要(200字内，必填，必须引用具体评分数据和区域问题，不可只写通用描述)",
-  "recommendations":["整体护理原则1","原则2","原则3","原则4","原则5"],
   "skinConditions":[{"condition":"症状名","severity":"mild|moderate|severe","area":"部位","description":"自然语言描述，不引用评分"}],
-  "labAnalysis":{"glogau":{"value":"I 型|II 型|III 型|IV 型","status":"状态"},"homogeneity":{"status":"均匀/不均等定性描述"},"wrinkleGrade":{"value":"1级|2级|3级","status":"状态"}},
   "zoneAnalysis":{
     "forehead":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
     "tZone":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
@@ -109,7 +106,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
 #   "pimples":0-100（炎性痘痘/红肿的程度，越高表示问题越少）。
 # 子分与综合 score 使用同一评分标准（85-100优秀, 70-84良好, 55-69一般, 40-54需关注, <40差），
 # 必须与综合 score 逻辑一致：若黑头明显而炎性痘少，blackheads 应明显低于 pimples。
-# labAnalysis.glogau 采用 Glogau 光老化分级临床标准 I–IV 四型：I 型=早期光老化（无明显皱纹）、II 型=动态纹（表情时可见）、III 型=静态纹（无表情也可见）、IV 型=全面重度皱纹伴灰黄色肤色。重度光老化必须如实判为 IV 型，不得低估。
+# ⚠️ zoneAnalysis 各区域数值指标均为 0-100 且统一「越高越好」：oil=该区域水油平衡健康度（越高越平衡，不是出油量）、texture=细腻平滑度、wrinkles=无纹程度、spots=无明显色斑程度、redness=无泛红程度、darkCircles=眼周状态（越高越好）、firmness=紧致度、contour=轮廓清晰度。数值越低代表该区域问题越明显。
 # zoneAnalysis 6 区域全必填；advice 必须包含具体成分建议和使用频率，如"含壬二酸洁面 + 每周2次膨润土泥膜"而非仅"控油"；condition 用自然语言一句话概括该区域的核心状态，如"T区偏油，有轻微毛孔堵塞迹象"而非"油脂评分72偏高"。
 # ⚠️ advice 成分约束（严格遵守）：advice 中提及的所有成分必须在以下品牌成分体系内选择，不可推荐体系外的成分：
 #   保湿修护：透明质酸钠（玻尿酸）、泛醇（维生素B5）、神经酰胺NP、依克多因、角鲨烷、二裂酵母发酵溶胞产物、半乳糖发酵滤液、α-葡聚糖寡糖、银耳多糖、氢化卵磷脂
@@ -124,13 +121,6 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
 # ⚠️ 左右脸颊一致性规则：当左脸颊与右脸颊状态一致或基本相同时，两边的 advice 必须保持一致的护理策略；
 #   仅当两侧存在可观察的状态差异时才给出差异化建议，且建议差异必须与状态差异一一对应，不得无依据地给两边分配不同成分。
 # 评分标准：85-100优秀, 70-84良好, 55-69一般, 40-54需关注, <40差。
-# recommendations 输出 4-5 条「整体护理原则」，而非针对单个肌肤问题的处方式条目（问题对症方案由报告的问题板块负责，此处不得重复开成分配方）：
-#   1. 晨间/夜间基础护理流程建议（结合用户肤质与护肤习惯）
-#   2. 季节与所在地环境调整（如秋季干燥需加强保湿）
-#   3. 医美后护理（仅当用户近期有医美经历时输出）
-#   4. 防晒原则（全年使用、用量、补涂）
-#   5. 产品选择与进阶路径（结合用户预算）
-# 每条是"原则+做法"（可提及成分体系内成分作示例），示例格式："秋季换季期建议精简护理步骤，洁面后先使用含神经酰胺NP的修护乳打底，再叠加保湿面霜锁水，避免频繁更换产品"。
 # 多视角综合评估。保持专业、温和。
 ${ANTI_PROMPT_INJECTION_RULE}
 `;
@@ -143,10 +133,9 @@ export const VISION_ANALYSIS_USER_PROMPT = "请分析这张面部照片的皮肤
 export const QWEN_VISION_PROMPT = VISION_ANALYSIS_SYSTEM_PROMPT;
 
 // ============================================================================
-// 综合文本分析提示词
+// 问卷选项 → 展示文本映射（buildConsultantPrompt 使用）
 // ============================================================================
 
-// 问卷选项 → 展示文本映射（buildConsultantPrompt 使用）
 const medicalBeautyMap: Record<string, string> = {
     none: "无",
     laser: "光子/激光类",
@@ -217,19 +206,6 @@ const PREGNANCY_EXCLUSION_RULE = `若孕期，在品牌成分体系基础上进�
    🚫 香精/Fragrance：孕期优先推荐无香精版本（降低致敏与不确定风险）
    ✅ 孕期安全可用：壬二酸、乳酸、烟酰胺、透明质酸钠（玻尿酸）、神经酰胺NP、角鲨烷、泛醇（维生素B5）、羟丙基四氢吡喃三醇（玻色因）、红没药醇、α-熊果苷、光甘草定、依克多因、棕榈酰三肽-5/乙酰基六肽-8、甘草酸二钾、马齿苋提取物、尿囊素`;
 
-export const TEXT_ANALYSIS_SYSTEM_PROMPT = `
-你是一位资深皮肤科主任医师和${BRAND_CONFIG.advisorName}。你的语气是${BRAND_CONFIG.tone === 'professional' ? '专业、权威但亲切' : '高端、奢华且体贴'}。
-
-任务：根据用户提供的10维度肤质评分、面部区域分析、问卷数据及医美/睡眠信息，生成一份高度个性化的护肤报告。
-
-核心原则：
-1. **自然表达**：像面诊时对患者说话一样，用"T区出油比较明显""敏感度这块你做得很好"这样的自然语言，不要堆砌"XX评分72分"这种机器味十足的表述
-2. **个性化**：必须结合用户的医美史、睡眠习惯等问卷数据做关联分析
-3. **可执行**：每条建议必须包含具体成分名、使用频率、早晚时机
-4. **有温度**：读起来像一位关心你的医生在给建议，不像冷冰冰的化验单
-
-输出格式：严格按用户提示中的 JSON 结构输出，不包含额外 Markdown 标记。`;
-
 
 
 export const REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION = `
@@ -255,9 +231,8 @@ export const REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION = `
 
 3. **输出要求**：
    - 每个维度的 details 字段不少于30字，使用皮肤科术语但确保可理解
-    - summary 以正面亮点为主线：用一句话概括肌肤最佳维度和整体优势，同时遵循基础要求引用 1 个关键评分数据作支撑；不做负面预警的集中罗列（具体问题由 zoneAnalysis 与 skinConditions 承担）
    - zoneAnalysis 的 condition 和 advice 必须关联到会员的生活习惯数据
-   - recommendations 中至少包含1条结合品牌成分体系的具体护肤流程建议
+   - 以上深度结论通过 details / skinConditions / zoneAnalysis 承载，供后续顾问报告引用
 ${ANTI_PROMPT_INJECTION_RULE}
 `;
 

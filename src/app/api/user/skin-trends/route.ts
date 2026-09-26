@@ -1,10 +1,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { getSkinTrends } from "@/lib/skin-trends";
 import { logger } from "@/lib/logger";
 
+// GET: 返回最近测肤的评分趋势；有效样本不足 2 次时 data=null（前端走解锁引导）。
+// 查询逻辑在 src/lib/skin-trends.ts（与内部接口共用口径）。
 export async function GET(request: NextRequest) {
     try {
         const user = await getSessionUser(request);
@@ -27,62 +29,14 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // 获取最近 100 次分析结果（时间正序）。
-        // 按天聚合（同日多次取当日最后一次）由前端护肤档案面板（DiaryPanel）以本地时区完成——
-        // 这里多取是为了覆盖"一天多次测肤"场景，聚合后仍有足够的"天"数构成趋势。
-        const recentSessions = (
-            await prisma.advisorSession.findMany({
-                where: {
-                    user: { id: user.id }, // Use relation filter
-                    completedAt: { not: null }
-                },
-                orderBy: { completedAt: 'desc' },
-                take: 100,
-                select: {
-                    completedAt: true,
-                    analysisResult: true
-                }
-            })
-        ).reverse();
-
-        // analysisResult 为 JSON 快照，用结构化类型收窄后安全读取
-        interface TrendDimension { score?: number }
-        interface TrendFaceAnalysis {
-            overallScore?: number;
-            dimensions?: {
-                wrinkles?: TrendDimension;
-                waterOil?: TrendDimension;
-                spots?: TrendDimension;
-                texture?: TrendDimension;
-            };
-        }
-        const asFaceAnalysis = (result: unknown): TrendFaceAnalysis | undefined =>
-            (result as { faceAnalysis?: TrendFaceAnalysis } | null | undefined)?.faceAnalysis;
-
-        // 过滤缺失/非法评分的样本：兜底 0 会把趋势域拉到 0、曲线失真
-        const validSessions = recentSessions.filter((s) => {
-            const score = asFaceAnalysis(s.analysisResult)?.overallScore;
-            return typeof score === "number" && Number.isFinite(score) && score > 0;
-        });
-
-        if (validSessions.length < 2) {
+        const trends = await getSkinTrends(user.id);
+        if (!trends) {
             return NextResponse.json({
                 success: true,
                 data: null,
                 message: "Not enough data for trend analysis"
             }, { headers: rateLimitHeaders });
         }
-
-        const trends = {
-            dates: validSessions.map(s => s.completedAt),
-            scores: validSessions.map(s => asFaceAnalysis(s.analysisResult)?.overallScore || 0),
-            dimensions: {
-                wrinkles: validSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.wrinkles?.score || 0),
-                waterOil: validSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.waterOil?.score || 0),
-                spots: validSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.spots?.score || 0),
-                texture: validSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.texture?.score || 0),
-            }
-        };
 
         return NextResponse.json({
             success: true,

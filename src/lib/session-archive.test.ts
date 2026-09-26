@@ -118,6 +118,48 @@ describe("buildArchivedSummary", () => {
         expect(summary.profile).toBeNull();
     });
 
+    it("归档时用区域纹理均值固化 dimensions.texture（冷层无 zoneAnalysis 也能续上趋势）", () => {
+        const summary = buildArchivedSummary(
+            {
+                faceAnalysis: {
+                    overallScore: 90,
+                    dimensions: { wrinkles: { score: 88 }, waterOil: { score: 91 } },
+                    zoneAnalysis: {
+                        forehead: { texture: 60 },
+                        tZone: { texture: 70 },
+                        leftCheek: { texture: 80 },
+                        rightCheek: { texture: 90 },
+                        eyeArea: { texture: 100 },
+                        jawline: { texture: 50 },
+                    },
+                },
+            },
+            null
+        );
+        const fa = summary.faceAnalysis as {
+            dimensions: { wrinkles: { score: number }; texture: { score: number } };
+        };
+        expect(fa.dimensions.wrinkles.score).toBe(88);
+        expect(fa.dimensions.texture.score).toBe(75);
+        // 原始大字段仍被剔除
+        expect(JSON.stringify(summary)).not.toContain("zoneAnalysis");
+    });
+
+    it("已有 texture 维度分时保留原值，不重复派生", () => {
+        const summary = buildArchivedSummary(
+            {
+                faceAnalysis: {
+                    overallScore: 90,
+                    dimensions: { texture: { score: 66 } },
+                    zoneAnalysis: { tZone: { texture: 10 } },
+                },
+            },
+            null
+        );
+        const fa = summary.faceAnalysis as { dimensions: { texture: { score: number } } };
+        expect(fa.dimensions.texture.score).toBe(66);
+    });
+
     it("空输入不抛异常", () => {
         const summary = buildArchivedSummary(null, undefined);
         expect(summary.archived).toBe(true);

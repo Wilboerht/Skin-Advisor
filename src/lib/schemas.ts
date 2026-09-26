@@ -89,6 +89,9 @@ export const AnalyzeRequestSchema = z.object({
             percentile: scoreSchema.optional(),
             grade: z.enum(["excellent", "good", "average", "fair", "poor"]).optional(),
             details: z.string().optional(),
+            // acne 子分（黑头/炎性痘）：v2 报告证据链与十维口径依赖，缺少会被 zod 默认剥离
+            blackheads: scoreSchema.optional(),
+            pimples: scoreSchema.optional(),
         })).optional(),
         overallScore: scoreSchema.optional(),
         skinAge: z.object({

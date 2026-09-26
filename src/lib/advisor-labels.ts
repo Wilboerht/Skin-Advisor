@@ -7,7 +7,7 @@ import type { FaceAnalysisResult } from "@/lib/advisor-utils";
  * 客户端组件只要值导入就会把整个 zod 打进首屏包；本文件只含类型与常量，可安全被客户端引用。
  */
 
-// 10 维度评分接口 (用于 ScientificBarChart)
+// 10 维度评分接口（DimensionRadarChart 与报告证据 chips 共用）
 export type SkinDimensions = FaceAnalysisResult['dimensions'];
 export type SkinDimensionKey = keyof SkinDimensions;
 
@@ -38,7 +38,7 @@ export const DIMENSION_DESCRIPTIONS: Record<string, string> = {
     radiance: "皮肤表面光泽感与通透度"
 };
 
-// 十维分析展示顺序：PC 条形图与移动端表单共用，避免两处硬编码漂移
+// 十维展示顺序：雷达图等展示组件共用，避免多处硬编码漂移
 export const DIMENSION_ORDER: SkinDimensionKey[] = [
     'radiance', 'acne', 'firmness', 'darkCircles',
     'sensitivity', 'uvDamage', 'wrinkles', 'spots',

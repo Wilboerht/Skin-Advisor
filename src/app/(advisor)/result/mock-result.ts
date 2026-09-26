@@ -75,6 +75,61 @@ export const MOCK_RESULT: ComprehensiveResult = {
     ],
     dataSource: "comprehensive",
     persona: "sensitive",
+    reportVersion: 2,
+    consultantReport: {
+        overview:
+            "整体看你的底子不错，肤色均匀度与光老化控制得挺好，说明日常防晒是有效的。当前最需要关注的是两颊的屏障状态与眼周暗沉：泛红不算严重，但反复出现说明屏障还在修复期。先稳住修护节奏，其他功效可以晚一点再加。",
+        issues: [
+            {
+                title: "两颊轻度泛红与屏障偏薄",
+                severity: "moderate",
+                observation:
+                    "敏感度 45 分（需关注），两颊区域观察到轻度泛红、纹理偏薄，皮肤在温度变化时反应较明显。",
+                directCauses:
+                    "角质层砖墙结构不够致密，锁水能力下降，外界刺激更容易穿透皮肤触发炎症反应，表现为泛红和紧绷。",
+                indirectCauses:
+                    "你提到经常熬夜（睡眠较差），夜间屏障修复时间不足；加上换季期间环境湿度变化，泛红更容易反复。",
+                skincarePlan:
+                    "早间用温水或氨基酸洁面，之后使用含神经酰胺NP（修护屏障）的精华与含泛醇（舒缓刺激）的面霜；夜间在修护精华后叠加含角鲨烷（锁水封层）的面霜，每日早晚各一次，暂停酸类与多重功效叠加。",
+                lifestylePlan:
+                    "尽量在 23:00 前入睡，保证 7 小时睡眠；换季前两周把护肤步骤精简到洁面+修护+防晒三步，减少新产品的引入频率。",
+                medicalBoundary:
+                    "如果泛红伴随持续灼热、脱屑或使用基础护肤品也刺痛超过一周，建议到皮肤科面诊评估屏障受损程度；目前无这些信号，坚持修护观察即可。",
+                relatedDimensions: ["sensitivity", "waterOil"],
+            },
+            {
+                title: "眼周轻度暗沉",
+                severity: "mild",
+                observation:
+                    "黑眼圈 62 分（良好），眼周观察到轻度色素与循环型暗沉，未见明显细纹。",
+                directCauses:
+                    "眼周皮肤较薄，微循环偏慢时血液代谢产物堆积，会在视觉上呈现青褐色暗沉。",
+                indirectCauses:
+                    "作息不规律是主要加重因素；你平时的日晒防护做得不错，光老化型暗沉可能性较低。",
+                skincarePlan:
+                    "早晚使用含烟酰胺（提亮肤色、改善暗沉）的眼部产品，点涂后无名指轻按至吸收，每日两次；白天配合防晒时注意眼周补涂。",
+                lifestylePlan:
+                    "保证睡眠时长，睡前减少屏幕使用；午间可做 1-2 分钟眼周热敷促进循环。",
+                medicalBoundary: "暂不需要就医，坚持护理观察即可。",
+                relatedDimensions: ["darkCircles"],
+            },
+        ],
+        strengths: [
+            "光老化 79 分、色斑 82 分，说明日常防晒与基础护理到位，这是抗老最重要的底子。",
+        ],
+        routineNote:
+            "你的敏敏派既定早晚方案方向正确，本次只需把修护精华提前到洁面后第一步，并暂停任何酸类护理两周。",
+        productReasons: [
+            {
+                id: "mock-serum",
+                reason: "针对你两颊的泛红与屏障偏薄，这款含神经酰胺NP的修护精华正好对应日常屏障修护需求。",
+            },
+            {
+                id: "mock-cream",
+                reason: "精简配方适合你当前屏障修复期，夜间封层锁住前面修护精华的成果。",
+            },
+        ],
+    },
 };
 
 export const MOCK_FACE_ANALYSIS: FaceAnalysisResult = {

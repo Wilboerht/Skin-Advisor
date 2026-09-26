@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
-import { generateText, fallbackAnalysis, type AIProvider } from "@/lib/ai";
+import { generateText, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
 import { parseConsultantReport, sanitizeConsultantReport, type ConsultantReport } from "@/lib/advisor-utils";
+import { enforceConsultantReportIngredients } from "@/lib/ingredient-guard";
 import { buildConsultantPrompt, CONSULTANT_SYSTEM_PROMPT, type PersonaRoutineContext } from "@/config/ai-prompts";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -146,51 +147,6 @@ function sanitizeReason(reason: string): string {
     return sanitized;
 }
 
-/** 清理 Lab 分析状态中的英文词汇 */
-function sanitizeLabStatus(status: string): string {
-    if (!status) return status;
-    const replacements: Record<string, string> = {
-        normal: "正常",
-        mild: "轻度",
-        moderate: "中度",
-        severe: "重度",
-        good: "良好",
-        excellent: "优秀",
-        poor: "较差",
-        average: "一般",
-        fair: "一般",
-        low: "低",
-        medium: "中等",
-        high: "高",
-    };
-    let sanitized = status;
-    for (const [en, cn] of Object.entries(replacements)) {
-        // 使用非字母前后断言，避免中文语境下 \b 失效；同时防止误切合法产品名中的子串
-        const regex = new RegExp(`(?<![a-zA-Z])${en}(?![a-zA-Z])`, "gi");
-        sanitized = sanitized.replace(regex, cn);
-    }
-    return sanitized;
-}
-
-/** 递归清理 faceAnalysis.labAnalysis 中的英文状态 */
-function sanitizeLabAnalysis(labAnalysis: unknown): unknown {
-    if (!labAnalysis || typeof labAnalysis !== 'object') return labAnalysis;
-    if (Array.isArray(labAnalysis)) {
-        return labAnalysis.map(sanitizeLabAnalysis);
-    }
-    const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(labAnalysis)) {
-        if (key === 'status' && typeof value === 'string') {
-            result[key] = sanitizeLabStatus(value);
-        } else if (typeof value === 'object' && value !== null) {
-            result[key] = sanitizeLabAnalysis(value);
-        } else {
-            result[key] = value;
-        }
-    }
-    return result;
-}
-
 /**
  * 检查指定 session 是否已成功完成面部分析（AI 视觉调用已真实扣费/存储）。
  * 用于防止综合 analyze 回滚时退还已被 face-analyze 消耗的额度。
@@ -207,6 +163,27 @@ async function hasSuccessfulFaceAnalysis(sessionId: string): Promise<boolean> {
         return count > 0;
     } catch (e) {
         logger.warn(`[analyze] Failed to check face analysis usage for ${sessionId}:`, e);
+        // 保守认为已消费，避免免费重试漏洞
+        return true;
+    }
+}
+
+/**
+ * 检查指定 session 是否已成功产生文本 AI 计费（v2 报告生成）。
+ * 用于 AI 失败时判断预占是否可退还：已计费则保留预占（同 session 重试不再扣次）。
+ */
+async function hasSuccessfulTextAnalysis(sessionId: string): Promise<boolean> {
+    try {
+        const count = await prisma.aIUsageLog.count({
+            where: {
+                sessionId,
+                requestType: "text",
+                success: true,
+            },
+        });
+        return count > 0;
+    } catch (e) {
+        logger.warn(`[analyze] Failed to check text analysis usage for ${sessionId}:`, e);
         // 保守认为已消费，避免免费重试漏洞
         return true;
     }
@@ -264,6 +241,7 @@ async function clearAnalysisStartedAt(sessionId: string): Promise<void> {
 export async function POST(request: NextRequest) {
     // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
     const abortController = new AbortController();
+    const requestStartedAt = Date.now();
     const serverTimeout = setTimeout(() => abortController.abort(), 90 * 1000);
 
     const onClientAbort = () => {
@@ -650,7 +628,6 @@ export async function POST(request: NextRequest) {
                 skinType: faceAnalysis.skinType as any,
                 dimensions: faceAnalysis.dimensions,
                 overallScore: faceAnalysis.overallScore,
-                summary: faceAnalysis.summary,
                 zoneAnalysis: faceAnalysis.zoneAnalysis,
                 skinAge: faceAnalysis.skinAge,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -667,12 +644,29 @@ export async function POST(request: NextRequest) {
         // 调用 AI
         const provider = process.env.AI_PROVIDER || "qwen";
 
-        let resultJson: Record<string, unknown> = {};
-        // 顾问叙事报告（v2）解析成功时非空；fallback 规则引擎产出 v1 结构，此变量保持 null
+        // v2-only：AI 失败不再降级为 v1 规则报告。
+        // 解析失败先做一次 JSON 修复重试；仍失败则返回可重试错误（同 session 重试不再扣次）
         let consultantReport: ConsultantReport | null = null;
         // 解析失败时记录 AI 原始输出片段，便于定位模型返回了什么（截断/字段不符/非 JSON）
         let rawAiOutput: string | undefined;
         let queueAcquired = false;
+
+        // 孕期状态（含"不确定"按谨慎处理）：用于报告文本的孕期禁忌成分硬校验
+        const pregnancyRaw = (answers.pregnancy ?? answers.pregnancyStatus) as string | undefined;
+        const pregnancyCautious = pregnancyRaw === "yes" || pregnancyRaw === "unknown";
+
+        // 解析 + 字段清洗 + 成分/孕期硬校验（初始输出与修复重试共用）
+        const finalizeConsultantReport = (text: string): ConsultantReport => {
+            const report = sanitizeConsultantReport(parseConsultantReport(text));
+            const violations = enforceConsultantReportIngredients(report, { pregnancy: pregnancyCautious });
+            if (violations.length > 0) {
+                aiLogger.warn(
+                    `[IngredientGuard] v2 报告成分命中 ${violations.length} 处：` +
+                    violations.map((v) => `${v.field}/${v.keyword}(${v.type})`).join(", ")
+                );
+            }
+            return report;
+        };
         try {
             // P3: 请求队列处理 - 申请令牌（防止并发过高打爆 LLM API）
             // 透传 userId 使队列的 maxConcurrentPerUser 生效
@@ -695,10 +689,35 @@ export async function POST(request: NextRequest) {
                 throw new Error(`[CircuitBreaker] Text AI service ${provider} is temporarily unavailable`);
             }
 
-            const resultText = await generateText(systemPrompt, userPrompt, provider as AIProvider, abortController.signal, user?.id, effectiveSessionId);
-            rawAiOutput = resultText;
-            consultantReport = sanitizeConsultantReport(parseConsultantReport(resultText));
-            resultJson = consultantReport as unknown as Record<string, unknown>;
+            rawAiOutput = await generateText(systemPrompt, userPrompt, provider as AIProvider, abortController.signal, user?.id, effectiveSessionId);
+            try {
+                consultantReport = finalizeConsultantReport(rawAiOutput);
+            } catch (parseErr: unknown) {
+                // 一次 JSON 修复重试：把解析失败原因回传模型，要求只输出完整 JSON。
+                // 仅在剩余时间预算充足时重试：路由总预算 90s（serverTimeout），
+                // 若首次生成已耗时较多，再跑一次会撞上 90s 超时反而不如直接走可重试错误
+                const elapsedMs = Date.now() - requestStartedAt;
+                const REPAIR_RETRY_DEADLINE_MS = 40 * 1000;
+                const reason = parseErr instanceof Error ? parseErr.message : String(parseErr);
+                if (elapsedMs >= REPAIR_RETRY_DEADLINE_MS) {
+                    aiLogger.warn("AI report parse failed; skip repair retry (insufficient time budget)", {
+                        error: reason,
+                        elapsedMs,
+                    });
+                    throw parseErr;
+                }
+                const isSchemaIssue = reason.includes("schema validation failed");
+                aiLogger.warn("AI report parse failed, retrying once with repair instruction", {
+                    error: reason,
+                    elapsedMs,
+                    aiOutputHead: rawAiOutput.slice(0, 300),
+                    aiOutputTail: rawAiOutput.slice(-200),
+                });
+                const repairPrompt = `${userPrompt}\n\n【格式修复】上一次输出无法解析（${isSchemaIssue ? "字段结构不符合上述 JSON 要求" : "不是合法 JSON 或输出被截断"}）。请严格按上述 JSON 结构重新输出完整结果：不要 Markdown 代码块、不要任何解释文字，确保所有字段完整且 JSON 正确闭合。`;
+                const repairText = await generateText(systemPrompt, repairPrompt, provider as AIProvider, abortController.signal, user?.id, effectiveSessionId);
+                rawAiOutput = repairText;
+                consultantReport = finalizeConsultantReport(repairText);
+            }
         } catch (e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));
             if (err.message?.includes("cancelled") || err.name === 'AbortError') {
@@ -724,7 +743,6 @@ export async function POST(request: NextRequest) {
                 response.headers.set("Retry-After", "3600");
                 return response;
             }
-            // 熔断器触发：直接返回 503，不走 fallback（fallback 会隐藏服务异常）
             if (err.message?.includes("[CircuitBreaker]")) {
                 aiLogger.warn("Circuit breaker open, rejecting request", { error: err.message });
                 if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
@@ -743,33 +761,38 @@ export async function POST(request: NextRequest) {
                 ? "AI_AUTH" : err.message?.includes("429")
                 ? "AI_RATE_LIMIT" : err.message?.includes("timeout") || err.message?.includes("ETIMEDOUT")
                 ? "AI_TIMEOUT" : "AI_UNKNOWN";
-            aiLogger.warn(`AI Generation failed [${errorCategory}], falling back to rule engine`, {
+            aiLogger.warn(`AI generation failed [${errorCategory}] (v2-only, report will fail)`, {
                 error: err.message,
-                // JSON 解析/schema 校验失败时附原始输出片段（截断看尾部，schema 看头部），上限 500 字符
                 ...(["AI_JSON_PARSE", "AI_SCHEMA_INVALID"].includes(errorCategory) && rawAiOutput
                     ? { aiOutputHead: rawAiOutput.slice(0, 300), aiOutputTail: rawAiOutput.slice(-200) }
                     : {}),
             });
-            // 使用规则引擎生成完整降级报告，而非空对象
-            try {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const fallbackFace = fallbackAnalysis(answers as any);
-                resultJson = {
-                    summary: fallbackFace.skinType.description || "基于您的问卷数据生成的初步分析报告。",
-                    skinTypeAnalysis: `检测到的主要肤质特征为：${getSkinTypeLabel(fallbackFace.skinType.type)}。`,
-                    concernAnalysis: fallbackFace.recommendations?.map((r: string) => `• ${r}`) || [],
-                    lifestyleTips: fallbackFace.recommendations || [],
-                    // 不携带 fallbackFace 本体：它是规则引擎伪造的面部分析（overallScore 75 等），
-                    // 进入结果会被前端当作真实扫脸数据渲染维度图 / Lab 入口 / 肌龄
-                };
-            } catch (fallbackErr) {
-                logger.error("Fallback analysis also failed", fallbackErr);
-                resultJson = {};
+
+            // 预占处理：只要本次已成功产生任何 AI 计费（视觉/文本），就保留预占——
+            // 同 session 重试命中既有 TestRecord（幂等），不再额外扣次；全部未计费（如鉴权失败）则退还
+            const [visionConsumed, textConsumed] = await Promise.all([
+                hasSuccessfulFaceAnalysis(effectiveSessionId),
+                hasSuccessfulTextAnalysis(effectiveSessionId),
+            ]);
+            if (reservedResult && !reservedResult.alreadyReserved && !visionConsumed && !textConsumed) {
+                await rollbackUsage(request, effectiveSessionId);
             }
+            await clearAnalysisStartedAt(effectiveSessionId);
+            const response = apiError(ErrorCode.AI_SERVICE_ERROR, "报告生成失败，请点击重试（不会额外消耗次数）", 503);
+            response.headers.set("Retry-After", "30");
+            return response;
         } finally {
             if (queueAcquired) {
                 analysisQueue.release();
             }
+        }
+
+        // 成功路径必定有报告；此处兜底防御（理论上不可达）
+        if (!consultantReport) {
+            await clearAnalysisStartedAt(effectiveSessionId);
+            const response = apiError(ErrorCode.AI_SERVICE_ERROR, "报告生成失败，请点击重试（不会额外消耗次数）", 503);
+            response.headers.set("Retry-After", "30");
+            return response;
         }
 
         // 7. 补全产品详情 — 返回最多3个产品（AI精选 + 算法补足）
@@ -785,8 +808,8 @@ export async function POST(request: NextRequest) {
             [key: string]: unknown;
         };
 
-        if (resultJson.productReasons && Array.isArray(resultJson.productReasons)) {
-            const mappedProducts = (resultJson.productReasons as AiProductItem[]).map((p) => {
+        if (consultantReport.productReasons && Array.isArray(consultantReport.productReasons)) {
+            const mappedProducts = (consultantReport.productReasons as AiProductItem[]).map((p) => {
                 // strict match against candidate pool to enforce RAG boundaries
                 const catalogProduct = candidateProducts.find((cp) => String(cp.id) === String(p.id));
                 if (catalogProduct) {
@@ -833,39 +856,19 @@ export async function POST(request: NextRequest) {
 
         // 8. Construct Final Standardized Result (Matching ComprehensiveResult Interface)
 
-        // 仅使用客户端传来的真实面部分析（用户真的扫过脸）；
-        // 不再从 resultJson.faceAnalysis 取——fallback 路径产出的是规则引擎伪造数据
+        // 仅使用客户端传来的真实面部分析（用户真的扫过脸）
         const finalFaceAnalysis = faceAnalysis || null;
         if (finalFaceAnalysis) {
             const fa = finalFaceAnalysis as Record<string, unknown>;
-            // 清理 labAnalysis 中的英文状态描述
-            if (fa.labAnalysis) {
-                fa.labAnalysis = sanitizeLabAnalysis(fa.labAnalysis);
-            }
-            // Ensure recommendations exist
-            if (!fa.recommendations) {
-                fa.recommendations = [];
-            }
-
             // Preserve gender if available in original input
             if (faceAnalysis?.gender && !fa.gender) {
                 fa.gender = faceAnalysis.gender;
             }
-
-            // lifestyleTips 不再混入 recommendations，保持两种内容类型的独立性
-            // lifestyleTips 通过 standardizedResult.analysis.lifestyleTips 独立传递
-
-
         }
 
-        // Safe concernAnalysis extraction with Array.isArray guard（仅 v1 fallback 路径有此字段）
-        const concernAnalysisItems = Array.isArray(resultJson.concernAnalysis)
-            ? resultJson.concernAnalysis
-            : [];
-
         // v2 顾问报告：details 由各问题的 observation 组成，供旧消费方（历史列表、日记补建）使用
-        const consultantObservations = consultantReport?.issues.map((i) => i.observation) ?? [];
-        const consultantLifestylePlans = consultantReport?.issues.map((i) => i.lifestylePlan) ?? [];
+        const consultantObservations = consultantReport.issues.map((i) => i.observation);
+        const consultantLifestylePlans = consultantReport.issues.map((i) => i.lifestylePlan);
 
         const standardizedResult = {
             skinProfile: {
@@ -877,26 +880,14 @@ export async function POST(request: NextRequest) {
                 skinAge: faceAnalysis?.skinAge?.estimated
             },
             analysis: {
-                summary: consultantReport?.overview || (resultJson.summary as string | undefined) || "根据您的问卷及面部数据，我们为您生成了这份综合分析报告。",
-                details: consultantReport
-                    ? consultantObservations
-                    : [
-                        resultJson.skinTypeAnalysis || "",
-                        ...concernAnalysisItems
-                    ].filter(Boolean),
-                lifestyleTips: consultantReport
-                    ? consultantLifestylePlans
-                    : (Array.isArray(resultJson.lifestyleTips) ? resultJson.lifestyleTips as string[] : []),
+                summary: consultantReport.overview,
+                details: consultantObservations,
+                lifestyleTips: consultantLifestylePlans,
             },
             products: finalProducts,
             faceAnalysis: finalFaceAnalysis, // Ensure faceAnalysis is propagated
-            // 按实际生成路径取值，与前端消费闭环：
-            // consultantReport 非空 = 真实 AI 成功（有扫脸 hybrid / 纯问卷 comprehensive），
-            // 规则引擎 fallback（无论有无扫脸）统一 questionnaire ——
-            // 前端埋点把 questionnaire 记为 "fallback"，且 Lab 入口在 questionnaire 下隐藏
-            dataSource: consultantReport
-                ? (faceAnalysis ? "hybrid" : "comprehensive")
-                : "questionnaire",
+            // v2-only：报告必为真实 AI 产出，dataSource 只区分是否使用扫脸
+            dataSource: faceAnalysis ? "hybrid" : "comprehensive",
             persona: personaKey,          // IP 形象 key (8-pie)
             userLocation: geoLocation,
             // 昵称优先用客户端填写值；未填时回退到服务端会话里的用户昵称（主站资料），
@@ -904,10 +895,7 @@ export async function POST(request: NextRequest) {
             nickname: nickname || user?.name || "护肤达人", // Include user nickname for sharing
             analyzedAt: new Date().toISOString(), // 证书/报告展示用（随结果持久化，游客流程也可用）
             skinState: typeof skinState === "string" ? skinState : undefined, // 拍摄时肌肤状态（引导页确认后随请求上传；扫脸失败也保留用户声明，历史报告可追溯）
-            // 顾问叙事报告标记与数据（v2）；fallback 路径显式置 null，
-            // 保证免费重试合并旧结果时（下方 mergedResult 展开）覆盖残留的 v2 报告，
-            // 避免前端 isV2Report 误判、用旧叙事渲染本次降级结果
-            reportVersion: consultantReport ? 2 : null,
+            reportVersion: 2,
             consultantReport,
         };
 
@@ -977,9 +965,8 @@ export async function POST(request: NextRequest) {
             }
 
             // ====== 护肤日记自动生成：测肤完成后写入/更新当日条目 ======
-            // 失败不影响分析响应；仅真实面部分析（faceAnalysis 存在）生成。
-            // 不加 faceAnalysis 条件时，纯问卷测肤在 AI 失败走规则引擎降级路径
-            // 会拿到默认 overallScore 75，伪装成真实测肤记录写入日记。
+            // 失败不影响分析响应；仅真实面部分析（faceAnalysis 存在）生成，
+            // 纯问卷模式没有分数，不写测肤日记
             const overallScore = (finalFaceAnalysis as Record<string, unknown> | null)?.overallScore;
             if (user?.id && clientDate && faceAnalysis && typeof overallScore === "number") {
                 upsertAutoDiaryEntry({

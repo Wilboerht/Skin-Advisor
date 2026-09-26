@@ -20,7 +20,7 @@ const RAW = {
 
 describe("extractReportSummary", () => {
     it("从综合报告快照提取档案字段", () => {
-        const s = extractReportSummary(RAW, "sess-1234567890", { gender: "female" });
+        const s = extractReportSummary(RAW, "sess-1234567890", { gender: "female" }, 72);
         expect(s.found).toBe(true);
         expect(s.nickname).toBe("小雨");
         expect(s.gender).toBe("female");
@@ -28,11 +28,16 @@ describe("extractReportSummary", () => {
         expect(s.skinTypeLabel).toBe("混干性肌肤");
         expect(s.skinAge).toBe(28);
         expect(s.overallScore).toBe(82);
-        expect(s.percentile).toBeGreaterThan(0);
+        expect(s.percentile).toBe(72);
         expect(s.issues).toEqual([
             { label: "光泽度", score: 58 },
             { label: "水油平衡", score: 65 },
         ]);
+    });
+
+    it("未传百分位（样本不足/聚合失败）时返回 null，不伪造百分位", () => {
+        const s = extractReportSummary(RAW, "sess-1234567890");
+        expect(s.percentile).toBeNull();
     });
 
     it("问卷性别优先于 AI 识别性别", () => {

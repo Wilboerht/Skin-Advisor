@@ -9,6 +9,13 @@ import { useToast } from '@/components/ui/Toast';
 import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
 import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from '@/lib/storage-keys';
 import { localDateStr } from '@/lib/local-date';
+import {
+    parseFailedAnalysisRetry,
+    serializeFailedAnalysisRetry,
+    fingerprintAnswers,
+    canReuseFailedAnalysis,
+    type FailedAnalysisRetry,
+} from '@/lib/failed-analysis-retry';
 
 export interface AsyncAnalysisState {
     status: 'idle' | 'preparing' | 'analyzing_face' | 'analyzing_skin' | 'completed' | 'error';
@@ -27,6 +34,36 @@ export interface SessionStatusResponse {
 }
 
 const ANALYSIS_LOCK_TTL_MS = 90 * 1000;
+
+// 失败重试暂存的读写包装：纯逻辑（指纹/TTL/形状校验）在 lib/failed-analysis-retry.ts
+function readFailedAnalysisRetry(): FailedAnalysisRetry | null {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS);
+        if (!raw) return null;
+        const parsed = parseFailedAnalysisRetry(raw);
+        // 过期/损坏/旧版本无指纹的记录直接清掉，避免残留误导后续判断
+        if (!parsed) {
+            localStorage.removeItem(STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS);
+            return null;
+        }
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
+function writeFailedAnalysisRetry(sessionId: string, fingerprint: string): void {
+    try {
+        localStorage.setItem(
+            STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS,
+            serializeFailedAnalysisRetry({ sessionId, startedAt: Date.now(), fingerprint })
+        );
+    } catch { /* ignore */ }
+}
+
+function clearFailedAnalysisRetry(): void {
+    try { localStorage.removeItem(STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS); } catch { /* ignore */ }
+}
 
 function acquireAnalysisLock(sessionId: string): boolean {
     try {
@@ -93,6 +130,15 @@ function getServerErrorMessage(errorData: Record<string, unknown>, fallback: str
     return fallback;
 }
 
+/** 标记"绝不重试"错误的哨兵属性（配额/5xx 透传文案后无法再用 message 前缀判定） */
+type NoRetryError = Error & { noRetry?: boolean };
+
+function throwNoRetry(message: string): never {
+    const error = new Error(message) as NoRetryError;
+    error.noRetry = true;
+    throw error;
+}
+
 // Helper for auto-retry
 async function fetchWithRetry(
     url: string,
@@ -104,11 +150,17 @@ async function fetchWithRetry(
         // 429 is a business logic rejection (usage limit), do NOT retry
         if (!res.ok && res.status === 429) {
             const errorData = await res.json().catch(() => ({}));
-            throw new Error(getServerErrorMessage(errorData, '您已达到测试次数上限'));
+            throwNoRetry(getServerErrorMessage(errorData, '您已达到测试次数上限'));
         }
         // 默认不在 5xx 时重试；调用方可显式开启（仅用于幂等、非 AI 调用）
         if (!res.ok && res.status >= 500) {
-            throw new Error(`Request failed: ${res.status}`);
+            if (retryOnServerError) {
+                throw new Error(`Request failed: ${res.status}`);
+            }
+            // 不重试时优先透传服务端错误文案（如"报告生成失败，请点击重试"），
+            // 避免用户只看到 "Request failed: 503"；文案透传后必须用哨兵标记禁止重试
+            const errorData = await res.json().catch(() => ({}));
+            throwNoRetry(getServerErrorMessage(errorData, `服务暂时不可用（${res.status}），请稍后重试`));
         }
         return res;
     } catch (err: unknown) {
@@ -117,7 +169,11 @@ async function fetchWithRetry(
         if (error.name === 'AbortError' || options.signal?.aborted) {
             throw error;
         }
-        // Do NOT retry usage-limit errors (429)
+        // 显式标记不重试（429 / 5xx 服务端文案透传）
+        if ((error as NoRetryError).noRetry) {
+            throw error;
+        }
+        // Do NOT retry usage-limit errors (429，兼容旧文案判定)
         if (error.message?.includes('测试次数上限') || error.message?.includes('测试上限')) {
             throw error;
         }
@@ -237,6 +293,11 @@ export function useAsyncAnalysis() {
         // 记录本次调用是否持有全局分析锁：未持有（其他会话在分析）时 finally 不得释放锁
         let lockAcquired = false;
 
+        // 会话 ID / 问卷指纹 / 成功标记需在异常路径可见：失败时暂存供免费重试，成功时清理恢复标记
+        let activeSessionId: string | null = null;
+        let activeAnswersFingerprint: string | null = null;
+        let analysisSucceeded = false;
+
         const analysisPromise = async () => {
             let answersStr: string | null = null;
             let nickname = "您";
@@ -297,9 +358,25 @@ export function useAsyncAnalysis() {
             }
             const isAnalyzingSessionValid = analyzingSessionId && (Date.now() - analyzingStartedAt) < ANALYZING_SESSION_TTL_MS;
 
+            // 本次问卷指纹：失败暂存只在"同一份问卷的重试"时复用，
+            // 用户改过问卷/开始全新测试不会再被旧失败会话免费劫持
+            const answersFingerprint = fingerprintAnswers(answersStr);
+
+            // 上一次分析失败后的会话：仅当问卷指纹一致时复用（服务端预占幂等，重试不再扣次）
+            const failedRetry = readFailedAnalysisRetry();
+            const reusableFailedSessionId =
+                canReuseFailedAnalysis(failedRetry, answersFingerprint) ? failedRetry!.sessionId : null;
+            if (failedRetry && !reusableFailedSessionId) {
+                // 问卷已变化：旧暂存不再适用，清掉避免残留
+                clearFailedAnalysisRetry();
+            }
+
             const sessionId = freeRetrySessionId
+                || reusableFailedSessionId
                 || (isAnalyzingSessionValid ? analyzingSessionId : null)
                 || crypto.randomUUID();
+            activeSessionId = sessionId;
+            activeAnswersFingerprint = answersFingerprint;
 
             // 获取全局分析锁，防止组件 unmount/remount 或 StrictMode 双 mount 导致重复分析
             if (!acquireAnalysisLock(sessionId)) {
@@ -603,18 +680,13 @@ export function useAsyncAnalysis() {
                 localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(result));
             } catch (e) {
                 console.warn("Failed to save full result to localStorage, attempting stripped save", e);
-                // 配额满了：只保留关键字段（移除大体积的 labAnalysis 和 faceAnalysis 详情），保证基本展示可用
+                // 配额满了：只保留关键字段（移除大体积的 labAnalysis），保证基本展示可用
                 try {
                     const stripped = {
                         ...result,
                         faceAnalysis: result.faceAnalysis ? {
-                            skinType: (result.faceAnalysis as Record<string, unknown>)?.skinType,
-                            overallScore: (result.faceAnalysis as Record<string, unknown>)?.overallScore,
-                            summary: (result.faceAnalysis as Record<string, unknown>)?.summary,
+                            ...(result.faceAnalysis as Record<string, unknown>),
                             labAnalysis: undefined,
-                            zoneAnalysis: undefined,
-                            recommendations: undefined,
-                            dimensions: (result.faceAnalysis as Record<string, unknown>)?.dimensions,
                         } : undefined,
                     };
                     localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(stripped));
@@ -622,7 +694,7 @@ export function useAsyncAnalysis() {
                     console.warn("Failed to save even stripped result to localStorage", e2);
                 }
             }
-            trackAnalysisComplete(result.dataSource === "comprehensive" || result.dataSource === "hybrid" ? "ai" : "fallback");
+            trackAnalysisComplete("ai");
 
             // Only clear freeRetry flag after successful server response
             if (isFreeRetry) {
@@ -636,6 +708,7 @@ export function useAsyncAnalysis() {
 
             setAnalysisState({ status: 'completed', progress: 100, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
 
+            analysisSucceeded = true;
             // Return data to caller
             return { result: result as Record<string, unknown>, faceAnalysis, sessionId };
         };
@@ -649,20 +722,27 @@ export function useAsyncAnalysis() {
             abortController.abort(); // 确保取消所有未完成的请求
             const error = e instanceof Error ? e : new Error(String(e));
             console.error("Analysis failed:", error);
+            // 失败会话暂存：同问卷重试时复用 sessionId（服务端预占幂等，不额外扣次）
+            if (activeSessionId && activeAnswersFingerprint) {
+                writeFailedAnalysisRetry(activeSessionId, activeAnswersFingerprint);
+            }
             setAnalysisState({ status: 'error', progress: 0, error: error.message || "Unknown error", queuePosition: undefined, queueWaitSeconds: undefined });
             throw error;
         } finally {
             isRunningRef.current = false;
-            // 仅在本次调用持有锁时释放并清理恢复标记，避免误删其他会话持有的锁
+            // 仅在本次调用持有锁时释放并清理恢复标记，避免误删其他会话持有的锁。
+            // 失败时保留 ANALYZING_* 标记（配合失败暂存），供用户点击重试时复用同一会话
             if (lockAcquired) {
                 releaseAnalysisLock();
-                // 分析流程结束（成功/失败/超时）后清除刷新复用标记
-                try {
-                    sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
-                    sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
-                    localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
-                } catch (e) {
-                    console.warn("sessionStorage/localStorage access failed", e);
+                if (analysisSucceeded) {
+                    clearFailedAnalysisRetry();
+                    try {
+                        sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
+                        sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
+                        localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
+                    } catch (e) {
+                        console.warn("sessionStorage/localStorage access failed", e);
+                    }
                 }
             }
         }

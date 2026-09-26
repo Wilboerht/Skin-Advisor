@@ -59,9 +59,9 @@ export interface ComprehensiveResult {
     skinState?: string;
     /** 测肤时使用的昵称（analyze 落库；结果页/海报展示用） */
     nickname?: string;
-    /** 报告版本：2 = 顾问叙事报告（consultantReport 存在），缺省/v1 = 旧板块渲染 */
+    /** 报告版本：2 = 顾问叙事报告（新结果恒为 2）；历史 v1 记录缺省，前端展示升级提示 */
     reportVersion?: number;
-    /** 顾问叙事报告数据（v2 专属；历史报告无此字段，走旧渲染） */
+    /** 顾问叙事报告数据（v2-only；历史 v1 记录无此字段） */
     consultantReport?: ConsultantReport;
 }
 

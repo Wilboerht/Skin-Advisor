@@ -36,11 +36,13 @@ async function main() {
                 value: {
                     provider: "qwen",
                     visionProvider: "qwen",
-                    model: "deepseek-chat",
-                    visionModel: "qwen-vl-max",
+                    model: "qwen-plus",
+                    // 视觉默认 vl-plus：比 vl-max 便宜 90%+，与 .env 部署口径一致
+                    visionModel: "qwen-vl-plus",
                     // SECURITY: API keys are NEVER stored in the database.
                     // They are always read from environment variables at runtime.
-                    maxTokens: 2000,
+                    // 顾问叙事报告（v2）输出约需 3-6K tokens；低于 6000 会被截断导致整报告降级
+                    maxTokens: 6000,
                     temperature: 0.3
                 }
             }

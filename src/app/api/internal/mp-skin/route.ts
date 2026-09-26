@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { extractReportSummary } from "@/lib/internal-report";
+import { resolveTrendDimensions } from "@/lib/trend-dimensions";
+import { getScoreDistribution } from "@/lib/score-percentile-db";
+import { percentileFromDistribution } from "@/lib/score-percentile";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { authorizeInternalRequest } from "@/lib/internal-api";
 import { logger } from "@/lib/logger";
@@ -103,10 +106,22 @@ export async function GET(request: NextRequest) {
 
         // ===== 最新报告摘要 =====
         const latestSession = recentSessions[0];
+        // 真实聚合百分位（与前端证书口径一致）；聚合失败不阻断主流程
+        let latestPercentile: number | null = null;
+        try {
+            const latestScore = asFaceAnalysis(latestSession.analysisResult)?.overallScore;
+            if (typeof latestScore === "number") {
+                const dist = await getScoreDistribution();
+                latestPercentile = percentileFromDistribution(dist, Math.round(latestScore));
+            }
+        } catch (e) {
+            logger.warn("mp-skin percentile aggregate failed", { error: String(e) });
+        }
         const latestSummary = extractReportSummary(
             latestSession.analysisResult,
             latestSession.sessionId,
-            latestSession.answers
+            latestSession.answers,
+            latestPercentile
         );
         const latest = latestSummary.found
             ? {
@@ -117,16 +132,21 @@ export async function GET(request: NextRequest) {
             : null;
 
         // ===== 趋势：最近 5 次（时间正序），缺失维度用 null 表示断线而非 0 分 =====
+        // texture 由 6 区域均值派生（十维中无该维度），口径见 lib/trend-dimensions.ts
         const trendSessions = recentSessions.slice(0, 5).reverse();
+        const trendFaces = trendSessions.map(s => asFaceAnalysis(s.analysisResult));
+        const trendDims = trendSessions.map(s => resolveTrendDimensions(
+            (s.analysisResult as { faceAnalysis?: unknown } | null | undefined)?.faceAnalysis
+        ));
         const trends = trendSessions.length >= 2
             ? {
                 dates: trendSessions.map(s => s.completedAt?.toISOString() ?? ""),
-                scores: trendSessions.map(s => asFaceAnalysis(s.analysisResult)?.overallScore ?? null),
+                scores: trendFaces.map(f => f?.overallScore ?? null),
                 dimensions: {
-                    wrinkles: trendSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.wrinkles?.score ?? null),
-                    waterOil: trendSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.waterOil?.score ?? null),
-                    spots: trendSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.spots?.score ?? null),
-                    texture: trendSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.texture?.score ?? null),
+                    wrinkles: trendDims.map(d => d.wrinkles),
+                    waterOil: trendDims.map(d => d.waterOil),
+                    spots: trendDims.map(d => d.spots),
+                    texture: trendDims.map(d => d.texture),
                 },
             }
             : null;

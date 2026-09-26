@@ -4,6 +4,7 @@ import { QuestionnaireAnswers } from "@/lib/advisor-utils";
 import type { Product } from "@prisma/client";
 import type { EnvContext } from "@/lib/weather-context";
 import { getSeasonLabel } from "@/lib/weather-context";
+import { PREGNANCY_FORBIDDEN_TERMS } from "@/lib/ingredient-guard";
 /** 带算法评分的商品（由 getCandidateProducts 生成） */
 type ScoredProduct = Product & {
     _score: number;
@@ -31,13 +32,13 @@ export interface ProductRecommendation {
     budgetLabel?: "within_budget" | "near_budget" | "over_budget" | "unknown";
     /** 环境相关匹配标签 */
     envTags?: string[];
-    /** 社交证明：协同过滤标签 */
+    /** 社交证明：同肤质报告推荐占比 + 真实反馈回购意愿 */
     socialProof?: {
-        /** 如 "沙漠派用户的选择" */
+        /** 如 "混干肌用户的选择" */
         label: string;
-        /** 如 87（代表87%的回购率或选择率） */
+        /** 同肤质用户的测肤报告中该产品被推荐的占比（0-100） */
         affinity: number;
-        /** 如 "87% 的同派系用户选择了这款产品" */
+        /** 如 "同肤质用户的测肤报告中 87% 被推荐" */
         detail: string;
     };
 }
@@ -123,10 +124,49 @@ interface ProductBase {
     benefits: unknown;
     suitableSkinTypes: unknown;
     negativeFor: unknown;
+    keyIngredients?: unknown;
     price: string | number;
     featured?: boolean;
     image?: string;
     category?: string;
+}
+
+/**
+ * 孕期/哺乳期产品硬排除（纯函数，供 calculateScore 与单测复用）：
+ * - 产品 negativeFor 标签含 孕妇/哺乳期/孕期 → 排除
+ * - 产品成分表命中孕期禁忌成分（精油类/香精）→ 排除
+ * pregnancyCautious 包含"不确定"（按孕期标准谨慎推荐）。
+ */
+export function isProductExcludedForPregnancy(
+    product: { negativeFor?: unknown; keyIngredients?: unknown },
+    pregnancyCautious: boolean
+): { excluded: boolean; reason?: string } {
+    if (!pregnancyCautious) return { excluded: false };
+
+    // 兼容 Json 字段的数组与历史字符串两种存储形态
+    const negativeTags: string[] = Array.isArray(product.negativeFor)
+        ? (product.negativeFor as string[]).filter((s): s is string => typeof s === "string")
+        : typeof product.negativeFor === "string" && product.negativeFor
+            ? [product.negativeFor]
+            : [];
+    if (negativeTags.some((t) => /孕妇|孕期|哺乳|pregnan|breastfeed|lactation/i.test(t))) {
+        return { excluded: true, reason: "⚠️ 孕期/哺乳期不适用" };
+    }
+
+    const ingredients: string[] = Array.isArray(product.keyIngredients)
+        ? (product.keyIngredients as string[]).filter((s): s is string => typeof s === "string")
+        : typeof product.keyIngredients === "string" && product.keyIngredients
+            ? [product.keyIngredients]
+            : [];
+    const ingredientText = ingredients.join(" ").toLowerCase();
+    if (ingredientText) {
+        const hit = PREGNANCY_FORBIDDEN_TERMS.find((term) => ingredientText.includes(term.toLowerCase()));
+        if (hit) {
+            return { excluded: true, reason: `⚠️ 含孕期需回避成分（${hit}）` };
+        }
+    }
+
+    return { excluded: false };
 }
 
 function calculateScore(
@@ -278,11 +318,16 @@ function calculateScore(
             excluded = true;
             reasons.push("⚠️ 不适合您的肤质/状况");
         }
-        if (concerns.includes("anti_aging") && negativeTags.some(t => ["孕妇", "哺乳期"].includes(t))) {
-            score = 0;
-            excluded = true;
-            reasons.push("⚠️ 不适合您的肤质/状况");
-        }
+    }
+
+    // 7. 孕期/哺乳期硬排除（独立于关注点，含"不确定"按谨慎处理）
+    const pregnancyRaw = answers.pregnancy ?? answers.pregnancyStatus;
+    const pregnancyCautious = pregnancyRaw === "yes" || pregnancyRaw === "unknown";
+    const pregnancyCheck = isProductExcludedForPregnancy(product, pregnancyCautious);
+    if (pregnancyCheck.excluded) {
+        score = 0;
+        excluded = true;
+        reasons.push(pregnancyCheck.reason || "⚠️ 孕期/哺乳期不适用");
     }
 
     // Base Score fallback：有负面理由时保持 0 分，不允许被恢复为保底分
@@ -627,51 +672,41 @@ export async function getClusterSocialProof(
 
         if (matchingSessionCount === 0 || productCounts.size === 0) return result;
 
-        // 3. 批量查询产品回购率（从 ProductFeedback）
+        // 3. 批量查询产品反馈（愿意回购比例 = repurchase=true / 有反馈总数）
         const productIds = Array.from(productCounts.keys());
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
         const repurchaseMap = new Map<string, number>();
         try {
-            const feedbackAggs = await prisma.productFeedback.groupBy({
-                by: ["productId"],
-                where: {
-                    productId: { in: productIds },
-                    createdAt: { gte: thirtyDaysAgo },
-                },
-                _avg: { rating: true },
-                _count: { id: true },
-            });
-            for (const agg of feedbackAggs) {
-                const avgRating = agg._avg.rating || 0;
-                repurchaseMap.set(agg.productId, Math.round(avgRating * 20)); // 1-5 → 20-100%
-            }
-
-            // 回购意愿
-            const repurchaseAggs = await prisma.productFeedback.groupBy({
-                by: ["productId"],
-                where: {
-                    productId: { in: productIds },
-                    repurchase: true,
-                },
-                _count: { id: true },
-            });
+            const [totalAggs, repurchaseAggs] = await Promise.all([
+                prisma.productFeedback.groupBy({
+                    by: ["productId"],
+                    where: { productId: { in: productIds } },
+                    _count: { id: true },
+                }),
+                prisma.productFeedback.groupBy({
+                    by: ["productId"],
+                    where: { productId: { in: productIds }, repurchase: true },
+                    _count: { id: true },
+                }),
+            ]);
 
             const totalCounts = new Map<string, number>();
-            for (const agg of feedbackAggs) {
+            for (const agg of totalAggs) {
                 totalCounts.set(agg.productId, agg._count.id);
             }
+            // 样本 <3 条不展示回购率，避免小样本误导
             for (const agg of repurchaseAggs) {
-                const total = totalCounts.get(agg.productId) || 1;
-                repurchaseMap.set(agg.productId, Math.round((agg._count.id / total) * 100));
+                const total = totalCounts.get(agg.productId) || 0;
+                if (total >= 3) {
+                    repurchaseMap.set(agg.productId, Math.round((agg._count.id / total) * 100));
+                }
             }
         } catch {
             // 反馈查询失败不阻断主流程
         }
 
-        // 4. 计算 affinity（该产品被同 skinType 用户推荐的占比）
-        const personaLabel = persona ? getPersonaLabelFromKey(persona) : "用户";
+        // 4. 计算 affinity（该产品在同肤质用户测肤报告中被推荐的占比）
+        const personaLabel = persona ? getPersonaLabelFromKey(persona) : "";
         for (const [productId, count] of productCounts) {
             const affinity = Math.round((count / matchingSessionCount) * 100);
             if (affinity >= 10) {
@@ -679,7 +714,7 @@ export async function getClusterSocialProof(
                 result.set(productId, {
                     affinity,
                     repurchaseRate: repurchaseMap.get(productId) || 0,
-                    label: `${getSkinTypeLabelShort(skinType)}${personaLabel}的选择`,
+                    label: `${getSkinTypeLabelShort(skinType)}${personaLabel ? ` · ${personaLabel}` : ""}高频推荐`,
                 });
             }
         }
@@ -872,14 +907,14 @@ export async function recommendProducts(
                 );
             }
 
-            // 协同过滤社交证明
+            // 社交证明：口径为"同肤质用户的测肤报告中被推荐占比"，不宣称用户购买/选择
             const clusterProof = socialProofMap.get(p.id);
             const socialProof = clusterProof ? {
                 label: clusterProof.label,
                 affinity: clusterProof.affinity,
                 detail: clusterProof.repurchaseRate > 0
-                    ? `${clusterProof.affinity}% 的同肤质用户选择了这款产品，${clusterProof.repurchaseRate}% 愿意回购`
-                    : `${clusterProof.affinity}% 的同肤质用户选择了这款产品`,
+                    ? `同肤质用户的测肤报告中 ${clusterProof.affinity}% 被推荐；反馈用户中 ${clusterProof.repurchaseRate}% 表示愿意回购`
+                    : `同肤质用户的测肤报告中 ${clusterProof.affinity}% 被推荐`,
             } : undefined;
 
             return {

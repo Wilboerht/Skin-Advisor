@@ -4,7 +4,6 @@
  * 仅返回护肤档案所需的少量字段，不暴露人脸图片等敏感数据。
  */
 import { normalizeAnalysisResult } from "@/lib/analysis-result";
-import { getRankPercentile } from "@/lib/result-utils";
 import {
     extractQuestionnaireProfile,
     getDimensionScores,
@@ -24,6 +23,7 @@ export interface ReportSummary {
     skinTypeLabel?: string;
     skinAge?: number | null;
     overallScore?: number | null;
+    /** 真实聚合百分位（与前端证书同口径）；样本不足/聚合失败时为 null，不伪造 */
     percentile?: number | null;
     /** 重点问题（<70 分维度，最多 3 项） */
     issues?: ReportIssue[];
@@ -65,11 +65,13 @@ function readGender(
  * @param raw analysisResult JSON
  * @param sessionId 会话 ID
  * @param answers 问卷答案 JSON（可选，取问卷性别等）
+ * @param percentile 真实聚合百分位（可选；由调用方用 getScoreDistribution 计算，缺省为 null 不展示）
  */
 export function extractReportSummary(
     raw: unknown,
     sessionId: string,
-    answers?: unknown
+    answers?: unknown,
+    percentile?: number | null
 ): ReportSummary {
     const record = asRecord(raw);
     const hasProfileData = !!record && !!(record.skinProfile || record.skinAnalysis);
@@ -110,8 +112,8 @@ export function extractReportSummary(
         skinAge,
         overallScore,
         percentile:
-            overallScore !== null
-                ? getRankPercentile(overallScore)
+            overallScore !== null && typeof percentile === "number"
+                ? percentile
                 : null,
         issues: getIssueList(dimensions),
         dimensions: getDimensionScores(dimensions),

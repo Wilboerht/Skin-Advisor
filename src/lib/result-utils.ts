@@ -1,18 +1,4 @@
 /**
- * 根据综合评分计算全国排名百分比（连续幂函数曲线）
- *
- * 使用幂函数模拟真实分布：低分段拉开差距，高分段逐渐饱和。
- * 曲线示例：score=30→45% | 50→68% | 70→86% | 85→95% | 95→99%
- * 幂指数 1.6 控制曲率：指数越大，高分段越密集。
- */
-export function getRankPercentile(score: number): number {
-    if (score >= 98) return 99;
-    if (score <= 5) return 1;
-    const percentile = Math.round(100 - Math.pow((100 - score) / 100, 1.6) * 98);
-    return Math.max(1, Math.min(99, percentile));
-}
-
-/**
  * 根据水油维度分数返回 T 区标签
  */
 export function getTZoneLabel(waterOilScore: number): string {

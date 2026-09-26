@@ -33,7 +33,7 @@ export interface ProductCardData {
     } | null; // 关联的维度评分
     /** 推荐来源：ai（AI 精选）| persona（IP 池内）| algorithm（池外补充） */
     source?: "ai" | "persona" | "algorithm";
-    /** 社交证明：协同过滤标签 */
+    /** 社交证明：同肤质报告推荐占比（label 如"混干肌 · 沙漠派高频推荐"） */
     socialProof?: {
         label: string;
         affinity: number;

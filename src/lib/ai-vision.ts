@@ -4,8 +4,7 @@ import {
     createOpenAIClient,
     isAllowedAIModel,
     PROVIDER_FALLBACK_CHAIN,
-    type AIProvider,
-    type AISettings
+    type AIProvider
 } from "./ai";
 import { aiLogger } from "./logger";
 import { circuitBreaker } from "./circuit-breaker";
@@ -28,6 +27,56 @@ export interface VisionImage {
 
 // 辅助函数：延迟
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/** 单个分数夹取到 0-100 整数；非数值返回 undefined（保持字段缺失而不是写脏值） */
+function clampScore(value: unknown): number | undefined {
+    if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+    return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+const ZONE_NUMERIC_KEYS = ["oil", "texture", "wrinkles", "spots", "redness", "darkCircles", "firmness", "contour"] as const;
+
+/**
+ * 视觉结果分数校准（原地修改）：
+ * - 十维/子分/区域指标统一夹取 0-100；
+ * - overallScore 由十维分数均值重算，保证与雷达图/证据链一致（模型自报综合分不参与）；
+ * - 肌龄夹取 10-80 的合理区间。
+ */
+function calibrateVisionScores(data: Record<string, unknown>): void {
+    const dims = data.dimensions as Record<string, { score?: unknown; blackheads?: unknown; pimples?: unknown }> | undefined;
+
+    if (dims && typeof dims === "object") {
+        const scores: number[] = [];
+        for (const dim of Object.values(dims)) {
+            if (!dim || typeof dim !== "object") continue;
+            const score = clampScore(dim.score);
+            if (score !== undefined) {
+                dim.score = score;
+                scores.push(score);
+            }
+            if (dim.blackheads !== undefined) dim.blackheads = clampScore(dim.blackheads);
+            if (dim.pimples !== undefined) dim.pimples = clampScore(dim.pimples);
+        }
+        if (scores.length > 0) {
+            data.overallScore = Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length);
+        }
+    }
+
+    const zones = data.zoneAnalysis as Record<string, Record<string, unknown>> | undefined;
+    if (zones && typeof zones === "object") {
+        for (const zone of Object.values(zones)) {
+            if (!zone || typeof zone !== "object") continue;
+            for (const key of ZONE_NUMERIC_KEYS) {
+                if (zone[key] !== undefined) zone[key] = clampScore(zone[key]);
+            }
+        }
+    }
+
+    const skinAge = data.skinAge as { estimated?: unknown } | undefined;
+    if (skinAge && typeof skinAge === "object" && typeof skinAge.estimated === "number" && Number.isFinite(skinAge.estimated)) {
+        skinAge.estimated = Math.min(80, Math.max(10, Math.round(skinAge.estimated)));
+    }
+}
 
 /**
  * 计算指数退避延迟
@@ -61,7 +110,7 @@ function mergeAbortSignals(...signals: (AbortSignal | undefined)[]): AbortSignal
  */
 export async function analyzeImages(
     images: VisionImage[],
-    _defaultSystemPrompt: string, // 保留参数兼容，但内部优先用配置
+    _defaultSystemPrompt: string, // 调用方构建的视觉 system prompt（基础 + 动态条件化），为空时按 provider 兜底
     userPrompt: string,
     _defaultProvider: AIProvider = "qwen",
     signal?: AbortSignal,
@@ -105,17 +154,9 @@ export async function analyzeImages(
                 model = fallbackModel;
             }
 
-            // 获取 prompt (优先数据库配置)
-            const systemPrompt = getVisionSystemPrompt(provider, settings) || _defaultSystemPrompt;
-
-            // 视觉 system prompt 长度保护：防止自定义 DB prompt 膨胀请求
-            const MAX_VISION_SYSTEM_PROMPT_CHARS = 4000;
-            let safeSystemPrompt = systemPrompt;
-            if (systemPrompt.length > MAX_VISION_SYSTEM_PROMPT_CHARS) {
-                safeSystemPrompt = systemPrompt.slice(0, MAX_VISION_SYSTEM_PROMPT_CHARS) +
-                    "\n\n[提示：系统提示词过长，已截断以控制成本]";
-                aiLogger.warn(`Vision system prompt truncated: ${systemPrompt.length} -> ${safeSystemPrompt.length} chars`);
-            }
+            // 视觉 system prompt 由调用方（face-analyze）构建：基础常量 + 会员深度分析 + 拍摄状态条件化，
+            // 均为代码内受控内容；默认按 provider 兜底。不再支持 DB 覆盖，避免覆盖时静默丢失动态说明
+            const systemPrompt = _defaultSystemPrompt || getVisionSystemPrompt(provider);
 
             aiLogger.info(`Starting Vision Analysis: ${provider} (${model})`, { imageCount: images.length, isFallback: !isPrimary });
 
@@ -124,7 +165,7 @@ export async function analyzeImages(
                     provider,
                     model,
                     images,
-                    safeSystemPrompt,
+                    systemPrompt,
                     finalUserPrompt,
                     signal,
                     userId,
@@ -189,6 +230,9 @@ async function tryVisionProviderWithKeys(
 
             // 解析与 Zod 结构验证
             const jsonData = validateAndExtractJson(result, VisionAnalysisOutputSchema);
+
+            // 分数校准：0-100 夹取 + 综合评分由十维均值重算（模型自报综合分常与维度矛盾）
+            calibrateVisionScores(jsonData as unknown as Record<string, unknown>);
 
             // 硬保证：zoneAnalysis advice 禁用成分扫描（prompt 软约束的兜底）。
             // 命中时该区域 advice 降级为安全通用文案并告警，禁用成分文本不出库
@@ -438,12 +482,8 @@ function getDefaultVisionModel(provider: AIProvider): string {
     }
 }
 
-// 辅助：获取视觉专用 Prompt
-function getVisionSystemPrompt(provider: AIProvider, settings: AISettings): string {
-    // 如果数据库配了 visionSystemPrompt，优先使用
-    if (settings.visionSystemPrompt) return settings.visionSystemPrompt;
-
-    // 否则根据 active provider 返回预设
+// 辅助：按 provider 返回预设视觉 Prompt（调用方未传时的兜底；不再支持 DB 覆盖）
+function getVisionSystemPrompt(provider: AIProvider): string {
     if (provider === "qwen") return QWEN_VISION_PROMPT || "";
 
     // 默认 (DeepSeek 等 OpenAI 兼容接口)

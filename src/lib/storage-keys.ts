@@ -36,6 +36,8 @@ export const STORAGE_KEYS = {
     // localStorage 持久备份（sessionStorage 在关闭标签页后丢失，
     // 重新打开 /result?status=analyzing 时可从 localStorage 恢复会话 ID）
     ADVISOR_ANALYZING_SESSION_LOCAL: 'advisor_analyzing_session_local',
+    // 分析失败后的会话暂存（v2-only：失败不退款，同 session 重试免费；30 分钟有效）
+    ADVISOR_FAILED_ANALYSIS: 'advisor_failed_analysis',
 
     // 全局分析锁（防止组件 unmount/remount 或 StrictMode 双 mount 导致重复分析）
     ADVISOR_ANALYSIS_LOCK: 'advisor_analysis_lock',

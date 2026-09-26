@@ -109,7 +109,6 @@ export {
     type SkinDimensions,
     type SkinDimensionKey,
 } from "./advisor-labels";
-// 本文件内部（如 fallback 模板）继续使用标签常量
 import { DIMENSION_LABELS } from "./advisor-labels";
 
 export function getSkinTypeLabel(type: string): string {
@@ -123,52 +122,6 @@ export function getSkinTypeLabel(type: string): string {
         normal: "中性肌肤",
     };
     return map[type.toLowerCase()] || type;
-}
-
-export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
-    return {
-        validation: { isValid: true, message: "默认分析" },
-        skinType: { type: "combination", confidence: 0.8, description: "混合性肌肤" },
-        skinAge: { estimated: 25, factors: [] },
-        // 默认不设置 gender，避免与问卷答案产生误判
-        gender: undefined,
-        dimensions: {
-            waterOil: { score: 72, grade: "average", details: "T区偏油，U区适中" },
-            skinTone: { score: 75, grade: "good", details: "肤色基本均匀" },
-            spots: { score: 78, grade: "good", details: "少量浅层色斑" },
-            wrinkles: { score: 85, grade: "excellent", details: "无明显皱纹" },
-            uvDamage: { score: 75, grade: "good", details: "轻度光老化痕迹" },
-            sensitivity: { score: 72, grade: "average", details: "换季易泛红" },
-            darkCircles: { score: 68, grade: "fair", details: "有轻微黑眼圈" },
-            firmness: { score: 82, grade: "excellent", details: "紧致度良好" },
-            acne: { score: 70, grade: "average", details: "偶尔冒痘" },
-            radiance: { score: 65, grade: "fair", details: "熬夜后略显暗沉" },
-        },
-        hydration: { level: "medium", description: "水分含量尚可，需加强保湿" },
-        overallScore: 75,
-        summary: "您的皮肤整体状态良好，主要问题集中在水油平衡和T区出油。眼周循环和光泽度也有提升空间。",
-        recommendations: [
-            "针对您目前的肤质状况，建议您采取精细化的分区护理策略。",
-            "由于T区油脂分泌较旺盛且容易引发粉刺，建议早晚使用氨基酸洁面产品重点清洁额头与鼻翼，必要时可搭配含壬二酸的控油产品进行局部护理，以控制油脂。",
-            "U区相对干燥敏感，应避免过度清洁，建议使用含有神经酰胺或透明质酸的修护型乳液进行保湿。",
-            "此外，您的眼周存在轻微循环不畅导致的黑眼圈，建议规律作息，并坚持使用含有烟酰胺或胜肽成分的眼部产品。",
-            "最后，鉴于光老化迹象初显，请务必全年坚持使用SPF30+以上的防晒霜，以预防紫外线对胶原蛋白的进一步损伤。"
-        ],
-        skinConditions: [],
-        zoneAnalysis: {
-            forehead: { condition: "轻微出油", advice: "使用清爽控油产品，定期深层清洁", oil: 60, texture: 80, wrinkles: 10, spots: 15, redness: 10, firmness: 85, contour: 90 },
-            tZone: { condition: "出油旺盛", advice: "使用含壬二酸的控油平衡产品", oil: 70, texture: 40, wrinkles: 5, spots: 20, redness: 15, firmness: 80, contour: 85 },
-            leftCheek: { condition: "状态健康", advice: "保持日常保湿与防晒即可", oil: 30, texture: 90, wrinkles: 8, spots: 10, redness: 20, firmness: 85, contour: 88 },
-            rightCheek: { condition: "状态健康", advice: "保持日常保湿与防晒即可", oil: 30, texture: 90, wrinkles: 8, spots: 10, redness: 20, firmness: 85, contour: 88 },
-            eyeArea: { condition: "轻微黑眼圈", advice: "使用含烟酰胺或胜肽的眼部产品修护", oil: 20, texture: 75, wrinkles: 20, darkCircles: 40, firmness: 80 },
-            jawline: { condition: "轮廓紧致", advice: "保持现状，可配合提拉按摩", oil: 25, firmness: 90, contour: 85 }
-        },
-        labAnalysis: {
-            glogau: { value: "II 型", status: "轻中度" },
-            homogeneity: { status: "均匀" },
-            wrinkleGrade: { value: "1 级", status: "基本无皱纹" }
-        }
-    };
 }
 
 // ============================================================================
@@ -392,20 +345,22 @@ export function identifyConcerns(
     }
 
     // 3. 检查维度评分（防御性：前端传入的 faceAnalysis 可能只包含部分维度）
+    // 问题线统一为 70：与报告重点问题（<70）、内部报告 issues（<70）口径一致
     if (faceAnalysis?.dimensions) {
-        if (faceAnalysis.dimensions.wrinkles?.score < 60) concerns.add("wrinkles");
-        if (faceAnalysis.dimensions.spots?.score < 60) concerns.add("spots");
-        if (faceAnalysis.dimensions.waterOil?.score < 60) concerns.add("waterOil");
-        if (faceAnalysis.dimensions.acne?.score < 60) concerns.add("acne");
-        if (faceAnalysis.dimensions.uvDamage?.score < 60) concerns.add("anti_aging");
-        if (faceAnalysis.dimensions.sensitivity?.score < 60) concerns.add("sensitivity");
-        if (faceAnalysis.dimensions.radiance?.score < 60) concerns.add("dullness");
-        if (faceAnalysis.dimensions.darkCircles?.score < 60) concerns.add("dark_circles");
-        if (faceAnalysis.dimensions.firmness?.score < 60) concerns.add("anti_aging");
-        if (faceAnalysis.dimensions.skinTone?.score < 60) concerns.add("dullness");
+        if (faceAnalysis.dimensions.wrinkles?.score < 70) concerns.add("wrinkles");
+        if (faceAnalysis.dimensions.spots?.score < 70) concerns.add("spots");
+        if (faceAnalysis.dimensions.waterOil?.score < 70) concerns.add("waterOil");
+        if (faceAnalysis.dimensions.acne?.score < 70) concerns.add("acne");
+        if (faceAnalysis.dimensions.uvDamage?.score < 70) concerns.add("anti_aging");
+        if (faceAnalysis.dimensions.sensitivity?.score < 70) concerns.add("sensitivity");
+        if (faceAnalysis.dimensions.radiance?.score < 70) concerns.add("dullness");
+        if (faceAnalysis.dimensions.darkCircles?.score < 70) concerns.add("dark_circles");
+        if (faceAnalysis.dimensions.firmness?.score < 70) concerns.add("anti_aging");
+        if (faceAnalysis.dimensions.skinTone?.score < 70) concerns.add("dullness");
     }
 
     // 4. 检查区域分析中的各维度异常指标 (6 大区域 × 8 维指标)
+    // 区域指标统一「越高越好」（与视觉 prompt 口径一致），低分代表问题
     if (faceAnalysis?.zoneAnalysis) {
         const zones = [
             faceAnalysis.zoneAnalysis.forehead,
@@ -415,18 +370,18 @@ export function identifyConcerns(
             faceAnalysis.zoneAnalysis.eyeArea,
             faceAnalysis.zoneAnalysis.jawline,
         ];
-        // 纹理/粗糙 → roughness (原逻辑)
+        // 细腻度偏低 → roughness
         if (zones.some(z => z.texture !== undefined && z.texture < 50)) concerns.add("roughness");
-        // 出油偏高 → oil_control
-        if (zones.some(z => z.oil !== undefined && z.oil > 60)) concerns.add("oil_control");
-        // 皱纹 → wrinkles
-        if (zones.some(z => z.wrinkles !== undefined && z.wrinkles > 50)) concerns.add("wrinkles");
-        // 色斑 → spots
-        if (zones.some(z => z.spots !== undefined && z.spots > 50)) concerns.add("spots");
-        // 泛红 → sensitivity
-        if (zones.some(z => z.redness !== undefined && z.redness > 50)) concerns.add("sensitivity");
-        // 黑眼圈 → dark_circles (眼周区域特有)
-        if (faceAnalysis.zoneAnalysis.eyeArea?.darkCircles !== undefined && faceAnalysis.zoneAnalysis.eyeArea.darkCircles > 50) {
+        // 水油平衡健康度偏低 → oil_control
+        if (zones.some(z => z.oil !== undefined && z.oil < 40)) concerns.add("oil_control");
+        // 无纹程度偏低 → wrinkles
+        if (zones.some(z => z.wrinkles !== undefined && z.wrinkles < 50)) concerns.add("wrinkles");
+        // 无色斑程度偏低 → spots
+        if (zones.some(z => z.spots !== undefined && z.spots < 50)) concerns.add("spots");
+        // 无泛红程度偏低 → sensitivity
+        if (zones.some(z => z.redness !== undefined && z.redness < 50)) concerns.add("sensitivity");
+        // 眼周状态偏低 → dark_circles (眼周区域特有)
+        if (faceAnalysis.zoneAnalysis.eyeArea?.darkCircles !== undefined && faceAnalysis.zoneAnalysis.eyeArea.darkCircles < 50) {
             concerns.add("dark_circles");
         }
         // 松弛 → anti_aging
@@ -569,23 +524,11 @@ export const VisionAnalysisOutputSchema = z.object({
     }).optional(),
 }).passthrough();
 
-export const TextAnalysisOutputSchema = z.object({
-    summary: z.string().min(1),
-    skinTypeAnalysis: z.string().optional(),
-    concernAnalysis: z.array(z.string()).optional(),
-    lifestyleTips: z.array(z.string()).optional(),
-    products: z.array(z.object({
-        id: z.union([z.string(), z.number()]),
-        reason: z.string().optional(),
-    }).passthrough()).optional(),
-}).passthrough();
-
 /**
  * 顾问叙事报告（Report v2）输出 Schema
  *
- * 与 v1（TextAnalysisOutputSchema）的区别：从"板块填充"改为"推理链"——
- * 每个问题必须走完 观察（证据）→ 直接/间接诱因 → 护理/生活方案 → 就医边界。
- * issues 动态数量：只报告有证据的问题，证据不足宁可不报。
+ * 报告结构为"推理链"——每个问题必须走完 观察（证据）→ 直接/间接诱因 → 护理/生活方案 → 就医边界。
+ * issues 动态数量：只报告有证据的问题，证据不足宁可不报（0-4，与 prompt 约束一致）。
  */
 export const ConsultantIssueSchema = z.object({
     title: z.string().min(1),
@@ -601,7 +544,7 @@ export const ConsultantIssueSchema = z.object({
 
 export const ConsultantReportSchema = z.object({
     overview: z.string().min(1),
-    issues: z.array(ConsultantIssueSchema).max(5),
+    issues: z.array(ConsultantIssueSchema).max(4),
     strengths: z.array(z.string()).default([]),
     routineNote: z.string().optional(),
     productReasons: z.array(z.object({
@@ -694,7 +637,9 @@ export function parseConsultantReport(content: string): ConsultantReport {
             if (typeof issue.medicalBoundary !== "string" || !issue.medicalBoundary) issue.medicalBoundary = "暂不需要就医，坚持护理观察即可。";
             if (!Array.isArray(issue.relatedDimensions)) issue.relatedDimensions = [];
             return issue;
-        });
+        })
+        // prompt 约束 0-4 个问题：模型偶尔多写时截断而不是整报告失败
+        .slice(0, 4);
 
     const normalized = {
         ...raw,
