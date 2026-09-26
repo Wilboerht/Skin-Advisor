@@ -25,11 +25,6 @@ const ssoMiddleware = createSsoMiddleware({
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   scopes: process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile phone membership birthday profile:write",
     publicPaths: PUBLIC_PATHS,
-    // 指向一个永不存在的 Cookie：SDK 默认检查 __Host-user_token（主站会话 JWT）
-    // 并拿去主站 introspect——主站 introspect 只接受 OAuth token，对该值恒
-    // active:false，白付一次回源；子站微信流程又会种同名 Cookie，必须绕开。
-    // Cookie 不存在时 SDK 跳过该项检查。
-    ssoCookieName: "__Host-nihplod_noop_session",
     // 本地 HTTP 开发模式：与 callback/logout/login 保持一致（生产被 SDK 强制忽略）
     insecureLocalDev: SSO_INSECURE_LOCAL_DEV,
     // 服务器间调用（introspect）的内网地址；未配置时走公网（SDK 默认行为）
@@ -85,38 +80,6 @@ function isAllowedOrigin(value: string | null): boolean {
     });
 }
 
-/**
- * SDK <=1.4.0 的 introspect 无超时且 fail-closed：主站挂起时每次页面导航都
- * 会 hang 在无超时的 introspect 上，再被 302 到一个死站。此处包装 6s 超时，
- * 超时即放行——middleware 只是 UX 层，真正的鉴权由各 route handler 强制。
- * （主站 packages/sso-sdk@1.4.1 已内置超时+fail-open，依赖升级后可移除本包装。）
- */
-const SSO_MIDDLEWARE_TIMEOUT_MS = 6000;
-let lastSsoTimeoutWarnAt = 0;
-
-async function ssoMiddlewareWithTimeout(request: NextRequest): Promise<NextResponse> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    try {
-        const result = await Promise.race([
-            ssoMiddleware(request),
-            new Promise<"timeout">((resolve) => {
-                timer = setTimeout(() => resolve("timeout"), SSO_MIDDLEWARE_TIMEOUT_MS);
-            }),
-        ]);
-        if (result === "timeout") {
-            const now = Date.now();
-            if (now - lastSsoTimeoutWarnAt > 60_000) {
-                lastSsoTimeoutWarnAt = now;
-                console.warn("[proxy] SSO middleware 超时（主站 introspect 不可达？），本次请求 fail-open 放行");
-            }
-            return NextResponse.next();
-        }
-        return result;
-    } finally {
-        if (timer) clearTimeout(timer);
-    }
-}
-
 // 是否启用同源保护（任一允许源已配置即生效）
 const ORIGIN_PROTECTION_ENABLED = ALLOWED_ORIGINS.length > 0;
 
@@ -149,7 +112,7 @@ export async function proxy(request: NextRequest) {
     const localAuthCookieVal = request.cookies.get(AUTH_COOKIE_NAME)?.value;
     const hasValidLocalSession = localAuthCookieVal ? Boolean(await verifyToken(localAuthCookieVal)) : false;
 
-    const ssoResponse = isApiPath || hasValidLocalSession ? null : await ssoMiddlewareWithTimeout(request);
+    const ssoResponse = isApiPath || hasValidLocalSession ? null : await ssoMiddleware(request);
     if (ssoResponse && (ssoResponse.headers.get("location") || (ssoResponse.status >= 300 && ssoResponse.status < 400))) {
         return ssoResponse;
     }
