@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseConsultantReport, sanitizeConsultantText } from "./advisor-utils";
+import { parseConsultantReport, sanitizeConsultantText, sanitizeConsultantReport } from "./advisor-utils";
 
 function makeIssue(overrides: Record<string, unknown> = {}) {
     return {
@@ -55,5 +55,27 @@ describe("sanitizeConsultantText - 程序字段名清洗", () => {
     it("替换 camelCase 字段名为中文标签，不误伤正常英文单词", () => {
         expect(sanitizeConsultantText("tZone 出油，waterOil 偏油")).toBe("T区 出油，水油平衡 偏油");
         expect(sanitizeConsultantText("acne 与 spots 是合法单词，不替换")).toBe("acne 与 spots 是合法单词，不替换");
+    });
+});
+
+describe("sanitizeConsultantReport - 步骤标签剥离", () => {
+    it("落库前剥离 AI 复述的步骤标签，卡片 UI 不再双重展示", () => {
+        const report = parseConsultantReport(makeRaw([
+            makeIssue({
+                observation: "我看到的：全脸存在眼周动态细纹。",
+                directCauses: "直接诱因：紫外线反复照射会降解胶原。",
+                indirectCauses: "间接诱因：你提到睡眠较差。",
+                skincarePlan: "护理方案：晨间使用含烟酰胺的精华。",
+                lifestylePlan: "生活方案：把入睡时间提前。",
+                medicalBoundary: "就医边界：出现持续灼热建议面诊。",
+            }),
+        ]));
+        const cleaned = sanitizeConsultantReport(report);
+        expect(cleaned.issues[0].observation).toBe("全脸存在眼周动态细纹。");
+        expect(cleaned.issues[0].directCauses).toBe("紫外线反复照射会降解胶原。");
+        expect(cleaned.issues[0].indirectCauses).toBe("你提到睡眠较差。");
+        expect(cleaned.issues[0].skincarePlan).toBe("晨间使用含烟酰胺的精华。");
+        expect(cleaned.issues[0].lifestylePlan).toBe("把入睡时间提前。");
+        expect(cleaned.issues[0].medicalBoundary).toBe("出现持续灼热建议面诊。");
     });
 });

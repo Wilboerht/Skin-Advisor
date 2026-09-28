@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { stripConsultantStepLabels } from "./consultant-text";
 
 /**
  * MySkin.Technology 专业皮肤分析类型定义
@@ -582,18 +583,20 @@ export function sanitizeConsultantText(text: string): string {
 
 /** 深度清洗顾问报告的所有文本字段（title/六段推理链/strengths/routineNote/productReasons.reason） */
 export function sanitizeConsultantReport(report: ConsultantReport): ConsultantReport {
+    // 步骤标签由卡片 UI 渲染；AI 常在字段开头复述（"直接诱因：…"），落库前剥离避免双重展示
+    const clean = (text: string) => stripConsultantStepLabels(sanitizeConsultantText(text));
     return {
         ...report,
         overview: sanitizeConsultantText(report.overview),
         issues: report.issues.map((issue) => ({
             ...issue,
             title: sanitizeConsultantText(issue.title),
-            observation: sanitizeConsultantText(issue.observation),
-            directCauses: sanitizeConsultantText(issue.directCauses),
-            indirectCauses: sanitizeConsultantText(issue.indirectCauses),
-            skincarePlan: sanitizeConsultantText(issue.skincarePlan),
-            lifestylePlan: sanitizeConsultantText(issue.lifestylePlan),
-            medicalBoundary: sanitizeConsultantText(issue.medicalBoundary),
+            observation: clean(issue.observation),
+            directCauses: clean(issue.directCauses),
+            indirectCauses: clean(issue.indirectCauses),
+            skincarePlan: clean(issue.skincarePlan),
+            lifestylePlan: clean(issue.lifestylePlan),
+            medicalBoundary: clean(issue.medicalBoundary),
         })),
         strengths: report.strengths.map(sanitizeConsultantText),
         routineNote: report.routineNote ? sanitizeConsultantText(report.routineNote) : report.routineNote,

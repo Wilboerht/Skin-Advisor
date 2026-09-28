@@ -444,12 +444,12 @@ ${productsContext}
     {
       "title": "问题名（自然语言，如「两颊色斑倾向」）",
       "severity": "mild | moderate | severe",
-      "observation": "我看到的：问题是什么、在哪个部位、什么程度。必须引用至少一条具体证据（维度评分+判读 / 区域观察 / 问卷原话）",
-      "directCauses": "直接诱因：皮肤学机制，这个问题在皮肤上是怎么发生的",
-      "indirectCauses": "间接诱因：结合用户问卷指出生活中的喂养因素；确实无关时写「目前没有明显的生活习惯诱因」",
-      "skincarePlan": "护理方案：具体成分（限品牌体系内）+ 使用频率 + 早晚时机",
-      "lifestylePlan": "生活方案：可执行的作息/饮食/防晒调整，不说正确的废话",
-      "medicalBoundary": "什么情况建议皮肤科面诊；无风险信号时如实写暂不需要就医。只做就医提示，不做疾病诊断",
+      "observation": "问题是什么、在哪个部位、什么程度。必须引用至少一条具体证据（维度评分+判读 / 区域观察 / 问卷原话）。不要以「我看到的」开头",
+      "directCauses": "皮肤学机制：这个问题在皮肤上是怎么发生的。不要以「直接诱因」开头",
+      "indirectCauses": "结合用户问卷指出生活中的喂养因素；确实无关时写「目前没有明显的生活习惯诱因」。不要以「间接诱因」开头",
+      "skincarePlan": "具体成分（限品牌体系内）+ 使用频率 + 早晚时机。不要以「护理方案」开头",
+      "lifestylePlan": "可执行的作息/饮食/防晒调整，不说正确的废话。不要以「生活方案」开头",
+      "medicalBoundary": "什么情况建议皮肤科面诊；无风险信号时如实写暂不需要就医。只做就医提示，不做疾病诊断。不要以「就医边界」开头",
       "relatedDimensions": ["关联维度key，从 waterOil/skinTone/spots/wrinkles/uvDamage/sensitivity/darkCircles/firmness/acne/radiance 中选"]
     }
   ],

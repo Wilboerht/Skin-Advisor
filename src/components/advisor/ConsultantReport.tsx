@@ -5,6 +5,7 @@ import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import { ChevronDown, Eye, HelpCircle, Sparkles, Stethoscope, Sun, Moon, HeartHandshake } from "lucide-react";
 import type { ConsultantReport, ConsultantIssue } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS } from "@/lib/advisor-labels";
+import { stripConsultantStepLabels, splitConsultantSentences } from "@/lib/consultant-text";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { cn } from "@/lib/utils";
 
@@ -22,13 +23,60 @@ const SEVERITY_META: Record<ConsultantIssue["severity"], { label: string; badge:
     mild: { label: "轻微", badge: "bg-[#F1ECE3] text-[#8c7a6b]", bar: "bg-[#D9D0C3]" },
 };
 
-const GRADE_LABELS: Record<string, string> = {
-    excellent: "优秀",
-    good: "良好",
-    average: "一般",
-    fair: "需关注",
-    poor: "较差",
-};
+// 分数语义色/档位：与全站评分标准一致（85+优秀 / 70-84良好 / 55-69一般 / 40-54需关注 / <40较差），
+// 不再透传 AI 自报的 grade（曾出现"60 分 · 需关注"与档位表打架的情况）
+function scoreBand(score: number): { label: string; toneClass: string } {
+    if (score >= 85) return { label: "优秀", toneClass: "text-[var(--color-brand-cocoa)]" };
+    if (score >= 70) return { label: "良好", toneClass: "text-[var(--color-brand-cocoa)]" };
+    if (score >= 55) return { label: "一般", toneClass: "text-amber-600" };
+    if (score >= 40) return { label: "需关注", toneClass: "text-orange-600" };
+    return { label: "较差", toneClass: "text-red-600" };
+}
+
+function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensions?: ConsultantReportProps["dimensions"] }) {
+    if (!dimensions || issue.relatedDimensions.length === 0) return null;
+    const chips = issue.relatedDimensions
+        .map((key) => {
+            const dim = dimensions[key];
+            const label = DIMENSION_LABELS[key];
+            if (!dim || typeof dim.score !== "number" || !label) return null;
+            return { key, label, score: dim.score };
+        })
+        .filter((c): c is NonNullable<typeof c> => c !== null);
+    if (chips.length === 0) return null;
+
+    return (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] tracking-[0.14em] text-[var(--color-brand-taupe)]/80 mr-0.5">证据</span>
+            {chips.map((chip) => {
+                const band = scoreBand(chip.score);
+                return (
+                    <span
+                        key={chip.key}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand-espresso)]/10 bg-white px-2.5 py-1 text-[11px] text-[var(--color-brand-espresso)]/70 font-light"
+                    >
+                        {chip.label}
+                        <span className={cn("font-medium", band.toneClass)}>
+                            {chip.score} 分 · {band.label}
+                        </span>
+                    </span>
+                );
+            })}
+        </div>
+    );
+}
+
+/** 行动类字段按句拆行（≥2 句且较长时），每条行动一行的可扫描性优于整段 */
+function PlanLines({ text }: { text: string }) {
+    const lines = splitConsultantSentences(text);
+    return (
+        <div className="space-y-1.5">
+            {lines.map((line, i) => (
+                <p key={i} className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{line}</p>
+            ))}
+        </div>
+    );
+}
 
 interface DimensionLike {
     score?: number;
@@ -50,47 +98,6 @@ function SectionTitle({ children, en }: { children: ReactNode; en?: string }) {
             {children}
             {en && <span className="text-xs lg:text-base">（{en}）</span>}
         </h4>
-    );
-}
-
-// 分数语义色：与十维口径一致（<40 红 / <55 琥珀 / 其余中性），让用户一眼判断分数好坏
-function scoreTone(score: number): string {
-    if (score < 40) return "text-red-600";
-    if (score < 55) return "text-amber-600";
-    return "text-[var(--color-brand-cocoa)]";
-}
-
-function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensions?: ConsultantReportProps["dimensions"] }) {
-    if (!dimensions || issue.relatedDimensions.length === 0) return null;
-    const chips = issue.relatedDimensions
-        .map((key) => {
-            const dim = dimensions[key];
-            const label = DIMENSION_LABELS[key];
-            if (!dim || typeof dim.score !== "number" || !label) return null;
-            return {
-                key,
-                label,
-                score: dim.score,
-                grade: dim.grade ? GRADE_LABELS[dim.grade] || dim.grade : null,
-            };
-        })
-        .filter((c): c is NonNullable<typeof c> => c !== null);
-    if (chips.length === 0) return null;
-
-    return (
-        <div className="flex flex-wrap gap-2 mt-2.5">
-            {chips.map((chip) => (
-                <span
-                    key={chip.key}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand-espresso)]/10 bg-white px-2.5 py-1 text-[11px] text-[var(--color-brand-espresso)]/70 font-light"
-                >
-                    {chip.label}
-                    <span className={cn("font-medium", scoreTone(chip.score))}>
-                        {chip.score} 分{chip.grade ? ` · ${chip.grade}` : ""}
-                    </span>
-                </span>
-            ))}
-        </div>
     );
 }
 
@@ -145,7 +152,7 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                     </div>
                     {!expanded && issue.observation && (
                         <p className="mt-1 text-[12px] text-[var(--color-brand-taupe)] font-light leading-relaxed line-clamp-1">
-                            {issue.observation}
+                            {stripConsultantStepLabels(issue.observation)}
                         </p>
                     )}
                 </div>
@@ -183,7 +190,7 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                                     我看到的
                                 </StepLabel>
                                 <p className="text-sm lg:text-[15px] leading-[1.9] text-[var(--color-brand-espresso)]">
-                                    {issue.observation}
+                                    {stripConsultantStepLabels(issue.observation)}
                                 </p>
                                 <EvidenceChips issue={issue} dimensions={dimensions} />
                             </div>
@@ -195,13 +202,13 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                                     为什么会出现这个问题
                                 </StepLabel>
                                 <div className="space-y-2.5">
-                                    <div className="rounded-lg bg-[#F7F3EC] px-4 py-3">
+                                    <div className="rounded-lg bg-[#F7F3EC] border-l-2 border-[#DED5C6] px-4 py-3">
                                         <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">直接诱因 · 皮肤层面</p>
-                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{issue.directCauses}</p>
+                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.directCauses)}</p>
                                     </div>
-                                    <div className="rounded-lg bg-[#F7F3EC] px-4 py-3">
+                                    <div className="rounded-lg bg-[#F7F3EC] border-l-2 border-[#DED5C6] px-4 py-3">
                                         <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">间接诱因 · 生活习惯</p>
-                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{issue.indirectCauses}</p>
+                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.indirectCauses)}</p>
                                     </div>
                                 </div>
                             </div>
@@ -215,26 +222,32 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                                 </StepLabel>
                                 <div className="space-y-2.5">
                                     <div className="rounded-lg border border-[#C9A86C]/35 bg-[#FBF8F3] px-4 py-3">
-                                        <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1">护理方案</p>
-                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{issue.skincarePlan}</p>
+                                        <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1.5">护理方案</p>
+                                        <PlanLines text={stripConsultantStepLabels(issue.skincarePlan)} />
                                     </div>
                                     <div className="rounded-lg border border-[#C9A86C]/35 bg-[#FBF8F3] px-4 py-3">
-                                        <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1">生活调整</p>
-                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{issue.lifestylePlan}</p>
+                                        <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1.5">生活调整</p>
+                                        <PlanLines text={stripConsultantStepLabels(issue.lifestylePlan)} />
                                     </div>
                                 </div>
                             </div>
 
                             {/* 就医边界：重度问题升级为醒目提示框（安全信息不能被滑过去），其余保持低调 */}
                             {isSevere ? (
-                                <p className="flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200/60 px-3 py-2.5 text-[12px] leading-relaxed text-amber-900">
+                                <div className="flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200/60 px-3 py-2.5 text-amber-900">
                                     <Stethoscope className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.8} />
-                                    {issue.medicalBoundary}
-                                </p>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-medium mb-0.5">就医边界</p>
+                                        <p className="text-[12px] leading-relaxed">{stripConsultantStepLabels(issue.medicalBoundary)}</p>
+                                    </div>
+                                </div>
                             ) : (
                                 <p className="flex items-start gap-1.5 text-[12px] leading-relaxed text-[var(--color-brand-taupe)]">
                                     <Stethoscope className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.8} />
-                                    {issue.medicalBoundary}
+                                    <span>
+                                        <span className="font-medium text-[var(--color-brand-taupe)]">就医边界 · </span>
+                                        {stripConsultantStepLabels(issue.medicalBoundary)}
+                                    </span>
                                 </p>
                             )}
                         </div>
