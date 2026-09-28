@@ -577,21 +577,18 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.18 }}
                     >
-                      <div className="flex items-center gap-2 mb-4">
-                        {/* 返回入口仅桌面端（移动端由账户弹层头部承载，避免同屏两个返回） */}
+                      <div className="flex items-center mb-4">
+                        {/* 返回入口全端可用：与主视图「全部测肤记录」同款描边胶囊（移动端头槽已留空） */}
                         <button
                           type="button"
                           onClick={() => onHistoryViewChange(false)}
-                          aria-label="返回护肤档案"
-                          className="hidden md:flex w-8 h-8 -ml-1 items-center justify-center rounded-full text-brand-charcoal/65 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
+                          className="shrink-0 h-8 inline-flex items-center gap-1 px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
                         >
-                          <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
-                        </button>
-                        <span className="hidden md:inline text-[12px] text-brand-charcoal/70 font-light tracking-[0.05em]">
+                          <ChevronLeft className="w-3.5 h-3.5" strokeWidth={1.8} />
                           返回护肤档案
-                        </span>
+                        </button>
                         {testsTotal > 0 && (
-                          <span className="ml-auto text-[12px] text-brand-charcoal/60 font-light tabular-nums">
+                          <span className="ml-auto text-[12px] text-brand-charcoal/45 font-light tabular-nums">
                             共 {testsTotal} 条
                           </span>
                         )}
@@ -704,9 +701,10 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                       )}
 
                       {/* 打卡：与测肤趋势语义分离的独立子区块（色带 + 连续性统计）。
-                          列数跟随实际项数（最长连续为 0 时不占列） */}
+                          列数跟随实际项数（最长连续为 0 时不占列）。
+                          PC 端半卡片：极浅底托住彩色色带（无描边无阴影）；移动端平铺 + 分割线 */}
                       {summary && summary.totalCheckins > 0 && (
-                        <div className="mt-4 border-t border-brand-espresso/[0.15] pt-4">
+                        <div className="mt-4 border-t border-brand-espresso/[0.15] pt-4 lg:border-t-0 lg:rounded-2xl lg:bg-white/40 lg:p-4">
                           <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2 mb-3">
                             <Flame className="w-4 h-4 text-[var(--color-brand-ember)]" strokeWidth={1.5} />
                             打卡

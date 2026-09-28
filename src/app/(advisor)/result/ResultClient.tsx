@@ -210,9 +210,9 @@ function ResultHeader({
     const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
 
     return (
-        <div className="w-full flex flex-col items-center pt-6 lg:pt-8 pb-4 lg:pb-6">
+        <div className="w-full flex flex-col items-center pt-6 lg:pt-8 pb-4 lg:pb-5">
             {/* 状态标签属于标题一体：紧跟标题文字同行参与布局（整体居中） */}
-            <p className="mt-0 mb-3 lg:mb-4 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
+            <p className="mt-0 mb-4 lg:mb-5 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
                 <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                 {nickname} 的专属肌智派在线测肤报告
                 {skinStateLabel && (
@@ -221,10 +221,9 @@ function ResultHeader({
                     </span>
                 )}
             </p>
-            {/* 两页切换 tab：PC 与移动端统一置于标题下方；上下间距由标题 mb 与页头 pb 控制 */}
-            <div className="mb-4">
-                <ResultPageTabs pageIndex={pageIndex} onSwitchPage={onSwitchPage} />
-            </div>
+            {/* 两页切换 tab：与标题、与下方卡片保持同一间距
+                （标题 mb-4/5 == 页头 pb-4/5，tab 自身不再带下边距） */}
+            <ResultPageTabs pageIndex={pageIndex} onSwitchPage={onSwitchPage} />
         </div>
     );
 }
@@ -1661,10 +1660,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeInOut" }}
                             >
-                                {/* 标题固定顶部；证书卡在标题下方的剩余空间垂直居中。
-                                    内容超高一屏时 my-auto 自动退化为正常滚动（margin:auto 溢出归零） */}
+                                {/* 标题固定顶部；证书卡紧跟页头，tab 到标题/卡片的间距一致。
+                                    剩余空间由页脚 mt-auto 吸收（证书卡不再垂直居中，避免间距不对称） */}
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
-                                <div className="my-auto w-full">
+                                <div className="w-full">
                                     <div className="max-w-[900px] mx-auto px-6 md:px-8">
                                         <section aria-label="肌智派证书（第一面）">
                                         <ShareCardPage
@@ -1689,8 +1688,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     </section>
                                 </div>
                                 </div>
-                                {/* 证书面页脚：版权 + 备案（与报告面共用） */}
-                                <div className="w-full max-w-[900px] mx-auto px-6 md:px-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
+                                {/* 证书面页脚：版权 + 备案（与报告面共用）；mt-auto 把内容不足一屏时的剩余空间放到卡片之后 */}
+                                <div className="mt-auto w-full max-w-[900px] mx-auto px-6 md:px-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
                                     <ResultFooter />
                                 </div>
                             </m.div>
