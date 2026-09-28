@@ -694,7 +694,7 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                       {/* 打卡：与测肤趋势语义分离的独立子区块（色带 + 连续性统计）。
                           列数跟随实际项数（最长连续为 0 时不占列） */}
                       {summary && summary.totalCheckins > 0 && (
-                        <div className="mt-5 border-t border-brand-espresso/[0.06] pt-5">
+                        <div className="mt-5 border-t border-brand-espresso/[0.15] pt-5">
                           <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2 mb-3">
                             <Flame className="w-4 h-4 text-[var(--color-brand-ember)]" strokeWidth={1.5} />
                             打卡

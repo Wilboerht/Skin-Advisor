@@ -254,14 +254,14 @@ export function DiaryTimeline({
                           <button
                             type="button"
                             onClick={() => onCheckIn(null, todayStr)}
-                            className="shrink-0 min-h-9 px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
+                            className="shrink-0 inline-flex items-center justify-center h-8 px-3.5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium tracking-[0.05em] transition-colors hover:bg-brand-cocoa-dark cursor-pointer"
                           >
                             今日打卡
                           </button>
                         )}
                         <Link
                           href="/questions"
-                          className="shrink-0 min-h-9 inline-flex items-center px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
+                          className="shrink-0 inline-flex items-center h-8 px-1 text-[12px] text-brand-charcoal/55 transition-colors hover:text-brand-charcoal"
                         >
                           去测肤 →
                         </Link>
@@ -274,7 +274,7 @@ export function DiaryTimeline({
                         <button
                           type="button"
                           onClick={() => onCheckIn(manualDiaryEntry, todayStr)}
-                          className="inline-flex items-center min-h-9 px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
+                          className="inline-flex items-center justify-center h-8 px-3.5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] font-medium tracking-[0.05em] transition-colors hover:bg-brand-cocoa-dark cursor-pointer"
                         >
                           {manualDiaryEntry ? "编辑今日记录 →" : "今日打卡"}
                         </button>
