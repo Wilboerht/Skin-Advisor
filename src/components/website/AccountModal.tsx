@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, LazyMotion, domMax, m, useDragControls, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { ChevronLeft, Crown, Gift, LogOut, NotebookPen, User, X } from "lucide-react";
+import { Crown, Gift, LogOut, NotebookPen, User, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -413,28 +413,8 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                             <div className="h-1 w-9 rounded-full bg-stone-300/70" />
                           </div>
                           <div className="grid h-14 grid-cols-[3.5rem_1fr_3.5rem] items-center">
-                            {/* 左槽：护肤档案 tab 专用——主视图=「测肤记录」入口，子视图=返回（省去内容区首行入口） */}
-                            <div className="flex h-full w-full items-center justify-center">
-                              {activeTab === "diary" &&
-                                (diaryHistoryView ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => setDiaryHistoryView(false)}
-                                    aria-label="返回护肤档案"
-                                    className="flex h-11 w-full items-center justify-center text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
-                                  >
-                                    <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => setDiaryHistoryView(true)}
-                                    className="flex h-11 w-full items-center justify-center whitespace-nowrap text-[12px] tracking-[0.05em] text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
-                                  >
-                                    测肤记录
-                                  </button>
-                                ))}
-                            </div>
+                            {/* 左槽留空：保证标题居中；护肤档案的视图切换入口在面板「护肤历程」标题行内 */}
+                            <div aria-hidden />
                             <h2 className="truncate text-center text-[15px] font-medium tracking-wide text-stone-800">
                               {activeTab === "diary" && diaryHistoryView
                                 ? "测肤记录"

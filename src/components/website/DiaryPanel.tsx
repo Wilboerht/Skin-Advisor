@@ -614,7 +614,7 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                       transition={{ duration: 0.18 }}
                     >
                 {/* ===== 登录：概览（肌肤变化 + 打卡）+ 时间线 ===== */}
-                {/* 移动端「全部测肤记录」入口已上移到账户弹层头部左槽（省出首屏一行） */}
+                {/* 移动端「查看全部」入口在「护肤历程」标题行内（桌面端在标题栏右侧） */}
                 {/* PC 端（lg+）非对称双列（5:7，把宽度让给时间线）；左列 sticky 且限高内部滚动，
                     避免左列高于视口时 pin 住后底部内容不可达；移动端单列堆叠 */}
                 <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-10">
@@ -757,10 +757,21 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                     {/* 护肤历程 */}
                     <section>
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2">
-                          <NotebookPen className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />
-                          护肤历程
-                        </h3>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2">
+                            <NotebookPen className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />
+                            护肤历程
+                          </h3>
+                          {/* 移动端：整面板级视图切换入口（桌面端在标题栏右侧） */}
+                          <button
+                            type="button"
+                            onClick={() => onHistoryViewChange(true)}
+                            className="md:hidden shrink-0 inline-flex items-center gap-0.5 text-[12px] font-light tracking-[0.05em] text-brand-charcoal/55 transition-colors hover:text-brand-charcoal cursor-pointer"
+                          >
+                            查看全部
+                            <ChevronRight className="w-3 h-3" strokeWidth={1.8} />
+                          </button>
+                        </div>
                         {/* 视图切换：独立胶囊（风格对齐会员中心「录入消费」/渠道选择） */}
                         <div className="flex items-center gap-2" role="group" aria-label="历程视图切换">
                           {([
