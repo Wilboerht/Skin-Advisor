@@ -548,29 +548,17 @@
 
 /* 网格卡片样式（.kinetic-container/.kinetic-cell 等）已删除：全站无 DOM 引用 */
 
-/* ========== SVG 图表文字：CSS 响应式字号 ==========
-   SVG 的 presentation fontSize 会随 viewBox 缩放等比缩小（手机窄容器下 10px 实际渲染仅 ~5px），
-   改用 CSS font-size 并在移动端放大补偿，保证图表文字实际渲染尺寸稳定可读 */
+/* ========== SVG 图表文字：按 viewBox 缩放补偿的字号 ==========
+   SVG 以 640 宽的 viewBox 绘制，实际渲染宽度只有 ~280px（左列）/ ~340px（手机），
+   缩放系数约 0.44–0.52；字号必须按比例放大，26px 在屏幕上约等于 11px 才可读 */
 .trend-chart-scale {
-  font-size: 12px;
+  font-size: 26px;
 }
 .trend-chart-date {
-  font-size: 11px;
+  font-size: 24px;
 }
 .checkin-chart-date {
-  font-size: 11px;
-}
-
-@media (max-width: 640px) {
-  .trend-chart-scale {
-    font-size: 18px;
-  }
-  .trend-chart-date {
-    font-size: 15px;
-  }
-  .checkin-chart-date {
-    font-size: 14px;
-  }
+  font-size: 24px;
 }
 
 /* 隐藏滚动条但保留滚动功能 */

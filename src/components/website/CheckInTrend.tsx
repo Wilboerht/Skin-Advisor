@@ -42,11 +42,11 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
   const checkedCount = days.filter((d) => d.entry).length;
 
   const W = 640;
-  const H = 72;
+  const H = 92;
   const PAD_L = 4;
   const PAD_R = 4;
   const PAD_TOP = 8;
-  const PAD_BOTTOM = 18;
+  const PAD_BOTTOM = 34;
   const plotW = W - PAD_L - PAD_R;
   const plotH = H - PAD_TOP - PAD_BOTTOM;
   const cellW = plotW / TREND_DAYS;
@@ -115,10 +115,10 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
           );
         })}
 
-        <text x={PAD_L} y={H - 4} fill="var(--color-brand-taupe)" className="checkin-chart-date">
+        <text x={PAD_L} y={H - 8} fill="var(--color-brand-taupe)" className="checkin-chart-date">
           {firstLabel}
         </text>
-        <text x={W - PAD_R} y={H - 4} textAnchor="end" fill="var(--color-brand-taupe)" className="checkin-chart-date">
+        <text x={W - PAD_R} y={H - 8} textAnchor="end" fill="var(--color-brand-taupe)" className="checkin-chart-date">
           {lastLabel}
         </text>
       </svg>
