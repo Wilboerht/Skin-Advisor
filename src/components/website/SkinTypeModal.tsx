@@ -71,6 +71,15 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
             className="relative z-10 w-full h-[85dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-[1100px] bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* 背景纹理：80% 透明度（opacity-20）的丝绸质感图，铺在底色之上、内容之下 */}
+            <Image
+              src="/images/silk-texture.png"
+              alt=""
+              fill
+              sizes="(min-width: 640px) 1100px, 100vw"
+              aria-hidden="true"
+              className="pointer-events-none select-none object-cover opacity-20"
+            />
             {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
             <button
               onClick={onClose}
@@ -80,8 +89,8 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
               <X size={17} strokeWidth={1.5} />
             </button>
 
-            {/* 可滚动内容区：内容铺满弹层宽度（与护肤档案双列同宽的容器） */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
+            {/* 可滚动内容区：内容铺满弹层宽度（与护肤档案双列同宽的容器）；relative z-10 保持在背景纹理之上 */}
+            <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
               {/* 头部：形象 + 类型名 + 简介 */}
               <div className="flex flex-col items-center text-center mb-8">
                 <Image
