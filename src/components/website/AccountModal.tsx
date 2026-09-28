@@ -378,7 +378,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                           })}
                         </nav>
 
-                        <div className="mt-auto px-10 py-8">
+                        <div className="mt-auto px-10 pt-8 pb-6">
                           <button
                             type="button"
                             onClick={handleLogout}
