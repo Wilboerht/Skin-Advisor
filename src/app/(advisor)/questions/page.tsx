@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { DEFAULT_QUESTIONS, type Question } from "@/config/questions";
 import { QuestionStep } from "@/components/advisor/QuestionStep";
 import Image from "next/image";
@@ -33,7 +32,6 @@ const safeStorage = {
 };
 
 export default function QuestionsPage() {
-    const router = useRouter();
     // 预取首页与扫脸页路由，避免顶部栏按钮冷导航"点了没反应"；isNavigating 提供即时反馈
     const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/face-scan"]);
     const toast = useToast();
@@ -154,17 +152,25 @@ export default function QuestionsPage() {
     const isLoadingQuestions = false;
 
     // 入口守卫：必须通过首页引导弹窗（同意隐私协议）后才能进入问卷
-    // null = 尚未检查（避免首帧闪出性别选择页）
+    // 登录用户放宽：面板/档案里的「去测肤」直达本页，换设备或清缓存后本地无同意记录，
+    // 只要 /api/auth/me 确认有登录态就允许进入
+    // null = 尚未检查（避免首帧闪出性别选择页；登录态未决时也保持 null，避免误拦登录用户）
     const [accessDenied, setAccessDenied] = useState<boolean | null>(null);
     useEffect(() => {
         try {
             const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
             const hasAnswers = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
-            setAccessDenied(!hasConsent && !hasAnswers);
+            // 本地有同意记录或答题记录：与登录态无关，立即放行
+            if (hasConsent || hasAnswers) {
+                setAccessDenied(false);
+                return;
+            }
         } catch {
-            setAccessDenied(true);
+            // localStorage 不可用：继续走登录态判定（登录用户仍放行）
         }
-    }, [router]);
+        if (!isUserInitialized) return;
+        setAccessDenied(!user);
+    }, [user, isUserInitialized]);
 
     const getFilteredQuestions = (currentAnswers: Record<string, unknown>, currentGender: typeof gender) => {
         return allQuestions.filter(q => {
@@ -296,10 +302,20 @@ export default function QuestionsPage() {
         }
     }, [genderConfirmed, aiConfigured]);
 
-    // 恢复之前的状态（刷新或直接导航时，只要存在有效进度且同意隐私协议就恢复）
+    // 最新登录态：resumeSavedProgress 在挂载与登录态确定后各尝试一次，需读取最新值
+    const userRef = useRef(user);
+    useEffect(() => {
+        userRef.current = user;
+    }, [user]);
+
+    // 恢复之前的状态（刷新或直接导航时，只要存在有效进度且已同意隐私协议或已登录就恢复）
     const resumeSavedProgress = useCallback(() => {
+        // 幂等：登录态确定后会再次触发，已恢复过就不再覆盖
+        if (resumedProgressRef.current) return;
+
         const hasConsent = safeStorage.get(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
-        if (!hasConsent) return;
+        // 登录用户放宽：换设备/清缓存后本地无同意记录，也恢复进度
+        if (!hasConsent && !userRef.current) return;
 
         const savedAnswers = safeStorage.get(STORAGE_KEYS.ADVISOR_ANSWERS);
         const savedGender = safeStorage.get(STORAGE_KEYS.ADVISOR_GENDER);
@@ -345,6 +361,13 @@ export default function QuestionsPage() {
     useEffect(() => {
         resumeSavedProgress();
     }, [resumeSavedProgress]);
+
+    // 登录态由 /api/auth/me 在挂载后才确定：无本地同意记录的登录用户首次调用时会被跳过，
+    // 确定后再尝试恢复一次（resumeSavedProgress 幂等，不会覆盖已恢复/在答的状态）
+    useEffect(() => {
+        if (!isUserInitialized) return;
+        resumeSavedProgress();
+    }, [isUserInitialized, resumeSavedProgress]);
 
     // 在问题列表加载完成后再应用恢复的步骤，并自动限制在有效范围内
     useEffect(() => {
@@ -654,10 +677,10 @@ export default function QuestionsPage() {
     }, []);
 
 
-    // 入口守卫：未同意隐私协议时显示友好提示
+    // 入口守卫：未同意隐私协议且未登录时显示友好提示
     // 必须在性别页分支之前——新用户 gender 必为 null，放后面守卫永远不生效
     if (accessDenied === null) {
-        // 守卫检查（localStorage）尚未完成，先渲染加载态避免闪出性别选择页
+        // 守卫检查（localStorage + 登录态）尚未完成，先渲染加载态避免闪出性别选择页
         return (
             <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9]">
                 <Loader2 className="w-6 h-6 text-brand-charcoal/60 animate-spin" />

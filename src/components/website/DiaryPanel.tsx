@@ -148,6 +148,9 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
   // 请求时序守卫：打开/切号/重开时自增；所有异步回调写回 state 前比对，
   // 防止旧账号/旧请求的晚到响应串入当前界面（bootstrap/趋势/日历由 effect cancelled 覆盖）
   const requestSeqRef = useRef(0);
+  // 同步防抖锁：同帧双击「加载更早」时 state 守卫尚未生效，用 ref 保证只发一次请求
+  const entriesLoadingMoreRef = useRef(false);
+  const testsLoadingMoreRef = useRef(false);
 
   // 打卡弹层：existing 为 null 表示新建；dateStr 为目标日历日（补打卡为过去日期）
   const [checkIn, setCheckIn] = useState<{ open: boolean; existing: DiaryEntry | null; dateStr: string | null }>({
@@ -290,7 +293,8 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
   const loadMoreEntries = useCallback(async () => {
     const seq = requestSeqRef.current;
     const cursor = entriesCursorRef.current;
-    if (entriesLoadingMore || !cursor) return;
+    if (entriesLoadingMoreRef.current || entriesLoadingMore || !cursor) return;
+    entriesLoadingMoreRef.current = true;
     setEntriesLoadingMore(true);
     try {
       const res = await diaryFetch(`/api/user/diary?limit=${ENTRIES_PAGE_SIZE}&before=${cursor}`);
@@ -310,6 +314,7 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
       if (e instanceof AuthExpiredError) setSessionExpired(true);
       else toast.error("加载失败，请稍后再试");
     } finally {
+      entriesLoadingMoreRef.current = false;
       if (seq === requestSeqRef.current) setEntriesLoadingMore(false);
     }
   }, [entriesLoadingMore, toast]);
@@ -463,12 +468,13 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
   const loadMoreTests = useCallback(async () => {
     const seq = requestSeqRef.current;
     const cursor = testsCursorRef.current;
-    if (testsLoadingMore) return;
+    if (testsLoadingMoreRef.current || testsLoadingMore) return;
     // 游标为空说明首屏为空（或数据不一致：total>0 但首页无记录）——无法定位"更早"，直接封底避免死按钮
     if (!cursor) {
       setTestsExhausted(true);
       return;
     }
+    testsLoadingMoreRef.current = true;
     setTestsLoadingMore(true);
     try {
       const res = await diaryFetch(`/api/advisor/history?limit=${TESTS_PAGE_SIZE}&lite=1&before=${encodeURIComponent(cursor)}`);
@@ -487,6 +493,7 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
       console.error("Load more tests error:", e);
       if (e instanceof AuthExpiredError) setSessionExpired(true);
     } finally {
+      testsLoadingMoreRef.current = false;
       if (seq === requestSeqRef.current) setTestsLoadingMore(false);
     }
   }, [testsLoadingMore]);
@@ -510,6 +517,12 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
       if (seq === requestSeqRef.current) setDeletingId(null);
     }
   }, [deletingId, refreshEntries, toast]);
+
+  // 翻页回到面板顶部：换页后仍停在上一页的滚动位置会让人以为内容没变
+  const handleHistoryPageChange = useCallback((p: number) => {
+    setLastHistoryPage(p);
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, []);
 
   return (
     <LazyMotion features={domAnimation}>
@@ -586,7 +599,7 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                         initialPage={lastHistoryPage}
                         initialSessions={lastHistoryPage <= 1 ? tests.slice(0, TESTS_PAGE_SIZE) : undefined}
                         initialTotal={testsTotal}
-                        onPageChange={setLastHistoryPage}
+                        onPageChange={handleHistoryPageChange}
                       />
                     </m.div>
                   ) : (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Clock, ScanFace } from "lucide-react";
 import { STATE_META } from "@/components/website/DiaryTimeline";
@@ -62,27 +62,48 @@ export function TestHistoryList({
   const [page, setPage] = useState(initialPage ?? 1);
   const [totalPages, setTotalPages] = useState(initialTotal > 0 ? Math.ceil(initialTotal / pageSize) : 0);
   const [total, setTotal] = useState(initialTotal);
+  // 请求时序守卫：快速翻页/重试时丢弃晚到的旧响应，避免旧页数据覆盖新页
+  const requestSeqRef = useRef(0);
+  // 同步防抖锁：双击（同一帧内两次 click，state 尚未来得及禁用按钮）只放行一次翻页
+  const busyRef = useRef(false);
 
   const fetchHistory = useCallback(async () => {
+    const seq = ++requestSeqRef.current;
+    busyRef.current = true;
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch(`/api/advisor/history?page=${page}&limit=${pageSize}&lite=1`);
+      const res = await fetch(`/api/advisor/history?page=${page}&limit=${pageSize}&lite=1`, {
+        signal: AbortSignal.timeout(8000),
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (seq !== requestSeqRef.current) return; // 已被更新的请求取代，丢弃本次结果
       const sessions: HistorySession[] = data.history ?? [];
       const totalCount: number = data.pagination?.total || 0;
+      const pages: number = data.pagination?.totalPages || 0;
       setHistory(sessions);
-      setTotalPages(data.pagination?.totalPages || 0);
+      setTotalPages(pages);
       setTotal(totalCount);
       onDataChange?.(sessions, totalCount);
+      // 页码越界自愈（如末页记录被删后停留在空页）：回退到最后一页
+      if (sessions.length === 0 && pages > 0 && page > pages) {
+        setPage(pages);
+      }
     } catch (e) {
+      if (seq !== requestSeqRef.current) return;
       console.error("History fetch error:", e);
       setError(true);
     } finally {
-      setLoading(false);
+      if (seq === requestSeqRef.current) {
+        busyRef.current = false;
+        setLoading(false);
+      }
     }
   }, [page, pageSize, onDataChange]);
+
+  // 卸载时作废在途请求，避免晚到响应写回已卸载组件
+  useEffect(() => () => { requestSeqRef.current += 1; }, []);
 
   useEffect(() => {
     // 已提供首屏数据：跳过初始拉取，避免与父级（DiaryPanel 时间线）重复请求
@@ -118,7 +139,9 @@ export function TestHistoryList({
           <p className="text-[13px] text-brand-charcoal/60">测肤记录加载失败，请检查网络后重试</p>
           <button
             type="button"
-            onClick={fetchHistory}
+            onClick={() => {
+              if (!busyRef.current) fetchHistory();
+            }}
             className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[var(--color-brand-cocoa)] border border-brand-espresso/20 hover:border-brand-espresso/50 hover:bg-brand-espresso/[0.04] transition-all duration-300"
           >
             重新加载
@@ -156,6 +179,9 @@ export function TestHistoryList({
               minute: "2-digit",
               hour12: false,
             });
+            const weekday = new Date(session.completedAt).toLocaleDateString("zh-CN", {
+              weekday: "short",
+            });
             // 分数颜色分级：与时间线状态点同一套语义色（great/good/normal/bad/terrible），扫读口径一致
             const scoreState =
               typeof score === "number" && score > 0 ? scoreToSkinState(score) : null;
@@ -166,6 +192,7 @@ export function TestHistoryList({
                   <div className="pt-4 pb-1.5 first:pt-0 flex items-center gap-2.5">
                     <span className="shrink-0 text-[11px] font-medium text-brand-charcoal/60 tabular-nums">
                       {showYear ? `${year}.${day}` : day}
+                      <span className="ml-1 font-normal text-brand-charcoal/45">{weekday}</span>
                     </span>
                     <span className="flex-1 h-px bg-brand-espresso/[0.05]" />
                   </div>
@@ -181,10 +208,17 @@ export function TestHistoryList({
                     {skinType || "肌肤分析"}
                   </span>
                   <span
-                    className="shrink-0 text-[13px] font-medium tabular-nums"
+                    className="shrink-0 inline-flex items-baseline text-[13px] font-medium tabular-nums"
                     style={scoreState ? { color: STATE_META[scoreState].color } : undefined}
                   >
-                    {score != null && score > 0 ? `${score} 分` : "—"}
+                    {score != null && score > 0 ? (
+                      <>
+                        {score}
+                        <span className="ml-0.5 text-[11px] font-normal opacity-70">分</span>
+                      </>
+                    ) : (
+                      "—"
+                    )}
                   </span>
                   <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/40 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
                 </Link>
@@ -197,25 +231,33 @@ export function TestHistoryList({
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-6">
           <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            type="button"
+            onClick={() => {
+              if (busyRef.current) return;
+              setPage((p) => Math.max(1, p - 1));
+            }}
             disabled={page <= 1 || loading}
-            className="flex items-center gap-1.5 py-2 pr-2 text-[12px] text-brand-charcoal/60 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-1 h-8 px-3.5 rounded-full border border-brand-espresso/20 text-[12px] text-brand-charcoal/60 transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
             上一页
           </button>
 
-          <span className="text-[12px] text-brand-charcoal/60">
+          <span className="text-[12px] text-brand-charcoal/55 tabular-nums">
             {page} / {totalPages}
           </span>
 
           <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            type="button"
+            onClick={() => {
+              if (busyRef.current) return;
+              setPage((p) => Math.min(totalPages, p + 1));
+            }}
             disabled={page >= totalPages || loading}
-            className="flex items-center gap-1.5 py-2 pl-2 text-[12px] text-brand-charcoal/60 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-1 h-8 px-3.5 rounded-full border border-brand-espresso/20 text-[12px] text-brand-charcoal/60 transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             下一页
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
