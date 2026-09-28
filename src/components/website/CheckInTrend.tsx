@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { STATE_META, type DiaryEntry } from "@/components/website/DiaryTimeline";
 import { parseClientDate } from "@/lib/diary-utils";
 
@@ -23,6 +24,8 @@ const STATE_LEVEL: Record<string, number> = {
  * 近 30 天窗口内的全部打卡；若调整父级 ENTRIES_PAGE_SIZE 或服务端排序需重新评估。
  */
 export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; todayStr: string }) {
+  // 触屏上 SVG <title> 不可达：点按色带把该日「日期 + 状态」显示在标题行（再点取消）
+  const [activeDay, setActiveDay] = useState<string | null>(null);
   const dayMap = new Map<string, DiaryEntry>();
   for (const entry of entries) {
     const day = entry.date.slice(0, 10);
@@ -40,6 +43,8 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
   }
 
   const checkedCount = days.filter((d) => d.entry).length;
+  const activeInfo = activeDay ? days.find((d) => d.dateStr === activeDay) ?? null : null;
+  const activeMeta = activeInfo?.entry ? STATE_META[activeInfo.entry.skinState] : null;
 
   const W = 640;
   const H = 92;
@@ -64,12 +69,18 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
   return (
     <div>
       <div className="flex items-end justify-between mb-2.5">
-        <p className="text-[12px] tracking-[0.15em] text-brand-charcoal/60 font-light">
+        <p className="text-[12px] tracking-[0.15em] text-brand-charcoal/65 font-light">
           近 30 天打卡状态
         </p>
-        <p className="text-[12px] text-brand-charcoal/55 font-light">
-          已打卡 {checkedCount} 天
-        </p>
+        {activeInfo ? (
+          <p className="text-[12px] font-light" style={activeMeta ? { color: activeMeta.color } : undefined}>
+            {fmtShort(activeInfo.dateStr)} · {activeMeta ? activeMeta.label : "未打卡"}
+          </p>
+        ) : (
+          <p className="text-[12px] text-brand-charcoal/65 font-light">
+            已打卡 {checkedCount} 天
+          </p>
+        )}
       </div>
 
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="近 30 天打卡状态趋势">
@@ -82,8 +93,16 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
           const y = PAD_TOP + plotH - barH;
           return (
             <g key={dateStr}>
-              {/* 隐形热区 + 提示 */}
-              <rect x={x} y={PAD_TOP} width={cellW} height={plotH} fill="transparent">
+              {/* 热区：桌面 hover 提示 + 触屏点按选中（选中列加淡底色，标题行显示当日状态） */}
+              <rect
+                x={x}
+                y={PAD_TOP}
+                width={cellW}
+                height={plotH}
+                fill={activeDay === dateStr ? "rgba(92,73,55,0.07)" : "transparent"}
+                className="cursor-pointer"
+                onClick={() => setActiveDay((prev) => (prev === dateStr ? null : dateStr))}
+              >
                 <title>
                   {entry
                     ? `${fmtShort(dateStr)} · ${meta ? meta.label : entry.skinState}`
@@ -125,7 +144,7 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
 
       {/* 图例：5 色点 + 两端语义词（中间档位由颜色深浅自然表达），未打卡以灰点示意 */}
       <div className="flex items-center justify-center gap-1.5 mt-2">
-        <span className="text-[11px] text-brand-charcoal/55 font-light mr-0.5">很好</span>
+        <span className="text-[12px] text-brand-charcoal/65 font-light mr-0.5">很好</span>
         {(["great", "good", "normal", "bad", "terrible"] as const).map((key) => (
           <span
             key={key}
@@ -133,11 +152,15 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
             style={{ backgroundColor: STATE_META[key].color }}
           />
         ))}
-        <span className="text-[11px] text-brand-charcoal/55 font-light ml-0.5">很差</span>
+        <span className="text-[12px] text-brand-charcoal/65 font-light ml-0.5">很差</span>
         <span className="w-px h-3 bg-brand-espresso/[0.1] mx-1.5" />
         <span className="w-2 h-2 rounded-full bg-brand-charcoal/10" />
-        <span className="text-[11px] text-brand-charcoal/55 font-light">未打卡</span>
+        <span className="text-[12px] text-brand-charcoal/65 font-light">未打卡</span>
       </div>
+      {/* 触屏没有 hover 提示，给出点按发现性引导（桌面端 <title> 提示已覆盖） */}
+      <p className="md:hidden mt-1.5 text-center text-[12px] text-brand-charcoal/55 font-light">
+        点按色带查看每日状态
+      </p>
     </div>
   );
 }

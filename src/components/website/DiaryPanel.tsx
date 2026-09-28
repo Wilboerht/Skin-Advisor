@@ -89,6 +89,9 @@ interface DiaryPanelProps {
   active: boolean;
   /** 登录过期统一引导（弹层职责：关弹层 + 打开 AuthModal） */
   onRequestLogin: () => void;
+  /** 「全部测肤记录」子视图（受控）：移动端头部标题/返回由账户弹层承载，故状态上抛 */
+  historyView: boolean;
+  onHistoryViewChange: (view: boolean) => void;
 }
 
 /**
@@ -96,7 +99,7 @@ interface DiaryPanelProps {
  * 肌肤变化 + 护肤历程时间线；「全部记录」为面板内视图切换（原内容淡出 → 记录淡入），
  * 打卡保持二级弹层。弹层外壳/滚动锁/Escape/未登录引导由 AccountModal 统一负责；本面板自带标题与滚动区。
  */
-export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
+export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewChange }: DiaryPanelProps) {
   const { user } = useAuth();
   // 短缓存/请求的用户隔离标识：依赖 user?.id 而非 user 引用（定时续期返回同内容新对象不应触发重置）
   const userId = user?.id;
@@ -158,8 +161,6 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
     existing: null,
     dateStr: null,
   });
-  // 视图切换：true=全部记录（同一弹层内内容淡去切换，不开新弹层）
-  const [historyView, setHistoryView] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // 近 30 天内有效打卡天数（与 CheckInTrend 的 30 天窗口口径一致，避免旧数据触发空图）
@@ -368,7 +369,7 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
     setTestsTotal(0);
     setTestsLoadingMore(false);
     loadedTestIdsRef.current = new Set();
-    setHistoryView(false);
+    onHistoryViewChange(false);
     testsCursorRef.current = null;
     setCalendarView(false);
     setCalendarEntries([]);
@@ -404,7 +405,7 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
     return () => {
       cancelled = true;
     };
-  }, [active, userId, fetchBootstrap, applyBootstrap, loadTests]);
+  }, [active, userId, fetchBootstrap, applyBootstrap, loadTests, onHistoryViewChange]);
 
   // 趋势加载独立成 effect（带 60s 短缓存，重复开关弹层不重复请求）：
   // 失败可单独重试，不牵连条目/测肤列表；错误态与"测肤不足 2 次"的解锁引导区分开
@@ -536,8 +537,8 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
           {!historyView && (
             <button
               type="button"
-              onClick={() => setHistoryView(true)}
-              className="shrink-0 h-8 inline-flex items-center gap-1 px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
+              onClick={() => onHistoryViewChange(true)}
+              className="shrink-0 h-8 inline-flex items-center gap-1 px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/65 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
             >
               全部测肤记录
               <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.8} />
@@ -577,19 +578,20 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                       transition={{ duration: 0.18 }}
                     >
                       <div className="flex items-center gap-2 mb-4">
+                        {/* 返回入口仅桌面端（移动端由账户弹层头部承载，避免同屏两个返回） */}
                         <button
                           type="button"
-                          onClick={() => setHistoryView(false)}
+                          onClick={() => onHistoryViewChange(false)}
                           aria-label="返回护肤档案"
-                          className="w-8 h-8 -ml-1 flex items-center justify-center rounded-full text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
+                          className="hidden md:flex w-8 h-8 -ml-1 items-center justify-center rounded-full text-brand-charcoal/65 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
                         >
                           <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
                         </button>
-                        <span className="text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em]">
+                        <span className="hidden md:inline text-[12px] text-brand-charcoal/70 font-light tracking-[0.05em]">
                           返回护肤档案
                         </span>
                         {testsTotal > 0 && (
-                          <span className="ml-auto text-[12px] text-brand-charcoal/45 font-light tabular-nums">
+                          <span className="ml-auto text-[12px] text-brand-charcoal/60 font-light tabular-nums">
                             共 {testsTotal} 条
                           </span>
                         )}
@@ -611,19 +613,8 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.18 }}
                     >
-                {/* 移动端：整面板级入口（桌面端在标题栏），随主视图淡入淡出 */}
-                <div className="mb-4 flex justify-end md:hidden">
-                  <button
-                    type="button"
-                    onClick={() => setHistoryView(true)}
-                    className="shrink-0 h-9 inline-flex items-center gap-1 px-4 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
-                  >
-                    全部测肤记录
-                    <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.8} />
-                  </button>
-                </div>
-
                 {/* ===== 登录：概览（肌肤变化 + 打卡）+ 时间线 ===== */}
+                {/* 移动端「全部测肤记录」入口已上移到账户弹层头部左槽（省出首屏一行） */}
                 {/* PC 端（lg+）非对称双列（5:7，把宽度让给时间线）；左列 sticky 且限高内部滚动，
                     避免左列高于视口时 pin 住后底部内容不可达；移动端单列堆叠 */}
                 <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-10">
@@ -694,7 +685,7 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                             <TrendChart trends={rangeTrends} totalTests={summary?.testCount} />
                           ) : (
                             <div className="py-6 text-center">
-                              <p className="text-[13px] text-brand-charcoal/60 font-light">
+                              <p className="text-[13px] text-brand-charcoal/65 font-light">
                                 近 {trendRange} 天内测肤不足 2 次，暂无趋势可看
                               </p>
                             </div>
@@ -729,9 +720,9 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                             <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                               <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
                                 {summary.currentStreak}
-                                <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">天</span>
+                                <span className="ml-0.5 text-[12px] font-sans font-light text-brand-charcoal/65">天</span>
                               </p>
-                              <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
+                              <p className="flex items-center gap-1 text-[12px] text-brand-charcoal/65 font-light">
                                 <Flame className="w-3 h-3 text-brand-ember" strokeWidth={1.8} />
                                 连续打卡
                               </p>
@@ -739,9 +730,9 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                             <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                               <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
                                 {summary.totalCheckins}
-                                <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">次</span>
+                                <span className="ml-0.5 text-[12px] font-sans font-light text-brand-charcoal/65">次</span>
                               </p>
-                              <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
+                              <p className="flex items-center gap-1 text-[12px] text-brand-charcoal/65 font-light">
                                 <CalendarCheck className="w-3 h-3 text-brand-charcoal/65" strokeWidth={1.8} />
                                 累计打卡
                               </p>
@@ -750,9 +741,9 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                               <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                                 <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
                                   {summary.longestStreak}
-                                  <span className="ml-0.5 text-[11px] font-sans font-light text-brand-charcoal/65">天</span>
+                                  <span className="ml-0.5 text-[12px] font-sans font-light text-brand-charcoal/65">天</span>
                                 </p>
-                                <p className="flex items-center gap-1 text-[11px] text-brand-charcoal/65 font-light">
+                                <p className="flex items-center gap-1 text-[12px] text-brand-charcoal/65 font-light">
                                   <Trophy className="w-3 h-3 text-brand-gold" strokeWidth={1.8} />
                                   最长连续
                                 </p>

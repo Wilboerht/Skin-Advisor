@@ -95,14 +95,14 @@ export function TrendChart({ trends, totalTests }: { trends: TrendsData; totalTe
       {/* 摘要：最新评分 + 测评日期 + 与上次差值 */}
       <div className="flex items-end justify-between mb-3">
         <div>
-          <p className="text-[12px] tracking-[0.15em] text-brand-charcoal/45 font-light mb-1">
+          <p className="text-[12px] tracking-[0.15em] text-brand-charcoal/60 font-light mb-1">
             最新综合评分
           </p>
           <p className="text-3xl md:text-4xl font-serif font-light text-brand-charcoal leading-none">
             {latest}
-            <span className="text-sm text-brand-charcoal/40 ml-1.5">分</span>
+            <span className="text-sm text-brand-charcoal/55 ml-1.5">分</span>
           </p>
-          <p className="mt-1.5 text-[12px] text-brand-charcoal/40 font-light tracking-[0.08em]">
+          <p className="mt-1.5 text-[12px] text-brand-charcoal/55 font-light tracking-[0.08em]">
             {latestDate} 测
           </p>
         </div>
@@ -117,7 +117,7 @@ export function TrendChart({ trends, totalTests }: { trends: TrendsData; totalTe
             </span>
           )}
           {typeof totalTests === "number" && totalTests > 0 && (
-            <p className="text-[12px] text-brand-charcoal/45 font-light tracking-[0.08em]">
+            <p className="text-[12px] text-brand-charcoal/55 font-light tracking-[0.08em]">
               累计测肤 {totalTests} 次
             </p>
           )}

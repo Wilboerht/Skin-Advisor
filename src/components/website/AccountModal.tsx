@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, LazyMotion, domMax, m, useDragControls, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { Crown, Gift, LogOut, NotebookPen, User, X } from "lucide-react";
+import { ChevronLeft, Crown, Gift, LogOut, NotebookPen, User, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -110,6 +110,9 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
   // 一级菜单状态：首次进入后保持挂载（仅隐藏），iframe/会员数据不重载
   const [activeTab, setActiveTab] = useState<AccountTab>(initialTab ?? "profile");
   const [visitedTabs, setVisitedTabs] = useState<AccountTab[]>(initialTab ? [initialTab] : ["profile"]);
+  // 「全部测肤记录」子视图（受控）：DiaryPanel 内部视图状态上抛，
+  // 移动端头部据此切换标题（测肤记录）并显示返回按钮；主视图头部则显示入口
+  const [diaryHistoryView, setDiaryHistoryView] = useState(false);
 
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
@@ -126,6 +129,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
       const target = initialTabOnOpenRef.current ?? "profile";
       setActiveTab(target);
       setVisitedTabs([target]);
+      setDiaryHistoryView(false);
     }
   }, [isOpen]);
   // 账号切换：回到个人信息（跳过首次挂载，避免覆盖 initialTab）
@@ -135,9 +139,12 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
     prevUserIdRef.current = user?.id;
     setActiveTab("profile");
     setVisitedTabs(["profile"]);
+    setDiaryHistoryView(false);
   }, [user?.id]);
 
   const activateTab = (tab: AccountTab) => {
+    // 进入/切回「护肤档案」时回到主视图：避免头部停留在子视图，也作为点当前 tab 的复位手势
+    if (tab === "diary") setDiaryHistoryView(false);
     setActiveTab(tab);
     setVisitedTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]));
     onTabChange?.(tab);
@@ -406,9 +413,32 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                             <div className="h-1 w-9 rounded-full bg-stone-300/70" />
                           </div>
                           <div className="grid h-14 grid-cols-[3.5rem_1fr_3.5rem] items-center">
-                            <div aria-hidden />
+                            {/* 左槽：护肤档案 tab 专用——主视图=「测肤记录」入口，子视图=返回（省去内容区首行入口） */}
+                            <div className="flex h-full w-full items-center justify-center">
+                              {activeTab === "diary" &&
+                                (diaryHistoryView ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDiaryHistoryView(false)}
+                                    aria-label="返回护肤档案"
+                                    className="flex h-11 w-full items-center justify-center text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                                  >
+                                    <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDiaryHistoryView(true)}
+                                    className="flex h-11 w-full items-center justify-center whitespace-nowrap text-[12px] tracking-[0.05em] text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                                  >
+                                    测肤记录
+                                  </button>
+                                ))}
+                            </div>
                             <h2 className="truncate text-center text-[15px] font-medium tracking-wide text-stone-800">
-                              {MENU_ITEMS.find((i) => i.key === activeTab)?.label || "个人信息"}
+                              {activeTab === "diary" && diaryHistoryView
+                                ? "测肤记录"
+                                : MENU_ITEMS.find((i) => i.key === activeTab)?.label || "个人信息"}
                             </h2>
                             <div className="flex h-full w-full items-center justify-center">
                               <button
@@ -457,6 +487,8 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                               <DiaryPanel
                                 active={activeTab === "diary"}
                                 onRequestLogin={requestLogin}
+                                historyView={diaryHistoryView}
+                                onHistoryViewChange={setDiaryHistoryView}
                               />
                             </div>
                           )}

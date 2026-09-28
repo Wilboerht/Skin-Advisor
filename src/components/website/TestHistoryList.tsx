@@ -190,9 +190,9 @@ export function TestHistoryList({
               <div key={session.sessionId}>
                 {isNewDay && (
                   <div className="pt-4 pb-1.5 first:pt-0 flex items-center gap-2.5">
-                    <span className="shrink-0 text-[11px] font-medium text-brand-charcoal/60 tabular-nums">
+                    <span className="shrink-0 text-[12px] font-medium text-brand-charcoal/70 tabular-nums">
                       {showYear ? `${year}.${day}` : day}
-                      <span className="ml-1 font-normal text-brand-charcoal/45">{weekday}</span>
+                      <span className="ml-1 font-normal text-brand-charcoal/55">{weekday}</span>
                     </span>
                     <span className="flex-1 h-px bg-brand-espresso/[0.05]" />
                   </div>
@@ -201,7 +201,7 @@ export function TestHistoryList({
                   href={`/reports/${session.sessionId}?skipCover=1`}
                   className="group flex items-center gap-3 pl-1 py-2.5 rounded-md hover:bg-brand-charcoal/[0.03] transition-colors"
                 >
-                  <span className="shrink-0 w-12 text-[12px] text-brand-charcoal/60 font-light tabular-nums">
+                  <span className="shrink-0 w-12 text-[12px] text-brand-charcoal/65 font-light tabular-nums">
                     {time}
                   </span>
                   <span className="flex-1 min-w-0 truncate text-[13px] text-brand-charcoal/85">
@@ -214,7 +214,7 @@ export function TestHistoryList({
                     {score != null && score > 0 ? (
                       <>
                         {score}
-                        <span className="ml-0.5 text-[11px] font-normal opacity-70">分</span>
+                        <span className="ml-0.5 text-[12px] font-normal opacity-70">分</span>
                       </>
                     ) : (
                       "—"
@@ -243,7 +243,7 @@ export function TestHistoryList({
             上一页
           </button>
 
-          <span className="text-[12px] text-brand-charcoal/55 tabular-nums">
+          <span className="text-[12px] text-brand-charcoal/65 tabular-nums">
             {page} / {totalPages}
           </span>
 

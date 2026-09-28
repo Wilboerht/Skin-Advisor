@@ -95,7 +95,7 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
                 setOpenPopover(null);
                 onMonthChange(currentMonth);
               }}
-              className="text-[11px] text-brand-charcoal/60 font-light tracking-[0.04em] hover:text-brand-charcoal transition-colors cursor-pointer rounded-full px-2 py-0.5 hover:bg-brand-charcoal/[0.04]"
+              className="text-[12px] text-brand-charcoal/65 font-light tracking-[0.04em] hover:text-brand-charcoal transition-colors cursor-pointer rounded-full px-2 py-0.5 hover:bg-brand-charcoal/[0.04]"
             >
               回到本月
             </button>
@@ -115,7 +115,7 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
       {/* 星期表头 */}
       <div className="grid grid-cols-7 mb-1.5">
         {WEEKDAYS.map((w) => (
-          <span key={w} className="text-center text-[11px] text-brand-charcoal/60 font-light">
+          <span key={w} className="text-center text-[12px] text-brand-charcoal/65 font-light">
             {w}
           </span>
         ))}
@@ -148,7 +148,7 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
 
           const cell = (
             <div
-              className={`group/cell relative aspect-square rounded-lg flex items-center justify-center text-[11px] transition-colors ${
+              className={`group/cell relative aspect-square rounded-lg flex items-center justify-center text-[12px] transition-colors ${
                 isToday ? "font-medium ring-1 ring-inset ring-brand-charcoal/40" : "font-light"
               } ${
                 entry
@@ -156,10 +156,10 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
                     ? "hover:ring-1 hover:ring-inset hover:ring-brand-charcoal/40"
                     : ""
                   : clickable
-                    ? "text-brand-charcoal/60 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/75"
+                    ? "text-brand-charcoal/65 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal/75"
                     : isWeekend
-                      ? "text-brand-charcoal/25"
-                      : "text-brand-charcoal/30"
+                      ? "text-brand-charcoal/35"
+                      : "text-brand-charcoal/40"
               }`}
               style={entry && meta ? { backgroundColor: `${meta.color}26`, color: meta.color } : undefined}
               title={
@@ -182,16 +182,16 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
                     openPopover === dateStr ? "block" : "hidden lg:group-hover/cell:block"
                   }`}
                 >
-                  <p className="text-[11px] font-medium" style={{ color: meta.color }}>
+                  <p className="text-[12px] font-medium" style={{ color: meta.color }}>
                     {fmtShort(dateStr)} · {meta.label}
                   </p>
                   {entry.tags && entry.tags.length > 0 && (
-                    <p className="mt-0.5 text-[11px] text-brand-charcoal/60 font-light">
+                    <p className="mt-0.5 text-[12px] text-brand-charcoal/65 font-light">
                       {entry.tags.join(" · ")}
                     </p>
                   )}
                   {entry.note && (
-                    <p className="mt-0.5 text-[11px] text-brand-charcoal/55 font-light leading-relaxed line-clamp-2">
+                    <p className="mt-0.5 text-[12px] text-brand-charcoal/65 font-light leading-relaxed line-clamp-2">
                       {entry.note}
                     </p>
                   )}
@@ -238,17 +238,17 @@ export function DiaryCalendar({ entries, month, todayStr, onMonthChange, onBackf
 
       {/* 图例：与打卡色带同构（很好 → 5 色点 → 很差 | 未打卡）；左侧提示可点日期 */}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mt-4">
-        <span className="text-[11px] text-brand-charcoal/45 font-light">点空白日期补打卡</span>
+        <span className="text-[12px] text-brand-charcoal/60 font-light">点空白日期补打卡</span>
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-brand-charcoal/55 font-light mr-0.5">很好</span>
+          <span className="text-[12px] text-brand-charcoal/65 font-light mr-0.5">很好</span>
           {(["great", "good", "normal", "bad", "terrible"] as const).map((key) => (
             <span key={key} className="w-2 h-2 rounded-full" style={{ backgroundColor: STATE_META[key].color }} />
           ))}
-          <span className="text-[11px] text-brand-charcoal/55 font-light ml-0.5">很差</span>
+          <span className="text-[12px] text-brand-charcoal/65 font-light ml-0.5">很差</span>
           <span className="w-px h-3 bg-brand-espresso/[0.1] mx-1.5" />
           <span className="w-2 h-2 rounded-full bg-brand-charcoal/10" />
-          <span className="text-[11px] text-brand-charcoal/55 font-light">未打卡</span>
-          {loading && <span className="ml-2 text-[11px] text-brand-charcoal/55">加载中…</span>}
+          <span className="text-[12px] text-brand-charcoal/65 font-light">未打卡</span>
+          {loading && <span className="ml-2 text-[12px] text-brand-charcoal/65">加载中…</span>}
         </div>
       </div>
     </div>
