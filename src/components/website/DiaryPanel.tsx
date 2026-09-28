@@ -702,17 +702,17 @@ export function DiaryPanel({ active, onRequestLogin }: DiaryPanelProps) {
                       {/* 打卡：与测肤趋势语义分离的独立子区块（色带 + 连续性统计）。
                           列数跟随实际项数（最长连续为 0 时不占列） */}
                       {summary && summary.totalCheckins > 0 && (
-                        <div className="mt-5 border-t border-brand-espresso/[0.15] pt-5">
+                        <div className="mt-4 border-t border-brand-espresso/[0.15] pt-4">
                           <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2 mb-3">
                             <Flame className="w-4 h-4 text-[var(--color-brand-ember)]" strokeWidth={1.5} />
                             打卡
                           </h3>
                           {recentCheckInCount >= 2 && (
-                            <div className="mb-3">
+                            <div className="mb-4">
                               <CheckInTrend entries={entries} todayStr={todayStr} />
                             </div>
                           )}
-                          <div className={`grid ${summary.longestStreak > 0 ? "grid-cols-3" : "grid-cols-2"} pt-3 border-t border-brand-espresso/[0.06]`}>
+                          <div className={`grid ${summary.longestStreak > 0 ? "grid-cols-3" : "grid-cols-2"} pt-4 border-t border-brand-espresso/[0.06]`}>
                             <div className="flex flex-col items-center gap-1.5 py-1 border-r border-brand-espresso/[0.06] last:border-r-0">
                               <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
                                 {summary.currentStreak}
