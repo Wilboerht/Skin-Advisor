@@ -23,7 +23,7 @@ const LEVEL_SERVICE: Record<string, { title: string; desc: string }> = {
     SILVER: { title: "专属 AI 护肤顾问", desc: "报告深度解读 · 日常护理答疑" },
     GOLD: { title: "专属顾问 · 优先响应", desc: "报告深度解读 · 一对一护理建议" },
     ADVANCED: { title: "专属顾问 · 优先响应", desc: "报告深度解读 · 一对一护理建议" },
-    DIAMOND: { title: "专属顾问 · 一对一深度服务", desc: "报告解读 · 方案定制 · 长期陪伴" },
+    DIAMOND: { title: "专属人工顾问 · 一对一深度服务", desc: "真人顾问报告解读 · 方案定制 · 长期陪伴" },
 };
 
 /**
