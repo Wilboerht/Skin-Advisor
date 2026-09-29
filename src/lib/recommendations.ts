@@ -43,6 +43,17 @@ export interface ProductRecommendation {
     };
 }
 
+/**
+ * 精华品类仅对「奢华派 / 冻龄派」开放：精华是进阶抗老/奢护步骤，
+ * 其余派系（敏敏/极简/沙漠/油条/混合/守护）的方案不落到精华产品。
+ */
+const SERUM_ALLOWED_PERSONAS = new Set(["luxury", "ageless"]);
+
+/** 判断是否精华品类（兼容 精华 / 精华露 / 精华液 等历史与现行品类值） */
+function isSerumCategory(category?: string): boolean {
+    return !!category && category.includes("精华");
+}
+
 /** 关注点到功效标签的映射 */
 const CONCERN_TO_BENEFITS: Record<string, string[]> = {
     anti_aging: ["抗老", "抗初老", "紧致", "抗皱", "胶原", "弹力", "年轻", "修护光损伤", "抗氧化"],
@@ -528,6 +539,11 @@ export async function getCandidateProducts(
             })
             .filter(p => !p._excluded);
 
+        // 2c. 精华品类限制：仅奢华派/冻龄派可推荐精华（在派系池选择与补位之前过滤，两处都生效）
+        if (!persona || !SERUM_ALLOWED_PERSONAS.has(persona)) {
+            scored = scored.filter(p => !isSerumCategory(p.category));
+        }
+
         // 2b. User feedback boost: batch query product average ratings (last 30 days)
         try {
             const thirtyDaysAgo = new Date();
@@ -799,6 +815,12 @@ export async function recommendProducts(
                     };
                 })
                 .filter(p => !p._excluded);
+        }
+
+        // 2c. 精华品类限制：仅奢华派/冻龄派可推荐精华
+        // （pre-scored 路径通常已在 getCandidateProducts 过滤，此处对独立调用与规则补位兜底）
+        if (!persona || !SERUM_ALLOWED_PERSONAS.has(persona)) {
+            scored = scored.filter(p => !isSerumCategory(p.category));
         }
 
         // 3. Apply RecommendationRule engine (skip if already applied by getCandidateProducts)
