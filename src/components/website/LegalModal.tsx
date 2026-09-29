@@ -68,7 +68,7 @@ export function LegalModal({ isOpen, onClose, doc }: LegalModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full h-[85dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-lg bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col tracking-normal"
+            className="relative z-10 w-full h-[85dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-lg bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col tracking-normal"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮 */}
@@ -89,16 +89,16 @@ export function LegalModal({ isOpen, onClose, doc }: LegalModalProps) {
                 {doc.title}
               </h2>
 
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {doc.sections.map((section) => (
                   <section key={section.heading}>
-                    <h3 className="text-[14px] md:text-[15px] font-medium text-[#1A1A1A] mb-1.5">
+                    <h3 className="text-[14px] md:text-[15px] font-medium text-brand-charcoal mb-2">
                       {section.heading}
                     </h3>
                     {section.paragraphs.map((p, i) => (
                       <p
                         key={i}
-                        className="text-[13px] md:text-[14px] text-[#5E5E5E] font-light leading-relaxed mt-1.5 first:mt-0"
+                        className="text-[13px] md:text-[14px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] mt-2 first:mt-0"
                       >
                         {p}
                       </p>
@@ -107,13 +107,13 @@ export function LegalModal({ isOpen, onClose, doc }: LegalModalProps) {
                 ))}
               </div>
 
-              <p className="mt-8 pt-4 border-t border-brand-charcoal/[0.08] text-[12px] text-brand-charcoal/50 font-light leading-relaxed text-center">
+              <p className="mt-8 pt-5 border-t border-brand-charcoal/[0.08] text-[12px] text-brand-charcoal/50 font-light leading-[1.8] text-center">
                 本简版仅供快速了解，完整版本请访问
                 <a
                   href={doc.fullUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#2E4D9E] underline underline-offset-2 hover:text-[#23409a]"
+                  className="text-brand-charcoal underline underline-offset-2 hover:text-[var(--color-brand-cocoa)] transition-colors"
                 >
                   官网全文
                 </a>
