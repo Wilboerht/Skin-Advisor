@@ -71,3 +71,24 @@ export const FACTION_ACCENTS: Record<string, string> = {
 export function getFactionAccent(ipKey: string): string {
     return FACTION_ACCENTS[ipKey] ?? "#C9A86C";
 }
+
+/**
+ * 派系形象视觉重心（实测各形象 webp 非透明像素边界，人物在 960×1280 画布内并不居中）：
+ * x/y 为人物像素中心在画布内的位置（%），d 为圆形背景直径（占画面高度 %，约人物高度 ×1.1）。
+ * 用于详情弹窗头部人物形象的圆形衬底定位。
+ */
+export const FACTION_PORTRAIT_SPOTS: Record<string, { x: number; y: number; d: number }> = {
+    sensitive: { x: 48.3, y: 52.2, d: 93 },
+    minimalist: { x: 52.6, y: 53.9, d: 91 },
+    luxury: { x: 50.1, y: 55.2, d: 88 },
+    ageless: { x: 54.9, y: 51.1, d: 95 },
+    desert: { x: 52.2, y: 51.7, d: 94 },
+    oily: { x: 52.3, y: 48.6, d: 100 },
+    combination: { x: 56.0, y: 52.6, d: 92 },
+    guardian: { x: 47.3, y: 50.1, d: 98 },
+};
+
+/** 未知 ipKey 兜底为画面中心 */
+export function getFactionPortraitSpot(ipKey: string): { x: number; y: number; d: number } {
+    return FACTION_PORTRAIT_SPOTS[ipKey] ?? { x: 50, y: 50, d: 92 };
+}

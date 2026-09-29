@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { createElement, useEffect, useRef } from "react";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, MoonStar, Sunrise, X } from "lucide-react";
 import type { SkinTypeData } from "@/lib/result-content";
-import { getFactionIcon } from "@/components/website/faction-icons";
+import { getFactionAccent, getFactionIcon, getFactionPortraitSpot } from "@/components/website/faction-icons";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
@@ -91,15 +91,28 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
 
             {/* 可滚动内容区：内容铺满弹层宽度（与护肤档案双列同宽的容器）；relative z-10 保持在背景纹理之上 */}
             <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
-              {/* 头部：形象 + 类型名 + 简介 */}
+              {/* 头部：形象（衬派系主色圆形底） + 类型名 + 简介 */}
               <div className="flex flex-col items-center text-center mb-8">
-                <Image
-                  src={`/images/character/${data.ipKey}/${data.ipKey}_female.webp`}
-                  alt={`${data.typeName} 形象`}
-                  width={180}
-                  height={240}
-                  className="h-36 md:h-44 w-auto object-contain mb-4"
-                />
+                <div className="relative mb-4 flex items-center justify-center">
+                  {/* 圆形背景：派系主色淡化，圆心与直径对齐人物像素的实际重心（画布内人物并不居中） */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute rounded-full opacity-30 aspect-square -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      backgroundColor: getFactionAccent(data.ipKey),
+                      left: `${getFactionPortraitSpot(data.ipKey).x}%`,
+                      top: `${getFactionPortraitSpot(data.ipKey).y}%`,
+                      height: `${getFactionPortraitSpot(data.ipKey).d}%`,
+                    }}
+                  />
+                  <Image
+                    src={`/images/character/${data.ipKey}/${data.ipKey}_female.webp`}
+                    alt={`${data.typeName} 形象`}
+                    width={180}
+                    height={240}
+                    className="relative h-36 md:h-44 w-auto object-contain"
+                  />
+                </div>
                 <h2
                   id="skin-type-modal-title"
                   className="text-2xl font-serif font-light text-brand-charcoal tracking-[0.08em] mb-3 inline-flex items-center justify-center gap-2"
@@ -112,105 +125,107 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                 </p>
               </div>
 
-              {/* 优势高光 */}
+              {/* 优势高光：白底圆角卡片，序号为灰底圆角方块徽章 */}
               {(data.m5?.advantages?.length ?? 0) > 0 && (
                 <section className="mb-8">
-                  <h3 className="text-base md:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4">
-                    {data.m5?.title || "优势高光"}
-                  </h3>
-                  <div className="divide-y divide-brand-charcoal/[0.06]">
-                    {data.m5!.advantages.map((adv, i) => (
-                      <div key={i} className="py-4">
-                        <div className="flex items-baseline gap-3 mb-2">
-                          <span className="text-lg font-serif font-light text-brand-charcoal/20 leading-none select-none">
+                  <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-[#FCFAF4] p-6 md:p-8">
+                    <h3 className="text-base md:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
+                      {data.m5?.title || "优势高光"}
+                    </h3>
+                    <div className="divide-y divide-brand-charcoal/[0.06]">
+                      {data.m5!.advantages.map((adv, i) => (
+                        <div key={i} className="flex gap-3.5 py-4">
+                          <span className="shrink-0 w-9 h-9 rounded-xl bg-brand-charcoal/[0.05] flex items-center justify-center text-[13px] font-serif text-brand-charcoal/50 leading-none select-none">
                             {String(i + 1).padStart(2, "0")}
                           </span>
-                          <h4 className="text-[14px] md:text-[15px] font-medium text-brand-charcoal">{adv.title}</h4>
+                          <div className="min-w-0">
+                            <h4 className="pt-1.5 mb-2 text-[14px] md:text-[15px] font-medium text-brand-charcoal">{adv.title}</h4>
+                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
+                              {adv.content}
+                            </p>
+                          </div>
                         </div>
-                        <p className="pl-8 text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
-                          {adv.content}
-                        </p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </section>
               )}
 
-              {/* 护肤日常（晨/夜） */}
+              {/* 护肤日常（晨/夜）：日出/月亮图标 + 文本，标题在卡片外；左右留白与卡片内边距一致，文字与卡片内文字左对齐 */}
               {(data.m4?.morning || data.m4?.night) && (
-                <section className="mb-8">
+                <section className="mb-8 px-6 md:px-8">
                   <h3 className="text-base md:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4">
                     {data.m4?.title || "我们建议的护肤日常"}
                   </h3>
                   <div className="space-y-4">
                     {[
-                      { label: "晨", content: data.m4?.morning },
-                      { label: "夜", content: data.m4?.night },
+                      { key: "morning", content: data.m4?.morning, Icon: Sunrise },
+                      { key: "night", content: data.m4?.night, Icon: MoonStar },
                     ].map((item) =>
                       item.content ? (
-                        <div key={item.label} className="flex gap-3">
-                          <span className="shrink-0 w-8 h-8 rounded-full border border-brand-charcoal/15 flex items-center justify-center text-[13px] font-serif text-brand-charcoal/60 select-none">
-                            {item.label}
-                          </span>
-                          <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] pt-1">
+                        <div key={item.key} className="flex gap-3.5">
+                          <item.Icon aria-hidden="true" strokeWidth={1.5} className="shrink-0 w-7 h-7 mt-0.5 text-brand-charcoal/70" />
+                          <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                             {item.content}
                           </p>
                         </div>
                       ) : null
                     )}
                   </div>
-                  {/* 节奏备注：与晨/夜文本左对齐（序号圆 32 + 间距 12 = pl-11） */}
+                  {/* 节奏备注：与晨/夜图标左缘对齐，不缩进 */}
                   {data.m4?.note && (
-                    <p className="mt-3 pl-11 text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
+                    <p className="mt-3 text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                       {data.m4.note}
                     </p>
                   )}
                 </section>
               )}
 
-              {/* 护肤公式 */}
+              {/* 护肤公式：白底圆角卡片，序号为大号浅灰数字 */}
               {data.m7 && (
                 <section className="mb-8">
-                  <h3 className="text-base md:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4">
-                    {data.m7.title || `${data.typeName}的精准护肤公式`}
-                  </h3>
-                  {data.m7.formulaCore && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {data.m7.formulaCore.split(/\s*[·・]\s*/).filter(Boolean).map((keyword, i) => (
-                        <span
-                          key={i}
-                          className="text-[11px] tracking-[0.12em] text-brand-charcoal/65 border border-brand-charcoal/12 rounded-full px-3 py-1 font-light"
-                        >
-                          {keyword}
-                        </span>
+                  <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-[#FCFAF4] p-6 md:p-8">
+                    <h3 className="text-base md:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4">
+                      {data.m7.title || `${data.typeName}的精准护肤公式`}
+                    </h3>
+                    {data.m7.formulaCore && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {data.m7.formulaCore.split(/\s*[·・]\s*/).filter(Boolean).map((keyword, i) => (
+                          <span
+                            key={i}
+                            className="text-[11px] tracking-[0.12em] text-brand-charcoal/65 border border-brand-charcoal/12 rounded-full px-3 py-1 font-light"
+                          >
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="divide-y divide-brand-charcoal/[0.06]">
+                      {(data.m7.suggestions ?? []).map((sug, i) => (
+                        <div key={i} className="py-4">
+                          <div className="flex items-baseline gap-3 mb-2">
+                            <span className="text-xl font-serif font-light text-brand-charcoal/20 leading-none select-none">
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                            <h4 className="text-[14px] md:text-[15px] font-medium text-brand-charcoal">{sug.title}</h4>
+                          </div>
+                          <p className="pl-9 text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
+                            {sug.content}
+                          </p>
+                        </div>
                       ))}
                     </div>
-                  )}
-                  <div className="divide-y divide-brand-charcoal/[0.06]">
-                    {(data.m7.suggestions ?? []).map((sug, i) => (
-                      <div key={i} className="py-4">
-                        <div className="flex items-baseline gap-3 mb-2">
-                          <span className="text-lg font-serif font-light text-brand-charcoal/20 leading-none select-none">
-                            {String(i + 1).padStart(2, "0")}
-                          </span>
-                          <h4 className="text-[14px] md:text-[15px] font-medium text-brand-charcoal">{sug.title}</h4>
-                        </div>
-                        <p className="pl-8 text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
-                          {sug.content}
+                    {data.m7.onlyOneSet && (
+                      <div className="mt-2 border-l-[3px] border-brand-charcoal/20 pl-4">
+                        <span className="inline-block text-[11px] tracking-[0.15em] text-brand-charcoal/60 bg-brand-charcoal/[0.05] rounded-full px-3 py-1 mb-2">
+                          参考护理组合
+                        </span>
+                        <p className="text-[13px] text-brand-charcoal/90 font-light leading-[1.8] tracking-[0.06em]">
+                          {data.m7.onlyOneSet}
                         </p>
                       </div>
-                    ))}
+                    )}
                   </div>
-                  {data.m7.onlyOneSet && (
-                    <div className="mt-4 border-l-[3px] border-brand-charcoal/20 pl-4">
-                      <span className="inline-block text-[11px] tracking-[0.15em] text-brand-charcoal/60 bg-brand-charcoal/[0.05] rounded-full px-3 py-1 mb-2">
-                        参考护理组合
-                      </span>
-                      <p className="text-[13px] text-brand-charcoal/90 font-light leading-[1.8] tracking-[0.06em]">
-                        {data.m7.onlyOneSet}
-                      </p>
-                    </div>
-                  )}
                 </section>
               )}
 
@@ -220,7 +235,7 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                   <Link
                     href="/"
                     onClick={onClose}
-                    className="group inline-flex items-center justify-center gap-2 h-11 px-8 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#4a3a2c]"
+                    className="group inline-flex items-center justify-center gap-2 h-11 px-8 rounded-full bg-[#667a89] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#546775]"
                   >
                     <span>完成肌肤状态检测，查看你的专属肌肤派系</span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
