@@ -95,7 +95,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             {/* 可滚动内容区：移动端适配上下安全区 */}
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
               {/* 品牌 logo：标题上方居中 */}
-              <div className="mb-3 flex justify-center">
+              <div className="mb-4 flex justify-center">
                 <Image
                   src="/NIHPLOD-logo.svg"
                   alt="NIHPLOD"
@@ -106,14 +106,14 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
               </div>
               <h2
                 id="gift-modal-title"
-                className="text-xl font-serif font-light text-brand-charcoal text-center tracking-[0.08em] mb-5"
+                className="text-xl font-serif font-light text-brand-charcoal text-center tracking-[0.08em] mb-6"
               >
                 肌智派送好礼
               </h2>
 
               {/* 礼物盒插画：素材自带透明底，四周留白已裁掉（1195×1002）；
                   底下垫柔和品牌金光晕 + 白芯，增加温度与悬浮感 */}
-              <div className="relative mb-6 sm:mb-7 flex justify-center">
+              <div className="relative mb-8 flex justify-center">
                 <div
                   aria-hidden
                   className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-36 sm:h-28 sm:w-44 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-gold/15 blur-3xl"
@@ -132,49 +132,47 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
                 />
               </div>
 
-              {/* 玩法步骤 */}
-              <div className="w-full max-w-sm mx-auto mb-7">
-                {steps.map((item, i) => (
-                  <div key={i} className="flex items-start gap-4">
-                    <div className="flex flex-col items-center self-stretch">
-                      <span className="shrink-0 w-8 h-8 rounded-full bg-brand-charcoal/[0.08] flex items-center justify-center text-sm font-medium tabular-nums text-brand-charcoal">
-                        {i + 1}
+              {/* 玩法步骤：浅色卡片分组（与派系详情弹窗卡片同规格），序号圆角徽章 + 细分割线 */}
+              <div className="w-full max-w-sm mx-auto mb-8 rounded-3xl border border-brand-charcoal/[0.08] bg-[#FCFAF4] p-6">
+                <div className="divide-y divide-brand-charcoal/[0.06]">
+                  {steps.map((item, i) => (
+                    <div key={i} className="flex gap-3.5 py-4 first:pt-0 last:pb-0">
+                      <span className="shrink-0 w-9 h-9 rounded-xl bg-brand-charcoal/[0.05] flex items-center justify-center text-[13px] font-serif text-brand-charcoal/50 leading-none select-none">
+                        {String(i + 1).padStart(2, "0")}
                       </span>
-                      {i < steps.length - 1 && <div className="flex-1 my-2 border-l border-dashed border-brand-charcoal/20" />}
+                      <div className="min-w-0 flex-1 text-left">
+                        <h3 className="pt-1.5 mb-2 text-[14px] md:text-[15px] font-medium text-brand-charcoal tracking-[0.06em]">{item.title}</h3>
+                        <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
+                      </div>
                     </div>
-                    {/* 文字列 mt-1 让标题行与 32px 序号圆心视觉对齐；标题行高 1.6、正文 1.8，中文阅读更稳 */}
-                    <div className={`flex-1 text-left mt-1 ${i < steps.length - 1 ? "pb-6" : ""}`}>
-                      <h3 className="text-[15px] leading-[1.6] font-medium text-brand-charcoal tracking-[0.06em] mb-1.5">{item.title}</h3>
-                      <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              {/* CTA：实心主按钮（唯一行动点，视觉最重） */}
+              {/* CTA：实心主按钮（唯一行动点，视觉最重），样式与派系详情弹窗一致 */}
               <div className="w-full max-w-xs mx-auto mb-6">
                 {onStartTest ? (
                   <button
                     type="button"
                     onClick={onStartTest}
-                    className="group w-full inline-flex items-center justify-center gap-2 px-6 h-12 rounded-full bg-brand-charcoal text-white text-sm font-medium shadow-[0_14px_30px_-14px_rgba(0,38,62,0.6)] transition-colors duration-200 hover:bg-[#0d3b5c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2 cursor-pointer"
+                    className="group w-full inline-flex items-center justify-center gap-2 px-8 h-11 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#4a3a2c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2 cursor-pointer"
                   >
                     <span>开始测肤</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                   </button>
                 ) : (
                   <Link
                     href="/"
-                    className="group w-full inline-flex items-center justify-center gap-2 px-6 h-12 rounded-full bg-brand-charcoal text-white text-sm font-medium shadow-[0_14px_30px_-14px_rgba(0,38,62,0.6)] transition-colors duration-200 hover:bg-[#0d3b5c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2"
+                    className="group w-full inline-flex items-center justify-center gap-2 px-8 h-11 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#4a3a2c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2"
                   >
                     <span>开始测肤</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                   </Link>
                 )}
               </div>
 
               {/* 官方声明：脚注与小节间用细分割线区隔，行高 1.8 便于中文小字阅读 */}
-              <p className="border-t border-brand-charcoal/[0.08] pt-4 text-center text-[11px] leading-[1.8] text-brand-charcoal/55 font-light tracking-[0.06em]">
+              <p className="border-t border-brand-charcoal/[0.08] pt-5 text-center text-[11px] leading-[1.8] text-brand-charcoal/55 font-light tracking-[0.06em]">
                 具体活动时间、奖品与规则以 NIHPLOD 官方媒体账号发布的实际活动内容为准
               </p>
             </div>
