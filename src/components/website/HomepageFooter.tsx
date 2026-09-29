@@ -12,9 +12,9 @@ const LegalModal = dynamic(() => import("@/components/website/LegalModal").then(
 /**
  * HomepageFooter — 首页页脚（版权 + 政策入口 + 备案）
  * 浅色低存在感。宽屏（≥1280px）：备案居左、链接与版权居右（ICP 的 mr-auto 形成左右两组），单行排列。
- * 窄屏（<1280px）：居中两行——第一行 公安备案 | 版权，第二行 ICP备案 | 隐私政策 | 服务条款；
+ * 窄屏（<1280px）：居中两行——第一行 公安备案 | 版权，第二行 ICP备案 | 隐私政策 | 服务条款 | 常见问题；
  * 通过 flex order 重排实现，宽屏顺序与分组不变。
- * 「隐私政策 / 服务条款」打开站内简版弹窗（LegalModal），完整版在弹窗内链至官网。
+ * 「隐私政策 / 服务条款」打开站内简版弹窗（LegalModal），完整版在弹窗内链至官网；「常见问题」为指向 /faq 内容页的真实链接。
  */
 export function HomepageFooter() {
     const linkClass = "flex !min-h-0 !min-w-0 items-center hover:text-brand-charcoal/60 transition-colors cursor-pointer";
@@ -47,7 +47,7 @@ export function HomepageFooter() {
 
             {/* 版权：窄屏第一行右，宽屏右组最后；窄屏用简写避免拥挤，
                 年份跨年瞬间 SSR/CSR 会不一致，抑制 hydration 告警 */}
-            <p suppressHydrationWarning className="order-3 pc:order-8">
+            <p suppressHydrationWarning className="order-3 pc:order-10">
                 <span className="hidden pc:inline">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
                 <span className="pc:hidden">&copy; {new Date().getFullYear()} NIHPLOD</span>
             </p>
@@ -86,6 +86,15 @@ export function HomepageFooter() {
             >
                 服务条款
             </button>
+
+            <Link
+                href="/faq"
+                className={`order-11 pc:order-8 ${linkClass}`}
+            >
+                常见问题
+            </Link>
+
+            <span aria-hidden="true" className={`order-10 pc:order-9 ${separatorClass}`}>|</span>
 
             {shouldRenderLegal && (
                 <LegalModal

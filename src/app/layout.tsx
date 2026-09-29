@@ -6,6 +6,15 @@ import { OrganizationSchema, WebApplicationSchema, WebsiteSearchSchema } from "@
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
+const siteVerification = {
+  ...(process.env.BAIDU_SITE_VERIFICATION
+    ? { "baidu-site-verification": process.env.BAIDU_SITE_VERIFICATION }
+    : {}),
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { "google-site-verification": process.env.GOOGLE_SITE_VERIFICATION }
+    : {}),
+};
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -72,10 +81,7 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  other: {
-    "baidu-site-verification": process.env.BAIDU_SITE_VERIFICATION || "",
-    "google-site-verification": process.env.GOOGLE_SITE_VERIFICATION || "",
-  },
+  other: siteVerification,
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

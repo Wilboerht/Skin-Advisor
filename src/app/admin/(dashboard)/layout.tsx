@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "数据总览",
   description: "NIHPLOD 管理后台 — 数据总览与统计。",
+  robots: { index: false, follow: false },
 };
 
 import { redirect } from "next/navigation";
