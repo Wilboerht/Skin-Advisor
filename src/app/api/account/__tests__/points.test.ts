@@ -69,8 +69,10 @@ describe("GET /api/account/points", () => {
         const res = await GET(fakeReq());
         expect(res.status).toBe(200);
 
+        // 第 5 参为线上实际发送的原始查询串（封装内部 canonicalize 后参与新格式签名）
         expect(mocks.createSignedInternalApiHeaders).toHaveBeenCalledWith(
-            "advisor", "GET", "/api/v1/internal/points/balance", ""
+            "advisor", "GET", "/api/v1/internal/points/balance", "",
+            { query: "phone=13812341234" }
         );
         const [url, init] = mocks.fetch.mock.calls[0];
         expect(String(url)).toContain("/api/v1/internal/points/balance?phone=13812341234");

@@ -225,7 +225,14 @@ export async function proxy(request: NextRequest) {
         "/api/oss/sign",
         "/api/local-upload",
     ];
-    const isCApi = pathname.startsWith("/api/") && !isAdminApi && !csrfExemptPaths.some((p) => pathname === p || pathname === p + "/");
+    // 前缀豁免：/api/internal/* 是主站服务端到服务端调用（无浏览器 Cookie，
+    // 无法通过 CSRF 双重提交校验），与上方 webhook 豁免同模式；
+    // 安全性由路由内 authorizeInternalRequest 的 HMAC-SHA256 签名保证
+    // （签名覆盖方法+路径+时间戳+nonce+请求体哈希）。
+    const csrfExemptPrefixes = ["/api/internal"];
+    const isCApi = pathname.startsWith("/api/") && !isAdminApi
+        && !csrfExemptPaths.some((p) => pathname === p || pathname === p + "/")
+        && !csrfExemptPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
     if (isCApi) {
         const csrfResult = await verifyCsrfToken(request);
         if (!csrfResult.valid) {

@@ -23,13 +23,15 @@ const BALANCE_TIMEOUT_MS = 5000;
 export async function fetchOfficialMembershipLevel(phone: string | null | undefined): Promise<string | null> {
     if (!phone || !/^1[3-9]\d{9}$/.test(phone)) return null;
     try {
-        // GET 无请求体：签名按空串 body 计算（与主站校验侧一致）
-        const signed = await createSignedInternalApiHeaders("advisor", "GET", BALANCE_PATH, "");
+        // GET 无请求体：签名按空串 body 计算（与主站校验侧一致）；
+        // 签名绑定 canonical query（新格式）：传入线上实际发送的原始查询串
+        const query = `phone=${encodeURIComponent(phone)}`;
+        const signed = await createSignedInternalApiHeaders("advisor", "GET", BALANCE_PATH, "", { query });
         if (!signed) {
             logger.warn("[official-membership] 未配置内部 API 密钥，会员等级回源跳过");
             return null;
         }
-        const res = await fetch(`${OFFICIAL_BASE_URL}${BALANCE_PATH}?phone=${encodeURIComponent(phone)}`, {
+        const res = await fetch(`${OFFICIAL_BASE_URL}${BALANCE_PATH}?${query}`, {
             headers: signed.headers,
             signal: AbortSignal.timeout(BALANCE_TIMEOUT_MS),
         });

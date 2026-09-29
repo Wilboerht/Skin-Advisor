@@ -34,13 +34,15 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const signed = await createSignedInternalApiHeaders("advisor", "GET", BALANCE_PATH, "");
+        // 签名绑定 canonical query（新格式）：传入线上实际发送的原始查询串
+        const query = `phone=${encodeURIComponent(phone)}`;
+        const signed = await createSignedInternalApiHeaders("advisor", "GET", BALANCE_PATH, "", { query });
         if (!signed) {
             logger.warn("[account/points] 未配置内部 API 密钥，积分查询降级");
             return degraded();
         }
 
-        const res = await fetch(`${OFFICIAL_BASE_URL}${BALANCE_PATH}?phone=${encodeURIComponent(phone)}`, {
+        const res = await fetch(`${OFFICIAL_BASE_URL}${BALANCE_PATH}?${query}`, {
             headers: signed.headers,
             signal: AbortSignal.timeout(BALANCE_TIMEOUT_MS),
         });

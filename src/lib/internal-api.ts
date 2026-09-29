@@ -3,7 +3,13 @@
  *
  * 用于子站调用官网 /api/v1/internal/* 接口时生成 HMAC-SHA256 签名。
  * 签名算法与官网 src/lib/internal-api.ts 保持一致：
- *   signature = HMAC-SHA256(secret, "METHOD|path|timestamp|nonce|bodySha256")
+ *   旧格式：HMAC-SHA256(secret, "METHOD|path|timestamp|nonce|bodySha256")
+ *   新格式：HMAC-SHA256(secret, "METHOD|path|query|timestamp|nonce|bodySha256")
+ *   （query 为 canonicalizeQuery 结果，绑定查询串防篡改；主站开
+ *    INTERNAL_API_SIGN_QUERY=true 后启用）
+ *
+ * 入站（/api/internal/* 被调用方）灰度双验签：先试新格式，失败且
+ * INTERNAL_API_REQUIRE_SIGNED_QUERY 未开启时回退旧格式。
  *
  * 同时兼容旧版单一 INTERNAL_API_SECRET（/api/internal/*）。
  */
@@ -63,7 +69,36 @@ export async function hashRequestBody(body: string): Promise<string> {
 }
 
 /**
+ * 规范化查询串（签名用）：按 key/value 做**码点排序**（不依赖 ICU/locale），
+ * 再对 key/value 分别 `encodeURIComponent` 后以 `k=v&...` 拼接。
+ *
+ * 与官网 src/lib/internal-api.ts 的 canonicalizeQuery 必须逐字节一致——
+ * 两端各自对"解码后的参数集合"排序重编码，因此线上传输的编码差异
+ * （参数顺序、%20 vs + 等）不影响签名一致性。
+ */
+export function canonicalizeQuery(search: string): string {
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const pairs: [string, string][] = [];
+  for (const [key, value] of params.entries()) {
+    pairs.push([key, value]);
+  }
+  // 码点比较：跨语言/跨实现可复现（禁止 localeCompare，避免 ICU 差异导致签名不一致）
+  pairs.sort((a, b) => {
+    if (a[0] !== b[0]) return a[0] < b[0] ? -1 : 1;
+    if (a[1] !== b[1]) return a[1] < b[1] ? -1 : 1;
+    return 0;
+  });
+  return pairs
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join("&");
+}
+
+/**
  * 生成请求签名
+ *
+ * @param query - 规范化查询串（canonicalizeQuery）。传入时使用新格式
+ *   `METHOD|path|query|timestamp|nonce|bodyHash`（绑定 query，防篡改）；
+ *   不传时保持旧格式 `METHOD|path|timestamp|nonce|bodyHash`（仅过渡期使用）
  */
 export function generateInternalApiSignature(
   secret: string,
@@ -71,9 +106,13 @@ export function generateInternalApiSignature(
   path: string,
   timestamp: number,
   nonce: string,
-  bodyHash: string
+  bodyHash: string,
+  query?: string
 ): string {
-  const payload = `${method.toUpperCase()}|${path}|${timestamp}|${nonce}|${bodyHash}`;
+  const payload =
+    query === undefined
+      ? `${method.toUpperCase()}|${path}|${timestamp}|${nonce}|${bodyHash}`
+      : `${method.toUpperCase()}|${path}|${query}|${timestamp}|${nonce}|${bodyHash}`;
   return createHmac("sha256", secret).update(payload).digest("hex");
 }
 
@@ -92,16 +131,24 @@ export interface SignedHeadersResult {
 /**
  * 为官网内部 API v1 创建带签名的请求头
  *
+ * 签名固定使用新格式 `METHOD|path|query|timestamp|nonce|bodySha256`（绑定
+ * canonical query）：主站入站（/api/v1/internal/* 全部 7 个端点）已按
+ * `canonicalizeQuery(实际请求 query)` 双格式验签，且默认仍接受旧格式，
+ * 因此子站出站可直接切换，无需灰度开关。
+ *
  * @param project - 项目标识，如 "advisor"
  * @param method - HTTP 方法，如 "POST"
- * @param path - 请求路径，如 "/api/v1/internal/wechat/send-template"
+ * @param path - 请求路径（不含 query），如 "/api/v1/internal/wechat/send-template"
  * @param bodyText - 请求体 JSON 字符串
+ * @param options.query - **线上实际发送的原始查询串**（不含前导 `?`，无 query 省略）；
+ *   封装内部做 canonicalizeQuery，保证签名串与线上 query 一致，调用方不得预先排序/重编码
  */
 export async function createSignedInternalApiHeaders(
   project: string,
   method: string,
   path: string,
-  bodyText: string
+  bodyText: string,
+  options?: { query?: string }
 ): Promise<SignedHeadersResult | null> {
   const config = loadInternalApiKey(project);
   if (!config) {
@@ -117,7 +164,8 @@ export async function createSignedInternalApiHeaders(
     path,
     timestamp,
     nonce,
-    bodyHash
+    bodyHash,
+    canonicalizeQuery(options?.query ?? "")
   );
 
   return {
@@ -179,11 +227,22 @@ export interface VerifyInternalResult {
   /** 失败原因（仅用于服务端日志，不直接返回给调用方） */
   reason?: string;
   config?: InternalApiKeyConfig;
+  /** 验签通过时命中的签名格式（灰度观察统计用） */
+  signatureFormat?: "query-bound" | "legacy";
+}
+
+/** 旧格式（不绑定 query）的灰度开关：true 时仅接受新格式（收口开关） */
+function isSignedQueryRequired(): boolean {
+  return process.env.INTERNAL_API_REQUIRE_SIGNED_QUERY === "true";
 }
 
 /**
  * 完整签名校验：`X-Internal-API-Key/Timestamp/Nonce/Signature`
- * 签名格式与出站一致：HMAC-SHA256(secret, "METHOD|path|timestamp|nonce|bodySha256")
+ *
+ * 灰度双验签：优先新格式 `METHOD|path|query|timestamp|nonce|bodySha256`
+ * （query 为 canonicalizeQuery 结果，与主站出站格式逐字节对齐）；
+ * 未开启 INTERNAL_API_REQUIRE_SIGNED_QUERY 时回退旧格式
+ * `METHOD|path|timestamp|nonce|bodySha256`，保证主站切换前的旧调用可用。
  *
  * @param request 入站请求
  * @param rawBody 请求体原文（GET 传空串）；必须与实际请求体一致
@@ -218,23 +277,50 @@ export async function verifyInternalRequest(
     return { ok: false, reason: "nonce_replayed" };
   }
 
-  const path = new URL(request.url).pathname;
+  const url = new URL(request.url);
+  const path = url.pathname;
+  const canonicalQuery = canonicalizeQuery(url.search);
   const bodyHash = await hashRequestBody(rawBody);
-  const expected = generateInternalApiSignature(
-    config.secret,
-    request.method,
-    path,
-    timestamp,
-    nonce,
-    bodyHash
-  );
-  if (!safeEqualHex(expected, signature)) {
+
+  const candidates: { signature: string; format: "query-bound" | "legacy" }[] = [
+    {
+      signature: generateInternalApiSignature(
+        config.secret,
+        request.method,
+        path,
+        timestamp,
+        nonce,
+        bodyHash,
+        canonicalQuery
+      ),
+      format: "query-bound",
+    },
+  ];
+  if (!isSignedQueryRequired()) {
+    candidates.push({
+      signature: generateInternalApiSignature(config.secret, request.method, path, timestamp, nonce, bodyHash),
+      format: "legacy",
+    });
+  }
+
+  let matchedFormat: "query-bound" | "legacy" | null = null;
+  for (const candidate of candidates) {
+    if (safeEqualHex(candidate.signature, signature)) {
+      matchedFormat = candidate.format;
+      break;
+    }
+  }
+  if (!matchedFormat) {
     return { ok: false, reason: "signature_mismatch" };
   }
 
   // 校验通过后再记录 nonce，避免攻击者用无效签名刷掉合法 nonce
   seenNonces.set(nonce, now + NONCE_TTL_MS);
-  return { ok: true, config };
+  logger.info("[InternalApi] 签名校验通过", {
+    path,
+    signatureFormat: matchedFormat,
+  });
+  return { ok: true, config, signatureFormat: matchedFormat };
 }
 
 /** 旧版静态密钥鉴权方式（过渡期兼容，签名头缺失时回退） */

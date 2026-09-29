@@ -856,7 +856,7 @@ export default function HomeClient() {
           {/* 底部栏：淡奶油色通栏（比 Hero 上区的米色更浅），并入首屏；内容全宽，备案居左、链接与版权居右 */}
           <div className="relative z-40 bg-[#FBF9F3]">
             <div className="w-full px-6 pc:px-10 h-16 pc:h-14 flex items-center">
-              <HomepageFooter />
+              <HomepageFooter onOpenFaq={handleOpenFaq} />
             </div>
           </div>
         </m.div>

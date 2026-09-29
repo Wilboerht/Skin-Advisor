@@ -197,7 +197,8 @@ export function resetRateLimit(
  *
  * 生产部署要求：
  * 1. 必须配置 TRUSTED_PROXY_HOPS（例如 nginx 单层代理设 1），
- *    否则 X-Real-IP 不被信任，IP 维度限流可能不准确。
+ *    否则 X-Real-IP / X-Forwarded-For 均不被信任，所有客户端共享
+ *    "unknown" 限流桶（getClientIP 退回未知标识）。
  * 2. 边缘代理（nginx）必须主动覆写而非透传客户端 IP，例如：
  *      proxy_set_header X-Real-IP $remote_addr;
  *      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -209,11 +210,13 @@ const TRUSTED_PROXY_HOPS = (() => {
     return Number.isFinite(n) && n >= 0 ? n : 0;
 })();
 
-// 启动告警：生产环境未配置可信代理时，IP 类限流/配额可被伪造头绕过
+// 启动告警：生产环境未配置可信代理时，所有客户端共享 "unknown" 限流桶，
+// IP 维度限流/配额失效（宁可误伤也不信任可伪造头）
 if (process.env.NODE_ENV === "production" && !process.env.TRUSTED_PROXY_HOPS) {
     console.warn(
         "[ratelimit] WARNING: TRUSTED_PROXY_HOPS is not set in production. " +
-        "X-Real-IP will be ignored and IP-based rate limiting may be inaccurate. " +
+        "X-Real-IP/X-Forwarded-For will be IGNORED (client-spoofable) and all clients " +
+        "share the \"unknown\" rate-limit bucket. " +
         "Set TRUSTED_PROXY_HOPS and ensure the edge proxy overwrites X-Real-IP/X-Forwarded-For."
     );
 }
@@ -229,10 +232,14 @@ function normalizeClientIp(ip: string): string {
  * 获取客户端 IP 地址
  * 支持代理环境
  *
- * 优先级：
- * 1. X-Real-IP（仅在配置了 TRUSTED_PROXY_HOPS 时信任，否则客户端可直接伪造该头绕过 IP 限流）
- * 2. X-Forwarded-For：按 TRUSTED_PROXY_HOPS 从右向左取真实客户端 IP
- * 3. 未配置可信代理时，使用 X-Forwarded-For 最后一个值（离服务器最近的一跳）
+ * 优先级（仅当配置了 TRUSTED_PROXY_HOPS 时）：
+ * 1. X-Real-IP
+ * 2. X-Forwarded-For：按 TRUSTED_PROXY_HOPS 从右向左排除代理跳数后取值
+ *
+ * 未配置可信代理时，X-Real-IP / X-Forwarded-For 均可被客户端任意伪造，
+ * 一律不信任，退回 "unknown"（Request 上拿不到 socket 直连 IP）；
+ * 此时所有客户端共享同一限流桶——这是安全的失败方向（宁可误伤、不可放过），
+ * 生产环境必须配置 TRUSTED_PROXY_HOPS 恢复按 IP 区分。
  */
 export function getClientIP(request: Request): string {
     if (TRUSTED_PROXY_HOPS > 0) {
@@ -240,16 +247,14 @@ export function getClientIP(request: Request): string {
         if (realIp) {
             return normalizeClientIp(realIp.trim());
         }
-    }
 
-    const forwardedFor = request.headers.get("x-forwarded-for");
-    if (forwardedFor) {
-        const ips = forwardedFor.split(",").map(s => s.trim()).filter(Boolean);
-        if (ips.length > 0) {
-            const idx = TRUSTED_PROXY_HOPS > 0
-                ? Math.max(0, ips.length - TRUSTED_PROXY_HOPS - 1)
-                : ips.length - 1;
-            return normalizeClientIp(ips[idx]);
+        const forwardedFor = request.headers.get("x-forwarded-for");
+        if (forwardedFor) {
+            const ips = forwardedFor.split(",").map(s => s.trim()).filter(Boolean);
+            if (ips.length > 0) {
+                const idx = Math.max(0, ips.length - TRUSTED_PROXY_HOPS - 1);
+                return normalizeClientIp(ips[idx]);
+            }
         }
     }
 

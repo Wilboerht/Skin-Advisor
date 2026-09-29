@@ -48,16 +48,19 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(request.nextUrl.searchParams.get("page") || "1", 10) || 1);
     const pageSize = Math.min(20, Math.max(1, parseInt(request.nextUrl.searchParams.get("limit") || "10", 10) || 10));
 
-    // 限流分两层：
-    // 1. IP 级宽松兜底（防密钥泄漏后被批量滥用）；
-    // 2. 手机号级细粒度配额——商城服务端出口是同一 IP，若按 IP 计数所有用户会共享配额。
+    // 限流分三层：
+    // 1. IP 级严格桶（30/min）：手机号反查接口，防密钥泄漏后被批量遍历手机号；
+    //    商城服务端出口是同一 IP，正常调用为低频单用户触发，30/min 足够。
+    // 2. 手机号级细粒度配额——按 IP 计数会让所有用户共享配额。
     const ip = getClientIP(request);
-    const ipLimitResult = await rateLimit(`internal-mp-skin-ip-${ip}`, "default", { maxRequests: 300, windowMs: 60 * 1000 });
+    const ipLimitResult = await rateLimit(`internal-mp-skin-ip-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!ipLimitResult.success) {
+        logger.warn("internal mp-skin ip rate limited", { ip });
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
     const phoneLimitResult = await rateLimit(`internal-mp-skin-phone-${phone}`, "advisor");
     if (!phoneLimitResult.success) {
+        logger.warn("internal mp-skin phone rate limited", { phonePrefix: phone.slice(0, 3) });
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 

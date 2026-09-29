@@ -26,10 +26,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Invalid params" }, { status: 400 });
     }
 
-    // IP 级宽松兜底，防止密钥泄漏后被批量扫描
+    // 限流分两层：
+    // 1. IP 级严格桶（30/min），防密钥泄漏后被批量扫描 sessionId/手机号；
+    // 2. 手机号级桶（30/min），防止针对单一手机号暴力枚举 sessionId。
     const ip = getClientIP(request);
-    const limitResult = await rateLimit(`internal-session-ownership-${ip}`, "default", { maxRequests: 120, windowMs: 60 * 1000 });
-    if (!limitResult.success) {
+    const ipLimitResult = await rateLimit(`internal-session-ownership-ip-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!ipLimitResult.success) {
+        logger.warn("internal session-ownership ip rate limited", { ip });
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+    const phoneLimitResult = await rateLimit(`internal-session-ownership-phone-${phone}`, "advisor");
+    if (!phoneLimitResult.success) {
+        logger.warn("internal session-ownership phone rate limited", { phonePrefix: phone.slice(0, 3) });
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 

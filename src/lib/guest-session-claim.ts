@@ -16,6 +16,7 @@ import prisma from "@/lib/prisma";
 import { hashIP } from "@/lib/privacy";
 import { upsertAutoDiaryEntry } from "@/lib/diary";
 import { logger } from "@/lib/logger";
+import { isIP } from "node:net";
 
 /**
  * 补建日记的日期口径：客户端未携带本地日历日（dateStr/clientDate）时，
@@ -29,14 +30,20 @@ function diaryDateStrFallback(completedAt: Date): string {
     return shifted.toISOString().slice(0, 10);
 }
 
-export async function lazyClaimGuestSessions(userId: string, ip: string): Promise<void> {
+export async function lazyClaimGuestSessions(userId: string, ip: string): Promise<number> {
     try {
+        // 仅对合法 IP 字面量执行认领：getClientIP 未配置可信代理时可能退回
+        // "unknown" 等非 IP 标识，若据此认领会把该标识哈希下的游客会话错误归并
+        if (!isIP(ip)) {
+            logger.warn("[history] Lazy claim skipped: ip is not a valid IP literal", { userId });
+            return 0;
+        }
         const ipHash = hashIP(ip);
         const claimable = await prisma.advisorSession.findMany({
             where: { userId: null, ip: ipHash, completedAt: { not: null } },
             select: { sessionId: true, completedAt: true, analysisResult: true }
         });
-        if (claimable.length === 0) return;
+        if (claimable.length === 0) return 0;
 
         const claimed = await prisma.advisorSession.updateMany({
             where: {
@@ -47,7 +54,7 @@ export async function lazyClaimGuestSessions(userId: string, ip: string): Promis
             },
             data: { userId }
         });
-        if (claimed.count === 0) return;
+        if (claimed.count === 0) return 0;
         logger.info(`[history] Lazy-claimed ${claimed.count} guest session(s) for user ${userId}`);
 
         // 补建自动日记条目（与 claim 路由一致；best-effort，不阻塞响应）
@@ -74,23 +81,37 @@ export async function lazyClaimGuestSessions(userId: string, ip: string): Promis
                 logger.error("[history] 懒认领补建日记查询失败:", e);
             }
         }
+        return claimed.count;
     } catch (e) {
         // 认领失败不影响主查询
         logger.error("[history] Lazy claim failed:", e);
+        return 0;
     }
 }
 
-/** IP 字面量（IPv4/IPv6），长度上限防御异常输入 */
-const CLIENT_IP_RE = /^[\d.:a-fA-F]{1,64}$/;
-
 /**
- * 内部接口专用：clientIp 来自 HMAC 签名通道，仅接受 IP 字面量；
- * 非法/缺失时静默跳过（不阻断读取）。
+ * 内部接口专用：clientIp 来自 HMAC 签名通道，仅接受合法 IP 字面量
+ * （严格 IPv4/IPv6 校验，拒绝 "unknown" 等限流占位标识）；
+ * 非法/缺失时跳过并记录告警（不阻断读取）。
+ * 每次调用记录审计日志：哪个 userId 经内部通道按哪个 IP 哈希前缀认领了多少会话。
  */
 export async function claimGuestSessionsFromClientIp(
     userId: string,
     clientIp: string | null
 ): Promise<void> {
-    if (!clientIp || !CLIENT_IP_RE.test(clientIp)) return;
-    await lazyClaimGuestSessions(userId, clientIp);
+    if (!clientIp) return;
+    if (!isIP(clientIp)) {
+        logger.warn("[guest-claim] 拒绝非法 clientIp 认领请求", {
+            userId,
+            clientIpLength: clientIp.length,
+        });
+        return;
+    }
+    const claimedCount = await lazyClaimGuestSessions(userId, clientIp);
+    // 审计日志只记录 IP 哈希前缀（不可逆、可比对），不落原始 IP
+    logger.info("[guest-claim] audit: 内部通道游客会话认领", {
+        userId,
+        ipHashPrefix: hashIP(clientIp).slice(0, 8),
+        claimedCount,
+    });
 }
