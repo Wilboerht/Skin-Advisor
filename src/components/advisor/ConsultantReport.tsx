@@ -185,7 +185,7 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                         )}>
                             {/* 我看到的 */}
                             <div>
-                                <StepLabel step={1}>
+                                <StepLabel>
                                     <Eye className="w-3.5 h-3.5" strokeWidth={1.8} />
                                     我看到的
                                 </StepLabel>
@@ -197,16 +197,16 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
 
                             {/* 为什么：直接诱因 / 间接诱因 */}
                             <div>
-                                <StepLabel step={2}>
+                                <StepLabel>
                                     <HelpCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
                                     为什么会出现这个问题
                                 </StepLabel>
                                 <div className="space-y-2.5">
-                                    <div className="rounded-lg bg-[#F7F3EC] border-l-2 border-[#DED5C6] px-4 py-3">
+                                    <div className="rounded-lg border border-[var(--color-brand-espresso)]/[0.06] bg-[#FCFAF4] px-4 py-3">
                                         <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">直接诱因 · 皮肤层面</p>
                                         <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.directCauses)}</p>
                                     </div>
-                                    <div className="rounded-lg bg-[#F7F3EC] border-l-2 border-[#DED5C6] px-4 py-3">
+                                    <div className="rounded-lg border border-[var(--color-brand-espresso)]/[0.06] bg-[#FCFAF4] px-4 py-3">
                                         <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">间接诱因 · 生活习惯</p>
                                         <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.indirectCauses)}</p>
                                     </div>
@@ -216,7 +216,7 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                             {/* 怎么办：护理方案 / 生活调整。
                                 用户读报告的落脚点是行动，用品牌暖色与"为什么"的中性灰拉开层级，成为全卡视觉重心 */}
                             <div>
-                                <StepLabel step={3} emphasize>
+                                <StepLabel emphasize>
                                     <Sparkles className="w-3.5 h-3.5" strokeWidth={1.8} />
                                     怎么办
                                 </StepLabel>
@@ -258,16 +258,13 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
     );
 }
 
-/** 推理链步骤标题：数字圆点 + 图标 + 标题（01 我看到的 → 02 为什么 → 03 怎么办） */
-function StepLabel({ step, children, emphasize = false }: { step: number; children: ReactNode; emphasize?: boolean }) {
+/** 推理链步骤标题：图标 + 标题（我看到的 → 为什么 → 怎么办），步骤顺序由版式上下排列传达 */
+function StepLabel({ children, emphasize = false }: { children: ReactNode; emphasize?: boolean }) {
     return (
         <p className={cn(
             "flex items-center gap-2 text-[12px] font-medium tracking-wide mb-2",
             emphasize ? "text-[var(--color-brand-cocoa)]" : "text-[var(--color-brand-taupe)]"
         )}>
-            <span className="shrink-0 w-[18px] h-[18px] rounded-full bg-[var(--color-brand-cocoa)]/10 text-[var(--color-brand-cocoa)] text-[10px] font-bold flex items-center justify-center">
-                {step}
-            </span>
             {children}
         </p>
     );
