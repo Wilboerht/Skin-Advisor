@@ -40,7 +40,7 @@ function GiftConfetti() {
   );
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-30 overflow-hidden rounded-t-[28px] sm:rounded-[2.5rem]">
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
       {pieces.map((p) => (
         <m.span
           key={p.id}
@@ -127,6 +127,9 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
           />
 
+          {/* 打开时的彩带雨：铺满整个视口（一次性，随弹窗挂载自动播放） */}
+          <GiftConfetti />
+
           {/* 弹窗主体：移动端底部升起（与用户面板一致），桌面端居中卡片 */}
           <m.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
@@ -136,9 +139,6 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             className="relative z-10 w-full max-h-[85dvh] sm:max-h-none sm:max-w-lg sm:h-auto bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
-            {/* 打开时的彩带雨（一次性，随弹窗挂载自动播放） */}
-            <GiftConfetti />
-
             {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
             <button
               onClick={onClose}
