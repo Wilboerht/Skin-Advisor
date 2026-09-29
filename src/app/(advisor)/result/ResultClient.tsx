@@ -1781,7 +1781,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         } satisfies ProductCardData))}
                                         isLoading={loading}
                                         faceAnalysis={faceAnalysis}
-                                        personaLabel={personaLabel}
                                         onProductClick={(productId) => {
                                             const product = result.products?.find(p => p.id === productId);
                                             if (product && !isMock) {

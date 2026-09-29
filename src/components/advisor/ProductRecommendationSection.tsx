@@ -10,7 +10,6 @@ import { DIMENSION_LABELS } from "@/lib/advisor-labels";
 interface ProductRecommendationSectionProps {
     products: ProductCardData[];
     isLoading?: boolean;
-    personaLabel?: string;
     faceAnalysis?: {
         dimensions?: Record<string, { score: number }>;
     } | null;
@@ -22,7 +21,6 @@ interface ProductRecommendationSectionProps {
 export function ProductRecommendationSection({
     products,
     isLoading = false,
-    personaLabel,
     faceAnalysis,
     onProductClick,
     className,
@@ -113,8 +111,8 @@ export function ProductRecommendationSection({
     if (!isLoading && products.length === 0) {
         return (
             <div className="py-12 text-center">
-                <h4 className="text-base font-medium text-brand-espresso mb-2">暂无产品推荐</h4>
-                <p className="text-sm text-[#8c7a6b]">更多精选产品即将上线，敬请期待</p>
+                <h4 className="text-base font-medium text-brand-espresso mb-2">护理组合筹备中</h4>
+                <p className="text-sm text-[#8c7a6b]">正在为这个派系甄选产品，敬请期待</p>
             </div>
         );
     }
@@ -129,12 +127,10 @@ export function ProductRecommendationSection({
                 className="text-center pt-6 lg:pt-10 mb-6"
             >
                 <h2 className="text-lg lg:text-2xl font-bold text-brand-espresso tracking-wide">
-                    {personaLabel ? `你的「${personaLabel}」方案落点` : "方案里的产品落点"}
+                    为您甄选的护理组合
                 </h2>
                 <p className="text-xs lg:text-sm text-[#8c7a6b] mt-2">
-                    {personaLabel
-                        ? "以上方案中提到的产品，是对应你本次诊断发现的具体落点"
-                        : "基于本次诊断发现，这些产品是你方案中的具体落点"}
+                    方案中每一步护理，这里是为你对应好的具体选择
                 </p>
             </m.div>
 
