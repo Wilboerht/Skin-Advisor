@@ -76,6 +76,10 @@ const ProductRecommendationSection = dynamic(
     () => import("@/components/advisor/ProductRecommendationSection").then((mod) => mod.ProductRecommendationSection),
     { ssr: false, loading: () => <ProductSectionSkeleton /> }
 );
+const AdvisorServiceSection = dynamic(
+    () => import("@/components/advisor/AdvisorServiceSection").then((mod) => mod.AdvisorServiceSection),
+    { ssr: false, loading: () => null }
+);
 const PosterTemplatePicker = dynamic(
     () => import("@/components/advisor/poster/PosterTemplatePicker").then((mod) => mod.PosterTemplatePicker),
     { ssr: false }
@@ -1789,6 +1793,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         }}
                                         centered
                                     />
+
+                                    {/* 专属护肤顾问服务：按会员等级展示对应内容（未登录/普通会员/银卡及以上） */}
+                                    <AdvisorServiceSection onLogin={() => openAuthModal("login")} />
 
                                     {/* Global Footer（与证书面共用） */}
                                     <footer className="w-full bg-transparent mt-0">
