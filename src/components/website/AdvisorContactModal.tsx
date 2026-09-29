@@ -30,6 +30,14 @@ export const LEVEL_LABELS: Record<string, string> = {
 /** 二维码图片：放到 public/images/advisor-qr.png 即自动生效；缺图时展示占位框 */
 export const ADVISOR_QR_SRC = "/images/advisor-qr.png";
 
+/** 钻石会员专属人工顾问二维码（独立素材，人工顾问服务上线后使用） */
+export const ADVISOR_QR_DIAMOND_SRC = "/images/advisor-qr-diamond.jpg";
+
+/** 按会员等级取顾问二维码：钻石走人工顾问专属码，其余银卡及以上走 AI 顾问码 */
+export function getAdvisorQrSrc(membershipLevel?: string): string {
+  return membershipLevel === "DIAMOND" ? ADVISOR_QR_DIAMOND_SRC : ADVISOR_QR_SRC;
+}
+
 /**
  * AdvisorContactModal — 「联系专属 AI 护肤顾问」弹层（Dock「专属顾问」入口）。
  * 银卡及以上：展示企业微信二维码；普通会员：文案引导升级；未登录：登录引导。
@@ -121,7 +129,7 @@ export function AdvisorContactModal({ isOpen, onClose }: AdvisorContactModalProp
                       <MessageCircleHeart className="w-6 h-6 text-brand-charcoal/65" strokeWidth={1.4} />
                     </div>
                     <h3 className="text-xl font-serif font-light text-brand-charcoal tracking-[0.08em] mb-2">
-                      联系专属 AI 护肤顾问
+                      {user.membershipLevel === "DIAMOND" ? "联系专属人工顾问" : "联系专属 AI 护肤顾问"}
                     </h3>
                     <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] mb-6">
                       微信扫码添加您的专属顾问
@@ -140,8 +148,8 @@ export function AdvisorContactModal({ isOpen, onClose }: AdvisorContactModalProp
                         </div>
                       ) : (
                         <Image
-                          src={ADVISOR_QR_SRC}
-                          alt="专属 AI 护肤顾问二维码"
+                          src={getAdvisorQrSrc(user.membershipLevel ?? "")}
+                          alt={user.membershipLevel === "DIAMOND" ? "专属人工顾问二维码" : "专属 AI 护肤顾问二维码"}
                           width={240}
                           height={240}
                           unoptimized

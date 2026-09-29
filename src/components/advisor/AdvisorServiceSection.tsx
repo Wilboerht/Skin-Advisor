@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
     ADVISOR_MEMBER_LEVELS,
-    ADVISOR_QR_SRC,
+    getAdvisorQrSrc,
     LEVEL_LABELS,
 } from "@/components/website/AdvisorContactModal";
 
@@ -105,8 +105,8 @@ export function AdvisorServiceSection({ onLogin, className }: AdvisorServiceSect
                                 </div>
                             ) : (
                                 <Image
-                                    src={ADVISOR_QR_SRC}
-                                    alt="专属 AI 护肤顾问二维码"
+                                    src={getAdvisorQrSrc(level)}
+                                    alt={level === "DIAMOND" ? "专属人工顾问二维码" : "专属 AI 护肤顾问二维码"}
                                     width={200}
                                     height={200}
                                     unoptimized
