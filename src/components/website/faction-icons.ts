@@ -36,8 +36,8 @@ export function getFactionIcon(ipKey: string): LucideIcon {
  * - 冻龄派：冰蓝圆点（清透）
  * - 沙漠派：沙色疏点（干爽）
  * - 油条派：暖琥珀短横条（利落）
- * - 混合派：绿金对半（双区）
- * - 守护派：钢蓝实线（稳重）
+ * - 混合派：玫瑰与灰对半（双区）
+ * - 守护派：灰绿实线（稳重）
  */
 export const FACTION_EDGE_TEXTURES: Record<string, string> = {
     sensitive: "radial-gradient(#E4A6B5 1.5px, transparent 1.5px) 0 0/10px 6px",
@@ -46,8 +46,8 @@ export const FACTION_EDGE_TEXTURES: Record<string, string> = {
     ageless: "radial-gradient(#A8C6DF 1.5px, transparent 1.5px) 0 0/9px 6px",
     desert: "radial-gradient(#D9B98C 1.5px, transparent 1.5px) 0 0/11px 6px",
     oily: "repeating-linear-gradient(90deg, #E0A75E 0 4px, transparent 4px 10px)",
-    combination: "linear-gradient(90deg, #8FB7A8 0 50%, #C9A86C 50% 100%)",
-    guardian: "linear-gradient(#6B8CAE 0 0)",
+    combination: "linear-gradient(90deg, #C98B98 0 50%, #A9A29A 50% 100%)",
+    guardian: "linear-gradient(#A8C4A1 0 0)",
 };
 
 /** 未知 ipKey 兜底为金棕实线 */
@@ -63,8 +63,8 @@ export const FACTION_ACCENTS: Record<string, string> = {
     ageless: "#A8C6DF",
     desert: "#D9B98C",
     oily: "#E0A75E",
-    combination: "#8FB7A8",
-    guardian: "#6B8CAE",
+    combination: "#C98B98",
+    guardian: "#A8C4A1",
 };
 
 /** 未知 ipKey 兜底金棕 */
@@ -74,21 +74,21 @@ export function getFactionAccent(ipKey: string): string {
 
 /**
  * 派系形象视觉重心（实测各形象 webp 非透明像素边界，人物在 960×1280 画布内并不居中）：
- * x/y 为人物像素中心在画布内的位置（%），d 为圆形背景直径（占画面高度 %，约人物高度 ×1.1）。
- * 用于详情弹窗头部人物形象的圆形衬底定位。
+ * x/y 为圆心在画布内的位置（%，y 按圆底边略低于人物脚底约 3% 反推），d 为圆形背景直径
+ * （占画面高度 %，约人物高度的 85%）。用于详情弹窗头部人物形象的圆形衬底定位。
  */
 export const FACTION_PORTRAIT_SPOTS: Record<string, { x: number; y: number; d: number }> = {
-    sensitive: { x: 48.3, y: 52.2, d: 93 },
-    minimalist: { x: 52.6, y: 53.9, d: 91 },
-    luxury: { x: 50.1, y: 55.2, d: 88 },
-    ageless: { x: 54.9, y: 51.1, d: 95 },
-    desert: { x: 52.2, y: 51.7, d: 94 },
-    oily: { x: 52.3, y: 48.6, d: 100 },
-    combination: { x: 56.0, y: 52.6, d: 92 },
-    guardian: { x: 47.3, y: 50.1, d: 98 },
+    sensitive: { x: 48.3, y: 61.3, d: 72 },
+    minimalist: { x: 52.6, y: 63.2, d: 70 },
+    luxury: { x: 50.1, y: 64.2, d: 68 },
+    ageless: { x: 54.9, y: 60.5, d: 74 },
+    desert: { x: 52.2, y: 61.4, d: 72 },
+    oily: { x: 52.3, y: 58.6, d: 78 },
+    combination: { x: 56.0, y: 62.0, d: 71 },
+    guardian: { x: 47.3, y: 59.7, d: 76 },
 };
 
-/** 未知 ipKey 兜底为画面中心 */
+/** 未知 ipKey 兜底为画面中心偏下（圆底对齐 97.5% 处） */
 export function getFactionPortraitSpot(ipKey: string): { x: number; y: number; d: number } {
-    return FACTION_PORTRAIT_SPOTS[ipKey] ?? { x: 50, y: 50, d: 92 };
+    return FACTION_PORTRAIT_SPOTS[ipKey] ?? { x: 50, y: 61.5, d: 72 };
 }

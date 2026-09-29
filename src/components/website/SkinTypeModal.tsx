@@ -97,12 +97,14 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                   {/* 圆形背景：派系主色淡化，圆心与直径对齐人物像素的实际重心（画布内人物并不居中） */}
                   <span
                     aria-hidden="true"
-                    className="absolute rounded-full opacity-30 aspect-square -translate-x-1/2 -translate-y-1/2"
+                    className="absolute rounded-full opacity-30 -translate-x-1/2 -translate-y-1/2"
                     style={{
                       backgroundColor: getFactionAccent(data.ipKey),
                       left: `${getFactionPortraitSpot(data.ipKey).x}%`,
                       top: `${getFactionPortraitSpot(data.ipKey).y}%`,
+                      // 形象框固定 3:4（宽 = 高 × 0.75），宽高都显式给百分比，避免依赖 aspect-ratio 推算出椭圆
                       height: `${getFactionPortraitSpot(data.ipKey).d}%`,
+                      width: `${(getFactionPortraitSpot(data.ipKey).d * 4) / 3}%`,
                     }}
                   />
                   <Image
@@ -110,7 +112,7 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                     alt={`${data.typeName} 形象`}
                     width={180}
                     height={240}
-                    className="relative h-36 md:h-44 w-auto object-contain"
+                    className="relative h-44 md:h-56 w-auto object-contain"
                   />
                 </div>
                 <h2
