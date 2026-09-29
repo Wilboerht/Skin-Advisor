@@ -3,7 +3,8 @@
 /**
  * PasswordSection — 密码管理表单（移植自主站 SecurityPanel）
  * 修改密码（旧密码验证）→ BFF `/api/user/password`；首次设置（短信验证码）→ `/api/user/password/set`
- * 纯表单组件，由「个人信息」面板以行内展开方式承载。
+ * 均经 BFF 转发官网 OAuth 资源端点；成功后官网撤销全部 OAuth 会话（本站需重新登录），
+ * 由父级承接提示与收尾。纯表单组件，由「个人信息」面板以行内展开方式承载。
  */
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
@@ -59,16 +60,21 @@ export function PasswordSection({ hasPassword, onUpdated, onSessionExpired }: Pa
     return (await res.json().catch(() => null)) as ApiResult;
   };
 
-  /** 首次设置密码：发送短信验证码（BFF 从本地副本解析完整手机号，前端无需传参） */
+  /** 首次设置密码：发送短信验证码（官网按 OAuth token 解析本人手机号，前端无需传参） */
   const handleSendSetCode = async () => {
     if (countdown > 0) return;
-    const data = await request("/api/user/password/set-code", { method: "POST", body: "{}" });
-    if (!data) return;
-    if (data.success) {
-      setCountdown(60);
-      toast.success("验证码已发送");
-    } else {
-      toast.error(data.error?.message || "验证码发送失败");
+    try {
+      const data = await request("/api/user/password/set-code", { method: "POST", body: "{}" });
+      if (!data) return;
+      if (data.success) {
+        setCountdown(60);
+        toast.success("验证码已发送");
+      } else {
+        toast.error(data.error?.message || "验证码发送失败");
+      }
+    } catch {
+      // fetchWithCsrf 网络异常会抛出（无响应），必须兜底提示，否则按钮静默复原
+      toast.error("网络异常，验证码发送失败，请稍后再试");
     }
   };
 
@@ -94,7 +100,6 @@ export function PasswordSection({ hasPassword, onUpdated, onSessionExpired }: Pa
           setOldPassword("");
           setNewPassword("");
           setConfirmPassword("");
-          toast.success("密码修改成功");
           onUpdated();
         } else if (data.error?.code === "PASSWORD_NOT_SET") {
           // 未设过密码的账号（如短信注册）：切换到短信验证码设置流程
@@ -116,12 +121,14 @@ export function PasswordSection({ hasPassword, onUpdated, onSessionExpired }: Pa
           setSetCode("");
           setNewPassword("");
           setConfirmPassword("");
-          toast.success("密码设置成功");
           onUpdated();
         } else {
           toast.error(data.error?.message || "设置失败");
         }
       }
+    } catch {
+      // 网络异常时修改结果未知（可能已成功且会话已撤销）：提示重新登录确认
+      toast.error("网络异常，操作结果未知，请稍后重新登录确认");
     } finally {
       setSaving(false);
     }

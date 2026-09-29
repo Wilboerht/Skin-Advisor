@@ -1,59 +1,41 @@
 /**
- * 修改密码（代理到官网）
+ * 修改密码（BFF 代理官网 OAuth 资源端点 /api/oauth/user/password，Bearer 转发）
  * PUT /api/user/password
+ *
+ * 旧密码校验与凭证变更收尾由官网完成；成功后官网撤销全部 OAuth 会话并向本站
+ * 发送 backchannel logout（账号凭证变更的安全口径），本站用户需重新登录。
+ * 唯一例外：官网不可达时返回 502，前端提示稍后重试。
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
-import { getSessionUser, getAccessToken, SSO_BASE_URL } from "@/lib/sso-auth";
-import { logger } from "@/lib/logger";
+import { authorizeAccountBff, proxyOfficialJson } from "@/lib/account-bff-proxy";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
+// 官网改密成功后会等待 backchannel 通知（最坏约 12s，见主站 backchannel-logout：
+// 2 次 ×5s 超时 + 2s 退避），超时留足余量避免误报失败
+const UPSTREAM_TIMEOUT_MS = 25000;
+
 export async function PUT(req: NextRequest) {
-    try {
-        const ip = getClientIP(req);
-        const ipLimit = await rateLimit(`password-change-${ip}`, "login", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
-        if (!ipLimit.success) {
-            return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
-        }
-
-        const session = await getSessionUser(req);
-        if (!session) {
-            return apiError(ErrorCode.UNAUTHORIZED, "请先登录", 401);
-        }
-
-        const token = await getAccessToken(req);
-        if (!token) {
-            return apiError(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录", 401);
-        }
-
-        const body = await req.json();
-
-        if (!body.oldPassword || !body.newPassword) {
-            return apiError(ErrorCode.VALIDATION_ERROR, "请提供原密码和新密码", 400);
-        }
-
-        const res = await fetch(`${SSO_BASE_URL}/api/user/password`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify(body),
-        });
-
-        const data = (await res.json().catch(() => ({ success: false, error: { message: "上游响应异常" } }))) as { success?: boolean; error?: { message?: string } };
-
-        if (!res.ok || !data?.success) {
-            return NextResponse.json(
-                { success: false, error: data?.error || { code: ErrorCode.UPSTREAM_ERROR, message: "密码修改失败" } },
-                { status: res.status || 400 }
-            );
-        }
-
-        return NextResponse.json(data);
-    } catch (error) {
-        logger.error("[user/password] Proxy error:", error);
-        return apiError(ErrorCode.INTERNAL_ERROR, "服务器内部错误", 500);
+    const ip = getClientIP(req);
+    const ipLimit = await rateLimit(`password-change-${ip}`, "login", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
+    if (!ipLimit.success) {
+        return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
     }
+
+    const auth = await authorizeAccountBff(req, { scope: "password-change" });
+    if (auth.error) return auth.error;
+
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+        return apiError(ErrorCode.VALIDATION_ERROR, "请求体不是合法的 JSON", 400);
+    }
+
+    return proxyOfficialJson({
+        token: auth.token,
+        path: "/api/oauth/user/password",
+        method: "PUT",
+        body: JSON.stringify(body),
+        timeoutMs: UPSTREAM_TIMEOUT_MS,
+    });
 }

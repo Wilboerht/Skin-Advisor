@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { PasswordSection } from "@/components/website/account-sections/PasswordSection";
 import { AddressSection } from "@/components/website/account-sections/AddressSection";
+import { PhoneSection } from "@/components/website/account-sections/PhoneSection";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { localDateStr } from "@/lib/local-date";
 import { uploadImage } from "@/lib/upload-client";
@@ -54,9 +55,11 @@ interface AccountRootViewProps {
 /**
  * 「个人信息」面板（排版对齐官网 ProfilePanel）：
  * 左对齐头像区（头像 + 昵称 + 点击更换头像）+ 行式信息列表
- * （昵称/性别/生日可编辑，绑定手机号打码展示，密码可设置/修改，收货地址可增删改）+ 移动端退出登录。
- * 昵称/头像/性别/生日经 BFF（/api/account/profile）转发主站修改；手机号仅打码展示（换绑在主站）；
- * 密码经 BFF 转发主站；收货地址经 BFF 代理主站 OAuth 地址簿（单一数据源）。
+ * （昵称/性别/生日可编辑，绑定手机号可双向短信验证换绑，密码可设置/修改，收货地址可增删改）+ 移动端退出登录。
+ * 昵称/头像/性别/生日经 BFF（/api/account/profile）转发主站修改；手机号经 BFF（/api/account/phone）
+ * 转发主站 OAuth 换绑端点并同步本地副本（成功后官网撤销全部 OAuth 会话，需重新登录）；
+ * 密码经 BFF（/api/user/password*）转发主站 OAuth 端点（成功后同需重新登录）；
+ * 收货地址经 BFF 代理主站 OAuth 地址簿（单一数据源）。
  */
 export function AccountRootView({ user, onRequestLogout, onRequestLogin }: AccountRootViewProps) {
   const { refresh } = useAuth();
@@ -84,6 +87,13 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
   // 密码 / 收货地址行内展开（对齐主站个人信息面板的收起-展开行）
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [addressOpen, setAddressOpen] = useState(false);
+  // 密码变更成功后的本地覆盖（官网撤销会话后不再回源；hasPassword 立即展示为已设置）
+  const [passwordOverride, setPasswordOverride] = useState<boolean | null>(null);
+  // 手机号换绑表单展开（修改按钮切换；成功后自动收起）
+  const [phoneOpen, setPhoneOpen] = useState(false);
+  // 换绑成功后的本地手机号覆盖（打码展示）：会话已被官网撤销，不再回源 userinfo
+  //（回源会因 token 会话失效而降级 null，把已加载的生日/密码状态冲掉）
+  const [phoneOverride, setPhoneOverride] = useState<string | null>(null);
   // 收货地址数量（行内展示 已设置/未设置；展开区增删改后回报）
   const [addressCount, setAddressCount] = useState<number | null>(null);
   // 生日被主站锁定但官网回源不可达（日期降级为 null）：行内展示「已锁定（日期暂不可见）」
@@ -112,6 +122,22 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
     }
   }, []);
 
+  /** 密码变更成功：官网已撤销全部 OAuth 会话（含本站），本地展示已设置并提示重新登录 */
+  const handlePasswordUpdated = useCallback(() => {
+    setPasswordOpen(false);
+    setPasswordOverride(true);
+    toast.success("密码已更新，请重新登录");
+    setSessionExpired(true);
+  }, [toast]);
+
+  /** 手机号换绑成功：官网已撤销全部 OAuth 会话（含本站），本地立即展示新号并提示重新登录 */
+  const handlePhoneUpdated = useCallback((newPhone: string) => {
+    setPhoneOpen(false);
+    setPhoneOverride(maskPhoneForDisplay(newPhone));
+    toast.success("手机号已更新，请重新登录");
+    setSessionExpired(true);
+  }, [toast]);
+
   useEffect(() => {
     // 账号切换时先清空旧数据，避免重取期间展示上一账号的内容
     setProfile(null);
@@ -127,6 +153,9 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
     setEditingBirthday(false);
     setPasswordOpen(false);
     setAddressOpen(false);
+    setPasswordOverride(null);
+    setPhoneOpen(false);
+    setPhoneOverride(null);
     setBirthdayLockedHint(false);
   }, [user.id]);
 
@@ -277,11 +306,18 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
   // 性别：BFF 资料优先（含主站 claim）；资料未加载/字段缺失（undefined）时回退会话字段，null = 保密
   const genderValue = profile?.gender !== undefined ? profile.gender ?? null : user.gender ?? null;
   const genderLabel = genderValue === "male" ? "男" : genderValue === "female" ? "女" : "保密";
-  // 手机号：BFF 打码返回优先；回退会话字段时同样打码（会话里的 phoneNumber 是完整号码）
-  const phoneLabel = maskPhoneForDisplay(profile?.phone || user.phone) || "未绑定";
-  // 密码：已设置/未设置；官网未返回（null/undefined）时显示 —，表单按「修改」起步并靠 PASSWORD_NOT_SET 兜底
+  // 手机号：换绑后的本地覆盖优先；否则 BFF 打码返回；回退会话字段时同样打码（会话里的 phoneNumber 是完整号码）
+  const phoneLabel = phoneOverride || maskPhoneForDisplay(profile?.phone || user.phone) || "未绑定";
+  // 密码：已设置/未设置；官网未返回（null/undefined）时显示 —，表单按「修改」起步并靠 PASSWORD_NOT_SET 兜底；
+  // 变更成功后用本地覆盖立即反映「已设置」（官网已撤销会话，回源会降级）
   const passwordLabel =
-    profile?.hasPassword === true ? "已设置" : profile?.hasPassword === false ? "未设置" : "—";
+    passwordOverride === true
+      ? "已设置"
+      : profile?.hasPassword === true
+        ? "已设置"
+        : profile?.hasPassword === false
+          ? "未设置"
+          : "—";
   // 收货地址：挂载时轻量拉一次数量（地址簿很小）；展开区增删改后会回报最新数量
   const addressLabel = addressCount === null ? "—" : addressCount > 0 ? "已设置" : "未设置";
 
@@ -562,16 +598,41 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
 
           <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
 
-          {/* 绑定手机号：主站 userinfo 打码返回，仅展示（换绑走主站短信验证，独立站不提供） */}
-          <div className="group -mx-6 flex items-center justify-between rounded-2xl px-6 py-4">
-            <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
-              <div className="w-[4.5rem] shrink-0 md:w-20">
-                <p className="text-[13px] text-stone-400 md:text-sm md:font-light">绑定手机号</p>
+          {/* 绑定手机号：双向短信验证换绑（BFF 转发官网 OAuth 端点，成功后需重新登录） */}
+          <div className="group -mx-6 rounded-2xl px-6 transition-all hover:bg-white/40">
+            <div className="flex items-center justify-between py-4">
+              <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
+                <div className="w-[4.5rem] shrink-0 md:w-20">
+                  <p className="text-[13px] text-stone-400 md:text-sm md:font-light">绑定手机号</p>
+                </div>
+                <div className="flex w-full min-w-0 flex-1 items-center gap-2">
+                  <p className="truncate text-[15px] font-medium text-stone-800 md:text-sm">{phoneLabel}</p>
+                </div>
               </div>
-              <div className="flex w-full min-w-0 flex-1 items-center gap-2">
-                <p className="truncate text-[15px] font-medium text-stone-800 md:text-sm">{phoneLabel}</p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setPhoneOpen((v) => !v)}
+                aria-expanded={phoneOpen}
+                className="flex shrink-0 items-center gap-1.5 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+              >
+                <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100">修改</span>
+                <ChevronRight
+                  className={`h-3.5 w-3.5 text-stone-300 transition-transform duration-200 md:hidden ${
+                    phoneOpen ? "rotate-90" : ""
+                  }`}
+                />
+              </button>
             </div>
+            {phoneOpen && (
+              <div className="border-t border-stone-200/60 pb-5 pt-4">
+                <PhoneSection
+                  hasRealPhone={phoneLabel !== "未绑定"}
+                  onUpdated={handlePhoneUpdated}
+                  onSessionExpired={handleSessionExpired}
+                  onCancel={() => setPhoneOpen(false)}
+                />
+              </div>
+            )}
           </div>
 
           <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
@@ -601,8 +662,8 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
             {passwordOpen && (
               <div className="border-t border-stone-200/60 pb-5 pt-4">
                 <PasswordSection
-                  hasPassword={profile?.hasPassword}
-                  onUpdated={() => void loadProfile()}
+                  hasPassword={passwordOverride === true ? true : profile?.hasPassword}
+                  onUpdated={handlePasswordUpdated}
                   onSessionExpired={handleSessionExpired}
                 />
               </div>

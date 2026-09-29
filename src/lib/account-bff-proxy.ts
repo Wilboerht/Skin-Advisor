@@ -7,6 +7,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/sso-auth";
+import type { SessionUser } from "@/lib/auth";
 import { resolveOfficialAccessToken, OFFICIAL_BASE_URL } from "@/lib/account-bff";
 import { rateLimit } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
@@ -18,8 +19,8 @@ export function bffError(code: string, message: string, status: number) {
 }
 
 export type AccountBffAuthorizeResult =
-    | { error: NextResponse; token?: undefined }
-    | { error?: undefined; token: string };
+    | { error: NextResponse; token?: undefined; user?: undefined }
+    | { error?: undefined; token: string; user: SessionUser };
 
 /** 会话 + 限流 + 官网 token 统一前置；失败时返回可直接响应的 error */
 export async function authorizeAccountBff(
@@ -44,7 +45,7 @@ export async function authorizeAccountBff(
         return { error: bffError("UNAUTHORIZED", "登录已过期，请重新登录", 401) };
     }
 
-    return { token };
+    return { token, user };
 }
 
 /**
@@ -69,7 +70,7 @@ export async function proxyOfficialJson(options: {
     token: string;
     /** 官网路径（含 query），如 /api/oauth/points/gifts */
     path: string;
-    method?: "GET" | "POST" | "PATCH" | "DELETE";
+    method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
     /** 原始 JSON 字符串（透传避免两侧 schema 漂移） */
     body?: string;
     timeoutMs?: number;
