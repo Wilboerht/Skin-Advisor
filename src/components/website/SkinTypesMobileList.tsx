@@ -18,7 +18,7 @@ interface SkinTypesMobileListProps {
  * 窄屏下轮播侧卡露边过窄、信息密度低；2 列图鉴网格滚动过长且只有名字。
  * 改为单列横排卡：左形象 56px + 右派系名与一句简介 + 右箭头，
  * 行高约 100px，8 个派系滚动距离明显缩短、扫读性更好。
- * 纵向节奏规范：行间隙 8、卡内「名称→简介」8、简介行高 1.6（与桌面轮播卡一致）。
+ * 纵向节奏规范：行间隙 12、卡内「名称→简介」8、简介行高 1.6（与桌面轮播卡一致）。
  * 桌面端仍由 SkinTypesClient 轮播承载。
  */
 export function SkinTypesMobileList({ types, hideTestCTA = false }: SkinTypesMobileListProps) {
@@ -40,7 +40,7 @@ export function SkinTypesMobileList({ types, hideTestCTA = false }: SkinTypesMob
 
   return (
     <>
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-3">
         {types.map((type) => {
           const Icon = getFactionIcon(type.ipKey);
           return (
@@ -49,7 +49,7 @@ export function SkinTypesMobileList({ types, hideTestCTA = false }: SkinTypesMob
                 type="button"
                 onClick={() => setSelected(type)}
                 aria-label={`${type.typeName}（查看详情）`}
-                className="group flex w-full items-center gap-3.5 rounded-2xl border border-brand-espresso/[0.12] bg-white px-3.5 py-3 text-left transition-colors duration-300 hover:border-brand-espresso/[0.22] active:bg-brand-charcoal/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
+                className="group flex w-full items-center gap-3.5 rounded-2xl border border-brand-espresso/[0.12] bg-white px-3.5 py-3.5 text-left transition-colors duration-300 hover:border-brand-espresso/[0.22] active:bg-brand-charcoal/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
               >
                 <Image
                   src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}

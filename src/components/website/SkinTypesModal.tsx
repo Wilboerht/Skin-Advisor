@@ -85,9 +85,9 @@ export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTyp
 
               {/* 可滚动内容区（移动端底部另有版权底栏，滚动区底部留 24px 与之间隔） */}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:pt-8 pb-6 sm:pb-8">
-                {/* 头部：肌智派徽标 + 标题 + 品牌副标题 */}
-                <div className="text-center mb-5 md:mb-6">
-                  <div className="mb-3 md:mb-4 flex justify-center">
+                {/* 头部：肌智派徽标 + 标题 + 品牌副标题（节奏与 GiftModal 一致：徽标下 16、副标题上 12、头部下 24/32） */}
+                <div className="text-center mb-6 md:mb-8">
+                  <div className="mb-4 flex justify-center">
                     <Image
                       src="/images/jzp-eyebrow.png"
                       alt="肌智派"
@@ -102,7 +102,7 @@ export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTyp
                   >
                     派系速览
                   </h2>
-                  <p className="mt-2 md:mt-3 text-[12px] md:text-[13px] font-light text-brand-charcoal/55 tracking-[0.25em]">
+                  <p className="mt-3 text-[12px] md:text-[13px] font-light text-brand-charcoal/55 tracking-[0.25em]">
                     肌因觉醒 智成一派
                   </p>
                 </div>
@@ -118,7 +118,7 @@ export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTyp
                 {/* 桌面端版权：内容末尾居中（移动端版权在底部吸附栏内，始终可见） */}
                 <p
                   suppressHydrationWarning
-                  className="hidden md:block mt-6 text-center text-[11px] font-light tracking-[0.12em] text-brand-charcoal/50 select-none"
+                  className="hidden md:block mt-8 text-center text-[11px] font-light tracking-[0.12em] text-brand-charcoal/50 select-none"
                 >
                   &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
                 </p>

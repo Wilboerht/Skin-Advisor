@@ -116,7 +116,7 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
       <div
         role="group"
         aria-label="派系导航"
-        className="mb-4 md:mb-8 mx-auto flex flex-wrap justify-center gap-2 md:max-w-[360px] lg:max-w-none"
+        className="mb-8 mx-auto flex flex-wrap justify-center gap-2 md:max-w-[360px] lg:max-w-none"
       >
         {types.map((t, i) => {
           const active = i === activeIdx;
