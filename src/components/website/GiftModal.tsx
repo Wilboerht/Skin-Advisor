@@ -1,12 +1,65 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+
+/** 彩带配色：品牌金/可可/藏蓝 + 派系点缀色 */
+const CONFETTI_COLORS = ["#C9A86C", "#5c4937", "#00263E", "#E4A6B5", "#A8C6DF", "#E0A75E"];
+
+/** 确定性伪随机（渲染期不允许 Math.random）：按种子生成 0-1 的稳定散列 */
+function seededRandom(seed: number): number {
+  const v = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+/**
+ * 打开弹窗时的彩带雨：48 片品牌色纸屑从弹层顶部飘落，约 3-4s 内落完淡出。
+ * 组件随弹窗挂载而 mount（AnimatePresence 内），每次打开自动重播一次。
+ */
+function GiftConfetti() {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 48 }, (_, i) => ({
+        id: i,
+        x: seededRandom(i * 7 + 1) * 100,
+        delay: seededRandom(i * 13 + 2) * 0.5,
+        duration: 2.6 + seededRandom(i * 17 + 3) * 1.6,
+        size: 5 + seededRandom(i * 23 + 5) * 5,
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        rotate: seededRandom(i * 29 + 7) * 360,
+        spin: 240 + seededRandom(i * 31 + 11) * 360,
+        drift: (seededRandom(i * 37 + 13) - 0.5) * 60,
+        round: seededRandom(i * 41 + 17) > 0.6,
+      })),
+    []
+  );
+
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-30 overflow-hidden rounded-t-[28px] sm:rounded-[2.5rem]">
+      {pieces.map((p) => (
+        <m.span
+          key={p.id}
+          initial={{ top: "-4%", x: 0, opacity: 0, rotate: p.rotate }}
+          animate={{ top: "104%", x: p.drift, opacity: [0, 1, 1, 0.9, 0], rotate: p.rotate + p.spin }}
+          transition={{ duration: p.duration, delay: p.delay, ease: "easeIn" }}
+          className="absolute"
+          style={{
+            left: `${p.x}%`,
+            width: p.size,
+            height: p.round ? p.size : p.size * 1.8,
+            backgroundColor: p.color,
+            borderRadius: p.round ? "50%" : 1,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 interface GiftModalProps {
   isOpen: boolean;
@@ -83,6 +136,9 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             className="relative z-10 w-full max-h-[85dvh] sm:max-h-none sm:max-w-lg sm:h-auto bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
+            {/* 打开时的彩带雨（一次性，随弹窗挂载自动播放） */}
+            <GiftConfetti />
+
             {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
             <button
               onClick={onClose}
