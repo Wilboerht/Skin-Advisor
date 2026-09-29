@@ -17,9 +17,9 @@ interface AdvisorContactModalProps {
 }
 
 /** 银卡及以上可联系专属 AI 护肤顾问（历史值 ADVANCED 按金卡兜底，与后端 normalizeMembershipLevel 一致） */
-const ADVISOR_MEMBER_LEVELS = new Set(["SILVER", "GOLD", "DIAMOND", "ADVANCED"]);
+export const ADVISOR_MEMBER_LEVELS = new Set(["SILVER", "GOLD", "DIAMOND", "ADVANCED"]);
 
-const LEVEL_LABELS: Record<string, string> = {
+export const LEVEL_LABELS: Record<string, string> = {
   REGULAR: "普通会员",
   SILVER: "银卡会员",
   GOLD: "金卡会员",
@@ -28,7 +28,7 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 /** 二维码图片：放到 public/images/advisor-qr.png 即自动生效；缺图时展示占位框 */
-const ADVISOR_QR_SRC = "/images/advisor-qr.png";
+export const ADVISOR_QR_SRC = "/images/advisor-qr.png";
 
 /**
  * AdvisorContactModal — 「联系专属 AI 护肤顾问」弹层（Dock「专属顾问」入口）。
