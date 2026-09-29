@@ -237,7 +237,7 @@ export function SkinTypeModal({ data, onClose, hideTestCTA = false }: SkinTypeMo
                   <Link
                     href="/"
                     onClick={onClose}
-                    className="group inline-flex items-center justify-center gap-2 h-11 px-8 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#4a3a2c]"
+                    className="group inline-flex items-center justify-center gap-2 h-11 px-8 rounded-full border border-[#00263E]/25 bg-[#00263E]/[0.08] backdrop-blur-md text-[#00263E] text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#00263E]/[0.12] hover:border-[#00263E]/40"
                   >
                     <span>完成肌肤状态检测，查看你的专属肌肤派系</span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />

@@ -155,7 +155,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
                   <button
                     type="button"
                     onClick={onStartTest}
-                    className="group w-full inline-flex items-center justify-center gap-2 px-8 h-11 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#4a3a2c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2 cursor-pointer"
+                    className="group w-full inline-flex items-center justify-center gap-2 px-8 h-11 rounded-full border border-[#00263E]/25 bg-[#00263E]/[0.08] backdrop-blur-md text-[#00263E] text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#00263E]/[0.12] hover:border-[#00263E]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2 cursor-pointer"
                   >
                     <span>开始测肤</span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
@@ -163,7 +163,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
                 ) : (
                   <Link
                     href="/"
-                    className="group w-full inline-flex items-center justify-center gap-2 px-8 h-11 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#4a3a2c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2"
+                    className="group w-full inline-flex items-center justify-center gap-2 px-8 h-11 rounded-full border border-[#00263E]/25 bg-[#00263E]/[0.08] backdrop-blur-md text-[#00263E] text-[13px] font-normal tracking-[0.08em] transition-colors duration-300 hover:bg-[#00263E]/[0.12] hover:border-[#00263E]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2"
                   >
                     <span>开始测肤</span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none" />
