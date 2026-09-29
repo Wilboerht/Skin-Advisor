@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { m } from "framer-motion";
-import { ArrowRight, MessageCircleHeart, QrCode, Sparkles } from "lucide-react";
+import { ArrowRight, QrCode, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
@@ -81,42 +81,43 @@ export function AdvisorServiceSection({ onLogin, className }: AdvisorServiceSect
                         )}
                     </div>
                 ) : hasAccess ? (
-                    /* 银卡及以上：对应等级服务 + 顾问二维码 */
-                    <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-[#FCFAF4] p-6 md:p-8 flex flex-col items-center text-center">
-                        <span className="inline-flex h-[26px] px-3 items-center rounded-full border border-[var(--color-brand-cocoa)]/[0.3] bg-[var(--color-brand-cocoa)]/[0.06] text-[11px] font-light text-[var(--color-brand-cocoa)] tracking-[0.04em] mb-4">
-                            {LEVEL_LABELS[level] || "会员"} · 已解锁
-                        </span>
-                        <div className="w-12 h-12 rounded-full bg-brand-charcoal/[0.04] flex items-center justify-center mb-4">
-                            <MessageCircleHeart className="w-5 h-5 text-brand-charcoal/65" strokeWidth={1.4} />
-                        </div>
-                        <h3 className="text-base md:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
-                            {service.title}
-                        </h3>
-                        <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] mb-6">
-                            {service.desc}
-                            <br />
-                            微信扫码添加顾问，带上本次报告直接聊
-                        </p>
-                        <div className="w-full max-w-[200px] rounded-2xl border border-brand-charcoal/[0.08] bg-white p-3">
-                            {qrFailed ? (
-                                <div className="aspect-square w-full rounded-xl border border-dashed border-brand-charcoal/20 bg-brand-charcoal/[0.02] flex flex-col items-center justify-center text-brand-charcoal/45">
-                                    <QrCode className="w-10 h-10 mb-2" strokeWidth={1.25} />
-                                    <p className="text-[12px] font-light tracking-[0.04em]">二维码占位</p>
-                                </div>
-                            ) : (
-                                <Image
-                                    src={getAdvisorQrSrc(level)}
-                                    alt={level === "DIAMOND" ? "专属人工顾问二维码" : "专属 AI 护肤顾问二维码"}
-                                    width={200}
-                                    height={200}
-                                    unoptimized
-                                    className="w-full h-auto rounded-xl"
-                                    onError={() => setQrFailed(true)}
-                                />
-                            )}
-                            <p className="mt-3 mb-1 text-center text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em]">
-                                微信扫码添加
-                            </p>
+                    /* 银卡及以上：左右分栏服务卡（移动端堆叠）——左栏等级徽章 + 服务名 + 描述，右栏二维码 */
+                    <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-[#FCFAF4] p-6 md:p-8">
+                        <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
+                            <div className="min-w-0 flex-1 text-center md:text-left">
+                                <span className="inline-flex h-[26px] px-3 items-center rounded-full border border-[var(--color-brand-cocoa)]/[0.3] bg-[var(--color-brand-cocoa)]/[0.06] text-[11px] font-light text-[var(--color-brand-cocoa)] tracking-[0.04em] mb-4">
+                                    {LEVEL_LABELS[level] || "会员"} · 已解锁
+                                </span>
+                                <h3 className="text-lg md:text-xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
+                                    {service.title}
+                                </h3>
+                                <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
+                                    {service.desc}
+                                    <br />
+                                    扫码添加顾问，带上本次报告直接聊
+                                </p>
+                            </div>
+                            <div className="shrink-0 w-full max-w-[200px] md:w-[160px] mx-auto md:mx-0 rounded-2xl border border-brand-charcoal/[0.08] bg-white p-3">
+                                {qrFailed ? (
+                                    <div className="aspect-square w-full rounded-xl border border-dashed border-brand-charcoal/20 bg-brand-charcoal/[0.02] flex flex-col items-center justify-center text-brand-charcoal/45">
+                                        <QrCode className="w-10 h-10 mb-2" strokeWidth={1.25} />
+                                        <p className="text-[12px] font-light tracking-[0.04em]">二维码占位</p>
+                                    </div>
+                                ) : (
+                                    <Image
+                                        src={getAdvisorQrSrc(level)}
+                                        alt={level === "DIAMOND" ? "专属人工顾问二维码" : "专属 AI 护肤顾问二维码"}
+                                        width={200}
+                                        height={200}
+                                        unoptimized
+                                        className="w-full h-auto rounded-xl"
+                                        onError={() => setQrFailed(true)}
+                                    />
+                                )}
+                                <p className="mt-3 mb-1 text-center text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em]">
+                                    微信扫码添加
+                                </p>
+                            </div>
                         </div>
                     </div>
                 ) : (
