@@ -12,7 +12,7 @@ const LegalModal = dynamic(() => import("@/components/website/LegalModal").then(
 /**
  * HomepageFooter — 首页页脚（版权 + 政策入口 + 备案）
  * 浅色低存在感。宽屏（≥1280px）：备案居左、链接与版权居右（ICP 的 mr-auto 形成左右两组），单行排列。
- * 窄屏（<1280px）：居中两行——第一行 公安备案 | 版权，第二行 ICP备案 | 隐私政策 | 服务条款 | 常见问题；
+ * 窄屏（<1280px）：居中两行——第一行 公安备案 | 版权，第二行 ICP备案 | 隐私政策 | 服务条款（常见问题仅宽屏显示）；
  * 通过 flex order 重排实现，宽屏顺序与分组不变。
  * 「隐私政策 / 服务条款」打开站内简版弹窗（LegalModal），完整版在弹窗内链至官网；「常见问题」由父级回调打开 FaqModal。
  */
@@ -91,12 +91,12 @@ export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
                 type="button"
                 onClick={onOpenFaq}
                 aria-haspopup="dialog"
-                className={`order-11 pc:order-8 ${linkClass}`}
+                className={`order-11 pc:order-8 hidden pc:flex ${linkClass}`}
             >
                 常见问题
             </button>
 
-            <span aria-hidden="true" className={`order-10 pc:order-9 ${separatorClass}`}>|</span>
+            <span aria-hidden="true" className={`order-10 pc:order-9 hidden pc:inline ${separatorClass}`}>|</span>
 
             {shouldRenderLegal && (
                 <LegalModal
