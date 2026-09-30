@@ -323,7 +323,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                     {!isMobile && (
                       <div className="flex w-full shrink-0 flex-col border-r border-stone-200/60 md:w-64">
                         {/* 用户头像区域 */}
-                        <div className="px-6 pb-4 pt-10">
+                        <div className="px-12 pb-4 pt-12">
                           <div className="flex flex-col items-start gap-4 text-left">
                             <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FBF8F0]/40">
                               {user.avatar ? (
@@ -332,7 +332,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                                   alt="Avatar"
                                   fill
                                   unoptimized
-                                  className="object-cover"
+                                  className="h-full w-full object-cover"
                                 />
                               ) : (
                                 <User className="h-6 w-6 text-stone-500" strokeWidth={1.5} />
@@ -356,7 +356,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                         {/* 菜单列表 */}
                         <nav
                           aria-label="用户中心导航"
-                          className="scrollbar-hide relative flex w-full flex-1 flex-col space-y-1 overflow-y-auto px-4 py-2"
+                          className="scrollbar-hide relative flex w-full flex-1 flex-col items-start justify-start space-y-1 overflow-y-auto px-12 py-2"
                         >
                           {MENU_ITEMS.map((item) => {
                             const Icon = item.icon;
@@ -367,38 +367,40 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                                 type="button"
                                 onClick={() => activateTab(item.key)}
                                 aria-current={isActive ? "page" : undefined}
-                                className={`group relative isolate flex w-full items-center gap-3.5 rounded-2xl px-2 py-3.5 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
+                                className={`group relative -mx-2 flex w-[calc(100%_+_1rem)] items-center justify-start gap-5 rounded-2xl px-2 py-3.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
                                   isActive
-                                    ? "text-brand-charcoal"
-                                    : "text-brand-charcoal/50 hover:bg-white/50 hover:text-brand-charcoal"
+                                    ? "font-medium text-stone-800"
+                                    : "font-light text-stone-400 hover:bg-white/30 hover:text-stone-800"
                                 }`}
                               >
                                 {isActive && (
-                                  <>
+                                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center">
                                     <m.div
-                                      layoutId="activeMenuPill"
-                                      className="absolute inset-0 -z-10 rounded-2xl bg-white/70 shadow-[0_2px_12px_rgba(61,47,37,0.06)]"
+                                      layoutId="activeSideMenu"
+                                      className="h-[18px] w-[2px] rounded-full bg-stone-800"
                                       transition={
                                         reduceMotion
                                           ? { duration: 0 }
                                           : { type: "spring", bounce: 0.2, duration: 0.6 }
                                       }
                                     />
-                                    <m.div
-                                      layoutId="activeSideMenu"
-                                      className="pointer-events-none absolute inset-y-0 -left-2 flex items-center -z-10"
-                                      transition={
-                                        reduceMotion
-                                          ? { duration: 0 }
-                                          : { type: "spring", bounce: 0.2, duration: 0.6 }
-                                      }
-                                    >
-                                      <div className="h-[18px] w-[2px] rounded-full bg-brand-charcoal" />
-                                    </m.div>
-                                  </>
+                                  </div>
                                 )}
-                                <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={isActive ? 2 : 1.5} />
-                                <span className={`text-[13px] ${isActive ? "font-medium" : "font-light"}`}>
+                                <Icon
+                                  className={`h-[18px] w-[18px] shrink-0 transition-colors ${
+                                    isActive
+                                      ? "text-stone-800"
+                                      : "text-stone-400 group-hover:text-stone-800"
+                                  }`}
+                                  strokeWidth={1.5}
+                                />
+                                <span
+                                  className={`text-[13px] transition-colors ${
+                                    isActive
+                                      ? "font-medium text-stone-800"
+                                      : "font-light text-stone-400 group-hover:text-stone-800"
+                                  }`}
+                                >
                                   {item.label}
                                 </span>
                               </button>
@@ -406,11 +408,11 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                           })}
                         </nav>
 
-                        <div className="mt-auto px-4 pb-6 pt-8">
+                        <div className="mt-auto px-12 pt-8 pb-6">
                           <button
                             type="button"
                             onClick={handleLogout}
-                            className="group flex w-full items-center gap-3.5 rounded-2xl px-2 py-3.5 text-stone-600 transition-colors hover:bg-white/50 hover:text-stone-900 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
+                            className="group -mx-2 flex w-[calc(100%_+_1rem)] items-center justify-start gap-5 rounded-2xl px-2 py-3.5 text-stone-600 transition-all hover:bg-white/40 hover:text-stone-900 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
                           >
                             <LogOut className="h-[18px] w-[18px] transition-colors" strokeWidth={1.5} />
                             <span className="text-[13px] font-medium tracking-wide">退出登录</span>
