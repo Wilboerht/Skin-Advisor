@@ -33,6 +33,7 @@ import { AnimatePresence, m } from "framer-motion";
 import { useToast } from "@/components/ui/Toast";
 import type { ProductData } from "@/components/website/ProductDrawer";
 import { officialImageSrc } from "@/lib/official-assets";
+import { PanelShell } from "@/components/website/user-center/PanelShell";
 import { POINTS_CHANGED_EVENT, SESSION_EXPIRED_EVENT, fetchWithCsrf } from "@/lib/fetch-client";
 
 /** 与官网 api-client 同语义的轻量封装：非 2xx / success=false 抛错（message 取服务端文案） */
@@ -201,7 +202,7 @@ const REDEMPTION_STATUS_ICONS: Record<RedemptionRecord["status"], typeof Clock> 
 
 const REDEMPTION_STATUS_STYLES: Record<RedemptionRecord["status"], string> = {
   PENDING: "bg-amber-50 text-amber-600",
-  FULFILLED: "bg-[#00263e]/10 text-[#00263e]",
+  FULFILLED: "bg-brand-charcoal/10 text-brand-charcoal",
   CANCELLED: "bg-stone-100 text-stone-400",
 };
 
@@ -638,7 +639,7 @@ export function PointsMallPanel() {
             <button
               type="button"
               onClick={() => openRedemptionDetail(r, from)}
-              className="py-1 text-[#00263e] transition-opacity hover:opacity-70 active:opacity-60"
+              className="py-1 text-brand-charcoal transition-opacity hover:opacity-70 active:opacity-60"
             >
               查看
             </button>
@@ -649,16 +650,12 @@ export function PointsMallPanel() {
   );
 
   return (
-    <div className="flex h-full flex-col pt-4 md:pt-10" data-testid="panel-mall">
-      {/* 标题 - 移动端由弹窗全局 Header 管理 */}
-      <div className="hidden flex-shrink-0 border-b border-stone-200/60 px-6 pb-6 md:flex md:px-16">
-        <h2 className="text-xl font-medium tracking-wide text-stone-800">积分商城</h2>
-      </div>
-
-      <div
-        ref={scrollRef}
+    <>
+      <PanelShell
+        title="积分商城"
+        testId="panel-mall"
+        scrollRef={scrollRef}
         onScroll={handleScroll}
-        className="scrollbar-hide flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-16"
       >
         <AnimatePresence mode="wait" initial={false}>
           {view === "main" ? (
@@ -671,9 +668,9 @@ export function PointsMallPanel() {
             >
         {/* 兑换成功提示（面板内，可手动关闭，5 秒自动消失） */}
         {redeemSuccess && (
-          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#00263e]/20 bg-[#00263e]/5 px-4 py-3">
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-brand-charcoal/20 bg-brand-charcoal/5 px-4 py-3">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-[#00263e]" />
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-charcoal" />
               <p className="text-xs text-stone-700">
                 兑换成功，礼品将尽快为您寄出，可在「我的兑换记录」中查看发货进度
               </p>
@@ -694,7 +691,7 @@ export function PointsMallPanel() {
           <Sparkles
             aria-hidden
             strokeWidth={1}
-            className="pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 text-[#00263e]/[0.05] [-webkit-mask-image:linear-gradient(to_top_left,black,transparent_75%)] [mask-image:linear-gradient(to_top_left,black,transparent_75%)]"
+            className="pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 text-brand-charcoal/[0.05] [-webkit-mask-image:linear-gradient(to_top_left,black,transparent_75%)] [mask-image:linear-gradient(to_top_left,black,transparent_75%)]"
           />
           <div className="relative flex items-center justify-between">
             <h4 className="text-sm font-medium text-stone-700">积分余额</h4>
@@ -744,7 +741,7 @@ export function PointsMallPanel() {
                   <button
                     type="button"
                     onClick={() => void loadPointsData()}
-                    className="text-[#00263e] transition-opacity hover:opacity-70"
+                    className="text-brand-charcoal transition-opacity hover:opacity-70"
                   >
                     重试
                   </button>
@@ -833,7 +830,7 @@ export function PointsMallPanel() {
                         />
                       )}
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-stone-800 transition-colors group-hover:text-[#00263e]">
+                        <p className="truncate text-sm font-medium text-stone-800 transition-colors group-hover:text-brand-charcoal">
                           {g.name}
                         </p>
                         {g.description && (
@@ -855,7 +852,7 @@ export function PointsMallPanel() {
                       type="button"
                       disabled={!g.affordable}
                       onClick={() => openRedeem(g)}
-                      className="rounded-full bg-[#00263e] px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
+                      className="rounded-full bg-brand-charcoal px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
                     >
                       {g.affordable ? "兑换" : "积分不足"}
                     </button>
@@ -909,7 +906,7 @@ export function PointsMallPanel() {
                 <button
                   type="button"
                   onClick={() => void loadRedemptions()}
-                  className="text-[#00263e] transition-opacity hover:opacity-70"
+                  className="text-brand-charcoal transition-opacity hover:opacity-70"
                 >
                   重试
                 </button>
@@ -981,7 +978,7 @@ export function PointsMallPanel() {
                     <div className="flex items-center justify-between">
                       <span className="text-stone-400">发货状态</span>
                       {selectedRedemption.status === "FULFILLED" ? (
-                        <span className="text-[#00263e]">
+                        <span className="text-brand-charcoal">
                           已发货
                           {selectedRedemption.fulfilledAt
                             ? ` · ${formatDateTime(selectedRedemption.fulfilledAt)}`
@@ -1023,7 +1020,7 @@ export function PointsMallPanel() {
                             className="inline-flex items-center gap-0.5 rounded-full border border-stone-200 px-2 py-0.5 text-[10px] text-stone-500 transition-colors hover:border-stone-300 hover:text-stone-800"
                           >
                             {copiedWaybill ? (
-                              <Check className="h-3 w-3 text-[#00263e]" />
+                              <Check className="h-3 w-3 text-brand-charcoal" />
                             ) : (
                               <Copy className="h-3 w-3" />
                             )}
@@ -1044,7 +1041,7 @@ export function PointsMallPanel() {
                                 )}
                                 <span
                                   className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
-                                    i === 0 ? "bg-[#00263e]" : "bg-stone-300"
+                                    i === 0 ? "bg-brand-charcoal" : "bg-stone-300"
                                   }`}
                                 />
                                 <div className="min-w-0">
@@ -1065,7 +1062,7 @@ export function PointsMallPanel() {
                             <button
                               type="button"
                               onClick={() => void loadTracking(selectedRedemption.id)}
-                              className="text-xs text-[#00263e] transition-opacity hover:opacity-70"
+                              className="text-xs text-brand-charcoal transition-opacity hover:opacity-70"
                             >
                               重试
                             </button>
@@ -1115,7 +1112,7 @@ export function PointsMallPanel() {
                     <button
                       type="button"
                       onClick={() => void loadRedemptions()}
-                      className="text-[#00263e] transition-opacity hover:opacity-70"
+                      className="text-brand-charcoal transition-opacity hover:opacity-70"
                     >
                       重试
                     </button>
@@ -1174,7 +1171,7 @@ export function PointsMallPanel() {
                 </div>
 
                 {/* 礼品信息卡 */}
-                <div className="mt-4 flex items-center gap-3 rounded-xl border border-stone-200/60 bg-white/60 p-3">
+                <div className="mt-4 flex items-center gap-3 rounded-xl border border-stone-200/60 bg-white/60 p-4">
                   {confirmGift.image && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -1189,7 +1186,7 @@ export function PointsMallPanel() {
                     </p>
                     <p className="mt-0.5 text-xs text-stone-500">
                       消耗{" "}
-                      <span className="font-medium text-[#00263e]">
+                      <span className="font-medium text-brand-charcoal">
                         {confirmGift.cost?.toLocaleString()}
                       </span>{" "}
                       积分
@@ -1202,7 +1199,7 @@ export function PointsMallPanel() {
                 {/* 收货地址 */}
                 <div className="mt-4">
                   <p className="flex items-center gap-1.5 text-xs font-medium text-stone-600">
-                    <MapPin className="h-3.5 w-3.5 text-[#00263e]" />
+                    <MapPin className="h-3.5 w-3.5 text-brand-charcoal" />
                     收货地址
                     <span className="font-normal text-stone-400">
                       （礼品将寄送至所选地址）
@@ -1220,9 +1217,9 @@ export function PointsMallPanel() {
                         return (
                           <label
                             key={a.id}
-                            className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition-colors ${
+                            className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-4 transition-colors ${
                               isSelected
-                                ? "border-[#00263e] bg-[#00263e]/5"
+                                ? "border-brand-charcoal bg-brand-charcoal/5"
                                 : "border-stone-200 hover:border-stone-300"
                             }`}
                           >
@@ -1231,7 +1228,7 @@ export function PointsMallPanel() {
                               name="redeem-address"
                               checked={isSelected}
                               onChange={() => setSelectedAddressId(a.id)}
-                              className="mt-0.5 h-3.5 w-3.5 accent-[#00263e]"
+                              className="mt-0.5 h-3.5 w-3.5 accent-brand-charcoal"
                             />
                             <div className="min-w-0">
                               <p className="text-xs font-medium text-stone-800">
@@ -1240,7 +1237,7 @@ export function PointsMallPanel() {
                                   {a.phone}
                                 </span>
                                 {a.isDefault && (
-                                  <span className="ml-2 rounded-full bg-[#00263e]/10 px-1.5 py-0.5 text-[10px] text-[#00263e]">
+                                  <span className="ml-2 rounded-full bg-brand-charcoal/10 px-1.5 py-0.5 text-[10px] text-brand-charcoal">
                                     默认
                                   </span>
                                 )}
@@ -1265,7 +1262,7 @@ export function PointsMallPanel() {
                     onClick={() => setShowNewAddress((v) => !v)}
                     aria-expanded={showNewAddress}
                     aria-controls="new-redeem-address"
-                    className="mt-2 flex items-center gap-1 py-1 text-xs text-[#00263e] transition-colors hover:opacity-70 active:opacity-60"
+                    className="mt-2 flex items-center gap-1 py-1 text-xs text-brand-charcoal transition-colors hover:opacity-70 active:opacity-60"
                   >
                     {showNewAddress ? (
                       <>
@@ -1282,7 +1279,7 @@ export function PointsMallPanel() {
                   {showNewAddress && (
                     <div
                       id="new-redeem-address"
-                      className="mt-2 space-y-3 rounded-xl border border-stone-200 bg-white/50 p-3"
+                      className="mt-2 space-y-3 rounded-xl border border-stone-200 bg-white/50 p-4"
                     >
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <input
@@ -1291,7 +1288,7 @@ export function PointsMallPanel() {
                           value={newRecipient}
                           onChange={(e) => setNewRecipient(e.target.value)}
                           placeholder="收货人姓名"
-                          className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-[#00263e] md:text-sm"
+                          className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
                         />
                         <input
                           type="text"
@@ -1300,7 +1297,7 @@ export function PointsMallPanel() {
                           value={newPhone}
                           onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ""))}
                           placeholder="收货手机号"
-                          className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-[#00263e] md:text-sm"
+                          className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
                         />
                       </div>
                       <input
@@ -1309,7 +1306,7 @@ export function PointsMallPanel() {
                         value={newRegion}
                         onChange={(e) => setNewRegion(e.target.value)}
                         placeholder="省市区（如：上海市 浦东新区）"
-                        className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-[#00263e] md:text-sm"
+                        className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
                       />
                       <input
                         type="text"
@@ -1317,7 +1314,7 @@ export function PointsMallPanel() {
                         value={newDetail}
                         onChange={(e) => setNewDetail(e.target.value)}
                         placeholder="详细地址（街道、门牌号等）"
-                        className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-[#00263e] md:text-sm"
+                        className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
                       />
                     </div>
                   )}
@@ -1333,7 +1330,7 @@ export function PointsMallPanel() {
                       creatingAddress ||
                       (!showNewAddress && !selectedAddressId)
                     }
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#00263e] px-8 py-2.5 text-sm text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-charcoal px-8 py-2.5 text-sm text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {redeeming || creatingAddress ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1347,7 +1344,7 @@ export function PointsMallPanel() {
             )
           )}
         </AnimatePresence>
-      </div>
+      </PanelShell>
 
       {/* 产品详情抽屉：Portal 到 body；层级必须高于账户弹层（--z-modal 100100），
           与 LegalDocModal 同层（100110），否则会被用户中心盖住；
@@ -1392,6 +1389,6 @@ export function PointsMallPanel() {
           ) : null
         }
       />
-    </div>
+    </>
   );
 }

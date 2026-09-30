@@ -42,7 +42,6 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
     days.push({ dateStr, entry: dayMap.get(dateStr) });
   }
 
-  const checkedCount = days.filter((d) => d.entry).length;
   const activeInfo = activeDay ? days.find((d) => d.dateStr === activeDay) ?? null : null;
   const activeMeta = activeInfo?.entry ? STATE_META[activeInfo.entry.skinState] : null;
 
@@ -68,20 +67,16 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
 
   return (
     <div>
-      <div className="flex items-end justify-between mb-2.5">
-        <p className="text-[12px] tracking-[0.15em] text-brand-charcoal/65 font-light">
-          近 30 天打卡状态
+      {/* 标题行由父级「打卡记录」区标题承载（近 30 天打卡计数 + 今日打卡 CTA），此处只留色带与图例；
+          触屏点按的当日状态反馈保留，仅在选中时显示（再点取消） */}
+      {activeInfo && (
+        <p
+          className="mb-2.5 text-right text-[12px] font-light"
+          style={activeMeta ? { color: activeMeta.color } : undefined}
+        >
+          {fmtShort(activeInfo.dateStr)} · {activeMeta ? activeMeta.label : "未打卡"}
         </p>
-        {activeInfo ? (
-          <p className="text-[12px] font-light" style={activeMeta ? { color: activeMeta.color } : undefined}>
-            {fmtShort(activeInfo.dateStr)} · {activeMeta ? activeMeta.label : "未打卡"}
-          </p>
-        ) : (
-          <p className="text-[12px] text-brand-charcoal/65 font-light">
-            已打卡 {checkedCount} 天
-          </p>
-        )}
-      </div>
+      )}
 
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="近 30 天打卡状态趋势">
         {days.map(({ dateStr, entry }, i) => {

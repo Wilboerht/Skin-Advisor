@@ -323,7 +323,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                     {!isMobile && (
                       <div className="flex w-full shrink-0 flex-col border-r border-stone-200/60 md:w-64">
                         {/* 用户头像区域 */}
-                        <div className="px-12 pb-4 pt-12">
+                        <div className="px-12 pb-4 pt-10">
                           <div className="flex flex-col items-start gap-4 text-left">
                             <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FBF8F0]/40">
                               {user.avatar ? (
@@ -436,7 +436,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                             <div className="h-1 w-9 rounded-full bg-stone-300/70" />
                           </div>
                           <div className="grid h-14 grid-cols-[3.5rem_1fr_3.5rem] items-center">
-                            {/* 左槽留空：保证标题居中；护肤档案的视图切换入口在面板「护肤历程」标题行内 */}
+                            {/* 左槽留空：保证标题居中；护肤档案的「全部测肤记录」入口在趋势图下方 */}
                             <div aria-hidden />
                             <h2 className="truncate text-center text-[15px] font-medium tracking-wide text-stone-800">
                               {activeTab === "diary" && diaryHistoryView

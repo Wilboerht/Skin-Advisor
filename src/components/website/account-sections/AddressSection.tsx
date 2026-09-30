@@ -207,14 +207,14 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
           {addresses.map((a) => (
             <div
               key={a.id}
-              className="flex items-start justify-between gap-3 rounded-xl border border-stone-200/60 bg-white/40 px-4 py-3"
+              className="flex items-start justify-between gap-3 rounded-xl border border-stone-200/60 bg-white/40 p-4"
             >
               <div className="min-w-0">
                 <p className="text-sm font-medium text-stone-800">
                   {a.recipient}
                   <span className="ml-2 text-xs font-normal text-stone-400">{a.phone}</span>
                   {a.isDefault && (
-                    <span className="ml-2 rounded-full bg-[#00263e]/10 px-2 py-0.5 text-[11px] text-[#00263e]">
+                    <span className="ml-2 rounded-full bg-brand-charcoal/10 px-2 py-0.5 text-[11px] text-brand-charcoal">
                       默认
                     </span>
                   )}
@@ -291,7 +291,7 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
       {showForm && (
         <div className="space-y-4 pt-1">
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-[#00263e]" />
+            <MapPin className="h-4 w-4 text-brand-charcoal" />
             <h4 className="text-sm font-medium text-stone-700">
               {editingId ? "编辑收货地址" : "新增收货地址"}
             </h4>
@@ -301,7 +301,7 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
           </p>
           <div>
             <label htmlFor="addr-recipient" className="mb-1 block text-xs text-stone-500">
-              收货人 <span className="text-[#00263e]">*</span>
+              收货人 <span className="text-brand-charcoal">*</span>
             </label>
             <input
               id="addr-recipient"
@@ -315,7 +315,7 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
           </div>
           <div>
             <label htmlFor="addr-phone" className="mb-1 block text-xs text-stone-500">
-              手机号 <span className="text-[#00263e]">*</span>
+              手机号 <span className="text-brand-charcoal">*</span>
             </label>
             <input
               id="addr-phone"
@@ -330,7 +330,7 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
           </div>
           <div>
             <label htmlFor="addr-region" className="mb-1 block text-xs text-stone-500">
-              省市区 <span className="text-[#00263e]">*</span>
+              省市区 <span className="text-brand-charcoal">*</span>
             </label>
             <input
               id="addr-region"
@@ -344,7 +344,7 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
           </div>
           <div>
             <label htmlFor="addr-detail" className="mb-1 block text-xs text-stone-500">
-              详细地址 <span className="text-[#00263e]">*</span>
+              详细地址 <span className="text-brand-charcoal">*</span>
             </label>
             <input
               id="addr-detail"
@@ -361,7 +361,7 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
               type="checkbox"
               checked={isDefault}
               onChange={(e) => setIsDefault(e.target.checked)}
-              className="h-3.5 w-3.5 accent-[#00263e]"
+              className="h-3.5 w-3.5 accent-brand-charcoal"
             />
             设为默认地址
           </label>
@@ -370,7 +370,7 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
               type="button"
               onClick={saveAddress}
               disabled={saving}
-              className="rounded-full bg-[#00263e] px-6 py-2.5 text-sm text-white transition-colors hover:bg-[#0d3b5c] disabled:opacity-50 cursor-pointer"
+              className="rounded-full bg-brand-charcoal px-6 py-2.5 text-sm text-white transition-colors hover:bg-[#0d3b5c] disabled:opacity-50 cursor-pointer"
             >
               {saving ? "保存中..." : "保存"}
             </button>

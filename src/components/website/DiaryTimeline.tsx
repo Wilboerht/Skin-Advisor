@@ -80,6 +80,8 @@ interface DiaryTimelineProps {
   onLoadMoreEntries?: () => void;
   /** 日记列表刷新（如打卡保存）后自增，用于收起"近 30 天"折叠态 */
   refreshKey?: number;
+  /** 今日打卡 CTA 已由面板「打卡记录」区标题承载时置 true：今日引导只留文字提示，避免同屏重复 CTA */
+  hideTodayCta?: boolean;
 }
 
 export function DiaryTimeline({
@@ -97,6 +99,7 @@ export function DiaryTimeline({
   entriesLoadingMore = false,
   onLoadMoreEntries,
   refreshKey,
+  hideTodayCta = false,
 }: DiaryTimelineProps) {
   const [showAll, setShowAll] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -170,29 +173,31 @@ export function DiaryTimeline({
   return (
     <div>
       {!hasAnyEvent && (
-        /* 空态引导：无框居中（与左列"解锁引导"同一种样式语言，全站弹层一致） */
-        <div className="py-10 text-center mb-6">
+        /* 空态引导：无框居中（与左列"解锁引导"同一种样式语言，全站弹层一致）；
+           min-h 撑起时间线区域高度，提示文字在区域内垂直居中 */
+        <div className="flex min-h-[240px] flex-col items-center justify-center py-10 text-center mb-6">
           <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em] mb-4">
             完成一次测肤后，这里会自动生成你的护肤记录
           </p>
           <div className="flex items-center justify-center gap-3">
+            {/* 新用户主行动是去测肤（自动生成记录+评分，两次测肤解锁趋势），打卡降为次按钮 */}
+            <Link
+              href="/questions"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-5 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] tracking-[0.05em] font-medium transition-colors hover:bg-brand-cocoa-dark active:opacity-80"
+            >
+              去测肤
+              <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.8} />
+            </Link>
             {onCheckIn && (
               <button
                 type="button"
                 onClick={() => onCheckIn(null, todayStr)}
-                className="inline-flex items-center justify-center gap-1.5 px-5 h-9 rounded-full bg-[var(--color-brand-cocoa)] text-white text-[12px] tracking-[0.05em] font-medium transition-colors hover:bg-brand-cocoa-dark active:opacity-80 cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
               >
                 <CalendarCheck className="w-3.5 h-3.5" strokeWidth={1.8} />
                 今日打卡
               </button>
             )}
-            <Link
-              href="/questions"
-              className="inline-flex items-center justify-center gap-1 h-9 px-4 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
-            >
-              去测肤
-              <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.8} />
-            </Link>
           </div>
         </div>
       )}
@@ -228,7 +233,7 @@ export function DiaryTimeline({
         return (
           <div key={group.dateStr}>
             {monthDivider && (
-              <div className="mb-4 mt-3 first:mt-0">
+              <div className="mb-4 mt-2 first:mt-0">
                 <span className="text-[12px] tracking-[0.2em] text-brand-charcoal/70">
                   {monthDivider}
                 </span>
@@ -248,7 +253,13 @@ export function DiaryTimeline({
                 {isToday && !visibleEvents.some((e) => e.kind === "diary") && (
                   visibleEvents.length === 0 ? (
                     <div className="relative">
-                      <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
+                      <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
+                      {hideTodayCta ? (
+                        /* 打卡 CTA 由「打卡记录」区标题承载：此处仅留文字提示，避免同屏重复入口 */
+                        <span className="text-[13px] text-brand-charcoal/65 font-light">
+                          今天还没有记录
+                        </span>
+                      ) : (
                       <div className="flex items-center gap-3">
                         <span className="flex-1 text-[13px] text-brand-charcoal/65 font-light">
                           今天还没有记录
@@ -271,11 +282,12 @@ export function DiaryTimeline({
                           <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.8} />
                         </Link>
                       </div>
+                      )}
                     </div>
                   ) : (
-                    onCheckIn && (
+                    onCheckIn && !hideTodayCta && (
                       <div className="relative">
-                        <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
+                        <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
                         <button
                           type="button"
                           onClick={() => onCheckIn(manualDiaryEntry, todayStr)}
@@ -305,7 +317,7 @@ export function DiaryTimeline({
                   onCheckIn &&
                   canBackfill(group.dateStr) && (
                     <div className="relative">
-                      <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
+                      <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
                       <button
                         type="button"
                         onClick={() => onCheckIn(manualDiaryEntry, group.dateStr)}
@@ -339,7 +351,7 @@ export function DiaryTimeline({
                     return (
                       <div key={`d-${ev.entry.id}-${i}`} className="relative group">
                         <span
-                          className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE]"
+                          className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE]"
                           style={{ backgroundColor: meta.color }}
                         />
                         {/* 操作按钮：移动端常显（无 hover 可依赖），桌面端悬浮行尾显现；行内不占位（极简）。
@@ -443,7 +455,7 @@ export function DiaryTimeline({
                   const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
                   return (
                     <div key={`t-${ev.test.sessionId}-${i}`} className="relative">
-                      <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE] bg-[var(--color-brand-cocoa)]" />
+                      <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE] bg-[var(--color-brand-cocoa)]" />
                       <Link
                         href={`/reports/${ev.test.sessionId}?skipCover=1`}
                         className="group flex items-center gap-2 pr-4"

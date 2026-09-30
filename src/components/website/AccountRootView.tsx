@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/Toast";
 import { PasswordSection } from "@/components/website/account-sections/PasswordSection";
 import { AddressSection } from "@/components/website/account-sections/AddressSection";
 import { PhoneSection } from "@/components/website/account-sections/PhoneSection";
+import { PanelShell } from "@/components/website/user-center/PanelShell";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { localDateStr } from "@/lib/local-date";
 import { uploadImage } from "@/lib/upload-client";
@@ -322,13 +323,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
   const addressLabel = addressCount === null ? "—" : addressCount > 0 ? "已设置" : "未设置";
 
   return (
-    <div className="flex h-full flex-col pt-4 md:pt-10">
-      {/* 标题 - 移动端由弹窗全局 Header 管理 */}
-      <div className="hidden flex-shrink-0 border-b-0 border-stone-200/60 px-6 pb-6 md:flex md:border-b md:px-16">
-        <h2 className="text-xl font-medium tracking-wide text-stone-800">个人信息</h2>
-      </div>
-
-      <div className="scrollbar-hide flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-16">
+    <PanelShell title="个人信息">
         {/* 会话过期（BFF 401）：本地 user 态未同步时的兜底引导 */}
         {sessionExpired && (
           <div
@@ -498,7 +493,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                       onClick={() => void saveGender(opt.value)}
                       className={`rounded-full border px-5 py-2 text-sm transition-colors disabled:opacity-50 cursor-pointer ${
                         genderValue === opt.value
-                          ? "border-[#00263e] bg-[#00263e] text-white"
+                          ? "border-brand-charcoal bg-brand-charcoal text-white"
                           : "border-stone-200 text-stone-600 hover:border-stone-300 hover:text-stone-800"
                       }`}
                     >
@@ -716,7 +711,6 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
             退出登录
           </button>
         </div>
-      </div>
-    </div>
+    </PanelShell>
   );
 }

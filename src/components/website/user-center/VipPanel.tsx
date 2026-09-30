@@ -41,6 +41,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
 import { POINTS_CHANGED_EVENT } from "@/lib/fetch-client";
 import { SpentAdjustmentPanel, type SpentPanelView } from "@/components/website/user-center/SpentAdjustmentPanel";
+import { PanelShell } from "@/components/website/user-center/PanelShell";
 
 // 会员卡背景图（四档）：会员卡铺满作卡面底色，等级对比卡做虚化淡化处理
 const CARD_BG_IMAGES: Partial<Record<string, string>> = {
@@ -370,16 +371,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
   };
 
   return (
-    <div className="flex h-full flex-col pt-4 md:pt-10" data-testid="panel-vip">
-      {/* 标题 - 移动端由弹窗全局 Header 管理 */}
-      <div className="hidden flex-shrink-0 border-b border-stone-200/60 px-6 pb-6 md:flex md:px-16">
-        <h2 className="text-xl font-medium tracking-wide text-stone-800">会员中心</h2>
-      </div>
-
-      <div
-        ref={scrollRef}
-        className="scrollbar-hide flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-16"
-      >
+    <PanelShell title="会员中心" testId="panel-vip" scrollRef={scrollRef}>
         {/* 消费补录面板：首次进入后常驻挂载（hidden 切换可见性），
             避免返回主视图时卸载导致草稿与已传凭证丢失 */}
         {spentMounted && (
@@ -472,7 +464,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                 <div className="contents lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:flex lg:flex-col lg:gap-6">
                   <div className="rounded-xl border border-stone-200/60 bg-white/40 p-5">
                     <h4 className="flex items-center gap-2 text-sm font-medium text-stone-700">
-                      <TrendingUp className="h-[18px] w-[18px] text-[#00263e]" />
+                      <TrendingUp className="h-[18px] w-[18px] text-brand-charcoal" />
                       提升会员等级
                     </h4>
 
@@ -481,7 +473,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="text-sm text-stone-600">
                             再消费{" "}
-                            <span className="text-base font-semibold leading-none text-[#00263e]">
+                            <span className="text-base font-semibold leading-none text-brand-charcoal">
                               ¥{nextLevel.spentNeeded.toLocaleString()}
                             </span>
                           </p>
@@ -489,7 +481,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                         </div>
                         <div className="mt-3 h-1 overflow-hidden rounded-full bg-stone-200/70">
                           <div
-                            className="h-full rounded-full bg-[#00263e]/80 transition-all duration-500"
+                            className="h-full rounded-full bg-brand-charcoal/80 transition-all duration-500"
                             style={{ width: `${nextLevel.progress}%` }}
                           />
                         </div>
@@ -506,7 +498,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                     {/* 如何提升会员等级：三步流程 + 录入消费 / 查看录入历史 */}
                     <div className="mt-6 border-t border-stone-300/70 pt-6">
                       <h5 className="flex items-center gap-2 text-sm font-medium text-stone-700">
-                        <Info className="h-[18px] w-[18px] text-[#00263e]" />
+                        <Info className="h-[18px] w-[18px] text-brand-charcoal" />
                         如何提升会员等级
                       </h5>
                       {/* 步骤列表与官方渠道说明互斥交叉淡入淡出（问号图标切换，带点击防抖） */}
@@ -525,7 +517,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                                   type="button"
                                   onClick={toggleChannelTip}
                                   aria-label="返回步骤说明"
-                                  className="mr-1 inline-flex translate-y-[2px] text-[#00263e] transition-opacity hover:opacity-70"
+                                  className="mr-1 inline-flex translate-y-[2px] text-brand-charcoal transition-opacity hover:opacity-70"
                                 >
                                   <ChevronLeft className="h-3.5 w-3.5" />
                                 </button>
@@ -556,7 +548,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                                         onClick={toggleChannelTip}
                                         aria-label="查看官方渠道说明"
                                         aria-expanded={showChannelTip}
-                                        className="relative ml-1 inline-flex translate-y-[2px] text-stone-400 transition-colors after:absolute after:-inset-2 after:content-[''] hover:text-[#00263e] active:opacity-60"
+                                        className="relative ml-1 inline-flex translate-y-[2px] text-stone-400 transition-colors after:absolute after:-inset-2 after:content-[''] hover:text-brand-charcoal active:opacity-60"
                                       >
                                         <CircleHelp className="h-3.5 w-3.5" />
                                       </button>
@@ -572,7 +564,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                         <button
                           type="button"
                           onClick={focusSpentForm}
-                          className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[#00263e]/30 bg-white/40 px-5 py-2 text-xs text-[#00263e] transition-colors hover:border-[#00263e]/60 hover:bg-[#00263e]/5 active:opacity-70"
+                          className="inline-flex w-fit items-center gap-1.5 rounded-full border border-brand-charcoal/30 bg-white/40 px-5 py-2 text-xs text-brand-charcoal transition-colors hover:border-brand-charcoal/60 hover:bg-brand-charcoal/5 active:opacity-70"
                         >
                           录入消费
                           <ChevronRight className="h-3.5 w-3.5" />
@@ -591,7 +583,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                   {/* AI 测肤用量卡：不可用时弱提示 + 手动刷新 */}
                   <div className="order-last rounded-xl border border-stone-200/60 bg-white/40 p-5 lg:order-none">
                     <h5 className="flex items-center gap-2 text-sm font-medium text-stone-700">
-                      <ScanFace className="h-[18px] w-[18px] text-[#00263e]" />
+                      <ScanFace className="h-[18px] w-[18px] text-brand-charcoal" />
                       AI 测肤
                     </h5>
                     {!skinTestUsage ? (
@@ -642,7 +634,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                               <button
                                 type="button"
                                 onClick={focusSpentForm}
-                                className="mt-3 inline-flex items-center gap-1 rounded-full bg-[#00263e] px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80"
+                                className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-charcoal px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80"
                               >
                                 了解会员升级
                               </button>
@@ -657,7 +649,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                 <div className="flex flex-col lg:col-start-1 lg:row-start-2 lg:min-h-0 lg:self-stretch lg:overflow-hidden lg:[contain:size]">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <h4 className="flex items-center gap-2 text-sm font-medium text-stone-700">
-                      <Crown className="h-[18px] w-[18px] text-[#00263e]" />
+                      <Crown className="h-[18px] w-[18px] text-brand-charcoal" />
                       会员权益
                     </h4>
                     <button
@@ -679,7 +671,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                         const BenefitIcon = benefitIcon(b.title);
                         return (
                           <div key={i} className="flex items-start gap-2.5">
-                            <BenefitIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#00263e]" />
+                            <BenefitIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-charcoal" />
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-stone-800">{b.title}</p>
                               <p className="mt-0.5 text-[13px] leading-relaxed text-stone-400 md:text-xs">
@@ -751,7 +743,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                       key={level.level}
                       className={`relative overflow-hidden rounded-xl border ${
                         isCurrent
-                          ? "border-[#00263e] bg-white/70"
+                          ? "border-brand-charcoal bg-white/70"
                           : isUnlocked
                             ? "border-stone-200/60 bg-white/50"
                             : "border-stone-200/50 bg-white/40"
@@ -786,13 +778,13 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                               {level.name}
                             </p>
                             {isCurrent ? (
-                              <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#00263e]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#00263e]">
+                              <span className="flex shrink-0 items-center gap-1 rounded-full bg-brand-charcoal/10 px-2.5 py-0.5 text-[11px] font-medium text-brand-charcoal">
                                 <Crown className="h-3 w-3" />
                                 当前
                               </span>
                             ) : isUnlocked ? (
                               <span className="flex shrink-0 items-center gap-1 rounded-full border border-stone-200/80 bg-white/60 px-2.5 py-0.5 text-[11px] text-stone-500">
-                                <Check className="h-3 w-3 text-[#00263e]" />
+                                <Check className="h-3 w-3 text-brand-charcoal" />
                                 已解锁
                               </span>
                             ) : (
@@ -817,7 +809,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                               <div key={i} className="flex items-start gap-2.5">
                                 <BenefitIcon
                                   className={`mt-0.5 h-4 w-4 shrink-0 ${
-                                    isLocked ? "text-stone-400" : "text-[#00263e]"
+                                    isLocked ? "text-stone-400" : "text-brand-charcoal"
                                   }`}
                                 />
                                 <div className="min-w-0">
@@ -845,7 +837,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                                 <Lock className="h-3.5 w-3.5 shrink-0 text-stone-400" />
                                 <span>
                                   还差{" "}
-                                  <span className="text-sm font-medium text-[#00263e]">
+                                  <span className="text-sm font-medium text-brand-charcoal">
                                     ¥{(level.minSpent - totalSpent).toLocaleString()}
                                   </span>{" "}
                                   解锁该等级
@@ -854,7 +846,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                               <button
                                 type="button"
                                 onClick={focusSpentForm}
-                                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#00263e] px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80"
+                                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-charcoal px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80"
                               >
                                 补录消费记录
                               </button>
@@ -863,7 +855,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                               <div className="h-1 flex-1 overflow-hidden rounded-full bg-stone-200/70">
                                 <div
                                   className={`h-full rounded-full transition-all duration-500 ${
-                                    TIER_CARD_STYLES[level.level]?.bar ?? "bg-[#00263e]/80"
+                                    TIER_CARD_STYLES[level.level]?.bar ?? "bg-brand-charcoal/80"
                                   }`}
                                   style={{ width: `${tierProgress}%` }}
                                 />
@@ -888,7 +880,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                             <button
                               type="button"
                               onClick={focusSpentForm}
-                              className="mt-3 inline-flex items-center gap-1 rounded-full bg-[#00263e] px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80"
+                              className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-charcoal px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80"
                             >
                               补录消费记录
                             </button>
@@ -903,7 +895,6 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
           )}
 
         </AnimatePresence>
-      </div>
-    </div>
+    </PanelShell>
   );
 }

@@ -208,7 +208,7 @@ export function PhoneSection({ hasRealPhone, onUpdated, onSessionExpired, onCanc
           type="button"
           onClick={handleSubmit}
           disabled={saving}
-          className="rounded-full bg-[#00263e] px-6 py-2.5 text-sm text-white transition-colors hover:bg-[#0d3b5c] disabled:opacity-50 cursor-pointer"
+          className="rounded-full bg-brand-charcoal px-6 py-2.5 text-sm text-white transition-colors hover:bg-[#0d3b5c] disabled:opacity-50 cursor-pointer"
         >
           {saving ? "换绑中..." : "确认换绑"}
         </button>

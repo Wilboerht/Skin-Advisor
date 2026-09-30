@@ -110,7 +110,11 @@ export function TrendChart({ trends, totalTests }: { trends: TrendsData; totalTe
           {delta !== 0 && (
             <span
               className={`text-[12px] font-light px-2.5 py-1 rounded-full ${
-                delta > 0 ? "bg-[#4C8055]/10 text-[#4C8055]" : "bg-[#D44C47]/10 text-[#D44C47]"
+                Math.abs(delta) <= 2
+                  ? "bg-brand-charcoal/[0.06] text-brand-charcoal/55"
+                  : delta > 0
+                    ? "bg-[#4C8055]/10 text-[#4C8055]"
+                    : "bg-[#D44C47]/10 text-[#D44C47]"
               }`}
             >
               较上次 {delta > 0 ? `+${delta}` : delta}

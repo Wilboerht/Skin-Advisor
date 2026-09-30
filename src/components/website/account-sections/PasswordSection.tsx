@@ -218,7 +218,7 @@ export function PasswordSection({ hasPassword, onUpdated, onSessionExpired }: Pa
         type="button"
         onClick={handleSubmit}
         disabled={saving}
-        className="rounded-full bg-[#00263e] px-6 py-2.5 text-sm text-white transition-colors hover:bg-[#0d3b5c] disabled:opacity-50 cursor-pointer"
+        className="rounded-full bg-brand-charcoal px-6 py-2.5 text-sm text-white transition-colors hover:bg-[#0d3b5c] disabled:opacity-50 cursor-pointer"
       >
         {saving ? "提交中..." : mode === "change" ? "修改密码" : "设置密码"}
       </button>
