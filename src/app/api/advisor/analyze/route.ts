@@ -986,7 +986,7 @@ export async function POST(request: NextRequest) {
                     primaryConcern = concerns.join("、");
                 }
 
-                const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://advisor.nihplod.cn";
+                const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://smart.nihplod.cn";
                 const reportUrl = `${baseUrl}/reports/${effectiveSessionId}`;
 
                 // 异步触发，绝不阻塞前端响应时间

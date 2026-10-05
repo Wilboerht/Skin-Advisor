@@ -174,7 +174,7 @@ export function UsersClient() {
       <div className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/60 p-3 text-sm text-amber-800">
         <Info className="w-4 h-4 mt-0.5 shrink-0" />
         <p>
-          此处的「禁用」和「删除」<strong>仅作用于子站（advisor.nihplod.cn）</strong>，不会同步到 nihplod.cn 官网。
+          此处的「禁用」和「删除」<strong>仅作用于子站（smart.nihplod.cn）</strong>，不会同步到 nihplod.cn 官网。
           被禁用的用户仍可登录官网，但无法在子站使用测肤、查看历史记录等功能；删除仅清除子站本地数据，用户下次登录子站时会重新同步官网账户信息。
         </p>
       </div>
@@ -378,7 +378,7 @@ export function UsersClient() {
         title={confirmToggle?.isDisabling ? "禁用用户" : "启用用户"}
         message={
           confirmToggle?.isDisabling
-            ? `确定要禁用用户 "${confirmToggle?.user.name || confirmToggle?.user.email}" 吗？\n\n禁用后该用户将无法在子站（advisor.nihplod.cn）使用测肤、查看历史等功能，但 nihplod.cn 官网账户不受影响。`
+            ? `确定要禁用用户 "${confirmToggle?.user.name || confirmToggle?.user.email}" 吗？\n\n禁用后该用户将无法在子站（smart.nihplod.cn）使用测肤、查看历史等功能，但 nihplod.cn 官网账户不受影响。`
             : `确定要启用用户 "${confirmToggle?.user.name || confirmToggle?.user.email}" 吗？\n\n该用户将被恢复为之前的角色：${confirmToggle?.user.previousRole?.toUpperCase()}`
         }
         confirmText={confirmToggle?.isDisabling ? "禁用" : "启用"}

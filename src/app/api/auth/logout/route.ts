@@ -25,7 +25,7 @@ const handler = createLogoutRouteHandler({
   clientSecret: process.env.SSO_CLIENT_SECRET,
   ssoBaseUrl: process.env.NEXT_PUBLIC_SSO_BASE_URL!,
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
-  postLogoutRedirectUri: process.env.NEXT_PUBLIC_BASE_URL || "https://advisor.nihplod.cn",
+  postLogoutRedirectUri: process.env.NEXT_PUBLIC_BASE_URL || "https://smart.nihplod.cn",
   // 分层退出：默认仅退出本站（local）；global 由请求体 scope 字段经下方翻译为
   // SDK 的 global=1 表单字段触发（redirectToSso 已弃用，勿再使用）
   defaultScope: "local",

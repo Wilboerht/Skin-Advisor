@@ -298,7 +298,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // 二维码生成（按需，动态加载 qrcode）：桌面进入即预生成，触屏设备延迟到点击保存时
     const generateQrDataUrl = useCallback(async (): Promise<string | null> => {
-        const siteBase = process.env.NEXT_PUBLIC_SITE_URL || "https://advisor.nihplod.cn";
+        const siteBase = process.env.NEXT_PUBLIC_SITE_URL || "https://smart.nihplod.cn";
         const qrUrl = sessionId
             ? `${siteBase}/?ref=poster_${sessionId}`
             : `${siteBase}/?gift=1`;

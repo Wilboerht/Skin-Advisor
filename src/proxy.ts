@@ -65,7 +65,7 @@ const ALLOWED_ORIGINS = [
 /**
  * 严格判断 Origin/Referer 是否属于允许列表。
  * 必须完整相等（Referer 取其 origin 部分），禁止前缀匹配，
- * 防止 https://advisor.nihplod.cn.evil.com 之类的域名前缀绕过。
+ * 防止 https://smart.nihplod.cn.evil.com 之类的域名前缀绕过。
  */
 function isAllowedOrigin(value: string | null): boolean {
     if (!value) return false;

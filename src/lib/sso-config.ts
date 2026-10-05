@@ -30,7 +30,7 @@ export const SSO_SERVER_BASE_URL = (
 ).replace(/\/+$/, "");
 
 /**
- * 站点公网 origin（如 https://advisor.nihplod.cn），所有服务端 302 重定向的跳转基准。
+ * 站点公网 origin（如 https://smart.nihplod.cn），所有服务端 302 重定向的跳转基准。
  *
  * Next standalone 部署下 request.url / request.nextUrl.origin 是进程监听地址
  * （如 http://0.0.0.0:3002），用作重定向基准会把浏览器带到不可达地址，

@@ -24,7 +24,7 @@ const prisma = new PrismaClient();
 
 const OFFICIAL_API_URL = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY || "";
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://advisor.nihplod.cn";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://smart.nihplod.cn";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const STAGE_ARG = process.argv.find((a) => a.startsWith("--stage="));
