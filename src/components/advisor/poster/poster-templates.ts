@@ -3,9 +3,10 @@ import type { CSSProperties } from "react";
 /**
  * 海报模板配置（多版本）
  *
- * 两套模板同画布比例、不同设计：所有版式数值集中在这里，SharePoster 只按配置渲染。
- * 新模板图到位后：补 assets 路径 → 按图微调 fields/qr 坐标 → 把 ready 置 true，
- * 保存弹层会自动多出一个版本选项。
+ * 两套模板同画布比例、同字段坐标：所有版式数值集中在这里，SharePoster 只按配置渲染。
+ * 经典版面向通用平台（含二维码）；小红书版与其同版式、仅不渲染二维码（底图已派生，
+ * 清空了「专属福利」卡内的二维码框与扫码文案）。新增模板时补 assets 路径、
+ * 按图微调 fields/qr 坐标，并把 ready 置 true，保存弹层会自动多出一个版本选项。
  */
 
 export type PosterTemplateId = "classic" | "xhs";
@@ -56,7 +57,7 @@ export interface PosterTemplate {
 
 const TEXT = "text-[#00263E]";
 
-/** 经典版字段坐标（xhs 未定稿前先复用做起点，待新图微调） */
+/** 两套版式共用字段坐标（底图为同版式，画布一致；xhs 仅少二维码） */
 const CLASSIC_FIELDS: PosterTemplate["fields"] = {
   nickname: {
     style: { top: "43.2%", left: "40%", transform: "translateX(-50%)" },
@@ -102,7 +103,7 @@ export const POSTER_TEMPLATES: Record<PosterTemplateId, PosterTemplate> = {
     pixelRatio: 2,
     assets: {
       template: "/images/poster-template.webp?v=5",
-      overlay: "/images/poster-overlay.webp",
+      overlay: "/images/poster-overlay.webp?v=2",
       overlayStyle: {
         width: "85.5%",
         height: "auto",
@@ -120,17 +121,17 @@ export const POSTER_TEMPLATES: Record<PosterTemplateId, PosterTemplate> = {
     filenameSuffix: "",
   },
 
-  // 小红书版：素材待补（放入 public/images/ 后将 ready 置 true，并按新图微调坐标）
+  // 小红书版：与经典版同版式同坐标，仅无二维码（qr: null 同时让预生成跳过二维码等待）
   xhs: {
     id: "xhs",
     label: "小红书版",
     description: "小红书专用版式，无二维码",
-    ready: false,
+    ready: true,
     canvas: { width: 480, height: 640 },
     pixelRatio: 2,
     assets: {
-      template: "/images/poster-template-xhs.webp",
-      overlay: "/images/poster-overlay-xhs.webp",
+      template: "/images/poster-template-xhs.webp?v=1",
+      overlay: "/images/poster-overlay.webp?v=2",
       overlayStyle: {
         width: "85.5%",
         height: "auto",

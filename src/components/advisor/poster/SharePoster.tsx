@@ -2,6 +2,7 @@
 
 import { forwardRef, useState, useEffect } from "react";
 import { Inria_Serif, Noto_Sans_SC } from "next/font/google";
+import { formatCertDate, formatCertId } from "@/lib/poster-utils";
 import type { PosterTemplate } from "./poster-templates";
 
 const inriaSerif = Inria_Serif({ weight: ["400", "700"], subsets: ["latin"] });
@@ -13,20 +14,6 @@ function addCJKSpace(text: string): string {
   return text
     .replace(/([\u4e00-\u9fff\u3400-\u4dbf])([a-zA-Z0-9])/g, "$1 $2")
     .replace(/([a-zA-Z0-9])([\u4e00-\u9fff\u3400-\u4dbf])/g, "$1 $2");
-}
-
-function formatCertDate(iso?: string): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
-}
-
-function formatCertId(sessionId?: string): string | null {
-  if (!sessionId) return null;
-  const last6 = sessionId.replace(/[^a-zA-Z0-9]/g, "").slice(-6);
-  return last6.length >= 4 ? last6.toUpperCase() : null;
 }
 
 interface SharePosterProps {

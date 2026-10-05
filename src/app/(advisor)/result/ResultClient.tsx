@@ -15,6 +15,7 @@ import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { normalizeAnalysisResult, type ComprehensiveResult, type PreviousTestSummary } from "@/lib/analysis-result";
 import { getCharacterImage } from "@/lib/result-utils";
 import { isMobileDevice, isWeChatBrowser } from "@/lib/share-device";
+import { isPixelDataBlank, sanitizeFilename } from "@/lib/poster-utils";
 import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from "@/lib/storage-keys";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import type { SessionUser } from "@/lib/auth";
@@ -118,18 +119,30 @@ function preloadImage(url: string | undefined): void {
 
 async function waitForImages(container: HTMLElement): Promise<void> {
     const images = Array.from(container.querySelectorAll("img"));
+    // 单图失败不应阻断整张海报：坏图已由 SharePoster 的 onError 降级隐藏，
+    // 这里只等加载结束，失败也按就绪处理，避免一张可降级的素材让保存整体失败
     await Promise.all(
         images.map((img) => {
-            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-            if (img.complete && img.naturalWidth === 0) {
-                return Promise.reject(new Error("海报图片加载未成功"));
-            }
-            return new Promise<void>((resolve, reject) => {
-                img.onload = () => resolve();
-                img.onerror = () => reject(new Error("海报图片加载未成功"));
+            if (img.complete) return Promise.resolve();
+            return new Promise<void>((resolve) => {
+                img.addEventListener("load", () => resolve(), { once: true });
+                img.addEventListener("error", () => resolve(), { once: true });
             });
         })
     );
+}
+
+/** Blob 转 dataURL：微信 iOS 长按保存对 dataURL 兼容性优于 blob URL，且无需管理 objectURL 生命周期 */
+async function blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (typeof reader.result === "string") resolve(reader.result);
+            else reject(new Error("读取海报图片失败"));
+        };
+        reader.onerror = () => reject(reader.error ?? new Error("读取海报图片失败"));
+        reader.readAsDataURL(blob);
+    });
 }
 
 // 两页切换 tab：样式对齐主站用户中心「安全中心」的分段标签（胶囊容器 + 选中浅底）
@@ -423,6 +436,14 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const [posterError, setPosterError] = useState<string | null>(null);
     // 微信内嵌浏览器无法可靠触发下载，生成后改用「长按/右键保存」引导弹窗
     const [savedPosterForSave, setSavedPosterForSave] = useState<string | null>(null);
+    // 弹窗图片 URL 的 ref 镜像：替换/卸载时同步释放 objectURL（dataURL 无需释放）
+    const savedPosterForSaveRef = useRef<string | null>(null);
+    const setSavedPosterUrl = useCallback((url: string | null) => {
+        const prev = savedPosterForSaveRef.current;
+        if (prev && prev !== url && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+        savedPosterForSaveRef.current = url;
+        setSavedPosterForSave(url);
+    }, []);
     // 保存弹窗形态：微信移动端=长按保存；微信桌面端=右键另存
     const [posterSaveIsDesktop, setPosterSaveIsDesktop] = useState(false);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -493,6 +514,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         try { setDismissValidationWarning(sessionStorage.getItem('advisor_dismiss_validation') === 'true'); } catch { /* ignore */ }
     }, []);
     const posterRef = useRef<HTMLDivElement>(null);
+    // 保存动作进行中的同步守卫：state 更新有异步窗口，双击时 isGeneratingPoster 可能仍为 false
+    const posterBusyRef = useRef(false);
 
     // 恢复上次选择的保存版式（仅接受仍处于就绪状态的模板）
     useEffect(() => {
@@ -692,11 +715,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         } catch { /* ignore */ }
     }, [sessionId]);
 
-    // 页面进入后后台预加载海报素材
+    // 页面进入后后台预加载海报素材；素材体积不小，等浏览器空闲再载，不与首屏资源抢带宽
     useEffect(() => {
         if (!result) return;
         // 触屏设备跳过：预生成本就不在移动端执行（toBlob 冻结主线程），
-        // 预载模板/叠加图/角色图（约 650KB）只会白耗流量；点击保存时现场加载即可
+        // 预载模板/叠加图/角色图只会白耗流量；点击保存时现场加载即可
         if (window.matchMedia("(hover: none)").matches) return;
 
         const avatarUrl = getCharacterImage({
@@ -708,9 +731,20 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             gender: socialGender,
         });
 
-        preloadImage(posterTemplate.assets.template);
-        preloadImage(posterTemplate.assets.overlay);
-        preloadImage(avatarUrl);
+        const run = () => {
+            preloadImage(posterTemplate.assets.template);
+            preloadImage(posterTemplate.assets.overlay);
+            preloadImage(avatarUrl);
+        };
+
+        if (typeof window.requestIdleCallback === "function") {
+            const idleId = window.requestIdleCallback(run, { timeout: 3000 });
+            return () => {
+                if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleId);
+            };
+        }
+        const timer = window.setTimeout(run, 1500);
+        return () => window.clearTimeout(timer);
     }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender, posterTemplate]);
 
     // 海报内容数据源（昵称/派系头像/面部分析等）变化时使预生成缓存失效，触发重新生成，
@@ -722,7 +756,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 后台预生成海报 blob：素材和二维码就绪后延迟执行，点击保存时直接使用
     // 性别就绪后才生成，避免把默认女版头像烘焙进海报缓存；缓存按模板区分
     useEffect(() => {
-        if (!result || !qrDataUrl || preloadedPoster?.templateId === posterTemplateId || !socialGender) return;
+        // 仅当模板需要二维码时才等二维码就绪（小红书版无二维码，不必被它阻塞）
+        if (!result || (posterTemplate.qr !== null && !qrDataUrl) || preloadedPoster?.templateId === posterTemplateId || !socialGender) return;
         // 触屏设备（手机/平板）跳过预生成：toBlob(pixelRatio:2) 会冻结主线程数百 ms，
         // iOS 低端机甚至可能被杀进程，改为用户点击保存时再现场生成
         if (window.matchMedia("(hover: none)").matches) return;
@@ -968,11 +1003,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // Actions
     // Save result as image for sharing (image generation in progress)
 
-    function sanitizeFilename(name: string): string {
-        return name.replace(/[/\\:*?"<>|]/g, "_").trim() || "用户";
-    }
-
-    async function triggerDownload(blob: Blob, filename: string) {
+    /** 触发保存/分享（文件名清洗见 poster-utils.sanitizeFilename）；返回 false 表示用户在系统分享面板取消，不应计入分享埋点 */
+    async function triggerDownload(blob: Blob, filename: string): Promise<boolean> {
         const blobUrl = URL.createObjectURL(blob);
         const file = new File([blob], filename, { type: "image/png" });
 
@@ -989,13 +1021,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     files: [file],
                 });
                 URL.revokeObjectURL(blobUrl);
-                return;
+                return true;
             } catch (err) {
                 // 用户主动取消系统分享：视为放弃保存，不再触发下载兜底，避免"点了取消反而下载"
                 const cancelled = typeof err === "object" && err !== null && (err as { name?: unknown }).name === "AbortError";
                 if (cancelled) {
                     URL.revokeObjectURL(blobUrl);
-                    return;
+                    return false;
                 }
                 console.log("navigator.share failed, fallback to download", err);
             }
@@ -1008,6 +1040,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         link.click();
         document.body.removeChild(link);
         setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        return true;
     }
 
     async function generatePosterBlob(template: PosterTemplate): Promise<Blob> {
@@ -1064,31 +1097,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 try {
                     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-                    // 两种空白形态都要拦截：
-                    // 1. 全透明（alpha 全 0）——截图失败的典型产物；
-                    // 2. 纯色不透明图（如纯白）——alpha 全 255，仅查 alpha 会漏检。
-                    // 以首个不透明像素为基准色，出现明显色差即视为有内容。
-                    let hasOpaque = false;
-                    let baseR = -1, baseG = -1, baseB = -1;
-                    for (let i = 0; i < data.length; i += 4) {
-                        if (data[i + 3] === 0) continue;
-                        hasOpaque = true;
-                        if (baseR < 0) {
-                            baseR = data[i];
-                            baseG = data[i + 1];
-                            baseB = data[i + 2];
-                            continue;
-                        }
-                        const diff =
-                            Math.abs(data[i] - baseR) +
-                            Math.abs(data[i + 1] - baseG) +
-                            Math.abs(data[i + 2] - baseB);
-                        if (diff > 12) {
-                            resolve(false);
-                            return;
-                        }
-                    }
-                    resolve(!hasOpaque);
+                    // 空白判定规则（含纯白等纯色不透明图）见 poster-utils.isPixelDataBlank
+                    resolve(isPixelDataBlank(data));
                 } catch {
                     resolve(true);
                 }
@@ -1102,7 +1112,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     }
 
     const handleSavePoster = async (templateId: PosterTemplateId) => {
-        if (isGeneratingPoster) return;
+        if (posterBusyRef.current) return;
+        posterBusyRef.current = true;
         const template = POSTER_TEMPLATES[templateId];
         try {
             setIsGeneratingPoster(true);
@@ -1146,19 +1157,25 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             // 改为展示海报图片保存：移动端引导长按、桌面端引导右键另存
             if (typeof navigator !== "undefined" && isWeChatBrowser(navigator.userAgent)) {
                 setPosterSaveIsDesktop(!isMobileDevice(navigator.userAgent, navigator.maxTouchPoints));
-                setSavedPosterForSave(URL.createObjectURL(blob));
+                // 微信 iOS 长按保存对 dataURL 兼容性更好；转换失败再退回 objectURL（由 setSavedPosterUrl 统一管理释放）
+                try {
+                    setSavedPosterUrl(await blobToDataUrl(blob));
+                } catch {
+                    setSavedPosterUrl(URL.createObjectURL(blob));
+                }
                 // 埋点不在生成时上报：等用户在保存弹窗里点「已保存，关闭」再计入（见下方 onSaved）
                 return;
             }
 
             const safeName = sanitizeFilename(userNickname || "用户");
-            await triggerDownload(blob, `${safeName}的肌智派证书${template.filenameSuffix}.png`);
-            // 埋点口径：下载/原生分享动作已触发（生成成功但用户未保存不计入）
-            if (!isMock) trackResultShare("image");
+            const saved = await triggerDownload(blob, `${safeName}的肌智派证书${template.filenameSuffix}.png`);
+            // 埋点口径：真正触发下载/分享才计入；用户在系统分享面板取消返回 false
+            if (saved && !isMock) trackResultShare("image");
         } catch (error) {
             console.error("海报生成失败:", error);
             setPosterError("海报生成遇到问题，请稍后重试。");
         } finally {
+            posterBusyRef.current = false;
             setIsGeneratingPoster(false);
         }
     };
@@ -1181,15 +1198,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     };
 
     const closePosterSaveModal = () => {
-        if (savedPosterForSave) URL.revokeObjectURL(savedPosterForSave);
-        setSavedPosterForSave(null);
+        setSavedPosterUrl(null);
     };
 
-    // 弹窗打开时直接离开页面的兜底：卸载时 revoke，避免 blob URL 泄漏
-    const savedPosterForSaveRef = useRef<string | null>(null);
-    useEffect(() => { savedPosterForSaveRef.current = savedPosterForSave; }, [savedPosterForSave]);
+    // 弹窗打开时直接离开页面的兜底：卸载时释放 objectURL（dataURL 无需释放）
     useEffect(() => () => {
-        if (savedPosterForSaveRef.current) URL.revokeObjectURL(savedPosterForSaveRef.current);
+        const url = savedPosterForSaveRef.current;
+        if (url && url.startsWith("blob:")) URL.revokeObjectURL(url);
     }, []);
 
     // 海报错误提示自动消失（6s），避免旧错误常驻遮挡；用户也可点关闭按钮立即清除

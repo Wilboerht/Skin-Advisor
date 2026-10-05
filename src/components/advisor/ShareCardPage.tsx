@@ -5,6 +5,7 @@ import { m, useReducedMotion } from "framer-motion";
 import { ArrowRight, Gift, ImageDown, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { getCharacterImage, getSkinTypeName, type IPMatchParams } from "@/lib/result-utils";
+import { formatCertDate, formatCertId } from "@/lib/poster-utils";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface ShareCardPageProps {
@@ -34,20 +35,6 @@ interface ShareCardPageProps {
     onGift?: () => void;
     /** 复测用户（存在历史报告）：标题不再称"首次" */
     isReturning?: boolean;
-}
-
-function formatCertDate(iso?: string): string | null {
-    if (!iso) return null;
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return null;
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
-}
-
-function formatCertId(sessionId?: string): string | null {
-    if (!sessionId) return null;
-    const last6 = sessionId.replace(/[^a-zA-Z0-9]/g, "").slice(-6);
-    return last6.length >= 4 ? last6.toUpperCase() : null;
 }
 
 /** 抽奖按钮悬浮彩带：品牌色系的碎纸片 */

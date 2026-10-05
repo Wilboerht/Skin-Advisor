@@ -63,7 +63,7 @@ export function PosterTemplatePicker({ isOpen, templates, selectedId, onSelect, 
                                 选择保存样式
                             </p>
                             <p className="mt-1 mb-5 text-[12px] text-[var(--color-brand-taupe)] text-center">
-                                两套版式内容一致，仅视觉不同
+                                证书内容一致，小红书版不含二维码
                             </p>
 
                             <div className="flex flex-col gap-2.5">
