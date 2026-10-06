@@ -18,7 +18,9 @@ const cookieName = (name: string): string =>
 const secure = !SSO_INSECURE_LOCAL_DEV;
 
 export const USER_COOKIE_NAME = cookieName("__Host-user_token");
-export const USER_REFRESH_COOKIE_NAME = cookieName("__Host-user_refresh_token");
+// 与主站 src/types/auth.ts 保持一致：refresh Cookie 已改名并收窄 Path=/api
+//（__Host- 规范强制 Path=/，故放弃前缀；主站部署后旧名 Cookie 成为孤儿，用户最多重新登录一次）
+export const USER_REFRESH_COOKIE_NAME = cookieName("nihplod_user_refresh");
 /** 微信绑定流程的临时 exchange token Cookie（callback 写入，bind/wechat-bind 页读取） */
 export const WECHAT_BIND_COOKIE_NAME = cookieName("__Host-wechat_bind_token");
 
@@ -34,6 +36,7 @@ export const USER_REFRESH_COOKIE_OPTIONS = {
     httpOnly: true,
     secure,
     sameSite: "lax" as const,
-    path: "/",
+    // 与主站一致：收窄到 /api（读写点全部位于 /api 路由下）
+    path: "/api",
     maxAge: 30 * 24 * 60 * 60, // 30 天
 };
