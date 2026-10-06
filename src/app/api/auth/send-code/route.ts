@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
             cookies: authCookies,
             requireSignature: false,
             timeoutMs: 30000,
+            // 透传真实客户端 IP：配置 SUBSITE_PROXY_KEY 后主站按真实 IP 限流并记录 SmsCode.ipAddress
+            clientIp: ip,
         });
 
         if (!result) {

@@ -244,6 +244,13 @@ export interface CallOfficialApiOptions {
      */
     requireSignature?: boolean;
     timeoutMs?: number;
+    /**
+     * 真实客户端 IP（由调用方通过 getClientIP 从入站请求获取）。
+     * 仅在配置了 SUBSITE_PROXY_KEY 时，与 X-Subsite-Proxy-Key 一并转发给主站；
+     * 主站校验密钥通过后才信任 X-Forwarded-For 用于限流与 SmsCode.ipAddress 记录。
+     * 未配置密钥时不发送这两个头（主站也不会信任 XFF），其他出站调用一律不带密钥。
+     */
+    clientIp?: string;
 }
 
 export interface CallOfficialApiResult<T = unknown> {
@@ -274,6 +281,7 @@ export async function callOfficialApi<T = unknown>(
         userAgent,
         requireSignature = true,  // 默认要求签名，安全优先
         timeoutMs = 30000,
+        clientIp,
     } = options;
 
     const officialApiUrl = process.env.OFFICIAL_API_URL || (() => {
@@ -311,7 +319,17 @@ export async function callOfficialApi<T = unknown>(
         cookieParts.push(`${OFFICIAL_CSRF_COOKIE_NAME}=${csrfCookieValue}`);
     }
     if (cookies) {
-        cookieParts.push(cookies);
+        // 过滤调用方 Cookie 中自带的 __Host-csrf_token：
+        // 子站生产环境的 CSRF Cookie 与官网同名（见 csrf-client.ts），
+        // 若不过滤会出现重复的 __Host-csrf_token 项（仅靠排列顺序侥幸让官网 token 生效），
+        // 必须确保只发送刚获取的官网 token。
+        const filteredCookies = cookies
+            .split(";")
+            .map((part) => part.trim())
+            .filter((part) => part && !part.startsWith(`${OFFICIAL_CSRF_COOKIE_NAME}=`));
+        if (filteredCookies.length > 0) {
+            cookieParts.push(filteredCookies.join("; "));
+        }
     }
     if (cookieParts.length > 0) {
         headers.set("Cookie", cookieParts.join("; "));
@@ -319,6 +337,16 @@ export async function callOfficialApi<T = unknown>(
 
     if (userAgent) {
         headers.set("User-Agent", userAgent);
+    }
+
+    // 子站→主站代理身份标识：仅在配置了共享密钥 SUBSITE_PROXY_KEY 且调用方
+    // 提供了真实客户端 IP 时发送。主站校验 X-Subsite-Proxy-Key 通过后才信任
+    // X-Forwarded-For（用于按真实客户端 IP 限流与记录 SmsCode.ipAddress）；
+    // 未配置密钥时两个头都不发送，避免伪造的 XFF 被误信。
+    const subsiteProxyKey = process.env.SUBSITE_PROXY_KEY;
+    if (subsiteProxyKey && clientIp) {
+        headers.set("X-Forwarded-For", clientIp);
+        headers.set("X-Subsite-Proxy-Key", subsiteProxyKey);
     }
 
     try {
