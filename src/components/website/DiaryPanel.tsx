@@ -10,7 +10,6 @@ import {
   Flame,
   NotebookPen,
   RefreshCw,
-  ScanFace,
   TrendingUp,
   Trophy,
 } from "lucide-react";
@@ -619,13 +618,10 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                     >
                 {/* ===== 登录：概览（肌肤变化 + 打卡记录）+ 时间线 ===== */}
                 {isEmpty ? (
-                  /* 新用户 hero 空态：跨列居中（图标 + 价值主张 + 步骤化引导 + 平权双 CTA），
+                  /* 新用户 hero 空态：跨列居中（价值主张 + 步骤化引导 + 平权双 CTA），
                      步骤列表传达递进：一次测肤 → 生成记录，两次 → 解锁趋势，坚持打卡 → 送积分兑产品；
                      有数据后进入双列布局 */
                   <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
-                    <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-brand-charcoal/10 bg-brand-charcoal/[0.04]">
-                      <ScanFace className="h-7 w-7 text-brand-charcoal/55" strokeWidth={1.5} />
-                    </div>
                     <p className="mb-7 text-[16px] font-medium tracking-[0.04em] text-[var(--color-brand-espresso)]">
                       开始你的护肤档案
                     </p>
