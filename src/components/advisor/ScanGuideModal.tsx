@@ -200,14 +200,6 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender }: ScanGuideM
                             >
                                 <p className="text-center text-[12px] font-light text-brand-charcoal/60 leading-relaxed tracking-[0.02em]">
                                     照片仅用于本次分析，分析完成后即删除
-                                    <span className="mx-1 text-brand-charcoal/30">·</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => openLegalDoc("privacy")}
-                                        className="underline underline-offset-2 transition-colors hover:text-brand-charcoal/85 cursor-pointer"
-                                    >
-                                        隐私政策
-                                    </button>
                                 </p>
 
                                 <button
