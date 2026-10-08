@@ -607,7 +607,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.96, y: 10 }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                    className="relative z-10 w-full max-w-xs bg-[#F7F4EE] rounded-[24px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
+                    className="relative z-10 w-full max-w-xs bg-[#FAF7F1] rounded-[24px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <h3 id="logout-confirm-title" className="text-base font-semibold text-brand-charcoal mb-2">

@@ -619,32 +619,57 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                     >
                 {/* ===== 登录：概览（肌肤变化 + 打卡记录）+ 时间线 ===== */}
                 {isEmpty ? (
-                  /* 新用户 hero 空态：跨列居中（图标 + 说明 + 主「去测肤」/ 次「今日打卡」），
+                  /* 新用户 hero 空态：跨列居中（图标 + 价值主张 + 步骤化引导 + 平权双 CTA），
+                     步骤列表传达递进：一次测肤 → 生成记录，两次 → 解锁趋势，坚持打卡 → 送积分兑产品；
                      有数据后进入双列布局 */
                   <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
-                    <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-brand-charcoal/[0.05]">
-                      <ScanFace className="h-6 w-6 text-brand-charcoal/50" strokeWidth={1.5} />
+                    <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-brand-charcoal/10 bg-brand-charcoal/[0.04]">
+                      <ScanFace className="h-7 w-7 text-brand-charcoal/55" strokeWidth={1.5} />
                     </div>
-                    <p className="mb-2 text-[15px] font-medium text-[var(--color-brand-espresso)]">
-                      完成一次测肤，自动生成你的护肤记录
+                    <p className="mb-7 text-[16px] font-medium tracking-[0.04em] text-[var(--color-brand-espresso)]">
+                      开始你的护肤档案
                     </p>
-                    <p className="mb-6 text-[13px] font-light leading-[1.8] tracking-[0.06em] text-brand-charcoal/60">
-                      两次不同日期的测肤后，解锁肌肤变化趋势
-                    </p>
+                    <ol className="mb-9 flex flex-col items-start gap-2.5">
+                      <li className="flex items-center gap-2.5">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-cocoa/10 text-[11px] font-medium text-brand-cocoa tabular-nums">
+                          1
+                        </span>
+                        <span className="text-[13px] font-light tracking-[0.04em] text-brand-charcoal/70">
+                          完成一次测肤，自动生成你的护肤记录
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-cocoa/10 text-[11px] font-medium text-brand-cocoa tabular-nums">
+                          2
+                        </span>
+                        <span className="text-[13px] font-light tracking-[0.04em] text-brand-charcoal/70">
+                          两次不同日期的测肤后，解锁肌肤变化趋势
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-cocoa/10 text-[11px] font-medium text-brand-cocoa tabular-nums">
+                          3
+                        </span>
+                        <span className="text-[13px] font-light tracking-[0.04em] text-brand-charcoal/70">
+                          坚持打卡送积分，积分可兑产品
+                        </span>
+                      </li>
+                    </ol>
+                    {/* 双 CTA 平权并排：微圆角 + 暖调薄底 + 发丝边框，图标弱化仅作功能暗示 */}
                     <div className="flex items-center justify-center gap-3">
                       <Link
                         href="/questions"
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand-cocoa)] px-5 text-[12px] font-medium tracking-[0.05em] text-white transition-colors hover:bg-brand-cocoa-dark active:opacity-80"
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-brand-charcoal/15 bg-brand-charcoal/[0.04] px-6 text-[12px] font-light tracking-[0.12em] text-brand-charcoal transition-all hover:border-brand-charcoal/30 hover:bg-brand-charcoal/[0.07] active:scale-[0.98]"
                       >
                         去测肤
-                        <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.8} />
+                        <ChevronRight className="h-3.5 w-3.5 text-brand-charcoal/50" strokeWidth={1.8} />
                       </Link>
                       <button
                         type="button"
                         onClick={() => setCheckIn({ open: true, existing: null, dateStr: todayStr })}
-                        className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-brand-espresso/20 px-4 text-[12px] text-brand-charcoal/60 transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
+                        className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-brand-charcoal/15 bg-brand-charcoal/[0.04] px-6 text-[12px] font-light tracking-[0.12em] text-brand-charcoal transition-all hover:border-brand-charcoal/30 hover:bg-brand-charcoal/[0.07] active:scale-[0.98]"
                       >
-                        <CalendarCheck className="h-3.5 w-3.5" strokeWidth={1.8} />
+                        <CalendarCheck className="h-3.5 w-3.5 text-brand-charcoal/50" strokeWidth={1.8} />
                         今日打卡
                       </button>
                     </div>

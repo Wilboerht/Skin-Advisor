@@ -1,9 +1,9 @@
 // 会员中心（AccountModal 系）共享样式：弹层壳、卡片、标题、说明文字统一收敛于此，
-// 与全站弹层规范（GiftModal/SkinTypesModal：#F7F4EE 底、40px 圆角、暖调阴影）对齐
+// 与全站弹层规范（GiftModal/SkinTypesModal：#FAF7F1 底、40px 圆角、暖调阴影）对齐
 
 /** 弹层壳：背景/圆角/暖调阴影 */
 export const ACCOUNT_SHELL =
-  "bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)]";
+  "bg-[#FAF7F1] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)]";
 
 /** 内容卡：纯白底 + 暖色轻阴影 + 细描边（替代旧 bg-white/70，拉开与弹层米底的层次差） */
 export const ACCOUNT_CARD =

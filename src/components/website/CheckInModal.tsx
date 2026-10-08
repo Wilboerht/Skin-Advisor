@@ -164,7 +164,7 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 flex w-full max-h-[86dvh] flex-col overflow-hidden bg-[#F7F4EE] rounded-t-[28px] sm:rounded-[2.5rem] sm:max-w-sm sm:max-h-[85vh] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)]"
+            className="relative z-10 flex w-full max-h-[86dvh] flex-col overflow-hidden bg-[#FAF7F1] rounded-t-[28px] sm:rounded-[2.5rem] sm:max-w-sm sm:max-h-[85vh] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮 */}

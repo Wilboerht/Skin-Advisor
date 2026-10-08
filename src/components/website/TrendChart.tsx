@@ -197,7 +197,7 @@ export function TrendChart({ trends, totalTests }: { trends: TrendsData; totalTe
                 cx={p.x}
                 cy={p.y}
                 r={isLatest ? 4.5 : 3}
-                fill={isLatest ? "#5c4937" : "#F7F4EE"}
+                fill={isLatest ? "#5c4937" : "#FAF7F1"}
                 stroke="#5c4937"
                 strokeWidth="2"
                 className="pointer-events-none"

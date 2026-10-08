@@ -600,7 +600,7 @@ export default function HomeClient() {
               <m.div
                 key="menu-panel"
                 id="home-menu"
-                className="absolute inset-x-0 top-full z-50 origin-top rounded-b-[24px] border-b border-black/[0.06] bg-[#F7F4EE] p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)] md:inset-x-auto md:left-0 md:w-60 md:origin-top-left md:rounded-bl-none md:rounded-br-2xl md:border-r"
+                className="absolute inset-x-0 top-full z-50 origin-top rounded-b-[24px] border-b border-black/[0.06] bg-[#FAF7F1] p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)] md:inset-x-auto md:left-0 md:w-60 md:origin-top-left md:rounded-bl-none md:rounded-br-2xl md:border-r"
                 initial={{ opacity: 0, y: -6, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}

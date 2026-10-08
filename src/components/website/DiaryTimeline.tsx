@@ -253,7 +253,7 @@ export function DiaryTimeline({
                 {isToday && !visibleEvents.some((e) => e.kind === "diary") && (
                   visibleEvents.length === 0 ? (
                     <div className="relative">
-                      <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
+                      <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#FAF7F1]" />
                       {hideTodayCta ? (
                         /* 打卡 CTA 由「打卡记录」区标题承载：此处仅留文字提示，避免同屏重复入口 */
                         <span className="text-[13px] text-brand-charcoal/65 font-light">
@@ -287,7 +287,7 @@ export function DiaryTimeline({
                   ) : (
                     onCheckIn && !hideTodayCta && (
                       <div className="relative">
-                        <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
+                        <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#FAF7F1]" />
                         <button
                           type="button"
                           onClick={() => onCheckIn(manualDiaryEntry, todayStr)}
@@ -317,7 +317,7 @@ export function DiaryTimeline({
                   onCheckIn &&
                   canBackfill(group.dateStr) && (
                     <div className="relative">
-                      <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#F7F4EE]" />
+                      <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#FAF7F1]" />
                       <button
                         type="button"
                         onClick={() => onCheckIn(manualDiaryEntry, group.dateStr)}
@@ -351,7 +351,7 @@ export function DiaryTimeline({
                     return (
                       <div key={`d-${ev.entry.id}-${i}`} className="relative group">
                         <span
-                          className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE]"
+                          className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-[#FAF7F1]"
                           style={{ backgroundColor: meta.color }}
                         />
                         {/* 操作按钮：移动端常显（无 hover 可依赖），桌面端悬浮行尾显现；行内不占位（极简）。
@@ -455,7 +455,7 @@ export function DiaryTimeline({
                   const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
                   return (
                     <div key={`t-${ev.test.sessionId}-${i}`} className="relative">
-                      <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-[#F7F4EE] bg-[var(--color-brand-cocoa)]" />
+                      <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-[#FAF7F1] bg-[var(--color-brand-cocoa)]" />
                       <Link
                         href={`/reports/${ev.test.sessionId}?skipCover=1`}
                         className="group flex items-center gap-2 pr-4"
