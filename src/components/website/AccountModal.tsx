@@ -326,17 +326,14 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                         <div className="px-12 pb-4 pt-10">
                           <div className="flex flex-col items-start gap-4 text-left">
                             <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FBF8F0]/40">
-                              {user.avatar ? (
-                                <Image
-                                  src={user.avatar}
-                                  alt="Avatar"
-                                  fill
-                                  unoptimized
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <User className="h-6 w-6 text-stone-500" strokeWidth={1.5} />
-                              )}
+                              {/* 未自定义头像的新用户使用默认头像 */}
+                              <Image
+                                src={user.avatar || "/images/default-avatar.png"}
+                                alt="Avatar"
+                                fill
+                                unoptimized
+                                className="h-full w-full object-cover"
+                              />
                             </div>
                             <div className="flex flex-col justify-center">
                               <p className="truncate text-[15px] font-medium text-stone-800">

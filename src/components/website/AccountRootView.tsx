@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, ChevronDown, ChevronRight, Loader2, Lock, LogOut, User as UserIcon } from "lucide-react";
+import { Camera, ChevronDown, ChevronRight, Loader2, Lock, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { PasswordSection } from "@/components/website/account-sections/PasswordSection";
@@ -351,11 +351,14 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
               aria-label="更换头像"
               className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-[#FBF8F0]/20 transition-all group-hover:border-stone-300 md:h-20 md:w-20 cursor-pointer disabled:cursor-wait"
             >
-              {displayAvatar ? (
-                <Image src={displayAvatar} alt="" fill unoptimized className="object-cover" />
-              ) : (
-                <UserIcon className="h-7 w-7 text-stone-400 md:h-8 md:w-8" strokeWidth={1} />
-              )}
+              {/* 未自定义头像的新用户使用默认头像（与主站 / SSO 输出口径一致） */}
+              <Image
+                src={displayAvatar || "/images/default-avatar.png"}
+                alt=""
+                fill
+                unoptimized
+                className="object-cover"
+              />
               <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition-all group-hover:bg-black/30">
                 {saving === "avatar" ? (
                   <Loader2 className="h-6 w-6 animate-spin text-white" />

@@ -138,9 +138,16 @@ export function BottomDock() {
         // 会话初始化期间渲染骨架占位（参考 UserBadge）：避免先渲染通用图标
         // 再切换成头像造成 pop-in 闪烁
         <span aria-hidden="true" className="block w-[22px] h-[22px] rounded-full bg-brand-charcoal/5 animate-pulse" />
-      ) : tab.panel === "account" && user?.avatar ? (
+      ) : tab.panel === "account" && user ? (
+        /* 已登录：自定义头像，未自定义则用默认头像（SSO claim 已按此口径下发） */
         <span className="relative block w-[22px] h-[22px] rounded-full overflow-hidden">
-          <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
+          <Image
+            src={user.avatar || "/images/default-avatar.png"}
+            alt=""
+            fill
+            unoptimized
+            className="object-cover"
+          />
         </span>
       ) : (
         <tab.icon
