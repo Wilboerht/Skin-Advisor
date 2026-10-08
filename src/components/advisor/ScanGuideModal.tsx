@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { m, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowRight, Sun, ScanEye, Glasses, Info, ChevronLeft } from "lucide-react";
+import { m, AnimatePresence } from "framer-motion";
+import { ArrowRight, Sun, ScanEye, Glasses, Info, ChevronLeft, Smile, Droplets, Brush, Palette } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
 import { SKIN_STATE_OPTIONS, DEFAULT_SKIN_STATE, isMakeupState, type SkinStateValue } from "@/lib/skin-state";
@@ -24,20 +26,25 @@ const CHIP_LABELS: Record<SkinStateValue, string> = {
     heavy_makeup: "浓妆",
 };
 
-/** 拍摄步骤预览：与 FaceCapture 的 CAPTURE_STEPS 标签保持一致，用于点开始前的预期管理 */
-const PREVIEW_STEPS = ["正脸", "右转", "左转", "下颚"];
-
-/** 拍摄小贴士：覆盖实际最常见的失败原因（逆光/遮挡/距离） */
+/** 拍摄小贴士：压缩为一行图标 + 标题（对齐预览页 F） */
 const TIPS = [
-    { icon: Sun, title: "光线充足", desc: "面向自然光，避免逆光" },
-    { icon: Glasses, title: "露出额头", desc: "撩起刘海，摘下眼镜" },
-    { icon: ScanEye, title: "对准镜头", desc: "保持约一臂距离" },
+    { icon: Sun, title: "光线充足" },
+    { icon: Glasses, title: "露出额头" },
+    { icon: ScanEye, title: "对准镜头" },
 ];
+
+/** 状态选择图标：与预览页 F 的图标卡片方案一致 */
+const STATE_ICONS: Record<SkinStateValue, LucideIcon> = {
+    bare: Smile,
+    sunscreen: Sun,
+    washed: Droplets,
+    light_makeup: Brush,
+    heavy_makeup: Palette,
+};
 
 export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProps) {
     const [skinState, setSkinState] = useState<SkinStateValue>(DEFAULT_SKIN_STATE);
     const { openLegalDoc } = useLegalDocModal();
-    const prefersReducedMotion = useReducedMotion();
     // 带妆时在状态选择下方就地提示影响范围（与结果页 banner、AI 条件化提示同口径）
     const isMakeup = isMakeupState(skinState);
 
@@ -93,50 +100,36 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                     {/* ---- 内容区：不足一屏垂直居中，超出独立滚动 ---- */}
                     <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
                         <div className="min-h-full w-full max-w-2xl mx-auto px-5 md:px-8 py-8 md:py-10 flex flex-col justify-center items-center">
-                            {/* 1. 预期管理：标题 + 时长 + 4 角度步骤预览 */}
+                            {/* 1. 预期管理：标题 + 时长 + 一行拍摄贴士 */}
                             <m.div
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.08, duration: 0.45 }}
-                                className="flex flex-col items-center text-center"
+                                className="flex w-full flex-col items-center text-center"
                             >
-                                <h1 id="scan-guide-title" className="text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em]">
+                                <h1 id="scan-guide-title" className="text-2xl md:text-3xl font-light text-brand-charcoal tracking-[0.02em]">
                                     面部扫描
                                 </h1>
                                 <p className="mt-3 text-[13px] md:text-sm font-light text-brand-charcoal/60 tracking-[0.02em] leading-relaxed">
                                     AI 将引导你完成 4 个角度，约 30 秒
                                 </p>
 
-                                <ol className="mt-6 md:mt-7 flex items-center justify-center gap-1.5 sm:gap-3" aria-label="拍摄步骤，共 4 步">
-                                    {PREVIEW_STEPS.map((label, i) => (
-                                        <li key={label} className="flex items-center gap-1.5 sm:gap-3">
-                                            <span className="inline-flex items-center gap-1.5">
-                                                <m.span
-                                                    aria-hidden="true"
-                                                    className="inline-flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full border border-brand-charcoal/15 bg-white text-[11px] sm:text-[12px] text-brand-charcoal/70 tabular-nums"
-                                                    animate={prefersReducedMotion ? { opacity: 0.85 } : { opacity: [0.55, 1, 0.55] }}
-                                                    transition={prefersReducedMotion ? { duration: 0 } : { duration: 2.4, repeat: Infinity, delay: i * 0.6, ease: "easeInOut" }}
-                                                >
-                                                    {i + 1}
-                                                </m.span>
-                                                <span className="text-[12px] sm:text-[13px] font-normal text-brand-charcoal/75 tracking-[0.04em]">
-                                                    {label}
-                                                </span>
-                                            </span>
-                                            {i < PREVIEW_STEPS.length - 1 && (
-                                                <ArrowRight className="h-3.5 w-3.5 text-brand-charcoal/25" strokeWidth={1.5} aria-hidden="true" />
-                                            )}
-                                        </li>
+                                <div className="mt-6 md:mt-7 grid w-full max-w-[330px] grid-cols-3 gap-2">
+                                    {TIPS.map(({ icon: Icon, title }) => (
+                                        <div key={title} className="flex flex-col items-center gap-1.5">
+                                            <Icon className="h-5 w-5 text-brand-charcoal/45" strokeWidth={1.8} aria-hidden="true" />
+                                            <span className="text-[12px] font-normal text-brand-charcoal/70 tracking-[0.03em]">{title}</span>
+                                        </div>
                                     ))}
-                                </ol>
+                                </div>
                             </m.div>
 
-                            {/* 2. 拍摄状态（关键输入）：选中带妆时就地提示影响范围 */}
+                            {/* 2. 拍摄状态（关键输入）：图标卡片（对齐预览页 F），选中带妆就地提示影响范围 */}
                             <m.div
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.18, duration: 0.45 }}
-                                className="mt-9 md:mt-10 w-full flex flex-col items-center"
+                                transition={{ delay: 0.16, duration: 0.45 }}
+                                className="mt-8 md:mt-9 w-full flex flex-col items-center"
                             >
                                 <p className="mb-3 text-center text-[12px] font-light tracking-[0.06em] text-brand-charcoal/60">
                                     拍摄状态<span className="text-brand-charcoal/45">（影响分析准确度）</span>
@@ -148,10 +141,11 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                         if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); moveSelection(1); }
                                         else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); moveSelection(-1); }
                                     }}
-                                    className="inline-flex w-full flex-wrap items-center justify-center gap-1 rounded-[22px] border border-brand-charcoal/[0.12] bg-white p-1 md:w-auto md:rounded-full"
+                                    className="grid w-full max-w-[330px] grid-cols-5 gap-1.5"
                                 >
                                     {SKIN_STATE_OPTIONS.map((option) => {
                                         const selected = skinState === option.value;
+                                        const Icon = STATE_ICONS[option.value];
                                         return (
                                             <button
                                                 key={option.value}
@@ -160,13 +154,24 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                                 aria-checked={selected}
                                                 aria-label={option.label}
                                                 onClick={() => setSkinState(option.value)}
-                                                className={`inline-flex min-h-[44px] flex-1 items-center justify-center rounded-full px-3 text-[12px] tracking-[0.04em] transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/25 md:flex-none md:px-4 ${
+                                                className={cn(
+                                                    "flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[14px] border bg-white px-1 py-2 transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/25",
                                                     selected
-                                                        ? "bg-brand-charcoal/[0.08] font-medium text-brand-charcoal"
-                                                        : "text-brand-charcoal/60 hover:text-brand-charcoal/85"
-                                                }`}
+                                                        ? "border-[var(--color-brand-cocoa)] bg-[var(--color-brand-cocoa)]/[0.05]"
+                                                        : "border-brand-charcoal/[0.12] hover:border-brand-charcoal/25"
+                                                )}
                                             >
-                                                {CHIP_LABELS[option.value]}
+                                                <Icon
+                                                    className={cn("h-[22px] w-[22px]", selected ? "text-[var(--color-brand-cocoa)]" : "text-brand-charcoal/45")}
+                                                    strokeWidth={1.8}
+                                                    aria-hidden="true"
+                                                />
+                                                <span className={cn(
+                                                    "text-[11.5px] tracking-[0.02em]",
+                                                    selected ? "font-medium text-brand-charcoal" : "text-brand-charcoal/60"
+                                                )}>
+                                                    {CHIP_LABELS[option.value]}
+                                                </span>
                                             </button>
                                         );
                                     })}
@@ -191,32 +196,11 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 </AnimatePresence>
                             </m.div>
 
-                            {/* 3. 拍摄小贴士（带原因，覆盖最常见的失败因素） */}
+                            {/* 3. 隐私透明（紧贴行动点） + 主 CTA */}
                             <m.div
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.24, duration: 0.45 }}
-                                className="mt-7 md:mt-8 w-full grid gap-2.5 md:grid-cols-3"
-                            >
-                                {TIPS.map(({ icon: Icon, title, desc }) => (
-                                    <div
-                                        key={title}
-                                        className="flex items-start gap-2.5 rounded-xl border border-brand-charcoal/[0.08] bg-white/70 px-3.5 py-3"
-                                    >
-                                        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-brand-charcoal/45" strokeWidth={1.5} aria-hidden="true" />
-                                        <div className="min-w-0">
-                                            <p className="text-[13px] font-normal text-brand-charcoal/80 tracking-[0.02em]">{title}</p>
-                                            <p className="mt-0.5 text-[12px] font-light leading-[1.6] text-brand-charcoal/55">{desc}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </m.div>
-
-                            {/* 4. 隐私透明（紧贴行动点） + 主 CTA */}
-                            <m.div
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.3, duration: 0.45 }}
+                                transition={{ delay: 0.26, duration: 0.45 }}
                                 className="w-full flex flex-col items-center mt-8 md:mt-9"
                             >
                                 <p className="text-center text-[12px] font-light text-brand-charcoal/60 leading-relaxed tracking-[0.02em]">
