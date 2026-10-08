@@ -15,6 +15,8 @@ interface ScanGuideModalProps {
     /** 确认开始扫描时回传拍摄时肌肤状态 */
     onConfirm: (skinState: SkinStateValue) => void;
     onExit?: () => void;
+    /** 问卷中选择的性别：决定中间引导头像；未知时默认女性头像 */
+    gender?: "female" | "male" | null;
 }
 
 /** 状态胶囊的短文案：完整文案（SKIN_STATE_LABELS）仍用于报告与 AI 提示词，这里只做界面简写 */
@@ -35,11 +37,12 @@ const STATE_ICONS: Record<SkinStateValue, LucideIcon> = {
     heavy_makeup: Palette,
 };
 
-export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProps) {
+export function ScanGuideModal({ isOpen, onConfirm, onExit, gender }: ScanGuideModalProps) {
     const [skinState, setSkinState] = useState<SkinStateValue>(DEFAULT_SKIN_STATE);
     const { openLegalDoc } = useLegalDocModal();
     // 带妆时在状态选择下方就地提示影响范围（与结果页 banner、AI 条件化提示同口径）
     const isMakeup = isMakeupState(skinState);
+    const avatarSrc = gender === "male" ? "/images/scan-guide-avatar-male.png" : "/images/scan-guide-avatar-female.png";
 
     const handleClose = () => {
         onExit?.();
@@ -106,7 +109,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
 
                                 <div className="mt-8 md:mt-10">
                                     <Image
-                                        src="/images/scan-guide-avatar.png"
+                                        src={avatarSrc}
                                         alt="面部扫描引导头像"
                                         width={153}
                                         height={151}

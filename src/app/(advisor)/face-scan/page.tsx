@@ -35,6 +35,8 @@ export default function FaceScanPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [storageError, setStorageError] = useState(false);
+    // 问卷中选择的性别（ADVISOR_GENDER）：决定 ScanGuideModal 的引导头像
+    const [gender, setGender] = useState<"female" | "male" | null>(null);
     // 面部模型全局状态（唯一事实源）：face-models store 单飞加载，问卷页已触发、这里只订阅
     const { status: faceModelStatus } = useFaceModels();
 
@@ -69,6 +71,11 @@ export default function FaceScanPage() {
             router.replace("/questions");
             return;
         }
+
+        try {
+            const savedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
+            if (savedGender === "female" || savedGender === "male") setGender(savedGender);
+        } catch { /* Storage 不可用时保持默认头像 */ }
 
         if (!hasTrackedStart.current) {
             trackFaceScanStart();
@@ -436,6 +443,7 @@ export default function FaceScanPage() {
             {/* Prep Guide Modal */}
             <ScanGuideModal
                 isOpen={isModalOpen}
+                gender={gender}
                 onConfirm={(skinState) => {
                     // 记录拍摄时肌肤状态（供分析条件化与结果页提示）
                     try { localStorage.setItem(STORAGE_KEYS.ADVISOR_SKIN_STATE, skinState); } catch { /* ignore */ }
