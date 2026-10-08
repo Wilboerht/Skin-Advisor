@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sun, ScanEye, Glasses, Info, ChevronLeft, Smile, Droplets, Brush, Palette } from "lucide-react";
+import { ArrowRight, Sun, Info, ChevronLeft, Smile, Droplets, Brush, Palette } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -25,13 +25,6 @@ const CHIP_LABELS: Record<SkinStateValue, string> = {
     light_makeup: "淡妆",
     heavy_makeup: "浓妆",
 };
-
-/** 拍摄小贴士：压缩为一行图标 + 标题（对齐预览页 F） */
-const TIPS = [
-    { icon: Sun, title: "光线充足" },
-    { icon: Glasses, title: "露出额头" },
-    { icon: ScanEye, title: "对准镜头" },
-];
 
 /** 状态选择图标：与预览页 F 的图标卡片方案一致 */
 const STATE_ICONS: Record<SkinStateValue, LucideIcon> = {
@@ -100,7 +93,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                     {/* ---- 内容区：不足一屏垂直居中，超出独立滚动 ---- */}
                     <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
                         <div className="min-h-full w-full max-w-2xl mx-auto px-5 md:px-8 py-8 md:py-10 flex flex-col justify-center items-center">
-                            {/* 1. 预期管理：标题 + 时长 + 一行拍摄贴士 */}
+                            {/* 1. 标题 + 引导头像（对齐设计稿） */}
                             <m.div
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -108,19 +101,18 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 className="flex w-full flex-col items-center text-center"
                             >
                                 <h1 id="scan-guide-title" className="text-2xl md:text-3xl font-light text-brand-charcoal tracking-[0.02em]">
-                                    面部扫描
+                                    开始面部扫描
                                 </h1>
-                                <p className="mt-3 text-[13px] md:text-sm font-light text-brand-charcoal/60 tracking-[0.02em] leading-relaxed">
-                                    AI 将引导你完成 4 个角度，约 30 秒
-                                </p>
 
-                                <div className="mt-6 md:mt-7 grid w-full max-w-[330px] grid-cols-3 gap-2">
-                                    {TIPS.map(({ icon: Icon, title }) => (
-                                        <div key={title} className="flex flex-col items-center gap-1.5">
-                                            <Icon className="h-5 w-5 text-brand-charcoal/45" strokeWidth={1.8} aria-hidden="true" />
-                                            <span className="text-[12px] font-normal text-brand-charcoal/70 tracking-[0.03em]">{title}</span>
-                                        </div>
-                                    ))}
+                                <div className="mt-8 md:mt-10">
+                                    <Image
+                                        src="/images/scan-guide-avatar.png"
+                                        alt="面部扫描引导头像"
+                                        width={153}
+                                        height={151}
+                                        priority
+                                        className="h-28 w-28 md:h-32 md:w-32 rounded-full object-cover shadow-[0_10px_30px_rgba(0,0,0,0.10)]"
+                                    />
                                 </div>
                             </m.div>
 
@@ -131,8 +123,8 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 transition={{ delay: 0.16, duration: 0.45 }}
                                 className="mt-8 md:mt-9 w-full flex flex-col items-center"
                             >
-                                <p className="mb-3 text-center text-[12px] font-light tracking-[0.06em] text-brand-charcoal/60">
-                                    拍摄状态<span className="text-brand-charcoal/45">（影响分析准确度）</span>
+                                <p className="mb-4 text-center text-[13px] font-light tracking-[0.06em] text-brand-charcoal/60">
+                                    请选择您的面部状态：
                                 </p>
                                 <div
                                     role="radiogroup"
@@ -141,7 +133,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                         if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); moveSelection(1); }
                                         else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); moveSelection(-1); }
                                     }}
-                                    className="grid w-full max-w-[330px] grid-cols-5 gap-1.5"
+                                    className="grid w-full max-w-[360px] grid-cols-5 gap-2"
                                 >
                                     {SKIN_STATE_OPTIONS.map((option) => {
                                         const selected = skinState === option.value;
