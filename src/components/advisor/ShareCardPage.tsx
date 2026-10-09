@@ -175,7 +175,7 @@ export default function ShareCardPage({
                     <h3 className="mt-[12px] text-[34px] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]">
                         「{skinTypeName}」
                     </h3>
-                    <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-5">
+                    <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-3">
                         {factionIntro || summary || "详细分析见下方报告。"}
                     </p>
 
