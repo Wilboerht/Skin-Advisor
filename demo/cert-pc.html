@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>肌智派在线测肤报告 · 电脑端</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --cream: #F2EDE5;
+    --blue: #A9BED1;
+    --ink: #22364B;
+    --gray: #6B7B8C;
+    --serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", Georgia, serif;
+    --sans: "PingFang SC", "Source Han Sans SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  }
+
+  html, body { background: var(--cream); }
+  body { font-family: var(--sans); color: var(--ink); }
+  button { font-family: inherit; }
+
+  /* ================= 通用顶部栏（回首页 / 居中 logo / 用户区） ================= */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 45;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 0 20px;
+    background: rgba(242, 237, 229, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .topbar-inner {
+    width: 100%;
+    padding: 0 80px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+  @media (max-width: 1023px) {
+    .topbar-inner { padding: 0 48px; }
+  }
+  .back-home {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 0;
+    background: transparent;
+    border-radius: 6px;
+    color: rgba(0, 38, 62, 0.6);
+    cursor: pointer;
+    transition: color 0.2s, background-color 0.2s;
+  }
+  .back-home:hover { color: #00263E; background: rgba(61, 68, 48, 0.05); }
+  .back-home svg { width: 20px; height: 20px; flex: none; }
+  .back-home-text { font-size: 14px; font-weight: 500; letter-spacing: 0.1em; }
+  .topbar-logo { justify-self: center; height: 36px; width: auto; object-fit: contain; }
+  .user-area { justify-self: end; display: flex; align-items: center; }
+  .user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 4px;
+    border: 0;
+    background: transparent;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  .user-badge:hover { background: rgba(0, 38, 62, 0.05); }
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(92, 73, 55, 0.15);
+    border: 1px solid rgba(0, 38, 62, 0.1);
+    font-size: 13px;
+    font-weight: 500;
+    color: #5C4937;
+  }
+  .user-name {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 500;
+    color: #00263E;
+  }
+
+  .content { max-width: 920px; margin: 0 auto; }
+
+  /* ================= 页头：归属标题 + 肌肤状态 + 两页 tab ================= */
+  .result-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 20px;
+  }
+  .result-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 0 20px;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    color: #5C4937;
+  }
+  .result-title > svg { width: 20px; height: 20px; flex: none; }
+  .skin-state-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid rgba(0, 38, 62, 0.15);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #5C4937;
+    white-space: nowrap;
+  }
+  .result-tabs {
+    display: inline-flex;
+    padding: 4px;
+    border: 1px solid #E7E5E4;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.4);
+  }
+  .tab {
+    padding: 8px 16px;
+    border: 0;
+    background: transparent;
+    border-radius: 999px;
+    font-size: 12px;
+    color: #78716C;
+    cursor: pointer;
+    transition: color 0.2s, background-color 0.2s;
+  }
+  .tab:hover { color: #292524; }
+  .tab.is-active {
+    background: rgba(0, 38, 62, 0.1);
+    color: #00263E;
+    font-weight: 500;
+  }
+
+  /* ================= 证书：融入页面（铺满宽度，无卡片框） ================= */
+  .poster-wide {
+    position: relative;
+    width: 100%;
+    max-width: 920px;
+    height: 560px;
+    margin: 0 auto;
+    overflow: hidden;
+    background: var(--cream);
+  }
+
+  /* 下部灰蓝色块：斜切 */
+  .poster-wide .blue-zone {
+    position: absolute;
+    inset: 0;
+    background: var(--blue);
+    clip-path: polygon(0 58%, 100% 46%, 100% 100%, 0 100%);
+  }
+
+  /* 文字区 */
+  .poster-wide .copy {
+    position: absolute;
+    top: 40px;
+    left: 56px;
+    width: 430px;
+    z-index: 4;
+  }
+  .poster-wide .lead { margin-top: 22px; font-size: 15px; }
+  .poster-wide .faction {
+    margin-top: 4px;
+    font-family: var(--serif);
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: 0.04em;
+  }
+  .poster-wide .quote { margin-top: 14px; font-size: 12.5px; line-height: 1.8; color: var(--gray); max-width: 300px; }
+
+  /* 角色：右侧站立，底边对齐证书下缘 */
+  .poster-wide .character {
+    position: absolute;
+    right: 40px;
+    bottom: 0;
+    height: 520px;
+    z-index: 3;
+    filter: drop-shadow(0 18px 24px rgba(35, 54, 75, 0.28));
+  }
+
+  /* 评分夹板 */
+  .clipboard {
+    position: absolute;
+    left: 56px;
+    bottom: 42px;
+    width: 250px;
+    background: #FDFCF9;
+    border-radius: 14px;
+    transform: rotate(-3.5deg);
+    box-shadow: 0 10px 28px rgba(35, 54, 75, 0.22);
+    padding: 30px 18px 16px;
+    z-index: 4;
+  }
+  /* 金属夹 */
+  .clipboard::before {
+    content: "";
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 92px;
+    height: 26px;
+    border-radius: 8px 8px 4px 4px;
+    background: linear-gradient(180deg, #F4F6F8 0%, #C6CDD4 45%, #9AA4AE 55%, #DDE2E7 100%);
+    box-shadow: 0 2px 5px rgba(35, 54, 75, 0.3), inset 0 1px 0 rgba(255,255,255,0.9);
+  }
+  .clipboard::after {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 34px;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #8A949E, #5F6A75);
+  }
+  .clipboard .cb-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .clipboard .cb-label-en {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: #9AA4AE;
+    margin-top: 2px;
+  }
+  .clipboard .cb-score {
+    font-family: var(--serif);
+    font-size: 76px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.05;
+    margin-top: 2px;
+  }
+  /* 圆形箭头徽章 */
+  .clipboard .percent-badge {
+    position: absolute;
+    right: 12px;
+    top: 30px;
+    width: 96px;
+    height: 96px;
+  }
+  .percent-badge svg { width: 100%; height: 100%; }
+  .percent-badge .pct-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--ink);
+  }
+  .percent-badge .pct-text .t1 { font-size: 9px; color: var(--gray); }
+  .percent-badge .pct-text .t2 { font-size: 20px; font-weight: 800; line-height: 1.1; }
+  .percent-badge .pct-text .t3 { font-size: 9px; color: var(--gray); }
+
+  /* ================= 证书卡外操作区（与结果页按钮一致） ================= */
+  .result-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    margin-top: 24px;
+    padding: 0 16px 40px;
+  }
+  .action-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+  }
+  .action-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+  }
+  .action-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: auto;
+    min-width: 224px;
+    height: 44px;
+    padding: 0 32px;
+    border: 1px solid rgba(92, 73, 55, 0.25);
+    border-radius: 999px;
+    background: rgba(92, 73, 55, 0.07);
+    color: #5C4937;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  .action-primary:hover { border-color: rgba(92, 73, 55, 0.4); background: rgba(92, 73, 55, 0.12); }
+  .action-primary svg { width: 16px; height: 16px; flex: none; }
+  .action-secondary,
+  .action-gift {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+  }
+  .action-secondary { border: 1px solid rgba(61, 47, 37, 0.12); color: rgba(0, 38, 62, 0.7); }
+  .action-secondary:hover { border-color: rgba(61, 47, 37, 0.25); background: rgba(61, 47, 37, 0.03); color: #00263E; }
+  .action-gift { border: 1px solid rgba(201, 168, 108, 0.4); color: #8B6914; }
+  .action-gift:hover { border-color: rgba(201, 168, 108, 0.7); background: rgba(201, 168, 108, 0.08); }
+  .action-secondary svg,
+  .action-gift svg { width: 14px; height: 14px; flex: none; }
+  .action-retest {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    color: rgba(0, 38, 62, 0.45);
+    text-underline-offset: 4px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .action-retest:hover { color: rgba(0, 38, 62, 0.7); text-decoration: underline; }
+
+  /* ================= 页脚：版权 + 备案 + AI 声明 ================= */
+  .result-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px 32px;
+    text-align: center;
+  }
+  .result-footer p {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 300;
+    color: rgba(0, 38, 62, 0.65);
+  }
+  .result-footer .footer-copy { letter-spacing: 0.15em; }
+  .result-footer .footer-ai { letter-spacing: 0.12em; }
+  .result-footer .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 8px;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    color: rgba(0, 38, 62, 0.65);
+  }
+  .result-footer a { color: inherit; text-decoration: none; transition: color 0.2s; }
+  .result-footer a:hover { color: rgba(0, 38, 62, 0.7); }
+  .result-footer .footer-police { display: inline-flex; align-items: center; gap: 4px; }
+  .result-footer .footer-police img { width: 12px; height: 12px; flex: none; opacity: 0.8; }
+  .result-footer .footer-sep { display: inline; }
+</style>
+</head>
+<body>
+
+<!-- 结果页通用顶部栏：回首页 / 居中 logo / 用户身份区 -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="back-home" type="button" aria-label="回到首页">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+        <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      </svg>
+      <span class="back-home-text">回到首页</span>
+    </button>
+
+    <img class="topbar-logo" src="../public/NIHPLOD-logo.svg" alt="NIHPLOD">
+
+    <div class="user-area">
+      <button class="user-badge" type="button" aria-label="Hank1的账户">
+        <span class="user-avatar">H</span>
+        <span class="user-name">Hank1</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="content">
+  <!-- 页头：归属标题 + 肌肤状态 + 两页 tab -->
+  <div class="result-header">
+    <p class="result-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+        <path d="M20 2v4"/>
+        <path d="M22 4h-4"/>
+        <circle cx="4" cy="20" r="2"/>
+      </svg>
+      Hank1 的专属肌智派在线测肤报告
+      <span class="skin-state-tag">只涂了防晒</span>
+    </p>
+    <div class="result-tabs" role="tablist" aria-label="报告页面切换">
+      <button class="tab is-active" type="button" role="tab" aria-selected="true">测肤证书</button>
+      <button class="tab" type="button" role="tab" aria-selected="false">完整报告</button>
+    </div>
+  </div>
+
+  <!-- 证书 -->
+  <div class="poster-wide">
+    <div class="blue-zone"></div>
+
+    <div class="copy">
+      <div class="lead">用户x的肌肤派系是</div>
+      <div class="faction">「守护派」</div>
+      <div class="quote">好皮肤不是运气，是你与肌肤之间一场被认真履行的长期契约</div>
+    </div>
+
+    <img class="character" src="../public/images/character/guardian/guardian_female.webp" alt="守护派">
+
+    <div class="clipboard">
+      <div class="cb-label">综合评分</div>
+      <div class="cb-label-en">SKIN SCORE</div>
+      <div class="cb-score">92</div>
+      <div class="percent-badge">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#22364B" stroke-width="3"
+                  stroke-dasharray="200 64" stroke-linecap="round"
+                  transform="rotate(-60 50 50)" opacity="0.85"/>
+          <path d="M 78 78 L 88 88 M 88 88 L 88 74 M 88 88 L 74 88"
+                fill="none" stroke="#22364B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="pct-text">
+          <div class="t1">击败了全国</div>
+          <div class="t2">96%</div>
+          <div class="t3">的用户</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 证书卡外操作区：查看完整报告 / 保存测肤证书 / 参与抽奖 / 重新测试 -->
+  <div class="result-actions">
+    <div class="action-stack">
+      <button class="action-primary" type="button">
+        查看完整报告
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14"/>
+          <path d="m12 5 7 7-7 7"/>
+        </svg>
+      </button>
+      <div class="action-row">
+        <button class="action-secondary" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21"/>
+            <path d="m14 19 3 3v-5.5"/>
+            <path d="m17 22 3-3"/>
+            <circle cx="9" cy="9" r="2"/>
+          </svg>
+          保存测肤证书
+        </button>
+        <button class="action-gift" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="8" width="18" height="4" rx="1"/>
+            <path d="M12 8v13"/>
+            <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/>
+            <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>
+          </svg>
+          肌智派送好礼 · 参与抽奖
+        </button>
+      </div>
+    </div>
+    <button class="action-retest" type="button">认为派系判断不准确？重新测试（消耗 1 次测试额度）</button>
+  </div>
+
+  <!-- 页脚：版权 + 备案 + AI 声明 -->
+  <div class="result-footer">
+    <p class="footer-copy">© 2026 NIHPLOD. All Rights Reserved.</p>
+    <div class="footer-links">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">沪ICP备2026014764号-1</a>
+      <span class="footer-sep" aria-hidden="true">|</span>
+      <a class="footer-police" href="http://www.beian.gov.cn/portal/registerSystemInfo" target="_blank" rel="noopener noreferrer">
+        <img src="../public/images/beian.webp" alt="">
+        <span>沪公网安备31010702010178号</span>
+      </a>
+    </div>
+    <p class="footer-ai">*AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议</p>
+  </div>
+</div>
+
+</body>
+</html>

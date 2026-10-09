@@ -40,6 +40,9 @@ interface ShareCardPageProps {
 /** 抽奖按钮悬浮彩带：品牌色系的碎纸片 */
 const GIFT_CONFETTI_COLORS = ["#C9A86C", "#D4B77A", "#B8975B", "#D9730D", "#7A9FD4", "#7A9A5B"];
 
+/** 移动端海报评分数字的衬线字体栈（对齐 demo/cert-mobile.html 的 --serif） */
+const POSTER_SERIF_STYLE = { fontFamily: '"Noto Serif SC", "Songti SC", "STSong", "SimSun", Georgia, serif' } as const;
+
 interface GiftConfettiPiece {
     id: number;
     x: number;
@@ -144,6 +147,192 @@ export default function ShareCardPage({
 
     return (
         <div className="w-full flex flex-col gap-0 lg:contents" aria-label={`${nickname || "用户"}的肌智派证书`}>
+            {/* ===== 移动端：证书海报（对齐 demo/cert-mobile.html，全出血无卡片框；≥1024px 由桌面卡片接管） ===== */}
+            <m.div
+                initial={{ opacity: 0, y: reduceMotion ? 0 : 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.5, delay: reduceMotion ? 0 : 0.05 }}
+                className="lg:hidden relative -mx-6 w-[calc(100%_+_3rem)] md:mx-auto md:w-full md:max-w-[480px] h-[727px] overflow-hidden bg-[#F2EDE5]"
+            >
+                {/* 下部灰蓝色块：斜切 */}
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-0 bg-[#A9BED1] [clip-path:polygon(0_47%,100%_42%,100%_100%,0_100%)]"
+                />
+
+                {/* 左侧背景水印：NIHPLOD 印章（透明 PNG，压在内容层之下） */}
+                <Image
+                    src="/images/nihplod-seal.png"
+                    alt=""
+                    aria-hidden="true"
+                    width={512}
+                    height={512}
+                    className="absolute left-[-110px] top-[210px] w-[440px] h-auto opacity-[0.26] pointer-events-none z-[1]"
+                />
+
+                {/* 文字区：引语 + 派系 + 文案，右侧评分徽章纵排 */}
+                <div className="absolute top-[18px] left-[28px] right-[28px] z-[4]">
+                    <p className="mt-[26px] text-[14px] tracking-[0.1em] text-[#22364B]/60">
+                        {nickname || "用户"} 的肌肤派系是
+                    </p>
+                    <h3 className="mt-[10px] text-[44px] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]">
+                        「{skinTypeName}」
+                    </h3>
+                    <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C]">
+                        {summary || "详细分析见下方报告。"}
+                    </p>
+
+                    {(score !== undefined || percentile !== null) && (
+                        <div className="absolute right-0 top-[26px] flex flex-col items-center gap-3">
+                            {/* 综合评分圆环（金边 + 虚线内圈，与桌面端徽章风格一致） */}
+                            {score !== undefined && (
+                                <div className="relative flex h-[72px] w-[72px] flex-col items-center justify-center rounded-full border border-[#C9A86C]/70">
+                                    <div
+                                        aria-hidden="true"
+                                        className="absolute inset-[3px] rounded-full border border-dashed border-[#C9A86C]/40"
+                                    />
+                                    <div className="relative flex flex-col items-center leading-none">
+                                        <span className="text-[22px] font-light text-[#3D2F25] tabular-nums" style={POSTER_SERIF_STYLE}>
+                                            {Math.round(score)}
+                                        </span>
+                                        <span className="mt-1 text-[9px] tracking-[0.08em] text-[#3D2F25]/55">综合评分</span>
+                                    </div>
+                                </div>
+                            )}
+                            {/* 桂冠徽章：超过 X% 的用户（月桂左右枝合围） */}
+                            {percentile !== null && (
+                                <div className="relative flex h-[68px] w-[92px] items-center justify-center text-[#C9A86C]/85">
+                                    <svg
+                                        className="absolute inset-0 h-full w-full"
+                                        viewBox="-28 108 1100 808"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <g transform="translate(-290 0)">
+                                            <path d="M447.6416 761.1648c-46.6176 3.1488-68.1216 29.056-61.3632 47.8976 6.784 18.8672 54.272 66.0992 134.0672 78.7712 79.7952 12.5952 158.72 6.8608 188.9024 6.8608 30.1568 0 65.6384-4.608 47.3088-21.76a454.8608 454.8608 0 0 0-143.4112-86.5024c-70.016-25.344-118.9632-28.544-165.504-25.2672z m-165.8368-225.4336c3.1744 21.9392 24.064 77.9264 84.3264 120.32a446.3616 446.3616 0 0 0 160.7168 71.0912c43.1872 9.9328 84.0704 23.4752 70.528-4.1216-13.5424-27.5968-59.2128-96.0768-125.3888-144.256-66.0736-48.0768-100.9664-53.8368-130.3552-60.5952-29.4912-6.6816-62.9248-4.3008-59.8272 17.5616z m20.3008-226.8672c-24.2432 0-22.6304 24.4224-16.2048 45.312 6.528 20.8384 34.304 83.1744 82.304 121.0368 31.9744 25.216 72.4992 47.1552 121.5232 65.664-10.88-67.7888-34.3552-121.0112-70.272-159.744-53.9136-58.2912-93.0816-72.192-117.3504-72.2688z m108.9536-180.6848a31.2832 31.2832 0 0 0-22.1184 6.1696 27.904 27.904 0 0 0-10.9824 19.2l-1.024 10.8032a240.3328 240.3328 0 0 0 14.4896 102.4c18.6112 49.664 46.5408 89.1648 83.7376 118.0416 7.296-26.4704 11.136-106.9568 2.2272-154.88-8.3968-45.4144-24.7808-72.2432-48.4352-93.8496a31.488 31.488 0 0 0-17.92-7.8848z" />
+                                        </g>
+                                        <g transform="translate(290 0)">
+                                            <path d="M595.5328 761.1648c46.6176 3.1488 68.1472 29.056 61.3632 47.8976-6.7584 18.8672-54.2464 66.0992-134.0416 78.7712-79.7952 12.5952-158.72 6.8608-188.928 6.8608-30.1568 0-65.6384-4.608-47.2832-21.76a454.8608 454.8608 0 0 1 143.36-86.5024c70.0416-25.344 118.9888-28.544 165.5296-25.2672z m165.8624-225.4336c-3.1744 21.9392-24.0896 77.9264-84.352 120.32a446.336 446.336 0 0 1-160.7168 71.0912c-43.1872 9.9328-84.0704 23.4752-70.528-4.1216 13.5424-27.5968 59.2128-96.0768 125.3888-144.256 66.0992-48.0768 100.9664-53.8368 130.3808-60.5952 29.4656-6.6816 62.8992-4.3008 59.8272 17.5616z m-20.3264-226.8672c24.2688 0 22.6304 24.4224 16.2048 45.312-6.528 20.8384-34.304 83.1744-82.2784 121.0368-32 25.216-72.5248 47.1552-121.5488 65.664 10.88-67.7888 34.3808-121.0112 70.2976-159.744 53.9136-58.2912 93.0816-72.192 117.3248-72.2688z m-108.928-180.6848c7.7824-0.8448 15.6672 1.3824 22.0928 6.1696 6.016 4.352 10.0352 11.392 11.008 19.2l1.024 10.8032a240.3072 240.3072 0 0 1-14.5152 102.4c-18.5856 49.664-46.5408 89.1648-83.712 118.0416-7.296-26.4704-11.1616-106.9568-2.2528-154.88 8.3968-45.4144 24.7808-72.2432 48.4352-93.8496 5.12-4.5312 11.392-7.296 17.92-7.8848z" />
+                                        </g>
+                                    </svg>
+                                    <div className="relative flex flex-col items-center">
+                                        <span className="text-[8px] leading-[1.4] tracking-[0.06em] text-[#3D2F25]/55">超过</span>
+                                        <span className="text-[15px] font-light leading-[1.1] text-[#3D2F25] tabular-nums" style={POSTER_SERIF_STYLE}>
+                                            {percentile}%
+                                        </span>
+                                        <span className="text-[8px] leading-[1.4] tracking-[0.06em] text-[#3D2F25]/55">的用户</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* 角色：右侧站立，脚底距海报下缘 3px，压制蓝色斜切块之上 */}
+                {characterReady && !characterImgFailed && (
+                    <Image
+                        src={characterImgSrc}
+                        alt={skinTypeName}
+                        width={480}
+                        height={640}
+                        className="absolute right-[-80px] bottom-[3px] z-[3] h-[510px] w-auto object-contain drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
+                        priority
+                        onError={handleCharacterImageError}
+                    />
+                )}
+
+                {/* 证书内操作区：人物左侧空白处（logo + 查看完整报告 / 保存证书 / 参与抽奖）
+                    三个按钮沿用首页「立刻体验」贴纸样式，三级层级：主 CTA 实心阴影、次按钮减弱、抽奖金色阴影 */}
+                <div className="absolute left-[28px] bottom-[32px] z-[5] flex w-[158px] flex-col items-stretch gap-[10px]">
+                    <Image
+                        src="/images/jzp-eyebrow.png"
+                        alt="肌智派"
+                        width={256}
+                        height={156}
+                        className="mb-[6px] w-[104px] h-auto self-start"
+                    />
+                    {onOpenReport && (
+                        <button
+                            type="button"
+                            onClick={onOpenReport}
+                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#22304E]/10 bg-white px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#22304E] shadow-[3px_4px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] cursor-pointer"
+                        >
+                            查看完整报告
+                            <ArrowRight className="h-[13px] w-[13px] flex-none" strokeWidth={1.75} />
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={onDownloadPoster}
+                        disabled={isPosterLoading}
+                        aria-busy={isPosterLoading}
+                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#22304E]/10 bg-white px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#22304E]/75 shadow-[2px_3px_0_0_rgba(34,48,78,0.28)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[1px_2px_0_0_rgba(34,48,78,0.28)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        {isPosterLoading ? (
+                            <Loader2 className="h-[13px] w-[13px] flex-none animate-spin" strokeWidth={2} />
+                        ) : (
+                            <ImageDown className="h-[13px] w-[13px] flex-none" strokeWidth={1.75} />
+                        )}
+                        {isPosterLoading ? "生成中..." : "保存证书"}
+                    </button>
+                    {onGift && (
+                        <button
+                            type="button"
+                            onClick={onGift}
+                            onMouseEnter={fireGiftConfetti}
+                            onFocus={fireGiftConfetti}
+                            className="relative inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#C9A86C]/55 bg-white px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#8B6914] shadow-[3px_4px_0_0_rgba(201,168,108,0.95)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(201,168,108,0.95)] cursor-pointer"
+                        >
+                            {/* 悬浮彩带：从按钮中心向上扇形迸发，指针事件穿透不影响点击 */}
+                            <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2">
+                                {giftConfetti.map((piece) => (
+                                    <m.span
+                                        key={piece.id}
+                                        initial={{ x: 0, y: 0, opacity: 0, rotate: 0, scale: 0.4 }}
+                                        animate={{ x: piece.x, y: piece.y, opacity: [0, 1, 1, 0], rotate: piece.rotate, scale: 1 }}
+                                        transition={{ duration: piece.duration, delay: piece.delay, ease: "easeOut" }}
+                                        className="absolute rounded-[1px]"
+                                        style={{
+                                            width: piece.width,
+                                            height: piece.height,
+                                            marginLeft: -piece.width / 2,
+                                            marginTop: -piece.height / 2,
+                                            backgroundColor: piece.color,
+                                        }}
+                                    />
+                                ))}
+                            </span>
+                            <Gift className="h-[13px] w-[13px] flex-none" strokeWidth={1.75} />
+                            参与抽奖
+                        </button>
+                    )}
+                </div>
+
+                {/* 重新测试入口：人物 IP 右下角问号按钮；无额度时同一位置改显原因文案 */}
+                {onReTest && (
+                    reTestBlockedReason ? (
+                        <p className="absolute right-[24px] bottom-[40px] z-[6] max-w-[170px] text-right text-[11px] font-light leading-[1.6] tracking-[0.04em] text-[#22364B]/45">
+                            {reTestBlockedReason === "login"
+                                ? "登录后可重新测试"
+                                : reTestBlockedReason === "lifetime"
+                                    ? "测肤次数已用完"
+                                    : "今日测试次数已用完"}
+                        </p>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => setShowReTestConfirm(true)}
+                            aria-label="重新测试"
+                            className="absolute right-[24px] bottom-[32px] z-[6] inline-flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#FDFCF9]/92 text-[14px] font-semibold leading-none text-[#22364B]/72 shadow-[0_3px_10px_rgba(35,54,75,0.14)] transition-colors hover:bg-[#FDFCF9] hover:text-[#22364B] cursor-pointer"
+                        >
+                            ?
+                        </button>
+                    )
+                )}
+            </m.div>
+
+            {/* ===== 桌面端：证书卡（保持原有版式，≥1024px 生效） ===== */}
+            <div className="hidden lg:contents">
             {/* Share Card（肌智派证书）：浅色单底 + 金色证书内框；移动端上下分区、桌面端左右分区，虚线分隔 */}
             <m.div
                 initial={{ opacity: 0, y: 20 }}
@@ -350,31 +539,34 @@ export default function ShareCardPage({
                         </p>
                     </m.div>
                 ) : (
-                    <>
-                        <m.div {...stagger(0.55)} className="mt-6 flex justify-center">
-                            <button
-                                type="button"
-                                onClick={() => setShowReTestConfirm(true)}
-                                className="text-[11px] font-light text-brand-charcoal/45 tracking-[0.04em] underline-offset-4 transition-colors hover:text-brand-charcoal/70 hover:underline cursor-pointer"
-                            >
-                                认为派系判断不准确？重新测试（消耗 1 次测试额度）
-                            </button>
-                        </m.div>
-                        <ConfirmModal
-                            isOpen={showReTestConfirm}
-                            onClose={() => setShowReTestConfirm(false)}
-                            onConfirm={() => {
-                                setShowReTestConfirm(false);
-                                onReTest();
-                            }}
-                            title="重新测试？"
-                            message="重新测试将清空当前测肤记录，并消耗 1 次测试额度。确认开始吗？"
-                            confirmText="重新测试"
-                            cancelText="取消"
-                            variant="warning"
-                        />
-                    </>
+                    <m.div {...stagger(0.55)} className="mt-6 flex justify-center">
+                        <button
+                            type="button"
+                            onClick={() => setShowReTestConfirm(true)}
+                            className="text-[11px] font-light text-brand-charcoal/45 tracking-[0.04em] underline-offset-4 transition-colors hover:text-brand-charcoal/70 hover:underline cursor-pointer"
+                        >
+                            认为派系判断不准确？重新测试（消耗 1 次测试额度）
+                        </button>
+                    </m.div>
                 )
+            )}
+            </div>
+
+            {/* 重新测试二次确认：移动端「?」与桌面端文字入口共用（会清空当前测肤记录并消耗额度，误触成本高） */}
+            {onReTest && !reTestBlockedReason && (
+                <ConfirmModal
+                    isOpen={showReTestConfirm}
+                    onClose={() => setShowReTestConfirm(false)}
+                    onConfirm={() => {
+                        setShowReTestConfirm(false);
+                        onReTest();
+                    }}
+                    title="重新测试？"
+                    message="重新测试将清空当前测肤记录，并消耗 1 次测试额度。确认开始吗？"
+                    confirmText="重新测试"
+                    cancelText="取消"
+                    variant="warning"
+                />
             )}
         </div>
     );

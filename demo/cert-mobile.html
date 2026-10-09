@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>肌智派在线测肤报告 · 手机端</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --cream: #F2EDE5;
+    --blue: #A9BED1;
+    --ink: #22364B;
+    --gray: #6B7B8C;
+    --serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", Georgia, serif;
+    --sans: "PingFang SC", "Source Han Sans SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  }
+
+  html, body { background: var(--cream); }
+  body { font-family: var(--sans); color: var(--ink); }
+  button { font-family: inherit; }
+
+  .app { max-width: 420px; margin: 0 auto; }
+
+  /* ================= 通用顶部栏（回首页 / 居中 logo / 用户区） ================= */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 45;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 0 20px;
+    background: rgba(242, 237, 229, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(61, 47, 37, 0.06);
+  }
+  .topbar-inner {
+    width: 100%;
+    padding: 0 16px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+  .back-home {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+    border: 0;
+    background: transparent;
+    border-radius: 6px;
+    color: rgba(0, 38, 62, 0.6);
+    cursor: pointer;
+    transition: color 0.2s, background-color 0.2s;
+  }
+  .back-home:hover { color: #00263E; background: rgba(61, 68, 48, 0.05); }
+  .back-home svg { width: 24px; height: 24px; flex: none; }
+  .back-home-text { display: none; font-size: 14px; font-weight: 500; letter-spacing: 0.1em; }
+  .topbar-logo { justify-self: center; height: 28px; width: auto; object-fit: contain; }
+  .user-area { justify-self: end; display: flex; align-items: center; }
+  .user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px 4px 4px;
+    border: 0;
+    background: transparent;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  .user-badge:hover { background: rgba(0, 38, 62, 0.05); }
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(92, 73, 55, 0.15);
+    border: 1px solid rgba(0, 38, 62, 0.1);
+    font-size: 12px;
+    font-weight: 500;
+    color: #5C4937;
+  }
+  .user-name {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 500;
+    color: #00263E;
+  }
+
+  /* ================= 页头：归属标题 + 肌肤状态 + 两页 tab ================= */
+  .result-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 16px;
+  }
+  .result-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 0 16px;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    color: #5C4937;
+  }
+  .result-title > svg { width: 16px; height: 16px; flex: none; }
+  .skin-state-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid rgba(0, 38, 62, 0.15);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #5C4937;
+    white-space: nowrap;
+  }
+  .result-tabs {
+    display: inline-flex;
+    padding: 4px;
+    border: 1px solid #E7E5E4;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.4);
+  }
+  .tab {
+    padding: 8px 16px;
+    border: 0;
+    background: transparent;
+    border-radius: 999px;
+    font-size: 12px;
+    color: #78716C;
+    cursor: pointer;
+    transition: color 0.2s, background-color 0.2s;
+  }
+  .tab:hover { color: #292524; }
+  .tab.is-active {
+    background: rgba(0, 38, 62, 0.1);
+    color: #00263E;
+    font-weight: 500;
+  }
+
+  /* ================= 证书：融入页面（铺满宽度，无卡片框） ================= */
+  .poster {
+    position: relative;
+    width: 100%;
+    height: 727px;
+    overflow: hidden;
+    background: var(--cream);
+  }
+
+  /* 下部灰蓝色块：斜切 */
+  .poster .blue-zone {
+    position: absolute;
+    inset: 0;
+    background: var(--blue);
+    clip-path: polygon(0 47%, 100% 42%, 100% 100%, 0 100%);
+  }
+
+  /* 左侧背景水印：NIHPLOD 印章（透明 PNG，压在内容层之下） */
+  .poster .watermark {
+    position: absolute;
+    left: -110px;
+    top: 210px;
+    width: 440px;
+    height: auto;
+    opacity: 0.26;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* 文字区 */
+  .poster .copy {
+    position: absolute;
+    top: 18px;
+    left: 28px;
+    right: 28px;
+    z-index: 4;
+  }
+  .poster .lead {
+    margin-top: 26px;
+    font-size: 14px;
+    color: rgba(34, 54, 75, 0.6);
+    letter-spacing: 0.1em;
+  }
+  .poster .faction {
+    margin-top: 10px;
+    font-family: var(--sans);
+    font-size: 44px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+    line-height: 1.15;
+  }
+  .poster .quote {
+    margin-top: 16px;
+    font-size: 12.5px;
+    line-height: 1.9;
+    letter-spacing: 0.03em;
+    color: var(--gray);
+    max-width: 200px;
+  }
+
+  /* 角色：右侧站立，与操作区 / 问号按钮底线对齐（脚底距蓝底 32px，与页脚版权间距一致） */
+  .poster .character {
+    position: absolute;
+    right: -80px;
+    bottom: 3px;
+    height: 510px;
+    z-index: 3;
+    filter: drop-shadow(0 18px 24px rgba(35, 54, 75, 0.28));
+  }
+
+  /* 评分圆环 ×2（与结果页 ShareCardPage 徽章风格一致）：文字区右侧纵排 */
+  .copy-badges {
+    position: absolute;
+    top: 26px;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .badge-ring {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(201, 168, 108, 0.7);
+    border-radius: 50%;
+  }
+  .badge-ring-inner {
+    position: absolute;
+    inset: 3px;
+    border: 1px dashed rgba(201, 168, 108, 0.4);
+    border-radius: 50%;
+  }
+  /* 桂冠徽章：荣誉月桂左右枝合围（左右两枝各展开 290 单位，互不重叠） */
+  .laurel-badge {
+    position: relative;
+    width: 92px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(201, 168, 108, 0.85);
+  }
+  .laurel-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .badge-value {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .badge-score {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 300;
+    line-height: 1;
+    color: #3D2F25;
+    font-variant-numeric: tabular-nums;
+  }
+  .badge-percent {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.1;
+    color: #3D2F25;
+    font-variant-numeric: tabular-nums;
+  }
+  .badge-label {
+    margin-top: 4px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: rgba(61, 47, 37, 0.55);
+  }
+  .badge-tip {
+    font-size: 8px;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+    color: rgba(61, 47, 37, 0.55);
+  }
+
+  /* ================= 证书内操作区：人物左侧空白处（文字 / 圆环下方） ================= */
+  .poster-actions {
+    position: absolute;
+    left: 28px;
+    bottom: 32px;
+    width: 158px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .poster-actions .poster-logo {
+    align-self: flex-start;
+    width: 104px;
+    height: auto;
+    margin-bottom: 6px;
+  }
+  /* 三个按钮：首页「立刻体验」贴纸样式的三级层级
+     主 CTA = 完整样式；次按钮 = 阴影/文字减淡；抽奖 = 金色硬阴影做活动区分 */
+  .poster-actions .action-primary,
+  .poster-actions .action-secondary,
+  .poster-actions .action-gift {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid rgba(34, 48, 78, 0.1);
+    border-radius: 999px;
+    background: #FFFFFF;
+    color: #22304E;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, color 0.2s;
+  }
+  /* 主 CTA：与首页完全一致（深蓝实心偏移阴影） */
+  .poster-actions .action-primary { box-shadow: 3px 4px 0 0 rgba(34, 48, 78, 0.85); }
+  /* 次按钮：同底色弱化——阴影减半、文字降透明度 */
+  .poster-actions .action-secondary {
+    color: rgba(34, 48, 78, 0.75);
+    box-shadow: 2px 3px 0 0 rgba(34, 48, 78, 0.28);
+  }
+  /* 抽奖：金色硬阴影 + 古铜文字，呼应活动属性 */
+  .poster-actions .action-gift {
+    border-color: rgba(201, 168, 108, 0.55);
+    color: #8B6914;
+    box-shadow: 3px 4px 0 0 rgba(201, 168, 108, 0.95);
+  }
+  .poster-actions .action-primary:hover,
+  .poster-actions .action-secondary:hover,
+  .poster-actions .action-gift:hover { transform: translateY(-2px); }
+  .poster-actions .action-primary:active,
+  .poster-actions .action-secondary:active,
+  .poster-actions .action-gift:active { transform: translateY(0); }
+  .poster-actions .action-primary:active { box-shadow: 2px 3px 0 0 rgba(34, 48, 78, 0.85); }
+  .poster-actions .action-secondary:active { box-shadow: 1px 2px 0 0 rgba(34, 48, 78, 0.28); }
+  .poster-actions .action-gift:active { box-shadow: 2px 3px 0 0 rgba(201, 168, 108, 0.95); }
+  .poster-actions .action-primary svg,
+  .poster-actions .action-secondary svg,
+  .poster-actions .action-gift svg { width: 13px; height: 13px; flex: none; }
+  /* 重新测试入口：人物 IP 右下角问号按钮 */
+  .retest-hint {
+    position: absolute;
+    right: 24px;
+    bottom: 32px;
+    z-index: 6;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(253, 252, 249, 0.92);
+    color: rgba(34, 54, 75, 0.72);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(35, 54, 75, 0.14);
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .retest-hint:hover { background: #FDFCF9; color: var(--ink); }
+
+  /* 重新测试确认弹窗（对齐项目 ConfirmModal warning 变体） */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(34, 30, 24, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal-card {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    padding: 24px;
+    border-radius: 20px;
+    background: #FAF7F1;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(35, 45, 60, 0.28);
+  }
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    padding: 4px;
+    border: 0;
+    background: transparent;
+    color: rgba(34, 54, 75, 0.4);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .modal-close:hover { color: rgba(34, 54, 75, 0.75); }
+  .modal-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #FEF3C7;
+    border-radius: 16px;
+    background: #FFFBEB;
+    color: #D97706;
+  }
+  .modal-icon svg { width: 30px; height: 30px; }
+  .modal-title {
+    margin: 0 0 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #3D2F25;
+  }
+  .modal-message {
+    margin: 0 0 24px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(26, 26, 26, 0.7);
+  }
+  .modal-actions { display: flex; gap: 12px; }
+  .modal-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+  .modal-btn-cancel {
+    border: 1px solid rgba(26, 26, 26, 0.1);
+    background: rgba(26, 26, 26, 0.05);
+    color: rgba(26, 26, 26, 0.6);
+  }
+  .modal-btn-cancel:hover { background: rgba(26, 26, 26, 0.1); }
+  .modal-btn-confirm {
+    border: 0;
+    background: #D97706;
+    color: #fff;
+  }
+  .modal-btn-confirm:hover { background: #B45309; }
+
+  /* ================= 页脚：版权 + 备案 + AI 声明 ================= */
+  .result-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 32px;
+    padding: 0 16px 32px;
+    text-align: center;
+  }
+  .result-footer p {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 300;
+    color: rgba(0, 38, 62, 0.65);
+  }
+  .result-footer .footer-copy { letter-spacing: 0.15em; }
+  .result-footer .footer-ai { letter-spacing: 0.12em; }
+  .result-footer .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 8px;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    color: rgba(0, 38, 62, 0.65);
+  }
+  .result-footer a { color: inherit; text-decoration: none; transition: color 0.2s; }
+  .result-footer a:hover { color: rgba(0, 38, 62, 0.7); }
+  .result-footer .footer-police { display: inline-flex; align-items: center; gap: 4px; }
+  .result-footer .footer-police img { width: 12px; height: 12px; flex: none; opacity: 0.8; }
+  .result-footer .footer-sep { display: none; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- 结果页通用顶部栏：回首页 / 居中 logo / 用户身份区 -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="back-home" type="button" aria-label="回到首页">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+          <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+        <span class="back-home-text">回到首页</span>
+      </button>
+
+      <img class="topbar-logo" src="../public/NIHPLOD-logo.svg" alt="NIHPLOD">
+
+      <div class="user-area">
+        <button class="user-badge" type="button" aria-label="Hank1的账户">
+          <span class="user-avatar">H</span>
+          <span class="user-name">Hank1</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 页头：归属标题 + 肌肤状态 + 两页 tab -->
+  <div class="result-header">
+    <p class="result-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+        <path d="M20 2v4"/>
+        <path d="M22 4h-4"/>
+        <circle cx="4" cy="20" r="2"/>
+      </svg>
+      Hank1 的专属肌智派在线测肤报告
+      <span class="skin-state-tag">只涂了防晒</span>
+    </p>
+    <div class="result-tabs" role="tablist" aria-label="报告页面切换">
+      <button class="tab is-active" type="button" role="tab" aria-selected="true">测肤证书</button>
+      <button class="tab" type="button" role="tab" aria-selected="false">完整报告</button>
+    </div>
+  </div>
+
+  <!-- 证书 -->
+  <div class="poster">
+    <div class="blue-zone"></div>
+
+    <!-- 左侧背景水印：NIHPLOD 印章 -->
+    <img class="watermark" src="../public/images/nihplod-seal.png" alt="">
+
+    <div class="copy">
+      <div class="lead">用户x的肌肤派系是</div>
+      <div class="faction">「守护派」</div>
+      <div class="quote">好皮肤不是运气，是你与肌肤之间一场被认真履行的长期契约</div>
+
+      <!-- 评分圆环 ×2（与结果页 ShareCardPage 徽章风格一致） -->
+      <div class="copy-badges">
+        <div class="badge-ring">
+          <div class="badge-ring-inner"></div>
+          <div class="badge-value">
+            <span class="badge-score">92</span>
+            <span class="badge-label">综合评分</span>
+          </div>
+        </div>
+        <!-- 桂冠徽章（超过 96% 的用户；图标：荣誉月桂-左/右，左右展开合围） -->
+        <div class="laurel-badge">
+          <svg class="laurel-svg" viewBox="-28 108 1100 808" fill="currentColor" aria-hidden="true">
+            <g transform="translate(-290 0)">
+              <path d="M447.6416 761.1648c-46.6176 3.1488-68.1216 29.056-61.3632 47.8976 6.784 18.8672 54.272 66.0992 134.0672 78.7712 79.7952 12.5952 158.72 6.8608 188.9024 6.8608 30.1568 0 65.6384-4.608 47.3088-21.76a454.8608 454.8608 0 0 0-143.4112-86.5024c-70.016-25.344-118.9632-28.544-165.504-25.2672z m-165.8368-225.4336c3.1744 21.9392 24.064 77.9264 84.3264 120.32a446.3616 446.3616 0 0 0 160.7168 71.0912c43.1872 9.9328 84.0704 23.4752 70.528-4.1216-13.5424-27.5968-59.2128-96.0768-125.3888-144.256-66.0736-48.0768-100.9664-53.8368-130.3552-60.5952-29.4912-6.6816-62.9248-4.3008-59.8272 17.5616z m20.3008-226.8672c-24.2432 0-22.6304 24.4224-16.2048 45.312 6.528 20.8384 34.304 83.1744 82.304 121.0368 31.9744 25.216 72.4992 47.1552 121.5232 65.664-10.88-67.7888-34.3552-121.0112-70.272-159.744-53.9136-58.2912-93.0816-72.192-117.3504-72.2688z m108.9536-180.6848a31.2832 31.2832 0 0 0-22.1184 6.1696 27.904 27.904 0 0 0-10.9824 19.2l-1.024 10.8032a240.3328 240.3328 0 0 0 14.4896 102.4c18.6112 49.664 46.5408 89.1648 83.7376 118.0416 7.296-26.4704 11.136-106.9568 2.2272-154.88-8.3968-45.4144-24.7808-72.2432-48.4352-93.8496a31.488 31.488 0 0 0-17.92-7.8848z"/>
+            </g>
+            <g transform="translate(290 0)">
+              <path d="M595.5328 761.1648c46.6176 3.1488 68.1472 29.056 61.3632 47.8976-6.7584 18.8672-54.2464 66.0992-134.0416 78.7712-79.7952 12.5952-158.72 6.8608-188.928 6.8608-30.1568 0-65.6384-4.608-47.2832-21.76a454.8608 454.8608 0 0 1 143.36-86.5024c70.0416-25.344 118.9888-28.544 165.5296-25.2672z m165.8624-225.4336c-3.1744 21.9392-24.0896 77.9264-84.352 120.32a446.336 446.336 0 0 1-160.7168 71.0912c-43.1872 9.9328-84.0704 23.4752-70.528-4.1216 13.5424-27.5968 59.2128-96.0768 125.3888-144.256 66.0992-48.0768 100.9664-53.8368 130.3808-60.5952 29.4656-6.6816 62.8992-4.3008 59.8272 17.5616z m-20.3264-226.8672c24.2688 0 22.6304 24.4224 16.2048 45.312-6.528 20.8384-34.304 83.1744-82.2784 121.0368-32 25.216-72.5248 47.1552-121.5488 65.664 10.88-67.7888 34.3808-121.0112 70.2976-159.744 53.9136-58.2912 93.0816-72.192 117.3248-72.2688z m-108.928-180.6848c7.7824-0.8448 15.6672 1.3824 22.0928 6.1696 6.016 4.352 10.0352 11.392 11.008 19.2l1.024 10.8032a240.3072 240.3072 0 0 1-14.5152 102.4c-18.5856 49.664-46.5408 89.1648-83.712 118.0416-7.296-26.4704-11.1616-106.9568-2.2528-154.88 8.3968-45.4144 24.7808-72.2432 48.4352-93.8496 5.12-4.5312 11.392-7.296 17.92-7.8848z"/>
+            </g>
+          </svg>
+          <div class="badge-value">
+            <span class="badge-tip">超过</span>
+            <span class="badge-percent">96%</span>
+            <span class="badge-tip">的用户</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <img class="character" src="../public/images/character/guardian/guardian_female.webp" alt="守护派">
+
+    <!-- 证书内操作区：人物左侧空白处（logo + 查看完整报告 / 保存证书 / 参与抽奖） -->
+    <div class="poster-actions">
+      <img class="poster-logo" src="../public/images/jzp-eyebrow.png" alt="肌智派">
+      <button class="action-primary" type="button">
+        查看完整报告
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14"/>
+          <path d="m12 5 7 7-7 7"/>
+        </svg>
+      </button>
+      <button class="action-secondary" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21"/>
+          <path d="m14 19 3 3v-5.5"/>
+          <path d="m17 22 3-3"/>
+          <circle cx="9" cy="9" r="2"/>
+        </svg>
+        保存证书
+      </button>
+      <button class="action-gift" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="8" width="18" height="4" rx="1"/>
+          <path d="M12 8v13"/>
+          <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/>
+          <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>
+        </svg>
+        参与抽奖
+      </button>
+    </div>
+
+    <!-- 重新测试入口：人物 IP 右下角问号按钮 → 确认弹窗 -->
+    <button class="retest-hint" type="button" id="reTestHint" aria-label="重新测试">?</button>
+  </div>
+
+  <!-- 页脚：版权 + 备案 + AI 声明 -->
+  <div class="result-footer">
+    <p class="footer-copy">© 2026 NIHPLOD. All Rights Reserved.</p>
+    <div class="footer-links">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">沪ICP备2026014764号-1</a>
+      <span class="footer-sep" aria-hidden="true">|</span>
+      <a class="footer-police" href="http://www.beian.gov.cn/portal/registerSystemInfo" target="_blank" rel="noopener noreferrer">
+        <img src="../public/images/beian.webp" alt="">
+        <span>沪公网安备31010702010178号</span>
+      </a>
+    </div>
+    <p class="footer-ai">*AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议</p>
+  </div>
+</div>
+
+<!-- 重新测试确认弹窗（演示：确认仅关闭弹窗） -->
+<div class="modal-overlay" id="reTestModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="reTestTitle">
+    <button class="modal-close" type="button" id="reTestClose" aria-label="关闭">×</button>
+    <div class="modal-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+        <path d="M12 9v4"/>
+        <path d="M12 17h.01"/>
+      </svg>
+    </div>
+    <h3 class="modal-title" id="reTestTitle">认为派系判断不准确？</h3>
+    <p class="modal-message">重新测试将清空当前测肤记录，并消耗 1 次测试额度，确认开始吗？</p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" type="button" id="reTestCancel">取消</button>
+      <button class="modal-btn modal-btn-confirm" type="button" id="reTestConfirm">重新测试</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var hint = document.getElementById("reTestHint");
+    var overlay = document.getElementById("reTestModal");
+    function openModal() { overlay.hidden = false; }
+    function closeModal() { overlay.hidden = true; }
+    hint.addEventListener("click", openModal);
+    document.getElementById("reTestClose").addEventListener("click", closeModal);
+    document.getElementById("reTestCancel").addEventListener("click", closeModal);
+    document.getElementById("reTestConfirm").addEventListener("click", closeModal);
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) closeModal(); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !overlay.hidden) closeModal();
+    });
+  })();
+</script>
+
+</body>
+</html>
