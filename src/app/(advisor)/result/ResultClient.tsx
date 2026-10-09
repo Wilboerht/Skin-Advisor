@@ -227,7 +227,8 @@ function ResultHeader({
     const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
 
     return (
-        <div className="w-full flex flex-col items-center pt-6 lg:pt-8 pb-4 lg:pb-5">
+        // 顶部间距：固定顶栏（76/84px）下缘到标题的初始留白，比原 pt-6/8 各加大 16px
+        <div className="w-full flex flex-col items-center pt-10 lg:pt-12 pb-4 lg:pb-5">
             {/* 状态标签属于标题一体：紧跟标题文字同行参与布局（整体居中） */}
             <p className="mt-0 mb-4 lg:mb-5 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
                 <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
