@@ -162,10 +162,10 @@ export default function ShareCardPage({
                 {/* 下部灰蓝色块：斜切 */}
                 <div
                     aria-hidden="true"
-                    className="absolute inset-0 bg-[#A9BED1] [clip-path:polygon(0_47%,100%_42%,100%_100%,0_100%)]"
+                    className="absolute inset-0 bg-[#A9BED1] [clip-path:polygon(0_50%,100%_45%,100%_100%,0_100%)]"
                 />
 
-                {/* 文字区：引语 + 派系 + 文案 + 评分徽章（文字下方横排）。
+                {/* 文字区：引语 + 派系 + 文案，评分徽章右上纵排。
                     顶部偏移 0：tab → 引语 = 页头 ResultHeader pb-4（16px），
                     与标题 mb-4 → tab（16px）等距，tab 上下间距对称 */}
                 <div className="absolute top-0 left-[28px] right-[28px] z-[4]">
@@ -179,9 +179,9 @@ export default function ShareCardPage({
                         {factionIntro || summary || "详细分析见下方报告。"}
                     </p>
 
-                    {/* 评分徽章：综合评分圆环 + 超过 X% 桂冠，置于派系说明文字下方横排 */}
+                    {/* 评分徽章：综合评分圆环 + 超过 X% 桂冠，右上角纵排 */}
                     {(score !== undefined || percentile !== null) && (
-                        <div className="mt-4 flex items-center gap-4">
+                        <div className="absolute right-0 top-0 flex flex-col items-center gap-3">
                             {/* 综合评分圆环（金边 + 虚线内圈，与桌面端徽章风格一致） */}
                             {score !== undefined && (
                                 <div className="relative flex h-[72px] w-[72px] flex-col items-center justify-center rounded-full border border-[#C9A86C]/70">
