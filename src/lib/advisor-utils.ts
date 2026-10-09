@@ -539,7 +539,8 @@ export const ConsultantIssueSchema = z.object({
     indirectCauses: z.string().min(1),
     skincarePlan: z.string().min(1),
     lifestylePlan: z.string().min(1),
-    medicalBoundary: z.string().min(1),
+    // 轻微问题无风险信号时 AI 返回空串，前端不渲染就医边界（重点/中度仍由 parse 兜底补默认值）
+    medicalBoundary: z.string().default(""),
     relatedDimensions: z.array(z.string()).default([]),
 }).passthrough();
 
@@ -612,7 +613,7 @@ export function sanitizeConsultantReport(report: ConsultantReport): ConsultantRe
  *
  * 归一化步骤容忍模型的常见输出偏差，避免整份报告因小瑕疵降级为 v1：
  * - severity 中英文/大小写归一（"轻度"/"Mild" → mild），缺省 moderate
- * - 缺失/空字符串的推理链字段补默认值（medicalBoundary 补"暂不需要就医"）
+ * - 缺失/空字符串的推理链字段补默认值（medicalBoundary 仅重点/中度补"暂不需要就医"，轻微问题留空）
  * - 缺 title/observation 的 issue 整条丢弃（没有观察就没有证据，不符合铁律）
  * - relatedDimensions / strengths 缺省为空数组
  */
@@ -637,7 +638,10 @@ export function parseConsultantReport(content: string): ConsultantReport {
             if (typeof issue.indirectCauses !== "string" || !issue.indirectCauses) issue.indirectCauses = "目前没有明显的生活习惯诱因。";
             if (typeof issue.skincarePlan !== "string" || !issue.skincarePlan) issue.skincarePlan = "详见每日方案。";
             if (typeof issue.lifestylePlan !== "string" || !issue.lifestylePlan) issue.lifestylePlan = "详见每日方案。";
-            if (typeof issue.medicalBoundary !== "string" || !issue.medicalBoundary) issue.medicalBoundary = "暂不需要就医，坚持护理观察即可。";
+            if (typeof issue.medicalBoundary !== "string" || !issue.medicalBoundary) {
+                // 轻微问题无风险信号时留空（前端不渲染），避免每卡挂一句套话；重点/中度必须兜底
+                issue.medicalBoundary = issue.severity === "mild" ? "" : "暂不需要就医，坚持护理观察即可。";
+            }
             if (!Array.isArray(issue.relatedDimensions)) issue.relatedDimensions = [];
             return issue;
         })

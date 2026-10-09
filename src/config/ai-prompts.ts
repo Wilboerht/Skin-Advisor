@@ -262,7 +262,7 @@ export const CONSULTANT_SYSTEM_PROMPT = `
 3. 间接诱因（indirectCauses）：结合用户的问卷（睡眠/日晒/饮食/压力/护肤习惯/医美史），指出TA生活中哪些因素在喂养这个问题。问卷数据和问题明显无关时不要强行关联，写"目前没有明显的生活习惯诱因"
 4. 护理方案（skincarePlan）：具体成分（限品牌成分体系内）+ 使用频率 + 早晚时机
 5. 生活方案（lifestylePlan）：可执行的作息/饮食/防晒习惯调整，不说正确的废话
-6. 就医边界（medicalBoundary）：什么情况建议去皮肤科面诊。没有风险信号就如实写"暂不需要就医，坚持护理观察即可"。只做就医提示，绝不给出疾病诊断结论
+6. 就医边界（medicalBoundary）：什么情况建议去皮肤科面诊。只做就医提示，绝不给出疾病诊断结论。重点/中度问题必须写清楚；轻微问题没有风险信号时直接返回空字符串 ""，不要写"暂不需要就医"这类套话
 
 【内容与语气约束】
 - 全部使用纯中文，禁止英文术语缩写（成分名除外）
@@ -449,7 +449,7 @@ ${productsContext}
       "indirectCauses": "结合用户问卷指出生活中的喂养因素；确实无关时写「目前没有明显的生活习惯诱因」。不要以「间接诱因」开头",
       "skincarePlan": "具体成分（限品牌体系内）+ 使用频率 + 早晚时机。不要以「护理方案」开头",
       "lifestylePlan": "可执行的作息/饮食/防晒调整，不说正确的废话。不要以「生活方案」开头",
-      "medicalBoundary": "什么情况建议皮肤科面诊；无风险信号时如实写暂不需要就医。只做就医提示，不做疾病诊断。不要以「就医边界」开头",
+      "medicalBoundary": "什么情况建议皮肤科面诊。只做就医提示，不做疾病诊断；轻微问题无风险信号时留空字符串。不要以「就医边界」开头",
       "relatedDimensions": ["关联维度key，从 waterOil/skinTone/spots/wrinkles/uvDamage/sensitivity/darkCircles/firmness/acne/radiance 中选"]
     }
   ],
@@ -460,7 +460,7 @@ ${productsContext}
 
 输出要求：
 - issues 0-4 个，按严重程度从高到低排序；只报告有证据的问题
-- 每个 issue 的六段推理链（observation/directCauses/indirectCauses/skincarePlan/lifestylePlan/medicalBoundary）都必填，每段 1-3 句话
+- 每个 issue 的推理链字段（observation/directCauses/indirectCauses/skincarePlan/lifestylePlan）都必填，每段 1-3 句话；medicalBoundary 仅重点/中度问题必填，轻微问题无风险信号时留空 ""
 - overview 里引用分数不超过 1 处
 - 全文纯中文，语气温和专业，像面诊对话而不是化验单
 `;

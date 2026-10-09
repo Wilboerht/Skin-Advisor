@@ -32,6 +32,14 @@ describe("parseConsultantReport - v2 报告解析容错", () => {
         expect(report.issues[0].medicalBoundary).toBe("暂不需要就医，坚持护理观察即可。");
     });
 
+    it("轻微问题的就医边界缺省时留空，不补套话", () => {
+        const report = parseConsultantReport(makeRaw([
+            makeIssue({ severity: "轻微", medicalBoundary: undefined }),
+        ]));
+        expect(report.issues[0].severity).toBe("mild");
+        expect(report.issues[0].medicalBoundary).toBe("");
+    });
+
     it("缺 title/observation 的问题整条丢弃", () => {
         const report = parseConsultantReport(makeRaw([
             makeIssue(),

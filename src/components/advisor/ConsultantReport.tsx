@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 const SEVERITY_META: Record<ConsultantIssue["severity"], { label: string; badge: string; bar: string }> = {
     severe: { label: "重点", badge: "bg-red-100 text-red-700", bar: "bg-red-400" },
-    moderate: { label: "改善", badge: "bg-amber-100 text-amber-700", bar: "bg-amber-400" },
+    moderate: { label: "待改善", badge: "bg-amber-100 text-amber-700", bar: "bg-amber-400" },
     mild: { label: "轻微", badge: "bg-[#F1ECE3] text-[#8c7a6b]", bar: "bg-[#D9D0C3]" },
 };
 
@@ -33,9 +33,9 @@ function scoreBand(score: number): { label: string; toneClass: string } {
     return { label: "较差", toneClass: "text-red-600" };
 }
 
-function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensions?: ConsultantReportProps["dimensions"] }) {
-    if (!dimensions || issue.relatedDimensions.length === 0) return null;
-    const chips = issue.relatedDimensions
+function getEvidenceChips(issue: ConsultantIssue, dimensions?: ConsultantReportProps["dimensions"]) {
+    if (!dimensions || issue.relatedDimensions.length === 0) return [];
+    return issue.relatedDimensions
         .map((key) => {
             const dim = dimensions[key];
             const label = DIMENSION_LABELS[key];
@@ -43,6 +43,10 @@ function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensio
             return { key, label, score: dim.score };
         })
         .filter((c): c is NonNullable<typeof c> => c !== null);
+}
+
+function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensions?: ConsultantReportProps["dimensions"] }) {
+    const chips = getEvidenceChips(issue, dimensions);
     if (chips.length === 0) return null;
 
     return (
@@ -66,13 +70,16 @@ function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensio
     );
 }
 
-/** 行动类字段按句拆行（≥2 句且较长时），每条行动一行的可扫描性优于整段 */
+/** 行动类字段按句拆行并加小圆点（≥2 句且较长时），清单式的可扫描性优于整段散文 */
 function PlanLines({ text }: { text: string }) {
     const lines = splitConsultantSentences(text);
     return (
         <div className="space-y-1.5">
             {lines.map((line, i) => (
-                <p key={i} className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]">{line}</p>
+                <p key={i} className="flex items-start gap-2 text-sm leading-[1.85] text-[var(--color-brand-espresso)]">
+                    <span aria-hidden className="mt-[0.72em] h-1 w-1 shrink-0 rounded-full bg-[var(--color-brand-cocoa)]/45" />
+                    <span>{line}</span>
+                </p>
             ))}
         </div>
     );
@@ -92,12 +99,15 @@ interface ConsultantReportProps {
     personaRoute?: string;
 }
 
-function SectionTitle({ children, en }: { children: ReactNode; en?: string }) {
+function SectionTitle({ children, en, action }: { children: ReactNode; en?: string; action?: ReactNode }) {
     return (
-        <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-            {children}
-            {en && <span className="text-xs lg:text-base">（{en}）</span>}
-        </h4>
+        <div className="flex items-center justify-between gap-3 mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
+            <h4 className="text-base font-medium text-[var(--color-brand-espresso)]">
+                {children}
+                {en && <span className="text-xs lg:text-base">（{en}）</span>}
+            </h4>
+            {action}
+        </div>
     );
 }
 
@@ -116,6 +126,9 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
     const isSevere = issue.severity === "severe";
     const reduceMotion = useReducedMotion();
     const stepNo = String(index + 1).padStart(2, "0");
+    // 折叠态卡头露最低分的一枚证据 chip：让严重度徽章有数据支撑，提升点击动机
+    const chips = getEvidenceChips(issue, dimensions);
+    const lowestChip = chips.length > 0 ? chips.reduce((a, b) => (b.score < a.score ? b : a)) : null;
 
     return (
         <article className={cn(
@@ -151,9 +164,17 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                         </span>
                     </div>
                     {!expanded && issue.observation && (
-                        <p className="mt-1 text-[12px] text-[var(--color-brand-taupe)] font-light leading-relaxed line-clamp-1">
+                        <p className="mt-1 text-[12px] text-[var(--color-brand-taupe)] font-light leading-relaxed line-clamp-1 lg:line-clamp-2">
                             {stripConsultantStepLabels(issue.observation)}
                         </p>
+                    )}
+                    {!expanded && lowestChip && (
+                        <span className="mt-1.5 inline-flex w-fit items-center gap-1.5 rounded-full border border-[var(--color-brand-espresso)]/10 bg-[var(--color-brand-espresso)]/[0.03] px-2.5 py-0.5 text-[11px] text-[var(--color-brand-espresso)]/70 font-light">
+                            {lowestChip.label}
+                            <span className={cn("font-medium", scoreBand(lowestChip.score).toneClass)}>
+                                {lowestChip.score} 分 · {scoreBand(lowestChip.score).label}
+                            </span>
+                        </span>
                     )}
                 </div>
                 <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-[var(--color-brand-espresso)]/[0.05] group-hover:bg-[var(--color-brand-espresso)]/[0.10] transition-colors">
@@ -213,34 +234,38 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="rounded-lg border border-[var(--color-brand-espresso)]/[0.06] bg-[#FCFAF4] px-4 py-3 space-y-2">
+                                    <div className="rounded-lg border border-[var(--color-brand-espresso)]/[0.06] bg-[#FCFAF4] px-4 py-3 space-y-2.5">
                                         <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.directCauses)}</p>
-                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.indirectCauses)}</p>
+                                        <div className="border-t border-dashed border-[var(--color-brand-espresso)]/10 pt-2.5">
+                                            <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">间接诱因 · 生活习惯</p>
+                                            <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.indirectCauses)}</p>
+                                        </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* 怎么办：护理方案 / 生活调整。
-                                用户读报告的落脚点是行动，用品牌暖色与"为什么"的中性灰拉开层级，成为全卡视觉重心 */}
+                            {/* 怎么办：护理方案 + 生活调整合并为一个行动区大卡。
+                                用户读报告的落脚点是行动，品牌暖色大卡与"为什么"的中性灰拉开层级，成为全卡视觉重心 */}
                             <div>
                                 <StepLabel emphasize>
                                     <Sparkles className="w-3.5 h-3.5" strokeWidth={1.8} />
                                     怎么办
                                 </StepLabel>
-                                <div className="space-y-2.5">
-                                    <div className="rounded-lg border border-[#C9A86C]/35 bg-[#FBF8F3] px-4 py-3">
+                                <div className="rounded-lg border border-[#C9A86C]/35 bg-[#FBF8F3] px-4 py-3 space-y-3">
+                                    <div>
                                         <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1.5">护理方案</p>
                                         <PlanLines text={stripConsultantStepLabels(issue.skincarePlan)} />
                                     </div>
-                                    <div className="rounded-lg border border-[#C9A86C]/35 bg-[#FBF8F3] px-4 py-3">
+                                    <div className="border-t border-dashed border-[#C9A86C]/25 pt-3">
                                         <p className="text-[11px] font-medium text-[var(--color-brand-cocoa)] mb-1.5">生活调整</p>
                                         <PlanLines text={stripConsultantStepLabels(issue.lifestylePlan)} />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* 就医边界：重度问题升级为醒目提示框（安全信息不能被滑过去），其余保持低调 */}
-                            {isSevere ? (
+                            {/* 就医边界：重度问题升级为醒目提示框（安全信息不能被滑过去），其余保持低调；
+                                轻微问题无风险信号时后端留空，不渲染套话 */}
+                            {issue.medicalBoundary.trim() && (isSevere ? (
                                 <div className="flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200/60 px-3 py-2.5 text-amber-900">
                                     <Stethoscope className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.8} />
                                     <div className="min-w-0">
@@ -256,7 +281,7 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                                         {stripConsultantStepLabels(issue.medicalBoundary)}
                                     </span>
                                 </p>
-                            )}
+                            ))}
                         </div>
                     </m.div>
                 )}
@@ -295,6 +320,7 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
         setExpandedIssues((prev) =>
             prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
         );
+    const allExpanded = issues.length > 0 && expandedIssues.length === issues.length;
 
     return (
         <div className="space-y-10 lg:space-y-12">
@@ -308,7 +334,20 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
 
             {/* 逐问题诊断卡 */}
             <section>
-                <SectionTitle en="Issue Diagnosis">逐问题诊断</SectionTitle>
+                <SectionTitle
+                    en="Issue Diagnosis"
+                    action={issues.length >= 3 ? (
+                        <button
+                            type="button"
+                            onClick={() => setExpandedIssues(allExpanded ? [] : issues.map((_, i) => i))}
+                            className="shrink-0 text-[12px] text-[var(--color-brand-taupe)] hover:text-[var(--color-brand-cocoa)] transition-colors"
+                        >
+                            {allExpanded ? "全部收起" : "全部展开"}
+                        </button>
+                    ) : undefined}
+                >
+                    逐问题诊断
+                </SectionTitle>
                 {issues.length > 0 ? (
                     <div className="space-y-3">
                         {issues.map((issue, idx) => (
