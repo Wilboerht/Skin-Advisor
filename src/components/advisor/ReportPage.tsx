@@ -6,9 +6,29 @@ import ResultCards from "./ResultCards";
 import ComparisonCard from "./ComparisonCard";
 import { ConsultantReport } from "./ConsultantReport";
 import { DimensionRadarChart } from "./DimensionRadarChart";
-import type { FaceAnalysisResult } from "@/lib/advisor-utils";
+import type { FaceAnalysisResult, ZoneData } from "@/lib/advisor-utils";
 import type { ComprehensiveResult, PreviousTestSummary } from "@/lib/analysis-result";
 import { isMakeupState } from "@/lib/skin-state";
+
+const ZONE_LABELS = {
+    forehead: "额头区域",
+    tZone: "T字区域",
+    leftCheek: "左脸颊",
+    rightCheek: "右脸颊",
+    eyeArea: "眼周",
+    jawline: "下颌线",
+} as const;
+
+const ZONE_SCORE_KEYS = ["oil", "texture", "wrinkles", "spots", "redness", "darkCircles", "firmness", "contour"] as const;
+// 与雷达图低分（<60 标注「注意」）同一条线
+const ZONE_ATTENTION_THRESHOLD = 60;
+
+/** 区域是否有实质问题：任一数值指标低于阈值；无数值数据（历史脏数据）时按 condition 是否有内容兜底，避免误杀 */
+function zoneNeedsAttention(zone: ZoneData): boolean {
+    const scores = ZONE_SCORE_KEYS.map((k) => zone[k]).filter((v): v is number => typeof v === "number");
+    if (scores.length === 0) return !!zone.condition?.trim();
+    return scores.some((s) => s < ZONE_ATTENTION_THRESHOLD);
+}
 
 interface ReportPageProps {
     result: ComprehensiveResult;
@@ -38,6 +58,13 @@ export default function ReportPage({
     const isV2Report = !!result.consultantReport?.overview?.trim();
     // 带妆拍摄：色斑/肤色/敏感度维度置信度降低（提示用户，并供雷达图标注）
     const isMakeupCapture = isMakeupState(result.skinState);
+    // 区域皮肤地图：只保留有实质问题的区域（状态良好的区域不占位）
+    const zoneEntries = faceAnalysis?.zoneAnalysis
+        ? (Object.entries(ZONE_LABELS) as [keyof typeof ZONE_LABELS, string][]).flatMap(([key, label]) => {
+            const data = faceAnalysis.zoneAnalysis?.[key];
+            return data && zoneNeedsAttention(data) ? [{ key, label, data }] : [];
+        })
+        : [];
 
     return (
         <div className="flex flex-col gap-6 lg:gap-8">
@@ -109,7 +136,7 @@ export default function ReportPage({
                         </div>
                     )}
 
-                    {/* 区域皮肤地图：v2 报告的区域观察入口（登录解锁） */}
+                    {/* 区域皮肤地图：v2 报告的区域观察入口（登录解锁）；仅展示有问题的区域 */}
                     {faceAnalysis?.zoneAnalysis && (
                         <>
                             {!authInitialized ? (
@@ -119,18 +146,9 @@ export default function ReportPage({
                                     <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-4 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                         区域皮肤地图 <span className="text-xs lg:text-base">（Area Focus）</span>
                                     </h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {Object.entries({
-                                            forehead: "额头区域",
-                                            tZone: "T字区域",
-                                            leftCheek: "左脸颊",
-                                            rightCheek: "右脸颊",
-                                            eyeArea: "眼周",
-                                            jawline: "下颌线"
-                                        } as Record<string, string>).map(([key, label]) => {
-                                            const zoneData = faceAnalysis.zoneAnalysis![key as keyof typeof faceAnalysis.zoneAnalysis];
-                                            if (!zoneData) return null;
-                                            return (
+                                    {zoneEntries.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {zoneEntries.map(({ key, label, data: zoneData }) => (
                                                 <div key={key} className="bg-[var(--color-brand-espresso)]/5 border text-left border-[var(--color-brand-espresso)]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                                                     <div className="flex items-center justify-between mb-2">
                                                         <div className="font-semibold text-[var(--color-brand-espresso)] text-sm">{label}</div>
@@ -145,9 +163,13 @@ export default function ReportPage({
                                                         </p>
                                                     </div>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-[var(--color-brand-cocoa)] leading-relaxed">
+                                            六大区域状态均衡，本次检测未发现需要重点关注的区域。
+                                        </p>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="mb-6 lg:mb-8">

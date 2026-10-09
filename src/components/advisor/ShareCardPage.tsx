@@ -179,9 +179,9 @@ export default function ShareCardPage({
                         {factionIntro || summary || "详细分析见下方报告。"}
                     </p>
 
-                    {/* 评分徽章：综合评分圆环 + 超过 X% 桂冠，右上角横排 */}
+                    {/* 评分徽章：综合评分圆环 + 超过 X% 桂冠，右上角纵排 */}
                     {(score !== undefined || percentile !== null) && (
-                        <div className="absolute right-0 top-0 flex items-center gap-2.5">
+                        <div className="absolute right-0 top-0 flex flex-col items-center gap-2.5">
                             {/* 综合评分圆环（金边 + 虚线内圈，与桌面端徽章风格一致） */}
                             {score !== undefined && (
                                 <div className="relative flex h-[58px] w-[58px] flex-col items-center justify-center rounded-full border border-[#C9A86C]/70">

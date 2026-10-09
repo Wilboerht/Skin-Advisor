@@ -195,22 +195,29 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                                 <EvidenceChips issue={issue} dimensions={dimensions} />
                             </div>
 
-                            {/* 为什么：直接诱因 / 间接诱因 */}
+                            {/* 为什么：重点问题拆分直接/间接诱因；改善/轻微合并为一盒，压缩篇幅 */}
                             <div>
                                 <StepLabel>
                                     <HelpCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
                                     为什么会出现这个问题
                                 </StepLabel>
-                                <div className="space-y-2.5">
-                                    <div className="rounded-lg border border-[var(--color-brand-espresso)]/[0.06] bg-[#FCFAF4] px-4 py-3">
-                                        <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">直接诱因 · 皮肤层面</p>
-                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.directCauses)}</p>
+                                {isSevere ? (
+                                    <div className="space-y-2.5">
+                                        <div className="rounded-lg border border-[var(--color-brand-espresso)]/[0.06] bg-[#FCFAF4] px-4 py-3">
+                                            <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">直接诱因 · 皮肤层面</p>
+                                            <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.directCauses)}</p>
+                                        </div>
+                                        <div className="rounded-lg border border-[var(--color-brand-espresso)]/[0.06] bg-[#FCFAF4] px-4 py-3">
+                                            <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">间接诱因 · 生活习惯</p>
+                                            <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.indirectCauses)}</p>
+                                        </div>
                                     </div>
-                                    <div className="rounded-lg border border-[var(--color-brand-espresso)]/[0.06] bg-[#FCFAF4] px-4 py-3">
-                                        <p className="text-[11px] text-[var(--color-brand-taupe)] mb-1">间接诱因 · 生活习惯</p>
+                                ) : (
+                                    <div className="rounded-lg border border-[var(--color-brand-espresso)]/[0.06] bg-[#FCFAF4] px-4 py-3 space-y-2">
+                                        <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.directCauses)}</p>
                                         <p className="text-sm leading-[1.85] text-[var(--color-brand-espresso)]/90">{stripConsultantStepLabels(issue.indirectCauses)}</p>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* 怎么办：护理方案 / 生活调整。
@@ -273,7 +280,7 @@ function StepLabel({ children, emphasize = false }: { children: ReactNode; empha
 export function ConsultantReport({ report, dimensions, personaRoute }: ConsultantReportProps) {
     const personaData = personaRoute ? getSkinTypeByIpKey(personaRoute) : undefined;
     const hasRoutine = personaData?.m4 && (personaData.m4.morning || personaData.m4.night);
-    const hasFormula = personaData?.m7 && (personaData.m7.formulaCore || personaData.m7.suggestions?.length);
+    const hasFormula = !!personaData?.m7?.formulaCore;
     const hasAdvantages = personaData?.m5?.advantages?.length;
     // 防御历史脏数据：normalizeAnalysisResult 已归一化，这里再兜底非数组场景
     const issues = Array.isArray(report.issues) ? report.issues : [];
@@ -323,17 +330,12 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
                 )}
             </section>
 
-            {/* 每日方案：派系骨架 + AI 个性化微调 */}
-            {(hasRoutine || hasFormula || report.routineNote) && (
+            {/* 每日方案：派系骨架（晨间/夜间 + 一句话护肤公式）；routineNote 与 m7 suggestions 已下线 */}
+            {(hasRoutine || hasFormula) && (
                 <section>
                     <SectionTitle en="Daily Routine">你的每日方案{personaData ? `：${personaData.typeName}` : ""}</SectionTitle>
-                    {report.routineNote && (
-                        <p className="text-sm lg:text-[15px] leading-[1.9] text-[var(--color-brand-espresso)] mb-4">
-                            {report.routineNote}
-                        </p>
-                    )}
                     {hasRoutine && (
-                        <div className="grid gap-3 lg:grid-cols-2 mb-4">
+                        <div className="grid gap-3 lg:grid-cols-2">
                             {personaData!.m4.morning && (
                                 <div className="rounded-xl border border-brand-charcoal/[0.08] bg-white/80 p-5">
                                     <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 mb-2">
@@ -354,36 +356,24 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
                             )}
                         </div>
                     )}
-                    {/* 节奏备注：派系文案的周期护理/禁忌提示（如敏敏状态暂停酸类） */}
+                    {/* 节奏备注：派系文案的周期护理/禁忌提示（如敏敏状态暂停酸类），作卡片脚注保留 */}
                     {hasRoutine && personaData!.m4.note && (
-                        <p className="mb-4 text-[13px] leading-[1.85] text-brand-charcoal/60">{personaData!.m4.note}</p>
+                        <p className="mt-2.5 text-xs leading-[1.8] text-[var(--color-brand-taupe)]">{personaData!.m4.note}</p>
                     )}
                     {hasFormula && (
-                        <div className="rounded-xl border border-brand-charcoal/[0.08] bg-white/80 p-5">
-                            {personaData!.m7.formulaCore && (
-                                <p className="text-sm font-medium text-[var(--color-brand-espresso)] mb-3">
-                                    护肤公式：{personaData!.m7.formulaCore}
-                                </p>
-                            )}
-                            <ul className="space-y-2.5">
-                                {personaData!.m7.suggestions?.map((s, i) => (
-                                    <li key={i} className="text-sm leading-[1.85] text-brand-charcoal/80">
-                                        <span className="font-medium text-[var(--color-brand-espresso)]">{s.title}：</span>
-                                        {s.content}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <p className="mt-4 text-sm font-medium text-[var(--color-brand-espresso)]">
+                            护肤公式：{personaData!.m7.formulaCore}
+                        </p>
                     )}
                 </section>
             )}
 
-            {/* 优势：AI 如实肯定 + 派系优势解析 */}
+            {/* 优势：AI 如实肯定；AI 未生成时回退派系优势解析第一条兜底，不再两份并排 */}
             {(strengths.length > 0 || hasAdvantages) && (
                 <section>
                     <SectionTitle en="Your Strengths">你的优势</SectionTitle>
-                    {strengths.length > 0 && (
-                        <ul className="space-y-2 mb-4">
+                    {strengths.length > 0 ? (
+                        <ul className="space-y-2">
                             {strengths.map((s, i) => (
                                 <li key={i} className="flex items-start gap-2 text-sm lg:text-[15px] leading-[1.85] text-[var(--color-brand-espresso)]">
                                     <HeartHandshake className="w-4 h-4 shrink-0 mt-1 text-[#C9A86C]" strokeWidth={1.8} />
@@ -391,16 +381,11 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
                                 </li>
                             ))}
                         </ul>
-                    )}
-                    {hasAdvantages && (
-                        <div className="rounded-xl bg-brand-charcoal/[0.03] p-5 space-y-3">
-                            {personaData!.m5.advantages.map((adv, i) => (
-                                <p key={i} className="text-sm leading-[1.85] text-brand-charcoal/75">
-                                    <span className="font-medium text-[var(--color-brand-espresso)]">{adv.title}：</span>
-                                    {adv.content}
-                                </p>
-                            ))}
-                        </div>
+                    ) : (
+                        <p className="text-sm leading-[1.85] text-brand-charcoal/75">
+                            <span className="font-medium text-[var(--color-brand-espresso)]">{personaData!.m5.advantages[0].title}：</span>
+                            {personaData!.m5.advantages[0].content}
+                        </p>
                     )}
                 </section>
             )}
