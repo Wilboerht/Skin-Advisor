@@ -177,8 +177,9 @@ export default function ShareCardPage({
                 />
 
                 {/* 文字区：引语 + 派系 + 文案，右侧评分徽章纵排。
-                    顶部偏移 16px = 页头 ResultHeader pb-4（tab → 分割线距离），保证分割线上下视觉间距一致 */}
-                <div className="absolute top-[16px] left-[28px] right-[28px] z-[4]">
+                    顶部偏移 0：tab → 引语 = 页头 ResultHeader pb-4（16px），
+                    与标题 mb-4 → tab（16px）等距，tab 上下间距对称 */}
+                <div className="absolute top-0 left-[28px] right-[28px] z-[4]">
                     <p className="text-[14px] tracking-[0.1em] text-[#22364B]/60">
                         {nickname || "用户"} 的肌肤派系是
                     </p>
