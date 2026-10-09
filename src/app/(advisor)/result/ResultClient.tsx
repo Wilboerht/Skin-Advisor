@@ -1685,7 +1685,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeInOut" }}
                             >
                                 {/* 标题固定顶部；证书卡紧跟页头，tab 到标题/卡片的间距一致。
-                                    剩余空间由页脚 mt-auto 吸收（证书卡不再垂直居中，避免间距不对称） */}
+                                    证书面为沉浸式海报：不展示底部页脚（版权/备案/AI 声明仅在完整报告面保留） */}
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
                                 <div className="w-full">
                                     <div className="max-w-[900px] mx-auto px-6 md:px-8">
@@ -1711,10 +1711,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         />
                                     </section>
                                 </div>
-                                </div>
-                                {/* 证书面页脚：版权 + 备案（与报告面共用）；mt-auto 把内容不足一屏时的剩余空间放到卡片之后 */}
-                                <div className="mt-auto w-full max-w-[900px] mx-auto px-6 md:px-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
-                                    <ResultFooter />
                                 </div>
                             </m.div>
                         )}

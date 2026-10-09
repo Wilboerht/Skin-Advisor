@@ -157,7 +157,7 @@ export default function ShareCardPage({
                 initial={{ opacity: 0, y: reduceMotion ? 0 : 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.5, delay: reduceMotion ? 0 : 0.05 }}
-                className="lg:hidden relative -mx-6 w-[calc(100%_+_3rem)] md:mx-auto md:w-full md:max-w-[480px] h-[727px] overflow-hidden bg-[#F2EDE5]"
+                className="lg:hidden relative -mx-6 w-[calc(100%_+_3rem)] md:mx-auto md:w-full md:max-w-[480px] h-[600px] overflow-hidden bg-[#F2EDE5]"
             >
                 {/* 下部灰蓝色块：斜切 */}
                 <div
@@ -165,14 +165,15 @@ export default function ShareCardPage({
                     className="absolute inset-0 bg-[#A9BED1] [clip-path:polygon(0_47%,100%_42%,100%_100%,0_100%)]"
                 />
 
-                {/* 左侧背景水印：NIHPLOD 印章（透明 PNG，压在内容层之下） */}
+                {/* 左侧背景水印：NIHPLOD 印章（透明 PNG，压在内容层之下）。
+                    top 150 = 海报高度 600 - 水印高 440 - 10px 边距，同时与蓝区斜切保持稿中相对距离 */}
                 <Image
                     src="/images/nihplod-seal.png"
                     alt=""
                     aria-hidden="true"
                     width={512}
                     height={512}
-                    className="absolute left-[-110px] top-[210px] w-[440px] h-auto opacity-[0.26] pointer-events-none z-[1]"
+                    className="absolute left-[-110px] top-[150px] w-[440px] h-auto opacity-[0.26] pointer-events-none z-[1]"
                 />
 
                 {/* 文字区：引语 + 派系 + 文案，右侧评分徽章纵排。
@@ -241,7 +242,7 @@ export default function ShareCardPage({
                         alt={skinTypeName}
                         width={480}
                         height={640}
-                        className="absolute right-[-80px] bottom-[3px] z-[3] h-[510px] w-auto object-contain drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
+                        className="absolute right-[-80px] bottom-[3px] z-[3] h-[440px] w-auto object-contain drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
                         priority
                         onError={handleCharacterImageError}
                     />
