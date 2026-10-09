@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
 import { ArrowRight, Gift, ImageDown, Loader2 } from "lucide-react";
 import Image from "next/image";
-import { getCharacterImage, getSkinTypeName, type IPMatchParams } from "@/lib/result-utils";
+import { getCharacterImage, matchCharacterIP, type IPMatchParams } from "@/lib/result-utils";
+import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { formatCertDate, formatCertId } from "@/lib/poster-utils";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
@@ -79,7 +80,11 @@ export default function ShareCardPage({
     const ipParams: IPMatchParams = { score: score ?? 80, skinType, budget, skincareFrequency };
     const characterReady = gender === "male" || gender === "female";
     const characterImage = getCharacterImage({ ...ipParams, gender });
-    const skinTypeName = getSkinTypeName(ipParams);
+    const characterIp = matchCharacterIP(ipParams);
+    const skinTypeName = characterIp.name;
+    // 派系介绍（海报引语下方文案）：取对应派系 m1.intro，缺省回退 persona
+    const factionContent = getSkinTypeByIpKey(characterIp.key);
+    const factionIntro = factionContent?.m1.intro || factionContent?.m1.persona;
 
     const [characterImgSrc, setCharacterImgSrc] = useState(characterImage);
     const [characterImgFailed, setCharacterImgFailed] = useState(false);
@@ -170,20 +175,21 @@ export default function ShareCardPage({
                     className="absolute left-[-110px] top-[210px] w-[440px] h-auto opacity-[0.26] pointer-events-none z-[1]"
                 />
 
-                {/* 文字区：引语 + 派系 + 文案，右侧评分徽章纵排 */}
-                <div className="absolute top-[18px] left-[28px] right-[28px] z-[4]">
-                    <p className="mt-[26px] text-[14px] tracking-[0.1em] text-[#22364B]/60">
+                {/* 文字区：引语 + 派系 + 文案，右侧评分徽章纵排。
+                    顶部偏移 16px = 页头 ResultHeader pb-4（tab → 分割线距离），保证分割线上下视觉间距一致 */}
+                <div className="absolute top-[16px] left-[28px] right-[28px] z-[4]">
+                    <p className="text-[14px] tracking-[0.1em] text-[#22364B]/60">
                         {nickname || "用户"} 的肌肤派系是
                     </p>
-                    <h3 className="mt-[10px] text-[44px] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]">
+                    <h3 className="mt-[10px] text-[38px] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]">
                         「{skinTypeName}」
                     </h3>
-                    <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C]">
-                        {summary || "详细分析见下方报告。"}
+                    <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-3">
+                        {factionIntro || summary || "详细分析见下方报告。"}
                     </p>
 
                     {(score !== undefined || percentile !== null) && (
-                        <div className="absolute right-0 top-[26px] flex flex-col items-center gap-3">
+                        <div className="absolute right-0 top-0 flex flex-col items-center gap-3">
                             {/* 综合评分圆环（金边 + 虚线内圈，与桌面端徽章风格一致） */}
                             {score !== undefined && (
                                 <div className="relative flex h-[72px] w-[72px] flex-col items-center justify-center rounded-full border border-[#C9A86C]/70">

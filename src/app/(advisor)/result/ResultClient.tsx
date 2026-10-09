@@ -491,7 +491,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const [scorePercentile, setScorePercentile] = useState<number | null>(null);
     const overallScore = faceAnalysis?.overallScore;
     useEffect(() => {
-        if (isMock || typeof overallScore !== "number") return;
+        if (typeof overallScore !== "number") return;
+        // mock 预览（本地 UI 走查，无真实聚合）：给演示百分位，保证「超过 X% 用户」徽章可见
+        if (isMock) {
+            setScorePercentile(96);
+            return;
+        }
         let cancelled = false;
         // 评分变化（如重新分析）先清掉旧百分位，避免展示与当前分数不符的副标
         setScorePercentile(null);
