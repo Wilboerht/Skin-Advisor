@@ -162,7 +162,7 @@ export default function ShareCardPage({
                 {/* 下部灰蓝色块：斜切 */}
                 <div
                     aria-hidden="true"
-                    className="absolute inset-0 bg-[#A9BED1] [clip-path:polygon(0_50%,100%_45%,100%_100%,0_100%)]"
+                    className="absolute inset-0 bg-[#A9BED1] [clip-path:polygon(0_47%,100%_42%,100%_100%,0_100%)]"
                 />
 
                 {/* 文字区：引语 + 派系 + 文案，评分徽章右上纵排。
@@ -175,7 +175,7 @@ export default function ShareCardPage({
                     <h3 className="mt-[12px] text-[38px] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]">
                         「{skinTypeName}」
                     </h3>
-                    <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-3">
+                    <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-2">
                         {factionIntro || summary || "详细分析见下方报告。"}
                     </p>
 
