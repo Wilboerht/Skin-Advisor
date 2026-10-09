@@ -123,6 +123,73 @@ export function GenderMismatchModal({
     );
 }
 
+/* ------------------------- 重新测试确认弹窗（样式对齐保存海报弹窗） ------------------------- */
+
+interface ReTestConfirmModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+}
+
+export function ReTestConfirmModal({ isOpen, onClose, onConfirm }: ReTestConfirmModalProps) {
+    const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <m.div
+                    className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                >
+                    <m.div
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                    />
+                    <m.div
+                        ref={modalRef}
+                        initial={{ scale: 0.95, opacity: 0, y: 12 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.95, opacity: 0, y: 12 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                        className="relative z-10 w-full max-w-[420px] rounded-2xl bg-white p-6 text-center shadow-xl"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="re-test-confirm-title"
+                    >
+                        <p id="re-test-confirm-title" className="text-[15px] font-medium text-[var(--color-brand-espresso)] mb-1">
+                            重新测试？
+                        </p>
+                        <p className="text-[12px] leading-[1.8] text-[var(--color-brand-taupe)]">
+                            重新测试将清空当前测肤记录，并消耗 1 次测试额度。确认开始吗？
+                        </p>
+                        <div className="mt-5 flex gap-3">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="flex-1 inline-flex items-center justify-center py-2.5 rounded-full border border-[var(--color-brand-cocoa)]/20 text-[var(--color-brand-taupe)] text-[13px] tracking-[0.1em] font-medium hover:bg-[var(--color-brand-cocoa)]/5 transition-colors cursor-pointer"
+                            >
+                                取消
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onConfirm}
+                                className="flex-1 inline-flex items-center justify-center py-2.5 rounded-full border border-[var(--color-brand-cocoa)]/30 text-[var(--color-brand-cocoa)] text-[13px] tracking-[0.1em] font-medium hover:bg-[var(--color-brand-cocoa)]/5 transition-colors cursor-pointer"
+                            >
+                                重新测试
+                            </button>
+                        </div>
+                    </m.div>
+                </m.div>
+            )}
+        </AnimatePresence>
+    );
+}
+
 /* ------------------------- 微信内嵌浏览器海报保存弹窗 ------------------------- */
 
 interface PosterSaveModalProps {

@@ -7,7 +7,7 @@ import Image from "next/image";
 import { getCharacterImage, matchCharacterIP, type IPMatchParams } from "@/lib/result-utils";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { formatCertDate, formatCertId } from "@/lib/poster-utils";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { ReTestConfirmModal } from "@/components/advisor/result-modals";
 
 interface ShareCardPageProps {
     nickname: string;
@@ -559,20 +559,15 @@ export default function ShareCardPage({
             )}
             </div>
 
-            {/* 重新测试二次确认：移动端「?」与桌面端文字入口共用（会清空当前测肤记录并消耗额度，误触成本高） */}
+            {/* 重新测试二次确认：移动端「?」与桌面端文字入口共用（样式对齐保存海报弹窗） */}
             {onReTest && !reTestBlockedReason && (
-                <ConfirmModal
+                <ReTestConfirmModal
                     isOpen={showReTestConfirm}
                     onClose={() => setShowReTestConfirm(false)}
                     onConfirm={() => {
                         setShowReTestConfirm(false);
                         onReTest();
                     }}
-                    title="重新测试？"
-                    message="重新测试将清空当前测肤记录，并消耗 1 次测试额度。确认开始吗？"
-                    confirmText="重新测试"
-                    cancelText="取消"
-                    variant="warning"
                 />
             )}
         </div>
