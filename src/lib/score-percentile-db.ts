@@ -9,7 +9,7 @@
  * - 归档冷层保留 faceAnalysis.overallScore，一并参与。
  *
  * 性能：一次查询取全量分数直方图（≤101 桶）并全局缓存，任意 score 由缓存求累计，
- * 避免按 score 缓存被刷导致重复扫表；空分布时 percentileFromDistribution 返回 null。
+ * 避免按 score 缓存被刷导致重复扫表；样本不足时由 percentileFromDistribution 给出展示性排名。
  */
 import prisma from "@/lib/prisma";
 import { buildDistribution, type ScoreDistribution } from "@/lib/score-percentile";

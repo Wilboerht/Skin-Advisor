@@ -1,22 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { buildDistribution, percentileFromDistribution } from "./score-percentile";
+import {
+    buildDistribution,
+    percentileFromDistribution,
+    MIN_PERCENTILE_SAMPLE_SIZE,
+} from "./score-percentile";
 
 describe("percentileFromDistribution", () => {
-    it("样本再少也照常计算（排名徽章始终展示）", () => {
-        const dist = buildDistribution([{ score: 80, count: 1 }]);
-        // 同分不计入 below → 0 → 夹到 1
-        expect(percentileFromDistribution(dist, 80)).toBe(1);
-        // 高于唯一样本 → below=1/1 → 夹到 99
-        expect(percentileFromDistribution(dist, 90)).toBe(99);
+    it("样本不足时按分数给 72–93 的展示性排名", () => {
+        const dist = buildDistribution([{ score: 85, count: MIN_PERCENTILE_SAMPLE_SIZE - 1 }]);
+        // 区间内直接用分数
+        expect(percentileFromDistribution(dist, 85)).toBe(85);
+        // 低于下限 → 夹到 72；高于上限 → 夹到 93
+        expect(percentileFromDistribution(dist, 60)).toBe(72);
+        expect(percentileFromDistribution(dist, 98)).toBe(93);
     });
 
-    it("空分布返回 null（无任何样本无法计算）", () => {
-        expect(percentileFromDistribution(buildDistribution([]), 80)).toBeNull();
+    it("空分布同样给展示性排名（徽章始终展示）", () => {
+        expect(percentileFromDistribution(buildDistribution([]), 80)).toBe(80);
     });
 
-    it("达到最小样本量后正常计算", () => {
-        const dist = buildDistribution([{ score: 60, count: 50 }]);
-        expect(percentileFromDistribution(dist, 80)).toBe(99);
+    it("达到最小样本量后按真实分布计算", () => {
+        const dist = buildDistribution([{ score: 60, count: MIN_PERCENTILE_SAMPLE_SIZE }]);
+        expect(percentileFromDistribution(dist, 80)).toBe(97);
     });
 
     it("严格高于才算超过：同分不计入 below", () => {
@@ -31,13 +36,13 @@ describe("percentileFromDistribution", () => {
         expect(percentileFromDistribution(dist, 90)).toBe(60);
     });
 
-    it("最低分夹到 1、最高分夹到 99", () => {
+    it("最低分夹到 1、最高分夹到 97", () => {
         const dist = buildDistribution([
             { score: 30, count: 60 },
             { score: 80, count: 40 },
         ]);
         expect(percentileFromDistribution(dist, 30)).toBe(1);
-        expect(percentileFromDistribution(dist, 100)).toBe(99);
+        expect(percentileFromDistribution(dist, 100)).toBe(97);
     });
 
     it("四舍五入取整", () => {

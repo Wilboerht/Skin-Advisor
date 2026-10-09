@@ -488,7 +488,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         })();
         return () => { cancelled = true; };
     }, [isMock, userId]);
-    // 综合评分百分位（后端真实聚合）：仅评分可用时请求，失败/样本不足则不展示副标
+    // 综合评分百分位（后端聚合；样本不足时后端按分数给出 72–93 展示性排名）：
+    // 仅评分可用时请求，请求失败则不展示副标
     const [scorePercentile, setScorePercentile] = useState<number | null>(null);
     const overallScore = faceAnalysis?.overallScore;
     useEffect(() => {
