@@ -2,12 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
-import { ArrowRight, Gift, ImageDown, Loader2 } from "lucide-react";
+import { ArrowRight, Gift, ImageDown, Info, Loader2 } from "lucide-react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { getCharacterImage, matchCharacterIP, type IPMatchParams } from "@/lib/result-utils";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { formatCertDate, formatCertId } from "@/lib/poster-utils";
 import { ReTestConfirmModal } from "@/components/advisor/result-modals";
+import { useLazyOpen } from "@/hooks/use-lazy-open";
+
+// 派系介绍弹窗：首次点击按钮才下载 chunk（配合 useLazyOpen latch，不进入首屏）
+const SkinTypeModal = dynamic(
+    () => import("@/components/website/SkinTypeModal").then((mod) => mod.SkinTypeModal),
+    { ssr: false }
+);
 
 interface ShareCardPageProps {
     nickname: string;
@@ -125,6 +133,10 @@ export default function ShareCardPage({
     // 重新测试二次确认：会清空当前测肤记录并消耗 1 次额度，误触成本高
     const [showReTestConfirm, setShowReTestConfirm] = useState(false);
 
+    // 派系介绍弹窗（移动端海报「查看派系介绍」入口）
+    const [showFactionIntro, setShowFactionIntro] = useState(false);
+    const shouldRenderFactionIntro = useLazyOpen(showFactionIntro);
+
     useEffect(() => {
         setCharacterImgSrc(characterImage);
         setCharacterImgFailed(false);
@@ -170,7 +182,7 @@ export default function ShareCardPage({
                     与标题 mb-4 → tab（16px）等距，tab 上下间距对称 */}
                 <div className="absolute top-0 left-[28px] right-[28px] z-[4]">
                     <p className="text-[14px] tracking-[0.1em] text-[#22364B]/60">
-                        {nickname || "用户"} 的肌肤派系是
+                        {isReturning ? "欢迎回来，您的肌肤派系是：" : "根据测肤结果，您的肌肤派系是："}
                     </p>
                     <h3 className="mt-[12px] text-[34px] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]">
                         「{skinTypeName}」
@@ -178,6 +190,18 @@ export default function ShareCardPage({
                     <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-3">
                         {factionIntro || summary || "详细分析见下方报告。"}
                     </p>
+
+                    {/* 派系介绍入口：打开对应派系的说明弹窗（首次点击才加载弹窗 chunk） */}
+                    {factionContent && (
+                        <button
+                            type="button"
+                            onClick={() => setShowFactionIntro(true)}
+                            className="mt-3 inline-flex h-[30px] items-center gap-1.5 rounded-full border border-[#22364B]/15 bg-white/70 px-3.5 text-[11px] font-medium tracking-[0.08em] text-[#22364B]/75 transition-colors hover:bg-white hover:border-[#22364B]/30 active:scale-[0.98] cursor-pointer"
+                        >
+                            <Info className="h-3.5 w-3.5 flex-none" strokeWidth={1.75} />
+                            查看派系介绍
+                        </button>
+                    )}
 
                     {/* 评分徽章：综合评分圆环 + 超过 X% 桂冠，右上角纵排 */}
                     {(score !== undefined || percentile !== null) && (
@@ -559,6 +583,15 @@ export default function ShareCardPage({
                         setShowReTestConfirm(false);
                         onReTest();
                     }}
+                />
+            )}
+
+            {/* 派系介绍弹窗：移动端海报「查看派系介绍」入口（懒加载，隐藏测肤 CTA） */}
+            {shouldRenderFactionIntro && (
+                <SkinTypeModal
+                    data={showFactionIntro ? factionContent ?? null : null}
+                    onClose={() => setShowFactionIntro(false)}
+                    hideTestCTA
                 />
             )}
         </div>
