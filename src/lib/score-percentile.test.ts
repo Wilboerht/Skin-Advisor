@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
-import {
-    buildDistribution,
-    percentileFromDistribution,
-    MIN_PERCENTILE_SAMPLE_SIZE,
-} from "./score-percentile";
+import { buildDistribution, percentileFromDistribution } from "./score-percentile";
 
 describe("percentileFromDistribution", () => {
-    it("样本不足返回 null", () => {
-        const dist = buildDistribution([{ score: 80, count: MIN_PERCENTILE_SAMPLE_SIZE - 1 }]);
-        expect(percentileFromDistribution(dist, 80)).toBeNull();
+    it("样本再少也照常计算（排名徽章始终展示）", () => {
+        const dist = buildDistribution([{ score: 80, count: 1 }]);
+        // 同分不计入 below → 0 → 夹到 1
+        expect(percentileFromDistribution(dist, 80)).toBe(1);
+        // 高于唯一样本 → below=1/1 → 夹到 99
+        expect(percentileFromDistribution(dist, 90)).toBe(99);
+    });
+
+    it("空分布返回 null（无任何样本无法计算）", () => {
+        expect(percentileFromDistribution(buildDistribution([]), 80)).toBeNull();
     });
 
     it("达到最小样本量后正常计算", () => {
