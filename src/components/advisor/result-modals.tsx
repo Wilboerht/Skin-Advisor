@@ -123,7 +123,7 @@ export function GenderMismatchModal({
     );
 }
 
-/* ------------------------- 重新测试确认弹窗（样式对齐保存海报弹窗） ------------------------- */
+/* ------------------------- 重新测试确认弹窗（样式对齐保存证书抽屉：手机端底部抽屉 / ≥sm 居中） ------------------------- */
 
 interface ReTestConfirmModalProps {
     isOpen: boolean;
@@ -138,7 +138,7 @@ export function ReTestConfirmModal({ isOpen, onClose, onConfirm }: ReTestConfirm
         <AnimatePresence>
             {isOpen && (
                 <m.div
-                    className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+                    className="fixed inset-0 z-[var(--z-modal)] flex items-end sm:items-center justify-center p-0 sm:p-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -152,36 +152,38 @@ export function ReTestConfirmModal({ isOpen, onClose, onConfirm }: ReTestConfirm
                     />
                     <m.div
                         ref={modalRef}
-                        initial={{ scale: 0.95, opacity: 0, y: 12 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.95, opacity: 0, y: 12 }}
+                        initial={{ y: 24, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 24, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                        className="relative z-10 w-full max-w-[420px] rounded-2xl bg-white p-6 text-center shadow-xl"
+                        className="relative z-10 w-full sm:max-w-[420px] rounded-t-[28px] sm:rounded-[28px] bg-[#FDFBF7] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)]"
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="re-test-confirm-title"
                     >
-                        <p id="re-test-confirm-title" className="text-[15px] font-medium text-[var(--color-brand-espresso)] mb-1">
-                            重新测试？
-                        </p>
-                        <p className="text-[12px] leading-[1.8] text-[var(--color-brand-taupe)]">
-                            重新测试将清空当前测肤记录，并消耗 1 次测试额度。确认开始吗？
-                        </p>
-                        <div className="mt-5 flex gap-3">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="flex-1 inline-flex items-center justify-center py-2.5 rounded-full border border-[var(--color-brand-cocoa)]/20 text-[var(--color-brand-taupe)] text-[13px] tracking-[0.1em] font-medium hover:bg-[var(--color-brand-cocoa)]/5 transition-colors cursor-pointer"
-                            >
-                                取消
-                            </button>
-                            <button
-                                type="button"
-                                onClick={onConfirm}
-                                className="flex-1 inline-flex items-center justify-center py-2.5 rounded-full border border-[var(--color-brand-cocoa)]/30 text-[var(--color-brand-cocoa)] text-[13px] tracking-[0.1em] font-medium hover:bg-[var(--color-brand-cocoa)]/5 transition-colors cursor-pointer"
-                            >
-                                重新测试
-                            </button>
+                        <div className="px-6 pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pt-7 sm:pb-6">
+                            <p id="re-test-confirm-title" className="text-[16px] font-medium text-[var(--color-brand-espresso)] text-center">
+                                重新测试？
+                            </p>
+                            <p className="mt-1.5 text-[12px] leading-[1.8] text-[var(--color-brand-taupe)] text-center">
+                                重新测试将清空当前测肤记录，并消耗 1 次测试额度。确认开始吗？
+                            </p>
+                            <div className="mt-6 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="flex-1 inline-flex items-center justify-center py-2.5 rounded-full border border-[var(--color-brand-cocoa)]/20 text-[var(--color-brand-taupe)] text-[13px] tracking-[0.1em] font-medium hover:bg-[var(--color-brand-cocoa)]/5 transition-colors cursor-pointer"
+                                >
+                                    取消
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onConfirm}
+                                    className="flex-1 inline-flex items-center justify-center py-2.5 rounded-full border border-[var(--color-brand-cocoa)]/30 text-[var(--color-brand-cocoa)] text-[13px] tracking-[0.1em] font-medium hover:bg-[var(--color-brand-cocoa)]/5 transition-colors cursor-pointer"
+                                >
+                                    重新测试
+                                </button>
+                            </div>
                         </div>
                     </m.div>
                 </m.div>

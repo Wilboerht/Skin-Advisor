@@ -236,14 +236,14 @@ export default function ShareCardPage({
                     )}
                 </div>
 
-                {/* 角色：右侧站立，脚底距海报下缘 10px，压制蓝色斜切块之上 */}
+                {/* 角色：右侧站立，脚底距海报下缘 3px，压制蓝色斜切块之上 */}
                 {characterReady && !characterImgFailed && (
                     <Image
                         src={characterImgSrc}
                         alt={skinTypeName}
                         width={480}
                         height={640}
-                        className="absolute right-[-80px] bottom-[10px] z-[3] h-[420px] w-auto object-contain drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
+                        className="absolute right-[-80px] bottom-[3px] z-[3] h-[420px] w-auto object-contain drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
                         priority
                         onError={handleCharacterImageError}
                     />
