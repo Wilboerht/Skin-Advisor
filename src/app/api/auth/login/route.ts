@@ -72,6 +72,11 @@ export async function GET(req: NextRequest) {
         nonce,
         code_challenge: challenge,
         code_challenge_method: "S256",
+        // 建立子站会话前由主站展示确认页（显示当前账号 + 切换账号入口），
+        // 避免"主站已登录 → 子站无感静默登录"。主站 authorize 已支持
+        // prompt=consent；consent 页的"切换账号"会带着本参数重走登录，
+        // 换号成功后仍需确认一次才签发 code
+        prompt: "consent",
     });
 
     // 本地 HTTP 开发模式：Cookie 名去除 __Host-/__Secure- 前缀并关闭 Secure，

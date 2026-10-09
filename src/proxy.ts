@@ -114,6 +114,21 @@ export async function proxy(request: NextRequest) {
 
     const ssoResponse = isApiPath || hasValidLocalSession ? null : await ssoMiddleware(request);
     if (ssoResponse && (ssoResponse.headers.get("location") || (ssoResponse.status >= 300 && ssoResponse.status < 400))) {
+        // SDK middleware 的授权跳转不带 prompt 参数（SsoMiddlewareConfig 无此项），
+        // 此处统一为 authorize 跳转追加 prompt=consent：建立子站会话前由主站
+        // 展示确认页（当前账号 + 切换账号入口），避免主站已登录时子站静默自动登录
+        const location = ssoResponse.headers.get("location");
+        if (location) {
+            try {
+                const authorizeUrl = new URL(location);
+                if (!authorizeUrl.searchParams.has("prompt")) {
+                    authorizeUrl.searchParams.set("prompt", "consent");
+                    ssoResponse.headers.set("location", authorizeUrl.toString());
+                }
+            } catch {
+                // Location 非合法 URL 时保留原始跳转
+            }
+        }
         return ssoResponse;
     }
 

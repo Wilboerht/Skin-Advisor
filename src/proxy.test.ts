@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * proxy（全局中间件）C 端 CSRF 豁免测试
@@ -13,10 +13,11 @@ const mocks = vi.hoisted(() => ({
     verifyCsrfToken: vi.fn(),
     verifyToken: vi.fn(),
     verifySessionSignature: vi.fn(),
+    ssoMiddleware: vi.fn<(req: NextRequest) => Promise<NextResponse | null>>(),
 }));
 
 vi.mock("@nihplod/sso-sdk/next", () => ({
-    createSsoMiddleware: () => async () => null,
+    createSsoMiddleware: () => mocks.ssoMiddleware,
 }));
 vi.mock("@/lib/session-verify", () => ({
     verifySessionSignature: mocks.verifySessionSignature,
@@ -48,6 +49,8 @@ beforeEach(() => {
     mocks.verifyCsrfToken.mockResolvedValue({ valid: false, reason: "missing_auth" });
     mocks.verifyToken.mockResolvedValue(null);
     mocks.verifySessionSignature.mockResolvedValue(null);
+    // 默认已登录/公开路径：SSO middleware 不重定向
+    mocks.ssoMiddleware.mockResolvedValue(null);
 });
 
 describe("proxy C 端 CSRF 豁免：/api/internal/*", () => {
@@ -77,6 +80,40 @@ describe("proxy C 端 CSRF 豁免：/api/internal/*", () => {
         const res = await proxy(req);
         expect(mocks.verifyCsrfToken).toHaveBeenCalledTimes(1);
         expect(res.status).toBe(401);
+    });
+});
+
+describe("proxy SSO 重定向：authorize 跳转追加 prompt=consent", () => {
+    const AUTHORIZE_URL =
+        "https://nihplod.cn/api/oauth/authorize?response_type=code&client_id=test-client&state=abc";
+
+    it("middleware 302 到 authorize 时追加 prompt=consent", async () => {
+        mocks.ssoMiddleware.mockResolvedValue(NextResponse.redirect(AUTHORIZE_URL));
+        const req = new NextRequest("http://localhost/profile");
+        const res = await proxy(req);
+        const location = res.headers.get("location");
+        expect(location).toBeTruthy();
+        const url = new URL(location!);
+        expect(url.searchParams.get("prompt")).toBe("consent");
+        // 原有参数不受影响
+        expect(url.searchParams.get("client_id")).toBe("test-client");
+        expect(url.searchParams.get("state")).toBe("abc");
+    });
+
+    it("authorize 跳转已携带 prompt 时不覆盖", async () => {
+        mocks.ssoMiddleware.mockResolvedValue(
+            NextResponse.redirect(`${AUTHORIZE_URL}&prompt=login`)
+        );
+        const req = new NextRequest("http://localhost/profile");
+        const res = await proxy(req);
+        const url = new URL(res.headers.get("location")!);
+        expect(url.searchParams.get("prompt")).toBe("login");
+    });
+
+    it("middleware 放行（无重定向）时不产生 location", async () => {
+        const req = new NextRequest("http://localhost/profile");
+        const res = await proxy(req);
+        expect(res.headers.get("location")).toBeNull();
     });
 });
 
