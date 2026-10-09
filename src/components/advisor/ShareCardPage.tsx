@@ -182,7 +182,7 @@ export default function ShareCardPage({
                     <p className="text-[14px] tracking-[0.1em] text-[#22364B]/60">
                         {nickname || "用户"} 的肌肤派系是
                     </p>
-                    <h3 className="mt-[10px] text-[38px] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]">
+                    <h3 className="mt-[12px] text-[38px] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]">
                         「{skinTypeName}」
                     </h3>
                     <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-3">
@@ -235,14 +235,14 @@ export default function ShareCardPage({
                     )}
                 </div>
 
-                {/* 角色：右侧站立，脚底距海报下缘 3px，压制蓝色斜切块之上 */}
+                {/* 角色：右侧站立，脚底距海报下缘 10px，压制蓝色斜切块之上 */}
                 {characterReady && !characterImgFailed && (
                     <Image
                         src={characterImgSrc}
                         alt={skinTypeName}
                         width={480}
                         height={640}
-                        className="absolute right-[-80px] bottom-[3px] z-[3] h-[440px] w-auto object-contain drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
+                        className="absolute right-[-80px] bottom-[10px] z-[3] h-[420px] w-auto object-contain drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
                         priority
                         onError={handleCharacterImageError}
                     />
@@ -256,7 +256,7 @@ export default function ShareCardPage({
                         alt="肌智派"
                         width={256}
                         height={156}
-                        className="mb-[6px] w-[104px] h-auto self-start"
+                        className="w-[104px] h-auto self-start"
                     />
                     {onOpenReport && (
                         <button
@@ -318,7 +318,7 @@ export default function ShareCardPage({
                 {/* 重新测试入口：人物 IP 右下角问号按钮；无额度时同一位置改显原因文案 */}
                 {onReTest && (
                     reTestBlockedReason ? (
-                        <p className="absolute right-[24px] bottom-[40px] z-[6] max-w-[170px] text-right text-[11px] font-light leading-[1.6] tracking-[0.04em] text-[#22364B]/45">
+                        <p className="absolute right-[28px] bottom-[40px] z-[6] max-w-[170px] text-right text-[11px] font-light leading-[1.6] tracking-[0.04em] text-[#22364B]/45">
                             {reTestBlockedReason === "login"
                                 ? "登录后可重新测试"
                                 : reTestBlockedReason === "lifetime"
@@ -330,7 +330,7 @@ export default function ShareCardPage({
                             type="button"
                             onClick={() => setShowReTestConfirm(true)}
                             aria-label="重新测试"
-                            className="absolute right-[24px] bottom-[32px] z-[6] inline-flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#FDFCF9]/92 text-[14px] font-semibold leading-none text-[#22364B]/72 shadow-[0_3px_10px_rgba(35,54,75,0.14)] transition-colors hover:bg-[#FDFCF9] hover:text-[#22364B] cursor-pointer"
+                            className="absolute right-[28px] bottom-[32px] z-[6] inline-flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#FDFCF9]/92 text-[14px] font-semibold leading-none text-[#22364B]/72 shadow-[0_3px_10px_rgba(35,54,75,0.14)] transition-colors hover:bg-[#FDFCF9] hover:text-[#22364B] cursor-pointer"
                         >
                             ?
                         </button>
