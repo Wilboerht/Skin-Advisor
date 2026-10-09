@@ -13,7 +13,7 @@ import { useNavPush } from "@/hooks/use-nav-push";
 import { useToast } from "@/components/ui/Toast";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { normalizeAnalysisResult, type ComprehensiveResult, type PreviousTestSummary } from "@/lib/analysis-result";
-import { getCharacterImage } from "@/lib/result-utils";
+import { getCharacterImage, getSkinTypeName } from "@/lib/result-utils";
 import { isMobileDevice, isWeChatBrowser } from "@/lib/share-device";
 import { isPixelDataBlank, sanitizeFilename } from "@/lib/poster-utils";
 import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from "@/lib/storage-keys";
@@ -111,25 +111,57 @@ interface ResultClientProps {
 
 // --- Poster image helpers ---
 
+/** 海报素材等待上限：弱网/请求挂起时超时放行，避免保存流程永久卡死（P1） */
+const POSTER_ASSET_WAIT_TIMEOUT_MS = 8000;
+/** 海报字体就绪等待上限（同上，超时用系统字体兜底渲染） */
+const POSTER_FONT_WAIT_TIMEOUT_MS = 3000;
+
 function preloadImage(url: string | undefined): void {
     if (!url) return;
     const img = new globalThis.Image();
     img.src = url;
 }
 
-async function waitForImages(container: HTMLElement): Promise<void> {
-    const images = Array.from(container.querySelectorAll("img"));
+/** Promise 超时兜底：到点返回 null 放行，调用方按"未就绪"继续后续流程 */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+    return Promise.race([
+        promise,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+    ]);
+}
+
+async function waitForImages(
+    container: HTMLElement,
+    timeoutMs: number = POSTER_ASSET_WAIT_TIMEOUT_MS
+): Promise<void> {
+    const images = Array.from(container.querySelectorAll("img")).filter((img) => !img.complete);
+    if (images.length === 0) return;
+
     // 单图失败不应阻断整张海报：坏图已由 SharePoster 的 onError 降级隐藏，
-    // 这里只等加载结束，失败也按就绪处理，避免一张可降级的素材让保存整体失败
-    await Promise.all(
-        images.map((img) => {
-            if (img.complete) return Promise.resolve();
-            return new Promise<void>((resolve) => {
-                img.addEventListener("load", () => resolve(), { once: true });
-                img.addEventListener("error", () => resolve(), { once: true });
+    // 这里只等加载结束，失败也按就绪处理；整体再加超时兜底，挂起的请求不拖死保存
+    await new Promise<void>((resolve) => {
+        let remaining = images.length;
+        let settled = false;
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            images.forEach((img) => {
+                img.removeEventListener("load", onSettled);
+                img.removeEventListener("error", onSettled);
             });
-        })
-    );
+            resolve();
+        };
+        const onSettled = () => {
+            remaining -= 1;
+            if (remaining <= 0) finish();
+        };
+        const timer = setTimeout(finish, timeoutMs);
+        images.forEach((img) => {
+            img.addEventListener("load", onSettled);
+            img.addEventListener("error", onSettled);
+        });
+    });
 }
 
 /** Blob 转 dataURL：微信 iOS 长按保存对 dataURL 兼容性优于 blob URL，且无需管理 objectURL 生命周期 */
@@ -523,6 +555,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const posterRef = useRef<HTMLDivElement>(null);
     // 保存动作进行中的同步守卫：state 更新有异步窗口，双击时 isGeneratingPoster 可能仍为 false
     const posterBusyRef = useRef(false);
+    // 后台预生成进行中的任务：保存命中同模板时直接 await 复用，避免两个 toBlob 并发跑（P2）
+    const pregenRef = useRef<{ templateId: PosterTemplateId; promise: Promise<Blob | null> } | null>(null);
+    // 微信保存弹窗「已保存，关闭」埋点一次性 latch：退出动画期间重复点击不重复上报（P3）
+    const savedPosterTrackedRef = useRef(false);
 
     // 恢复上次选择的保存版式（仅接受仍处于就绪状态的模板）
     useEffect(() => {
@@ -542,6 +578,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const personaLabel = result?.persona
         ? skinTypes.find(t => t.ipKey === result.persona)?.typeName
         : undefined;
+    // 海报派系名兜底：老报告缺 persona 时按评分/肤质重新匹配，避免导出海报缺「派系名」（P6）
+    const posterSkinTypeName = personaLabel || getSkinTypeName({
+        score: faceAnalysis?.overallScore ?? 80,
+        skinType: result?.skinProfile?.type || 'combination',
+        budget: ipBudget,
+        skincareFrequency: ipSkincareFrequency,
+    });
 
     // ===== 两页版式（证书封面 + 报告正文）与趋势对比 =====
 
@@ -770,29 +813,38 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         if (window.matchMedia("(hover: none)").matches) return;
 
         let cancelled = false;
-        const timer = setTimeout(async () => {
-            try {
-                // 延迟挂载隐藏海报（此时才触发素材/字体加载），等两帧确保 DOM 就绪
-                setPosterMounted(true);
-                await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-                // 海报 DOM 尚未挂载（加载态/分析中等早期分支渲染中）时跳过本次预生成，
-                // 后续数据变化会重新触发；用户点击保存时也有现场生成兜底
-                if (!posterRef.current) return;
-                // 先等海报内图片加载完成，避免生成空白 blob
-                await waitForImages(posterRef.current);
-                const blob = await generatePosterBlob(posterTemplate);
-                if (cancelled) return;
+        const timer = setTimeout(() => {
+            // 预生成任务登记到 ref：保存命中同模板时可直接复用结果，避免并发 toBlob（P2）
+            const task = (async (): Promise<Blob | null> => {
+                try {
+                    // 延迟挂载隐藏海报（此时才触发素材/字体加载），等两帧确保 DOM 就绪
+                    setPosterMounted(true);
+                    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+                    // 海报 DOM 尚未挂载（加载态/分析中等早期分支渲染中）时跳过本次预生成，
+                    // 后续数据变化会重新触发；用户点击保存时也有现场生成兜底
+                    if (!posterRef.current) return null;
+                    // 先等海报内图片加载完成，避免生成空白 blob
+                    await waitForImages(posterRef.current);
+                    const blob = await generatePosterBlob(posterTemplate);
+                    if (cancelled) return null;
 
-                // 不缓存异常小或空白的 blob
-                if (!blob || blob.size < 10 * 1024 || (await isBlobBlank(blob))) {
-                    console.warn("预生成海报异常（可能为空白），不缓存");
-                    return;
+                    // 不缓存异常小或空白的 blob
+                    if (!blob || blob.size < 10 * 1024 || (await isBlobBlank(blob))) {
+                        console.warn("预生成海报异常（可能为空白），不缓存");
+                        return null;
+                    }
+
+                    setPreloadedPoster({ templateId: posterTemplateId, blob });
+                    return blob;
+                } catch (error) {
+                    console.error("预生成海报失败:", error);
+                    return null;
                 }
-
-                setPreloadedPoster({ templateId: posterTemplateId, blob });
-            } catch (error) {
-                console.error("预生成海报失败:", error);
-            }
+            })();
+            pregenRef.current = { templateId: posterTemplateId, promise: task };
+            void task.finally(() => {
+                if (pregenRef.current?.promise === task) pregenRef.current = null;
+            });
         }, 1200);
 
         return () => {
@@ -1017,9 +1069,15 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
         // 仅在移动设备上尝试系统原生分享；PC 端（含触屏 Windows 笔记本）navigator.share 打开面板后通常无法真正保存文件
         const isMobile = isMobileDevice(navigator.userAgent, navigator.maxTouchPoints);
-        const canShareFiles = typeof navigator.share === "function" &&
-            typeof navigator.canShare === "function" &&
-            navigator.canShare({ files: [file] });
+        // canShare 个别环境会抛异常：整体包 try，异常按"不支持"处理直接降级下载（P5）
+        let canShareFiles = false;
+        try {
+            canShareFiles = typeof navigator.share === "function" &&
+                typeof navigator.canShare === "function" &&
+                navigator.canShare({ files: [file] });
+        } catch {
+            canShareFiles = false;
+        }
 
         if (isMobile && canShareFiles) {
             try {
@@ -1040,6 +1098,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             }
         }
 
+        // 兜底下载（桌面/不支持分享的移动端）：浏览器无"下载完成"确认 API，
+        // 埋点口径 = 已触发下载（click 后即返回 true）；补一个轻提示让用户明确已开始下载（P4）
         const link = document.createElement("a");
         link.download = filename;
         link.href = blobUrl;
@@ -1047,6 +1107,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         link.click();
         document.body.removeChild(link);
         setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        toast.success("证书已开始下载");
         return true;
     }
 
@@ -1058,7 +1119,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             throw new Error("海报元素尺寸为 0，无法生成图片");
         }
 
-        await document.fonts.ready;
+        // 字体/素材等待都设上限：挂起时超时放行（系统字体/已有图兜底渲染），不阻塞保存
+        await withTimeout(document.fonts.ready, POSTER_FONT_WAIT_TIMEOUT_MS);
         await waitForImages(posterRef.current);
 
         // 动态加载：html-to-image 仅保存海报时需要，不进首屏包
@@ -1141,8 +1203,14 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
             }
 
-            // 优先使用该模板的后台预生成 blob，没有则现场生成
+            // 优先使用该模板的后台预生成 blob；预生成进行中则等它完成复用，避免并发跑两个 toBlob（P2）
             let blob = preloadedPoster?.templateId === templateId ? preloadedPoster.blob : null;
+            if (!blob) {
+                const inFlight = pregenRef.current;
+                if (inFlight && inFlight.templateId === templateId) {
+                    blob = await inFlight.promise;
+                }
+            }
             if (!blob) {
                 // 现场生成（toBlob pixelRatio:2）在低端机上可能耗时数秒，提前给用户预期，避免误以为卡死
                 toast.info("正在生成高清海报，可能需要几秒钟…", 4000);
@@ -1164,6 +1232,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             // 改为展示海报图片保存：移动端引导长按、桌面端引导右键另存
             if (typeof navigator !== "undefined" && isWeChatBrowser(navigator.userAgent)) {
                 setPosterSaveIsDesktop(!isMobileDevice(navigator.userAgent, navigator.maxTouchPoints));
+                // 新一轮弹窗重置埋点 latch（退出动画期间重复点「已保存，关闭」只计一次，P3）
+                savedPosterTrackedRef.current = false;
                 // 微信 iOS 长按保存对 dataURL 兼容性更好；转换失败再退回 objectURL（由 setSavedPosterUrl 统一管理释放）
                 try {
                     setSavedPosterUrl(await blobToDataUrl(blob));
@@ -1880,7 +1950,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 nickname={userNickname || "用户"}
                                 score={faceAnalysis?.overallScore ?? undefined}
                                 waterOil={faceAnalysis?.dimensions?.waterOil?.score}
-                                skinTypeName={personaLabel}
+                                skinTypeName={posterSkinTypeName}
                                 skinAge={result?.skinProfile?.skinAge}
                                 avatar={socialGender ? getCharacterImage({
                                     // 纯问卷场景无评分：传中性分 80；matchCharacterIP 按 skinType 匹配派系（评分不再影响肤质派系命中，与封面页一致）
@@ -1915,7 +1985,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         imageUrl={savedPosterForSave}
                         variant={posterSaveIsDesktop ? "desktop" : "mobile"}
                         onClose={closePosterSaveModal}
-                        onSaved={() => { if (!isMock) trackResultShare("image"); }}
+                        onSaved={() => {
+                            // 一次性 latch：退出动画期间按钮仍可点，防重复上报（P3）
+                            if (isMock || savedPosterTrackedRef.current) return;
+                            savedPosterTrackedRef.current = true;
+                            trackResultShare("image");
+                        }}
                     />
 
                     {/* 肌智派送好礼活动弹窗：结果页原地打开（懒挂载，首次点开才加载分包） */}
