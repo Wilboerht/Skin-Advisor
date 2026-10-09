@@ -172,34 +172,34 @@ export default function ShareCardPage({
                     <p className="text-[14px] tracking-[0.1em] text-[#22364B]/60">
                         {nickname || "用户"} 的肌肤派系是
                     </p>
-                    <h3 className="mt-[12px] text-[38px] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]">
+                    <h3 className="mt-[12px] text-[34px] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]">
                         「{skinTypeName}」
                     </h3>
                     <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-5">
                         {factionIntro || summary || "详细分析见下方报告。"}
                     </p>
 
-                    {/* 评分徽章：综合评分圆环 + 超过 X% 桂冠，右上角纵排 */}
+                    {/* 评分徽章：综合评分圆环 + 超过 X% 桂冠，右上角横排 */}
                     {(score !== undefined || percentile !== null) && (
-                        <div className="absolute right-0 top-0 flex flex-col items-center gap-3">
+                        <div className="absolute right-0 top-0 flex items-center gap-2.5">
                             {/* 综合评分圆环（金边 + 虚线内圈，与桌面端徽章风格一致） */}
                             {score !== undefined && (
-                                <div className="relative flex h-[72px] w-[72px] flex-col items-center justify-center rounded-full border border-[#C9A86C]/70">
+                                <div className="relative flex h-[58px] w-[58px] flex-col items-center justify-center rounded-full border border-[#C9A86C]/70">
                                     <div
                                         aria-hidden="true"
                                         className="absolute inset-[3px] rounded-full border border-dashed border-[#C9A86C]/40"
                                     />
                                     <div className="relative flex flex-col items-center leading-none">
-                                        <span className="text-[22px] font-light text-[#3D2F25] tabular-nums" style={POSTER_SERIF_STYLE}>
+                                        <span className="text-[18px] font-light text-[#3D2F25] tabular-nums" style={POSTER_SERIF_STYLE}>
                                             {Math.round(score)}
                                         </span>
-                                        <span className="mt-1 text-[9px] tracking-[0.08em] text-[#3D2F25]/55">综合评分</span>
+                                        <span className="mt-0.5 text-[8px] tracking-[0.08em] text-[#3D2F25]/55">综合评分</span>
                                     </div>
                                 </div>
                             )}
                             {/* 桂冠徽章：超过 X% 的用户（月桂左右枝合围） */}
                             {percentile !== null && (
-                                <div className="relative flex h-[68px] w-[92px] items-center justify-center text-[#C9A86C]/85">
+                                <div className="relative flex h-[54px] w-[74px] items-center justify-center text-[#C9A86C]/85">
                                     <svg
                                         className="absolute inset-0 h-full w-full"
                                         viewBox="-28 108 1100 808"
@@ -214,11 +214,11 @@ export default function ShareCardPage({
                                         </g>
                                     </svg>
                                     <div className="relative flex flex-col items-center">
-                                        <span className="text-[8px] leading-[1.4] tracking-[0.06em] text-[#3D2F25]/55">超过</span>
-                                        <span className="text-[15px] font-light leading-[1.1] text-[#3D2F25] tabular-nums" style={POSTER_SERIF_STYLE}>
+                                        <span className="text-[7px] leading-[1.4] tracking-[0.06em] text-[#3D2F25]/55">超过</span>
+                                        <span className="text-[13px] font-light leading-[1.1] text-[#3D2F25] tabular-nums" style={POSTER_SERIF_STYLE}>
                                             {percentile}%
                                         </span>
-                                        <span className="text-[8px] leading-[1.4] tracking-[0.06em] text-[#3D2F25]/55">的用户</span>
+                                        <span className="text-[7px] leading-[1.4] tracking-[0.06em] text-[#3D2F25]/55">的用户</span>
                                     </div>
                                 </div>
                             )}
