@@ -100,10 +100,13 @@
     }
 }
 
-/* 证书面（第一面）：封面层整体铺丝绸纹理，顶部栏用同色半透明 + 毛玻璃，
-   既透出底层纹理又保证滚动时内容不干扰顶部栏可读性；翻页时随背景色过渡 */
+/* 证书面（第一面）：顶部栏完全透明，直接透出封面层的丝绸纹理（含移动端细分隔线一并去除）；
+   翻页时随背景色过渡 */
 .topBarCover {
-    background: rgba(242, 237, 229, 0.85);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom-color: transparent;
 }
 
 .topBar {
