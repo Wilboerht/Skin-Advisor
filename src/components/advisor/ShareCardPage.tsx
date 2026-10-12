@@ -380,7 +380,7 @@ export default function ShareCardPage({
                 )}
 
                 {/* 左区：@昵称 / 引语 / 派系名（收于烘焙问号涂鸦左侧） */}
-                <div className="absolute left-[25%] top-[23%] z-[4] flex max-w-[26%] flex-col items-start">
+                <div className="absolute left-[23%] top-[23%] z-[4] flex max-w-[26%] flex-col items-start">
                     <m.p {...stagger(0.1)} className="text-[1.5cqw] tracking-[0.06em] text-[#22364B]/70">
                         @{nickname || "用户"}
                     </m.p>
@@ -401,14 +401,14 @@ export default function ShareCardPage({
                 {/* 左区：派系引语（蓝灰色块内，斜边上缘最低点 54.5% 以下，两行截断） */}
                 <m.p
                     {...stagger(0.3)}
-                    className="absolute left-[25%] top-[62.5%] z-[4] max-w-[23%] text-[1.35cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
+                    className="absolute left-[23%] top-[62.5%] z-[4] max-w-[23%] text-[1.35cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
                 >
                     {factionIntro || summary || "详细分析见完整报告。"}
                 </m.p>
 
                 {/* 左区：抽奖入口（蓝灰色块上） */}
                 {onGift && (
-                    <m.div {...stagger(0.36)} className="absolute left-[25%] top-[74%] z-[5] flex flex-col items-start gap-[0.8cqw]">
+                    <m.div {...stagger(0.36)} className="absolute left-[23%] top-[74%] z-[5] flex flex-col items-start gap-[0.8cqw]">
                         <p className="flex items-center gap-[0.4cqw] text-[1.3cqw] tracking-[0.06em] text-[#22364B]/80">
                             <Gift className="h-[1.5cqw] w-[1.5cqw] flex-none" strokeWidth={1.75} />
                             肌智派送好礼
