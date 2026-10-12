@@ -210,7 +210,17 @@ function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; onSwitc
 }
 
 // 两页版式共享页脚：第一行 = 版权 + 备案链接，第二行 = AI 声明（证书面/报告面共用）
-function ResultFooter() {
+// simple 变体（证书面桌面端）：不要备案链接，版权与 AI 声明合并为一行
+function ResultFooter({ simple = false }: { simple?: boolean }) {
+    if (simple) {
+        return (
+            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
+                <span suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
+                <span aria-hidden="true" className="hidden sm:inline">|</span>
+                <p>*AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议</p>
+            </div>
+        );
+    }
     return (
         <div className="text-center flex flex-col items-center gap-2">
             <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
@@ -1755,8 +1765,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeInOut" }}
                             >
                                 {/* 标题固定顶部；证书卡紧跟页头，tab 到标题/卡片的间距一致。
-                                    证书面标题区底色与海报米色统一（消除接缝）；页脚（版权/备案/AI 声明）
-                                    仅桌面端展示（mt-auto 沉底，内容超高时随层内滚动），移动端保持沉浸式不展示 */}
+                                    证书面标题区底色与海报米色统一（消除接缝）；页脚仅桌面端展示
+                                    （mt-auto 沉底，simple 变体：版权 + AI 声明单行），移动端保持沉浸式不展示 */}
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
                                 <div className="w-full">
                                     <div className="max-w-[900px] mx-auto px-6 md:px-8">
@@ -1782,9 +1792,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     </section>
                                 </div>
                                 </div>
-                                {/* 桌面端页脚：版权 + 备案 + AI 声明（与报告面共用 ResultFooter） */}
+                                {/* 桌面端页脚：版权 + AI 声明单行（simple 变体，不含备案链接） */}
                                 <footer className="hidden lg:block w-full mt-auto pb-6 pt-8">
-                                    <ResultFooter />
+                                    <ResultFooter simple />
                                 </footer>
                             </m.div>
                         )}
