@@ -518,34 +518,9 @@ export default function ShareCardPage({
                     {isPosterLoading ? "生成中..." : "保存测肤证书"}
                 </button>
             </m.div>
-
-            {/* 重新测试：无额度时展示原因而非入口，避免点进去才发现走不通；可用时与主 CTA 拉开距离、视觉降级，点击后二次确认 */}
-            {onReTest && (
-                reTestBlockedReason ? (
-                    <m.div {...stagger(0.55)} className="mt-6 flex justify-center">
-                        <p className="text-[11px] font-light text-brand-charcoal/35 tracking-[0.04em]">
-                            {reTestBlockedReason === "login"
-                                ? "登录后可重新测试"
-                                : reTestBlockedReason === "lifetime"
-                                    ? "测肤次数已用完"
-                                    : "今日测试次数已用完"}
-                        </p>
-                    </m.div>
-                ) : (
-                    <m.div {...stagger(0.55)} className="mt-6 flex justify-center">
-                        <button
-                            type="button"
-                            onClick={() => setShowReTestConfirm(true)}
-                            className="text-[11px] font-light text-brand-charcoal/45 tracking-[0.04em] underline-offset-4 transition-colors hover:text-brand-charcoal/70 hover:underline cursor-pointer"
-                        >
-                            认为派系判断不准确？重新测试（消耗 1 次测试额度）
-                        </button>
-                    </m.div>
-                )
-            )}
             </div>
 
-            {/* 重新测试二次确认：移动端「?」与桌面端文字入口共用（样式对齐保存海报弹窗） */}
+            {/* 重新测试二次确认：移动端「?」入口使用（样式对齐保存海报弹窗）；桌面端证书面不提供重测入口 */}
             {onReTest && !reTestBlockedReason && (
                 <ReTestConfirmModal
                     isOpen={showReTestConfirm}
