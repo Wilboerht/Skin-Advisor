@@ -44,3 +44,31 @@ export const DIMENSION_ORDER: SkinDimensionKey[] = [
     'sensitivity', 'uvDamage', 'wrinkles', 'spots',
     'skinTone', 'waterOil'
 ];
+
+/**
+ * 关注点 key → 中文标签（客户端安全）。
+ * skinProfile.concerns 落库存的是 identifyConcerns 的原始 key（acne/spots/...），
+ * 展示层（结果页证书卡等）需经此映射；未知 key 原样透出（老数据可能是中文文本）。
+ */
+export const CONCERN_LABELS: Record<string, string> = {
+    anti_aging: "延衰抗老",
+    fine_lines: "淡化细纹",
+    dullness: "暗沉提亮",
+    pigmentation: "色素不均",
+    hydration: "补水保湿",
+    sensitivity: "敏感泛红",
+    acne: "痘痘粉刺",
+    aging: "延衰抗老",
+    dull: "暗沉提亮",
+    wrinkles: "淡化细纹",
+    spots: "色素不均",
+    dryness: "干燥缺水",
+    oil_control: "控油平衡",
+    dark_circles: "黑眼圈",
+    roughness: "粗糙毛孔",
+    waterOil: "水油平衡",
+};
+
+export function getConcernLabel(concern: string): string {
+    return CONCERN_LABELS[concern] || concern;
+}

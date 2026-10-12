@@ -7,6 +7,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { getCharacterImage, matchCharacterIP, type IPMatchParams } from "@/lib/result-utils";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
+import { getConcernLabel } from "@/lib/advisor-labels";
 import { ReTestConfirmModal } from "@/components/advisor/result-modals";
 import { useLazyOpen } from "@/hooks/use-lazy-open";
 
@@ -91,6 +92,8 @@ export default function ShareCardPage({
     const factionIntro = factionContent?.m1.intro || factionContent?.m1.persona;
     // 桌面端活页纸「护肤建议」栏：派系静态建议前 2 条（m7 建议标题）
     const adviceTags = (factionContent?.m7.suggestions ?? []).slice(0, 2).map((s) => s.title);
+    // 桌面端「皮肤特点」栏：concerns 落库存的是 identifyConcerns 原始 key，展示前映射为中文标签
+    const concernLabels = concerns.slice(0, 3).map((c) => getConcernLabel(c));
 
     const [characterImgSrc, setCharacterImgSrc] = useState(characterImage);
     const [characterImgFailed, setCharacterImgFailed] = useState(false);
@@ -470,18 +473,18 @@ export default function ShareCardPage({
                     <div aria-hidden="true" className="absolute left-[67.5%] top-[55%] z-[3] h-[17%] w-[10.5%] bg-[#F7F3EC]" />
                 )}
 
-                {/* 右页：皮肤特点（烘焙标签下方，最多 3 条） */}
-                {concerns.length > 0 && (
-                    <m.ul {...stagger(0.38)} className="absolute left-[82%] top-[47%] z-[4] flex w-[13%] flex-col gap-[0.5cqw]">
-                        {concerns.slice(0, 3).map((c) => (
+                {/* 右页：皮肤特点（对齐烘焙标签左缘 83%，不超出纸面右缘 93%，最多 3 条） */}
+                {concernLabels.length > 0 && (
+                    <m.ul {...stagger(0.38)} className="absolute left-[83%] top-[47%] z-[4] flex w-[10%] flex-col gap-[0.5cqw]">
+                        {concernLabels.map((c) => (
                             <li key={c} className="text-[1.35cqw] leading-[1.3] tracking-[0.04em] text-[#22364B]/85 line-clamp-1">{c}</li>
                         ))}
                     </m.ul>
                 )}
 
-                {/* 右页：护肤建议（派系静态建议前 2 条，烘焙标签下方） */}
+                {/* 右页：护肤建议（派系静态建议前 2 条，对齐烘焙标签左缘、不超出纸面右缘） */}
                 {adviceTags.length > 0 && (
-                    <m.ul {...stagger(0.44)} className="absolute left-[82%] top-[66%] z-[4] flex w-[13%] flex-col gap-[0.6cqw]">
+                    <m.ul {...stagger(0.44)} className="absolute left-[83%] top-[66%] z-[4] flex w-[10%] flex-col gap-[0.6cqw]">
                         {adviceTags.map((t) => (
                             <li key={t} title={t} className="text-[1.25cqw] leading-[1.35] tracking-[0.02em] text-[#22364B]/85 line-clamp-2">{t}</li>
                         ))}

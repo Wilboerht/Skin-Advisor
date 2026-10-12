@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { stripConsultantStepLabels } from "./consultant-text";
+import { getConcernLabel as getConcernLabelShared } from "./advisor-labels";
 
 /**
  * MySkin.Technology 专业皮肤分析类型定义
@@ -400,25 +401,8 @@ export function identifyConcerns(
 }
 
 export function getConcernLabel(concern: string): string {
-    const CONCERN_LABELS: Record<string, string> = {
-        anti_aging: "延衰抗老",
-        fine_lines: "淡化细纹",
-        dullness: "暗沉提亮",
-        pigmentation: "色素不均",
-        hydration: "补水保湿",
-        sensitivity: "敏感泛红",
-        acne: "痘痘粉刺",
-        aging: "延衰抗老",
-        dull: "暗沉提亮",
-        wrinkles: "淡化细纹",
-        spots: "色素不均",
-        dryness: "干燥缺水",
-        oil_control: "控油平衡",
-        dark_circles: "黑眼圈",
-        roughness: "粗糙毛孔",
-        waterOil: "水油平衡",
-    };
-    return CONCERN_LABELS[concern] || concern;
+    // 映射表维护在 advisor-labels（客户端安全模块），此处仅作服务端兼容转发
+    return getConcernLabelShared(concern);
 }
 
 // ============================================================================
