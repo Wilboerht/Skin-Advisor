@@ -380,20 +380,19 @@ export default function ShareCardPage({
                 )}
 
                 {/* 左区：@昵称 / 引语 / 派系名（收于烘焙问号涂鸦左侧） */}
-                <div className="absolute left-[28%] top-[23%] z-[4] flex max-w-[26%] flex-col items-start">
+                <div className="absolute left-[25%] top-[23%] z-[4] flex max-w-[26%] flex-col items-start">
                     <m.p {...stagger(0.1)} className="text-[1.5cqw] tracking-[0.06em] text-[#22364B]/70">
                         @{nickname || "用户"}
                     </m.p>
                     <m.p
                         {...stagger(0.16)}
-                        className="mt-[0.9cqw] inline-flex items-center rounded-md bg-white/80 px-[0.8cqw] py-[0.25cqw] text-[1.4cqw] tracking-[0.04em] text-[#22364B]/80"
+                        className="mt-[0.9cqw] inline-flex items-center bg-white/80 px-[0.8cqw] py-[0.25cqw] text-[1.4cqw] tracking-[0.04em] text-[#22364B]/80"
                     >
                         {isReturning ? "欢迎回来，你的肌智派系是" : "你的肌智派系是"}
                     </m.p>
                     <m.h3
                         {...stagger(0.22)}
-                        className="mt-[1.2cqw] text-[5.2cqw] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]"
-                        style={POSTER_SERIF_STYLE}
+                        className="mt-[1.2cqw] text-[4.6cqw] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]"
                     >
                         「{skinTypeName}」
                     </m.h3>
@@ -402,14 +401,14 @@ export default function ShareCardPage({
                 {/* 左区：派系引语（蓝灰色块内，斜边上缘最低点 54.5% 以下，两行截断） */}
                 <m.p
                     {...stagger(0.3)}
-                    className="absolute left-[28%] top-[55.5%] z-[4] max-w-[23%] text-[1.35cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
+                    className="absolute left-[25%] top-[62.5%] z-[4] max-w-[23%] text-[1.35cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
                 >
                     {factionIntro || summary || "详细分析见完整报告。"}
                 </m.p>
 
                 {/* 左区：抽奖入口（蓝灰色块上） */}
                 {onGift && (
-                    <m.div {...stagger(0.36)} className="absolute left-[28%] top-[67%] z-[5] flex flex-col items-start gap-[0.8cqw]">
+                    <m.div {...stagger(0.36)} className="absolute left-[25%] top-[74%] z-[5] flex flex-col items-start gap-[0.8cqw]">
                         <p className="flex items-center gap-[0.4cqw] text-[1.3cqw] tracking-[0.06em] text-[#22364B]/80">
                             <Gift className="h-[1.5cqw] w-[1.5cqw] flex-none" strokeWidth={1.75} />
                             肌智派送好礼
@@ -419,7 +418,7 @@ export default function ShareCardPage({
                             onClick={onGift}
                             onMouseEnter={fireGiftConfetti}
                             onFocus={fireGiftConfetti}
-                            className="relative inline-flex h-[3.4cqw] min-h-[32px] items-center justify-center rounded-full border border-[#22364B]/15 bg-white px-[2.2cqw] text-[1.4cqw] font-medium tracking-[0.1em] text-[#22364B] shadow-[0_3px_10px_rgba(35,54,75,0.16)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                            className="relative inline-flex h-[3.4cqw] min-h-[32px] items-center justify-center border border-[#22364B]/15 bg-white px-[2.2cqw] text-[1.4cqw] font-medium tracking-[0.1em] text-[#22364B] shadow-[0_3px_10px_rgba(35,54,75,0.16)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                         >
                             {/* 悬浮彩带：从按钮中心向上扇形迸发，指针事件穿透不影响点击 */}
                             <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2">
@@ -440,7 +439,7 @@ export default function ShareCardPage({
                                     />
                                 ))}
                             </span>
-                            点击参与抽奖
+                            点击查看活动
                         </button>
                     </m.div>
                 )}
