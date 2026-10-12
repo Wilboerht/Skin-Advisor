@@ -1757,8 +1757,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeInOut" }}
                             >
                                 {/* 标题固定顶部；证书卡紧跟页头，tab 到标题/卡片的间距一致。
-                                    证书面为沉浸式海报：标题区底色与海报米色统一（消除接缝），
-                                    且不展示底部页脚（版权/备案/AI 声明仅在完整报告面保留） */}
+                                    证书面标题区底色与海报米色统一（消除接缝）；页脚（版权/备案/AI 声明）
+                                    仅桌面端展示（mt-auto 沉底，内容超高时随层内滚动），移动端保持沉浸式不展示 */}
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
                                 <div className="w-full">
                                     <div className="max-w-[900px] mx-auto px-6 md:px-8">
@@ -1784,6 +1784,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     </section>
                                 </div>
                                 </div>
+                                {/* 桌面端页脚：版权 + 备案 + AI 声明（与报告面共用 ResultFooter） */}
+                                <footer className="hidden lg:block w-full mt-auto pb-6 pt-8">
+                                    <ResultFooter />
+                                </footer>
                             </m.div>
                         )}
 
