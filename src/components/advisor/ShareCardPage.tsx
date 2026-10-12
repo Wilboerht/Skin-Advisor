@@ -7,7 +7,6 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { getCharacterImage, matchCharacterIP, type IPMatchParams } from "@/lib/result-utils";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
-import { formatCertDate, formatCertId } from "@/lib/poster-utils";
 import { ReTestConfirmModal } from "@/components/advisor/result-modals";
 import { useLazyOpen } from "@/hooks/use-lazy-open";
 
@@ -28,12 +27,10 @@ interface ShareCardPageProps {
     /** 性别未就绪时不渲染 IP 形象，避免男性用户首帧闪现女版角色 */
     gender?: string;
     summary?: string;
+    /** 皮肤特点短标签（桌面端活页纸「皮肤特点」栏；来自 skinProfile.concerns） */
+    concerns?: string[];
     onDownloadPoster: () => void;
     isPosterLoading?: boolean;
-    /** 测肤日期（ISO），缺省不展示 */
-    certDate?: string;
-    /** 报告会话 ID（截取后 6 位作为证书编号），缺省不展示 */
-    certId?: string;
     /** 翻到第二面（完整报告）的入口；缺省时仅展示保存证书按钮 */
     onOpenReport?: () => void;
     /** 重新测试入口（正常消耗测试次数）；缺省时不展示 */
@@ -73,10 +70,9 @@ export default function ShareCardPage({
     skincareFrequency,
     gender = "",
     summary,
+    concerns = [],
     onDownloadPoster,
     isPosterLoading = false,
-    certDate,
-    certId,
     onOpenReport,
     onReTest,
     reTestBlockedReason = null,
@@ -93,6 +89,8 @@ export default function ShareCardPage({
     // 派系介绍（海报引语下方文案）：取对应派系 m1.intro，缺省回退 persona
     const factionContent = getSkinTypeByIpKey(characterIp.key);
     const factionIntro = factionContent?.m1.intro || factionContent?.m1.persona;
+    // 桌面端活页纸「护肤建议」栏：派系静态建议前 2 条（m7 建议标题）
+    const adviceTags = (factionContent?.m7.suggestions ?? []).slice(0, 2).map((s) => s.title);
 
     const [characterImgSrc, setCharacterImgSrc] = useState(characterImage);
     const [characterImgFailed, setCharacterImgFailed] = useState(false);
@@ -151,9 +149,6 @@ export default function ShareCardPage({
             setCharacterImgFailed(true);
         }
     }, [characterImgSrc, guardianFallback]);
-
-    const dateText = formatCertDate(certDate);
-    const idText = formatCertId(certId);
 
     // 揭晓仪式 stagger：文字逐行淡入（尊重减弱动效）
     const stagger = (delay: number) => ({
@@ -353,174 +348,78 @@ export default function ShareCardPage({
                 )}
             </m.div>
 
-            {/* ===== 桌面端：证书卡（保持原有版式，≥1024px 生效） ===== */}
+            {/* ===== 桌面端：活页笔记本证书（静态元素烘焙进背景图，动态字段绝对定位覆盖，≥1024px 生效） ===== */}
             <div className="hidden lg:contents">
-            {/* Share Card（肌智派证书）：浅色单底 + 金色证书内框；移动端上下分区、桌面端左右分区，虚线分隔 */}
+            {/* 容器即坐标系：aspect 锁定背景图比例（2960×1636），container-type 让 cqw 字号随卡片宽度等比缩放 */}
             <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.5, delay: 0.05 }}
-                className="relative rounded-[20px] lg:rounded-[24px] border border-brand-espresso/8"
-                style={{ background: "#F5F2ED" }}
+                className="relative w-full aspect-[2960/1636] [container-type:inline-size]"
             >
-                {/* 金色双线证书框（烫金质感，全周） */}
-                <div
-                    aria-hidden="true"
-                    className="absolute inset-2 rounded-[14px] lg:rounded-[18px] border border-[#C9A86C]/30 pointer-events-none"
-                />
-                <div
-                    aria-hidden="true"
-                    className="absolute inset-[10px] rounded-[10px] lg:rounded-[14px] border border-[#C9A86C]/14 pointer-events-none"
-                />
-
-                {/* 移动端：形象顶部居中，虚线横向分隔 */}
-                <div className="lg:hidden relative z-10 flex flex-col items-center pt-5">
-                    {characterReady && !characterImgFailed && (
-                        <Image
-                            src={characterImgSrc}
-                            alt={skinTypeName}
-                            width={160}
-                            height={160}
-                            className="w-[160px] h-[160px] object-contain"
-                            priority
-                            onError={handleCharacterImageError}
-                        />
-                    )}
-                    <div className="w-[calc(100%-3rem)] mt-4 border-t border-dashed border-brand-espresso/[0.2]" />
-                </div>
-
-                {/* 桌面端：文字区与形象区之间的竖向虚线分隔 */}
-                <div
-                    aria-hidden="true"
-                    className="hidden lg:block absolute inset-y-12 left-[64%] border-l border-dashed border-brand-espresso/[0.2] pointer-events-none"
+                <Image
+                    src="/images/cert-pc-bg.webp"
+                    alt=""
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 900px, 100vw"
+                    className="object-contain pointer-events-none select-none"
                 />
 
-                {/* 文字区 */}
-                <div className="relative z-10 w-full px-6 pt-6 pb-12 lg:p-10 lg:pr-[36%]">
-                    {/* 间距系统：区块间统一 16/24px（gap-4 lg:gap-6），组内统一 6px（gap-1.5），全部落在 4px 网格上 */}
-                    <div className="flex flex-col justify-center gap-4 lg:gap-6">
-                        {/* 分享版标签：弱化处理，不抢派系名焦点 */}
-                        <m.div
-                            {...stagger(0.1)}
-                            className="relative z-10 inline-flex h-[24px] px-2.5 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/12 bg-transparent text-[11px] font-medium text-[var(--color-brand-charcoal)]/60 tracking-[0.12em] whitespace-nowrap self-start"
-                        >
-                            肌智派证书
-                        </m.div>
+                {/* IP 形象：左侧站立，探出卡片左缘，脚踩蓝灰色块 */}
+                {characterReady && !characterImgFailed && (
+                    <Image
+                        src={characterImgSrc}
+                        alt={skinTypeName}
+                        width={480}
+                        height={640}
+                        className="absolute left-[-6%] bottom-[4%] z-[3] h-[98%] w-auto object-contain object-bottom drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
+                        priority
+                        onError={handleCharacterImageError}
+                    />
+                )}
 
-                        {/* 归属标题：同行区块，间距交给父层 gap */}
-                        <m.h2
-                            {...stagger(0.18)}
-                            className="text-balance text-[15px] lg:text-[18px] font-medium text-brand-espresso/80 leading-snug tracking-[0.01em]"
-                        >
-                            {isReturning ? "欢迎回来，您的测肤报告已更新" : "恭喜完成首次测肤，您的报告已生成"}
-                        </m.h2>
-
-                        {/* 派系宣告：左侧「引语 + 派系名」两行；右侧徽章占满两行高度（顶部=引语顶、底部=派系名底）
-                            徽章高度 = 引语行高(12×1.5=18 / 13×1.5=19.5) + gap-1.5(6) + 派系名(40/48) = 64 / 73.5 */}
-                        <div className={`flex items-start justify-between gap-4 lg:gap-5 lg:pr-6 ${percentile !== null ? "pb-4" : ""}`}>
-                            <div className="flex flex-col gap-1.5">
-                                <m.p
-                                    {...stagger(0.26)}
-                                    className="text-[12px] lg:text-[13px] text-brand-espresso/45 font-light tracking-[0.1em]"
-                                >
-                                    根据检测结果，您的肌智派系为
-                                </m.p>
-                                <m.h3
-                                    {...stagger(0.3)}
-                                    className="text-[40px] lg:text-[48px] font-serif font-light text-brand-espresso leading-none tracking-[0.12em]"
-                                >
-                                    {skinTypeName}
-                                </m.h3>
-                            </div>
-                            {score !== undefined && (
-                                <m.div {...stagger(0.34)} className="relative flex shrink-0">
-                                    <div className="relative flex h-16 w-16 lg:h-[73.5px] lg:w-[73.5px] flex-col items-center justify-center rounded-full border border-brand-gold/55">
-                                        <div aria-hidden="true" className="absolute inset-[3px] rounded-full border border-dashed border-brand-gold/30" />
-                                        <div className="flex flex-col items-center leading-none">
-                                            <span className="font-serif text-[22px] lg:text-[26px] font-light text-brand-espresso tabular-nums">
-                                                {Math.round(score)}
-                                            </span>
-                                            <span className="mt-1 text-[9px] tracking-[0.08em] text-brand-espresso/55">综合评分</span>
-                                        </div>
-                                    </div>
-                                    {percentile !== null && (
-                                        <p className="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 whitespace-nowrap text-[10px] font-light leading-none tracking-[0.02em] text-brand-espresso/50">
-                                            超过 {percentile}% 的用户
-                                        </p>
-                                    )}
-                                </m.div>
-                            )}
-                        </div>
-
-                        {/* 摘要：右缘与徽章右缘对齐（桌面端同样内缩 24px），行高独立于区块间距 */}
-                        <m.p
-                            {...stagger(0.4)}
-                            className="text-[13px] lg:text-[14px] leading-[1.7] lg:leading-[1.75] text-[var(--color-brand-cocoa)]/65 lg:pr-6 line-clamp-3"
-                        >
-                            {summary || "详细分析见下方报告。"}
-                        </m.p>
-                    </div>
-
-                    {/* Desktop: Character IP Image（高度随卡片自适应，底部与文字区对齐，顶部探出卡片上缘） */}
-                    {characterReady && !characterImgFailed && (
-                        <div className="hidden lg:block absolute right-3 -top-20 bottom-10 z-10 pointer-events-none">
-                            <Image
-                                src={characterImgSrc}
-                                alt={skinTypeName}
-                                width={480}
-                                height={640}
-                                className="h-full w-auto object-contain object-right drop-shadow-[0_10px_24px_rgba(0,0,0,0.15)]"
-                                priority
-                                onError={handleCharacterImageError}
-                            />
-                        </div>
-                    )}
-                </div>
-
-                {/* 证书落款：日期 · 编号，固定在卡片右下角 */}
-                {(dateText || idText) && (
-                    <m.p
-                        {...stagger(0.5)}
-                        className="absolute bottom-4 right-5 z-10 text-[11px] font-light tracking-[0.08em] text-brand-charcoal/45 tabular-nums"
-                    >
-                        {dateText || ""}
-                        {dateText && idText ? " · " : ""}
-                        {idText ? `No.${idText}` : ""}
+                {/* 左区：@昵称 / 引语 / 派系名（收于烘焙问号涂鸦左侧） */}
+                <div className="absolute left-[28%] top-[23%] z-[4] flex max-w-[26%] flex-col items-start">
+                    <m.p {...stagger(0.1)} className="text-[1.5cqw] tracking-[0.06em] text-[#22364B]/70">
+                        @{nickname || "用户"}
                     </m.p>
-                )}
-            </m.div>
+                    <m.p
+                        {...stagger(0.16)}
+                        className="mt-[0.9cqw] inline-flex items-center rounded-md bg-white/80 px-[0.8cqw] py-[0.25cqw] text-[1.4cqw] tracking-[0.04em] text-[#22364B]/80"
+                    >
+                        {isReturning ? "欢迎回来，你的肌智派系是" : "你的肌智派系是"}
+                    </m.p>
+                    <m.h3
+                        {...stagger(0.22)}
+                        className="mt-[1.2cqw] text-[5.2cqw] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]"
+                        style={POSTER_SERIF_STYLE}
+                    >
+                        「{skinTypeName}」
+                    </m.h3>
+                </div>
 
-            {/* 证书卡外操作区：主 CTA 独占一行（浅色 tonal 大按钮，避免实心过重），次级操作一行（描边胶囊） */}
-            <m.div {...stagger(0.42)} className="flex flex-col items-center gap-3 mt-6">
-                {onOpenReport && (
-                    <button
-                        onClick={onOpenReport}
-                        className="group inline-flex w-full sm:w-auto sm:min-w-[224px] items-center justify-center gap-2 h-11 px-8 rounded-full border border-brand-cocoa/25 bg-brand-cocoa/[0.07] text-brand-cocoa text-[14px] font-medium tracking-[0.08em] transition-colors duration-200 hover:border-brand-cocoa/40 hover:bg-brand-cocoa/[0.12] active:bg-brand-cocoa/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] cursor-pointer"
-                    >
-                        查看完整报告
-                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
-                    </button>
-                )}
-                <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
-                    <button
-                        onClick={onDownloadPoster}
-                        disabled={isPosterLoading}
-                        aria-busy={isPosterLoading}
-                        className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 min-w-[10.5em] px-4 rounded-full border border-brand-espresso/12 text-[13px] text-brand-charcoal/70 font-light tracking-[0.04em] transition-colors hover:border-brand-espresso/25 hover:bg-brand-espresso/[0.03] hover:text-brand-charcoal active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                        {isPosterLoading ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2} />
-                        ) : (
-                            <ImageDown className="w-3.5 h-3.5" strokeWidth={1.75} />
-                        )}
-                        {isPosterLoading ? "生成中..." : "保存测肤证书"}
-                    </button>
-                    {onGift && (
+                {/* 左区：派系引语（蓝灰色块上缘，两行截断） */}
+                <m.p
+                    {...stagger(0.3)}
+                    className="absolute left-[28%] top-[46%] z-[4] max-w-[23%] text-[1.35cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
+                >
+                    {factionIntro || summary || "详细分析见完整报告。"}
+                </m.p>
+
+                {/* 左区：抽奖入口（蓝灰色块上） */}
+                {onGift && (
+                    <m.div {...stagger(0.36)} className="absolute left-[28%] top-[57%] z-[5] flex flex-col items-start gap-[0.8cqw]">
+                        <p className="flex items-center gap-[0.4cqw] text-[1.3cqw] tracking-[0.06em] text-[#22364B]/80">
+                            <Gift className="h-[1.5cqw] w-[1.5cqw] flex-none" strokeWidth={1.75} />
+                            肌智派送好礼
+                        </p>
                         <button
+                            type="button"
                             onClick={onGift}
                             onMouseEnter={fireGiftConfetti}
                             onFocus={fireGiftConfetti}
-                            className="group relative inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 px-4 rounded-full border border-brand-gold/40 text-[13px] text-brand-bronze font-light tracking-[0.04em] transition-colors hover:border-brand-gold/70 hover:bg-brand-gold/[0.08] active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F2ED] cursor-pointer"
+                            className="relative inline-flex h-[3.4cqw] min-h-[32px] items-center justify-center rounded-full border border-[#22364B]/15 bg-white px-[2.2cqw] text-[1.4cqw] font-medium tracking-[0.1em] text-[#22364B] shadow-[0_3px_10px_rgba(35,54,75,0.16)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                         >
                             {/* 悬浮彩带：从按钮中心向上扇形迸发，指针事件穿透不影响点击 */}
                             <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2">
@@ -541,11 +440,80 @@ export default function ShareCardPage({
                                     />
                                 ))}
                             </span>
-                            <Gift className="w-3.5 h-3.5 transition-transform group-hover:-rotate-6 group-hover:scale-110" strokeWidth={1.75} />
-                            肌智派送好礼 · 参与抽奖
+                            点击参与抽奖
                         </button>
+                    </m.div>
+                )}
+
+                {/* 右页：综合评分（烘焙标签正下方）；无评分时用纸色块盖住烘焙文案 */}
+                {score !== undefined ? (
+                    <m.p
+                        {...stagger(0.26)}
+                        className="absolute left-[62%] top-[33%] z-[4] w-[20%] text-center text-[8.5cqw] font-medium leading-none text-[#22364B] tabular-nums"
+                        style={POSTER_SERIF_STYLE}
+                    >
+                        {Math.round(score)}
+                    </m.p>
+                ) : (
+                    <div aria-hidden="true" className="absolute left-[63%] top-[24%] z-[3] h-[25%] w-[18%] bg-[#F7F3EC]" />
+                )}
+
+                {/* 右页：百分位（烘焙"击败了全国 / 的用户"之间）；无数据时盖住圆环内烘焙文字 */}
+                {percentile !== null ? (
+                    <m.p
+                        {...stagger(0.32)}
+                        className="absolute left-[62%] top-[60%] z-[4] w-[20%] text-center text-[4.2cqw] font-medium leading-none text-[#22364B] tabular-nums"
+                        style={POSTER_SERIF_STYLE}
+                    >
+                        {percentile}%
+                    </m.p>
+                ) : (
+                    <div aria-hidden="true" className="absolute left-[67.5%] top-[55%] z-[3] h-[17%] w-[10.5%] bg-[#F7F3EC]" />
+                )}
+
+                {/* 右页：皮肤特点（烘焙标签下方，最多 3 条） */}
+                {concerns.length > 0 && (
+                    <m.ul {...stagger(0.38)} className="absolute left-[82%] top-[47%] z-[4] flex w-[13%] flex-col gap-[0.5cqw]">
+                        {concerns.slice(0, 3).map((c) => (
+                            <li key={c} className="text-[1.35cqw] leading-[1.3] tracking-[0.04em] text-[#22364B]/85 line-clamp-1">{c}</li>
+                        ))}
+                    </m.ul>
+                )}
+
+                {/* 右页：护肤建议（派系静态建议前 2 条，烘焙标签下方） */}
+                {adviceTags.length > 0 && (
+                    <m.ul {...stagger(0.44)} className="absolute left-[82%] top-[66%] z-[4] flex w-[13%] flex-col gap-[0.6cqw]">
+                        {adviceTags.map((t) => (
+                            <li key={t} title={t} className="text-[1.25cqw] leading-[1.35] tracking-[0.02em] text-[#22364B]/85 line-clamp-2">{t}</li>
+                        ))}
+                    </m.ul>
+                )}
+            </m.div>
+
+            {/* 卡外操作区：主 CTA 深色实心 + 保存证书描边，并排居中（对齐效果图） */}
+            <m.div {...stagger(0.42)} className="flex items-center justify-center gap-4 mt-6">
+                {onOpenReport && (
+                    <button
+                        onClick={onOpenReport}
+                        className="group inline-flex min-w-[224px] h-11 px-8 items-center justify-center gap-2 rounded-full bg-[#1D3A5F] text-white text-[14px] font-medium tracking-[0.08em] transition-colors duration-200 hover:bg-[#16304F] active:bg-[#122842] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D3A5F]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F2EDE5] cursor-pointer"
+                    >
+                        查看完整报告
+                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
+                    </button>
+                )}
+                <button
+                    onClick={onDownloadPoster}
+                    disabled={isPosterLoading}
+                    aria-busy={isPosterLoading}
+                    className="inline-flex min-w-[224px] h-11 px-8 items-center justify-center gap-2 rounded-full border border-[#1D3A5F]/55 text-[#1D3A5F] text-[14px] font-medium tracking-[0.08em] transition-colors duration-200 hover:border-[#1D3A5F] hover:bg-[#1D3A5F]/[0.05] active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D3A5F]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F2EDE5] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                    {isPosterLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />
+                    ) : (
+                        <ImageDown className="w-4 h-4" strokeWidth={1.75} />
                     )}
-                </div>
+                    {isPosterLoading ? "生成中..." : "保存测肤证书"}
+                </button>
             </m.div>
 
             {/* 重新测试：无额度时展示原因而非入口，避免点进去才发现走不通；可用时与主 CTA 拉开距离、视觉降级，点击后二次确认 */}

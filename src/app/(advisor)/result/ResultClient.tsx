@@ -1772,10 +1772,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             skincareFrequency={ipSkincareFrequency}
                                             gender={socialGender}
                                             summary={result?.analysis?.summary}
+                                            concerns={result?.skinProfile?.concerns}
                                             onDownloadPoster={handleRequestSavePoster}
                                             isPosterLoading={isGeneratingPoster}
-                                            certDate={certDate}
-                                            certId={sessionId}
                                             onOpenReport={handleFlipToReport}
                                             onReTest={handleReTest}
                                             reTestBlockedReason={reTestBlockedReason}
