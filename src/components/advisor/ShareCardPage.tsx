@@ -461,7 +461,7 @@ export default function ShareCardPage({
                 {percentile !== null ? (
                     <m.p
                         {...stagger(0.32)}
-                        className="absolute left-[62%] top-[60%] z-[4] w-[20%] text-center text-[4.2cqw] font-medium leading-none text-[#22364B] tabular-nums"
+                        className="absolute left-[62%] top-[60%] z-[4] w-[20%] text-center text-[3.5cqw] font-medium leading-none text-[#22364B] tabular-nums"
                         style={POSTER_SERIF_STYLE}
                     >
                         {percentile}%
