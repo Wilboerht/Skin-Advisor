@@ -1725,8 +1725,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
             {result && (
                 <div className={styles.container}>
-                    {/* 顶部栏：全局固定，三段式（回首页 / logo / 用户身份区），跨两页共享（不随页面层滚动） */}
-                    <header className={styles.topBar}>
+                    {/* 顶部栏：全局固定，三段式（回首页 / logo / 用户身份区），跨两页共享（不随页面层滚动）。
+                        底色随页面切换：证书面与封面层米色一致（topBarCover），报告面用默认毛玻璃底 */}
+                    <header className={`${styles.topBar} ${pageIndex === 0 ? styles.topBarCover : ""}`}>
                         <div className={styles.topBarInner}>
                             <button
                                 onClick={() => navPush('/')}
@@ -1758,14 +1759,15 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         {pageIndex === 0 && (
                             <m.div
                                 key="cover-layer"
-                                className={`${styles.pageLayer} bg-[#F2EDE5] flex flex-col`}
+                                className={`${styles.pageLayer} flex flex-col`}
+                                style={{ background: "#F2EDE5 url(/images/silk-texture.png) center / cover no-repeat" }}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeInOut" }}
                             >
                                 {/* 标题固定顶部；证书卡紧跟页头，tab 到标题/卡片的间距一致。
-                                    证书面标题区底色与海报米色统一（消除接缝）；页脚仅桌面端展示
+                                    证书面整面铺丝绸纹理（silk-texture.png，米色兜底）；页脚仅桌面端展示
                                     （mt-auto 沉底，simple 变体：版权 + AI 声明单行），移动端保持沉浸式不展示 */}
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
                                 <div className="w-full">

@@ -100,6 +100,16 @@
     }
 }
 
+/* 证书面（第一面）：封面层整体铺丝绸纹理，顶部栏用同色半透明 + 毛玻璃，
+   既透出底层纹理又保证滚动时内容不干扰顶部栏可读性；翻页时随背景色过渡 */
+.topBarCover {
+    background: rgba(242, 237, 229, 0.85);
+}
+
+.topBar {
+    transition: background-color 0.25s ease-in-out;
+}
+
 .main {
     /* 内容区域保持原有宽度（max-w 900 + 16/24px 边距），仅顶部栏与 questions 页对齐。
        底部留白含 safe-area + 底部 tab 占位（约 48px）：footer 不再自带 pb，统一由 main 收口 */
