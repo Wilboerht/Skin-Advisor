@@ -23,6 +23,8 @@ export const STORAGE_KEYS = {
     ADVISOR_LAST_SUMMARY: 'advisor_last_summary',
     // 测肤拍摄时肌肤状态（纯素颜/带妆等，扫脸引导弹窗选择）
     ADVISOR_SKIN_STATE: 'advisor_skin_state',
+    // 证书下载版式偏好（qr 标准版 / noqr 分享版，记忆上次选择）
+    ADVISOR_CERT_VARIANT: 'advisor_cert_variant',
 
     // 免费重试
     ADVISOR_FREE_RETRY: 'advisor_free_retry',

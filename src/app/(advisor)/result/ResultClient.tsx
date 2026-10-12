@@ -16,7 +16,7 @@ import { normalizeAnalysisResult, type ComprehensiveResult, type PreviousTestSum
 import { matchCharacterIP } from "@/lib/result-utils";
 import { isMobileDevice, isWeChatBrowser } from "@/lib/share-device";
 import { sanitizeFilename } from "@/lib/poster-utils";
-import { certImageUrl, renderCertImage } from "@/lib/cert-image";
+import { certImageUrl, renderCertImage, type CertVariant } from "@/lib/cert-image";
 import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from "@/lib/storage-keys";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import type { SessionUser } from "@/lib/auth";
@@ -73,6 +73,11 @@ const AdvisorServiceSection = dynamic(
     { ssr: false, loading: () => null }
 );
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
+// 证书版式选择：点「保存测肤证书」才需要（懒加载）
+const CertVariantPicker = dynamic(
+    () => import("@/components/advisor/CertVariantPicker").then((mod) => mod.CertVariantPicker),
+    { ssr: false }
+);
 // 派系介绍弹层：分析等待期的消遣内容（纯静态 JSON），点击才加载分包
 const SkinTypesModal = dynamic(() => import("@/components/website/SkinTypesModal").then((mod) => mod.SkinTypesModal), { ssr: false });
 
@@ -464,6 +469,27 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 证书日期：分析完成时间（游客"上一次摘要"快照用）。缺失时不记录，避免把"查看时间"伪造成"测肤时间"
     const certDate = result?.analyzedAt;
 
+    // 证书底图派系 key：优先落库 persona，老数据缺失时按评分/肤质重新匹配（与封面卡口径一致）。
+    // 纯问卷场景无评分：传中性分 80；matchCharacterIP 按 skinType 匹配派系（评分不再影响肤质派系命中）
+    const certPersonaKey = result?.persona || matchCharacterIP({
+        score: faceAnalysis?.overallScore ?? 80,
+        skinType: result?.skinProfile?.type || 'combination',
+        budget: ipBudget,
+        skincareFrequency: ipSkincareFrequency,
+    }).key;
+
+    // 证书下载版式：qr 标准版（含二维码）/ noqr 分享版（无二维码）；记忆用户上次选择
+    const [certVariant, setCertVariant] = useState<CertVariant>("qr");
+    const [showCertVariantPicker, setShowCertVariantPicker] = useState(false);
+    // 版式选择弹层懒挂载：点保存才可能打开，打开过保持挂载以保留退场动画
+    const shouldRenderCertVariantPicker = useLazyOpen(showCertVariantPicker);
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEYS.ADVISOR_CERT_VARIANT);
+            if (saved === "qr" || saved === "noqr") setCertVariant(saved);
+        } catch { /* ignore */ }
+    }, []);
+
     // ===== 两页版式（证书封面 + 报告正文）与趋势对比 =====
 
     // "上一次测肤摘要"：登录用户由服务端 previousSummary 提供（null=确认为首次）；
@@ -643,18 +669,15 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         } catch { /* ignore */ }
     }, [sessionId]);
 
-    // 进页后空闲时预载当前派系×性别的证书底图（~140KB），点保存时无需等网络
+    // 进页后空闲时预载当前派系×性别的两版证书底图（各 ~120KB），点保存时无需等网络
     useEffect(() => {
         if (!result || !socialGender) return;
-        const personaKey = result.persona || matchCharacterIP({
-            // 纯问卷场景无评分：传中性分 80；matchCharacterIP 按 skinType 匹配派系（评分不再影响肤质派系命中，与封面页一致）
-            score: faceAnalysis?.overallScore ?? 80,
-            skinType: result.skinProfile?.type || 'combination',
-            budget: ipBudget,
-            skincareFrequency: ipSkincareFrequency,
-        }).key;
-        const url = certImageUrl(personaKey, socialGender);
-        const run = () => { const img = new globalThis.Image(); img.src = url; };
+        const run = () => {
+            for (const variant of ["qr", "noqr"] as const) {
+                const img = new globalThis.Image();
+                img.src = certImageUrl(certPersonaKey, socialGender, variant);
+            }
+        };
         if (typeof window.requestIdleCallback === "function") {
             const idleId = window.requestIdleCallback(run, { timeout: 3000 });
             return () => {
@@ -663,7 +686,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         }
         const timer = window.setTimeout(run, 1500);
         return () => window.clearTimeout(timer);
-    }, [result, socialGender, faceAnalysis?.overallScore, ipBudget, ipSkincareFrequency]);
+    }, [result, socialGender, certPersonaKey]);
 
     const handleMismatchRetry = () => {
         // Clear previous answers to force a fresh start
@@ -923,30 +946,25 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         return true;
     }
 
-    // 「保存测肤证书」：canvas 合成派系×性别成品证书（底图含静态二维码），叠加评分/百分位/派系建议。
+    // 「保存测肤证书」：canvas 合成派系×性别成品证书，叠加评分(仅标准版)/百分位/派系建议。
     // 不再有 DOM 截图的空白/超时问题；底图在进页后已空闲预载，保存通常即时完成
-    const handleSavePoster = async () => {
+    const handleSavePoster = async (variant: CertVariant) => {
         if (posterBusyRef.current) return;
         posterBusyRef.current = true;
         try {
             setIsGeneratingPoster(true);
             setPosterError(null);
 
-            // 派系 key：优先落库的 persona，老数据缺失时按评分/肤质重新匹配（与封面卡口径一致）
-            const personaKey = result?.persona || matchCharacterIP({
-                score: faceAnalysis?.overallScore ?? 80,
-                skinType: result?.skinProfile?.type || 'combination',
-                budget: ipBudget,
-                skincareFrequency: ipSkincareFrequency,
-            }).key;
-            const advice = skinTypes.find(t => t.ipKey === personaKey)?.m7.suggestions?.slice(0, 2).map((s) => s.title);
+            const advice = skinTypes.find(t => t.ipKey === certPersonaKey)?.m7.suggestions?.slice(0, 2).map((s) => s.title);
 
             const blob = await renderCertImage({
-                persona: personaKey,
+                persona: certPersonaKey,
                 gender: socialGender,
+                variant,
                 score: faceAnalysis?.overallScore,
                 percentile: scorePercentile,
                 advice,
+                nickname: userNickname,
             });
 
             // 微信内置浏览器（移动端与桌面端）：<a download> 与 navigator.share(files) 均不可靠，
@@ -966,7 +984,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             }
 
             const safeName = sanitizeFilename(userNickname || "用户");
-            const saved = await triggerDownload(blob, `${safeName}的肌智派证书.png`);
+            const saved = await triggerDownload(blob, `${safeName}的肌智派证书${variant === "noqr" ? "-小红书" : ""}.png`);
             // 埋点口径：真正触发下载/分享才计入；用户在系统分享面板取消返回 false
             if (saved && !isMock) trackResultShare("image");
         } catch (error) {
@@ -976,6 +994,19 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             posterBusyRef.current = false;
             setIsGeneratingPoster(false);
         }
+    };
+
+    // 「保存测肤证书」入口：先弹版式选择（标准版含二维码 / 分享版无二维码）
+    const handleRequestSavePoster = () => {
+        setShowCertVariantPicker(true);
+    };
+
+    // 用户在版式选择弹层中点选：记忆选择并按该版式保存
+    const handlePickCertVariant = (variant: CertVariant) => {
+        setShowCertVariantPicker(false);
+        setCertVariant(variant);
+        try { localStorage.setItem(STORAGE_KEYS.ADVISOR_CERT_VARIANT, variant); } catch { /* ignore */ }
+        void handleSavePoster(variant);
     };
 
     const closePosterSaveModal = () => {
@@ -1479,7 +1510,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             gender={socialGender}
                                             summary={result?.analysis?.summary}
                                             concerns={result?.skinProfile?.concerns}
-                                            onDownloadPoster={handleSavePoster}
+                                            onDownloadPoster={handleRequestSavePoster}
                                             isPosterLoading={isGeneratingPoster}
                                             onOpenReport={handleFlipToReport}
                                             onReTest={handleReTest}
@@ -1640,6 +1671,18 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             </button>
                         </div>
                     )}
+                    {/* 证书版式选择：标准版（含二维码）/ 分享版（无二维码），点选即生成 */}
+                    {shouldRenderCertVariantPicker && (
+                        <CertVariantPicker
+                            isOpen={showCertVariantPicker}
+                            persona={certPersonaKey}
+                            gender={socialGender}
+                            selectedId={certVariant}
+                            onSelect={handlePickCertVariant}
+                            onClose={() => setShowCertVariantPicker(false)}
+                        />
+                    )}
+
                     {/* 微信内嵌浏览器海报保存兜底：移动端长按 / 桌面端右键另存；点「已保存，关闭」才计分享埋点 */}
                     <PosterSaveModal
                         imageUrl={savedPosterForSave}
