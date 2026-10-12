@@ -373,7 +373,7 @@ export default function ShareCardPage({
                         alt={skinTypeName}
                         width={480}
                         height={640}
-                        className="absolute left-[-12%] bottom-[-15%] z-[3] h-[130%] w-auto object-contain object-bottom drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
+                        className="absolute left-[-20%] bottom-[-15%] z-[3] h-[130%] w-auto object-contain object-bottom drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
                         priority
                         onError={handleCharacterImageError}
                     />
@@ -399,17 +399,17 @@ export default function ShareCardPage({
                     </m.h3>
                 </div>
 
-                {/* 左区：派系引语（蓝灰色块上缘，两行截断） */}
+                {/* 左区：派系引语（蓝灰色块内，斜边上缘最低点 54.5% 以下，两行截断） */}
                 <m.p
                     {...stagger(0.3)}
-                    className="absolute left-[28%] top-[46%] z-[4] max-w-[23%] text-[1.35cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
+                    className="absolute left-[28%] top-[55.5%] z-[4] max-w-[23%] text-[1.35cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
                 >
                     {factionIntro || summary || "详细分析见完整报告。"}
                 </m.p>
 
                 {/* 左区：抽奖入口（蓝灰色块上） */}
                 {onGift && (
-                    <m.div {...stagger(0.36)} className="absolute left-[28%] top-[57%] z-[5] flex flex-col items-start gap-[0.8cqw]">
+                    <m.div {...stagger(0.36)} className="absolute left-[28%] top-[67%] z-[5] flex flex-col items-start gap-[0.8cqw]">
                         <p className="flex items-center gap-[0.4cqw] text-[1.3cqw] tracking-[0.06em] text-[#22364B]/80">
                             <Gift className="h-[1.5cqw] w-[1.5cqw] flex-none" strokeWidth={1.75} />
                             肌智派送好礼
