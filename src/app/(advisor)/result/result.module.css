@@ -100,6 +100,20 @@
     }
 }
 
+/* 证书面（第一面）：整面丝绸纹理以伪元素铺设，opacity 单独可调（底色 #F2EDE5 兜底） */
+.coverLayer {
+    background-color: #F2EDE5;
+}
+
+.coverLayer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url(/images/silk-texture.png) center / cover no-repeat;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 /* 证书面（第一面）：顶部栏完全透明，直接透出封面层的丝绸纹理（含移动端细分隔线一并去除）；
    翻页时随背景色过渡 */
 .topBarCover {

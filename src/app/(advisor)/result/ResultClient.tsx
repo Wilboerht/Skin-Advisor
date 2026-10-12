@@ -1759,8 +1759,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         {pageIndex === 0 && (
                             <m.div
                                 key="cover-layer"
-                                className={`${styles.pageLayer} flex flex-col`}
-                                style={{ background: "#F2EDE5 url(/images/silk-texture.png) center / cover no-repeat" }}
+                                className={`${styles.pageLayer} ${styles.coverLayer} flex flex-col`}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
