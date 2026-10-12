@@ -209,15 +209,13 @@ function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; onSwitc
     );
 }
 
-// 两页版式共享页脚：版权 + 备案 + AI 声明（证书面/报告面共用）
+// 两页版式共享页脚：第一行 = 版权 + 备案链接，第二行 = AI 声明（证书面/报告面共用）
 function ResultFooter() {
     return (
-        <div className="text-center flex flex-col items-center gap-3">
-            <p className="text-[11px] font-light tracking-[0.15em] text-brand-charcoal/65" suppressHydrationWarning>
-                © {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-            </p>
-
+        <div className="text-center flex flex-col items-center gap-2">
             <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
+                <span suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
+                <span aria-hidden="true" className="hidden sm:inline">|</span>
                 <a
                     href="https://beian.miit.gov.cn/"
                     target="_blank"
