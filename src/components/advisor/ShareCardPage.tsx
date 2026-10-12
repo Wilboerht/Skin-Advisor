@@ -414,7 +414,7 @@ export default function ShareCardPage({
                     <m.div {...stagger(0.36)} className="absolute left-[23%] top-[73.5%] z-[5] flex flex-col items-start gap-[0.8cqw]">
                         <p className="flex items-center gap-[0.4cqw] text-[1.7cqw] tracking-[0.06em] text-[#22364B]/80">
                             <Gift className="h-[1.8cqw] w-[1.8cqw] flex-none" strokeWidth={1.75} />
-                            肌智派送好礼
+                            肌智派送好礼：
                         </p>
                         <button
                             type="button"
