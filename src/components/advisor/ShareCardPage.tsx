@@ -396,7 +396,7 @@ export default function ShareCardPage({
                     </m.p>
                     <m.h3
                         {...stagger(0.22)}
-                        className="mt-[1.2cqw] -ml-[0.5em] text-[4.6cqw] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]"
+                        className="mt-[3cqw] -ml-[0.5em] text-[4.6cqw] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]"
                     >
                         「{skinTypeName}」
                     </m.h3>
