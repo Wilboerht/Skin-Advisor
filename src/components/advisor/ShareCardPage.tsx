@@ -401,16 +401,16 @@ export default function ShareCardPage({
                 {/* 左区：派系引语（蓝灰色块内，斜边上缘最低点 54.5% 以下，两行截断） */}
                 <m.p
                     {...stagger(0.3)}
-                    className="absolute left-[23%] top-[62.5%] z-[4] max-w-[23%] text-[1.35cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
+                    className="absolute left-[23%] top-[62.5%] z-[4] max-w-[23%] text-[1.7cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
                 >
                     {factionIntro || summary || "详细分析见完整报告。"}
                 </m.p>
 
                 {/* 左区：抽奖入口（蓝灰色块上） */}
                 {onGift && (
-                    <m.div {...stagger(0.36)} className="absolute left-[23%] top-[74%] z-[5] flex flex-col items-start gap-[0.8cqw]">
-                        <p className="flex items-center gap-[0.4cqw] text-[1.3cqw] tracking-[0.06em] text-[#22364B]/80">
-                            <Gift className="h-[1.5cqw] w-[1.5cqw] flex-none" strokeWidth={1.75} />
+                    <m.div {...stagger(0.36)} className="absolute left-[23%] top-[76.5%] z-[5] flex flex-col items-start gap-[0.8cqw]">
+                        <p className="flex items-center gap-[0.4cqw] text-[1.7cqw] tracking-[0.06em] text-[#22364B]/80">
+                            <Gift className="h-[1.8cqw] w-[1.8cqw] flex-none" strokeWidth={1.75} />
                             肌智派送好礼
                         </p>
                         <button
@@ -418,7 +418,7 @@ export default function ShareCardPage({
                             onClick={onGift}
                             onMouseEnter={fireGiftConfetti}
                             onFocus={fireGiftConfetti}
-                            className="relative inline-flex h-[3.4cqw] min-h-[32px] items-center justify-center border border-[#22364B]/15 bg-white px-[2.2cqw] text-[1.4cqw] font-medium tracking-[0.1em] text-[#22364B] shadow-[0_3px_10px_rgba(35,54,75,0.16)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                            className="relative inline-flex h-[3.4cqw] min-h-[32px] items-center justify-center border border-[#22364B]/15 bg-white px-[2.2cqw] text-[1.7cqw] font-medium tracking-[0.1em] text-[#22364B] shadow-[0_3px_10px_rgba(35,54,75,0.16)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                         >
                             {/* 悬浮彩带：从按钮中心向上扇形迸发，指针事件穿透不影响点击 */}
                             <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2">
