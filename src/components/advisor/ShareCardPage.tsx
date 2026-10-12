@@ -366,14 +366,14 @@ export default function ShareCardPage({
                     className="object-contain pointer-events-none select-none"
                 />
 
-                {/* IP 形象：左侧站立，探出卡片左缘，脚踩蓝灰色块 */}
+                {/* IP 形象：卡片最左缘站立，身高超过卡片（头顶探出上缘），脚踩蓝灰色块 */}
                 {characterReady && !characterImgFailed && (
                     <Image
                         src={characterImgSrc}
                         alt={skinTypeName}
                         width={480}
                         height={640}
-                        className="absolute left-[-6%] bottom-[4%] z-[3] h-[98%] w-auto object-contain object-bottom drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
+                        className="absolute left-[-12%] bottom-[-15%] z-[3] h-[130%] w-auto object-contain object-bottom drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
                         priority
                         onError={handleCharacterImageError}
                     />
