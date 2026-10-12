@@ -404,14 +404,14 @@ export default function ShareCardPage({
                 {/* 左区：派系引语（蓝灰色块内，斜边上缘最低点 54.5% 以下，两行截断） */}
                 <m.p
                     {...stagger(0.3)}
-                    className="absolute left-[23%] top-[62.5%] z-[4] max-w-[23%] text-[1.7cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
+                    className="absolute left-[23%] top-[59.5%] z-[4] max-w-[23%] text-[1.7cqw] leading-[1.9] tracking-[0.03em] text-[#22364B]/85 line-clamp-2"
                 >
                     {factionIntro || summary || "详细分析见完整报告。"}
                 </m.p>
 
                 {/* 左区：抽奖入口（蓝灰色块上） */}
                 {onGift && (
-                    <m.div {...stagger(0.36)} className="absolute left-[23%] top-[76.5%] z-[5] flex flex-col items-start gap-[0.8cqw]">
+                    <m.div {...stagger(0.36)} className="absolute left-[23%] top-[73.5%] z-[5] flex flex-col items-start gap-[0.8cqw]">
                         <p className="flex items-center gap-[0.4cqw] text-[1.7cqw] tracking-[0.06em] text-[#22364B]/80">
                             <Gift className="h-[1.8cqw] w-[1.8cqw] flex-none" strokeWidth={1.75} />
                             肌智派送好礼
