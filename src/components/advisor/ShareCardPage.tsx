@@ -92,8 +92,9 @@ export default function ShareCardPage({
     const factionIntro = factionContent?.m1.intro || factionContent?.m1.persona;
     // 桌面端活页纸「护肤建议」栏：派系静态建议前 2 条（m7 建议标题）
     const adviceTags = (factionContent?.m7.suggestions ?? []).slice(0, 2).map((s) => s.title);
-    // 桌面端「皮肤特点」栏：concerns 落库存的是 identifyConcerns 原始 key，展示前映射为中文标签
-    const concernLabels = concerns.slice(0, 3).map((c) => getConcernLabel(c));
+    // 桌面端「皮肤特点」栏：concerns 落库存的是 identifyConcerns 原始 key，展示前映射为中文标签；
+    // 取前 2 条——区域纵向空间有限（夹在两个烘焙标签之间），3 条会贴近下方「护肤建议」标签
+    const concernLabels = concerns.slice(0, 2).map((c) => getConcernLabel(c));
 
     const [characterImgSrc, setCharacterImgSrc] = useState(characterImage);
     const [characterImgFailed, setCharacterImgFailed] = useState(false);
@@ -473,7 +474,7 @@ export default function ShareCardPage({
                     <div aria-hidden="true" className="absolute left-[67.5%] top-[55%] z-[3] h-[17%] w-[10.5%] bg-[#F7F3EC]" />
                 )}
 
-                {/* 右页：皮肤特点（对齐烘焙标签左缘 83%，不超出纸面右缘 93%，最多 3 条） */}
+                {/* 右页：皮肤特点（对齐烘焙标签左缘 83%，不超出纸面右缘 93%，最多 2 条） */}
                 {concernLabels.length > 0 && (
                     <m.ul {...stagger(0.38)} className="absolute left-[83%] top-[47%] z-[4] flex w-[10%] flex-col gap-[0.5cqw]">
                         {concernLabels.map((c) => (
