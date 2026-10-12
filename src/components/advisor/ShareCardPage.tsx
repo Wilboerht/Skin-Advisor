@@ -478,7 +478,7 @@ export default function ShareCardPage({
                 {concernLabels.length > 0 && (
                     <m.ul {...stagger(0.38)} className="absolute left-[83%] top-[47%] z-[4] flex w-[10%] flex-col gap-[0.5cqw]">
                         {concernLabels.map((c) => (
-                            <li key={c} className="text-[1.35cqw] leading-[1.3] tracking-[0.04em] text-[#22364B]/85 line-clamp-1">{c}</li>
+                            <li key={c} className="text-[1.5cqw] leading-[1.3] tracking-[0.04em] text-[#22364B]/85 line-clamp-1">{c}</li>
                         ))}
                     </m.ul>
                 )}
@@ -487,7 +487,7 @@ export default function ShareCardPage({
                 {adviceTags.length > 0 && (
                     <m.ul {...stagger(0.44)} className="absolute left-[83%] top-[66%] z-[4] flex w-[10%] flex-col gap-[0.6cqw]">
                         {adviceTags.map((t) => (
-                            <li key={t} title={t} className="text-[1.25cqw] leading-[1.35] tracking-[0.02em] text-[#22364B]/85 line-clamp-2">{t}</li>
+                            <li key={t} title={t} className="text-[1.5cqw] leading-[1.3] tracking-[0.02em] text-[#22364B]/85 line-clamp-3">{t}</li>
                         ))}
                     </m.ul>
                 )}
