@@ -381,18 +381,18 @@ export default function ShareCardPage({
 
                 {/* 左区：@昵称 / 引语 / 派系名（收于烘焙问号涂鸦左侧） */}
                 <div className="absolute left-[23%] top-[23%] z-[4] flex max-w-[26%] flex-col items-start">
-                    <m.p {...stagger(0.1)} className="text-[1.5cqw] tracking-[0.06em] text-[#22364B]/70">
+                    <m.p {...stagger(0.1)} className="text-[1.7cqw] tracking-[0.06em] text-[#22364B]/70">
                         @{nickname || "用户"}
                     </m.p>
                     <m.p
                         {...stagger(0.16)}
-                        className="mt-[0.9cqw] inline-flex items-center bg-white/80 px-[0.8cqw] py-[0.25cqw] text-[1.4cqw] tracking-[0.04em] text-[#22364B]/80"
+                        className="mt-[0.9cqw] inline-flex items-center bg-[#EFE6D2] px-[0.9cqw] py-[0.35cqw] text-[1.7cqw] tracking-[0.04em] text-[#22364B]/85"
                     >
                         {isReturning ? "欢迎回来，你的肌智派系是" : "你的肌智派系是"}
                     </m.p>
                     <m.h3
                         {...stagger(0.22)}
-                        className="mt-[1.2cqw] text-[4.6cqw] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]"
+                        className="mt-[1.2cqw] -ml-[0.5em] text-[4.6cqw] font-medium leading-[1.15] tracking-[0.04em] text-[#22364B]"
                     >
                         「{skinTypeName}」
                     </m.h3>
