@@ -284,7 +284,18 @@ async function tryVisionProviderWithKeys(
             const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, userPrompt, signal, userId, sessionId);
 
             // 解析与 Zod 结构验证（抽取 JSON → null/枚举/分区归一 → 校验）
-            const rawJson = extractJsonFromResponse<Record<string, unknown>>(result);
+            let rawJson: Record<string, unknown>;
+            try {
+                rawJson = extractJsonFromResponse<Record<string, unknown>>(result);
+            } catch (extractErr) {
+                // 提取失败多为输出截断/空响应，记录首尾便于定位
+                aiLogger.warn(`Vision JSON extraction failed (${provider}/${model})`, {
+                    contentLen: result.length,
+                    contentHead: result.slice(0, 150),
+                    contentTail: result.slice(-150),
+                });
+                throw extractErr;
+            }
             const parsed = VisionAnalysisOutputSchema.safeParse(normalizeVisionOutput(rawJson));
             if (!parsed.success) {
                 aiLogger.warn(`Vision schema validation failed (${provider}/${model})`, {
@@ -470,7 +481,9 @@ async function callOpenAICompatibleVision(
                     { role: "system", content: systemPrompt },
                     { role: "user", content },
                 ],
-                max_tokens: 2500,
+                // 十维 + 六分区完整 JSON 实测可达 2500+ tokens，2500 会在输出途中截断
+                //（截断的 JSON 无法解析，表现为 Failed to extract valid JSON）
+                max_tokens: 4000,
                 temperature: 0.2,
                 // deepseek-flash 默认推理强度 high：思考链会吃掉 max_tokens 预算，
                 // 导致正文 JSON 截断（生产实测 Failed to extract valid JSON）。
@@ -536,6 +549,15 @@ async function callOpenAICompatibleVision(
     // 记录成功到熔断器
     circuitBreaker.recordSuccess(serviceKey);
     cleanupTimeout();
+
+    // finish_reason=length 表示输出被 max_tokens 截断——JSON 必然不完整，
+    // 记录日志便于发现输出预算不足（正常应为 stop）
+    const finishReason = response.choices[0]?.finish_reason;
+    if (finishReason === "length") {
+        aiLogger.warn(`Vision output truncated by max_tokens (${provider}/${model})`, {
+            completionTokens: response.usage?.completion_tokens,
+        });
+    }
 
     return response.choices[0]?.message?.content || "";
 }
