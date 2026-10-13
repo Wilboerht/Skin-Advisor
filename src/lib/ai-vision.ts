@@ -15,7 +15,7 @@ import {
     QWEN_VISION_PROMPT
 } from "@/config/ai-prompts";
 import {
-    validateAndExtractJson,
+    extractJsonFromResponse,
     VisionAnalysisOutputSchema,
 } from "./advisor-utils";
 import { enforceZoneAdviceIngredients } from "./ingredient-guard";
@@ -76,6 +76,19 @@ function calibrateVisionScores(data: Record<string, unknown>): void {
     if (skinAge && typeof skinAge === "object" && typeof skinAge.estimated === "number" && Number.isFinite(skinAge.estimated)) {
         skinAge.estimated = Math.min(80, Math.max(10, Math.round(skinAge.estimated)));
     }
+}
+
+/**
+ * 性别枚举容错（原地修改）：模型可能返回 男/Male/未知 等值导致 zod 枚举校验失败。
+ * 映射常见写法；无法识别的删除该可选字段（gender 非必填），避免整份分析作废。
+ */
+function normalizeVisionGender(data: Record<string, unknown>): void {
+    const gender = data.gender as { value?: unknown } | undefined;
+    if (!gender || typeof gender !== "object" || gender.value === undefined) return;
+    const v = String(gender.value).trim().toLowerCase();
+    if (v === "male" || v === "男" || v === "男性") gender.value = "male";
+    else if (v === "female" || v === "女" || v === "女性") gender.value = "female";
+    else delete data.gender;
 }
 
 /**
@@ -228,8 +241,18 @@ async function tryVisionProviderWithKeys(
 
             const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, userPrompt, signal, userId, sessionId);
 
-            // 解析与 Zod 结构验证
-            const jsonData = validateAndExtractJson(result, VisionAnalysisOutputSchema);
+            // 解析与 Zod 结构验证（先抽取 JSON → 字段容错归一 → 校验）
+            const rawJson = extractJsonFromResponse<Record<string, unknown>>(result);
+            normalizeVisionGender(rawJson);
+            const parsed = VisionAnalysisOutputSchema.safeParse(rawJson);
+            if (!parsed.success) {
+                aiLogger.warn(`Vision schema validation failed (${provider}/${model})`, {
+                    issues: parsed.error.message.slice(0, 500),
+                    contentHead: result.slice(0, 200),
+                });
+                throw new Error(`AI response schema validation failed: ${parsed.error.message}`);
+            }
+            const jsonData = parsed.data;
 
             // 分数校准：0-100 夹取 + 综合评分由十维均值重算（模型自报综合分常与维度矛盾）
             calibrateVisionScores(jsonData as unknown as Record<string, unknown>);
@@ -407,7 +430,11 @@ async function callOpenAICompatibleVision(
                     { role: "user", content },
                 ],
                 max_tokens: 2500,
-                temperature: 0.2
+                temperature: 0.2,
+                // deepseek-flash 默认推理强度 high：思考链会吃掉 max_tokens 预算，
+                // 导致正文 JSON 截断（生产实测 Failed to extract valid JSON）。
+                // 结构化抽取任务不需要推理，压到 low
+                ...(provider === "deepseek" ? { reasoning_effort: "low" as const } : {}),
             },
             { signal: mergedSignal }
         );
