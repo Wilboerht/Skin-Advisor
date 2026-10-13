@@ -517,6 +517,16 @@ export async function POST(request: NextRequest) {
             const err = aiError instanceof Error ? aiError : new Error(String(aiError));
             aiLogger.error("AI Analysis Failed", { error: err.message });
 
+            // 单用户日限（[AIUserLimit]）：用户侧限额，不是平台故障——
+            // 429 + 直接展示原因，不能用"服务暂不可用"误导
+            if (err.message?.includes("[AIUserLimit]")) {
+                if (faceSessionId && reserved) {
+                    await rollbackUsage(request, faceSessionId);
+                }
+                const msg = err.message.replace("[AIUserLimit]", "").trim() || "今日分析次数已达上限";
+                return apiError("USER_DAILY_LIMIT", msg, 429);
+            }
+
             // AI 视觉预算超限（Provider 返回配额耗尽），回滚预占
             const isBudgetExceeded = err.message?.includes("budget") || err.message?.includes("quota");
             if (isBudgetExceeded) {

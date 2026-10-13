@@ -179,7 +179,10 @@ export async function analyzeImages(
     // 0. 全局预算熔断检查（vision 类型预估 ¥0.30 覆盖 qwen-vl-max 多图上限场景）
     const budgetStatus = await checkAIBudget("vision", 0.30, userId);
     if (!budgetStatus.allowed) {
-        throw new Error(`[AIBudget] ${budgetStatus.reason}`);
+        // 单用户日限与全局预算分开标记：用户侧限额走 [AIUserLimit]（路由返回 429+原因），
+        // 全局预算/在途预留走 [AIBudget]（路由 503 平台口径）
+        const tag = budgetStatus.userLimited ? "[AIUserLimit]" : "[AIBudget]";
+        throw new Error(`${tag} ${budgetStatus.reason}`);
     }
 
     try {
@@ -234,8 +237,9 @@ export async function analyzeImages(
                 if (error.name === 'AbortError' || signal?.aborted) {
                     throw new Error("Vision request cancelled by client.");
                 }
-                // 预算类错误与 provider 无关，换下一个 provider 也必然失败，直接上抛
-                if (typeof error?.message === 'string' && error.message.startsWith('[AIBudget]')) {
+                // 预算/限额类错误与 provider 无关，换下一个 provider 也必然失败，直接上抛
+                if (typeof error?.message === 'string' &&
+                    (error.message.startsWith('[AIBudget]') || error.message.startsWith('[AIUserLimit]'))) {
                     throw error;
                 }
                 lastError = error;

@@ -372,7 +372,10 @@ export async function generateText(
     // 全局预算熔断检查（text 类型预估 ¥0.10 覆盖 qwen-plus/deepseek 上限场景）
     const budgetStatus = await checkAIBudget("text", 0.10, userId);
     if (!budgetStatus.allowed) {
-        throw new Error(`[AIBudget] ${budgetStatus.reason}`);
+        // 单用户日限与全局预算分开标记：用户侧限额走 [AIUserLimit]（路由返回 429+原因），
+        // 全局预算/在途预留走 [AIBudget]（路由 503 平台口径）
+        const tag = budgetStatus.userLimited ? "[AIUserLimit]" : "[AIBudget]";
+        throw new Error(`${tag} ${budgetStatus.reason}`);
     }
 
     try {

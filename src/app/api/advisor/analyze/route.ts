@@ -736,6 +736,16 @@ export async function POST(request: NextRequest) {
                 await clearAnalysisStartedAt(effectiveSessionId);
                 return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消，请重试", 499);
             }
+            if (err.message?.includes("[AIUserLimit]")) {
+                // 单用户日限：用户侧限额（429 + 明确原因），不回退为"服务暂不可用"的平台口径
+                aiLogger.warn("User daily AI limit reached", { error: err.message });
+                if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
+                    await rollbackUsage(request, effectiveSessionId);
+                }
+                await clearAnalysisStartedAt(effectiveSessionId);
+                const msg = err.message.replace("[AIUserLimit]", "").trim() || "今日分析次数已达上限";
+                return apiError("USER_DAILY_LIMIT", msg, 429);
+            }
             if (err.message?.includes("[AIBudget]")) {
                 aiLogger.warn("AI budget exceeded, rejecting request", { error: err.message });
                 if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {

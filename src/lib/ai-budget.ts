@@ -32,6 +32,8 @@ export interface AIUsageRecord {
 export interface AIBudgetStatus {
     allowed: boolean;
     reason?: string;
+    /** true = 单用户日限触发（用户侧问题，应 429 并展示原因）；缺省/false = 全局预算（平台侧，503） */
+    userLimited?: boolean;
     dailyTokens: number;
     dailyCost: number;
     monthlyTokens: number;
@@ -252,6 +254,7 @@ export async function checkAIBudget(
             return {
                 allowed: false,
                 reason: userLimitCheck.reason,
+                userLimited: true,
                 ...stats,
             };
         }
