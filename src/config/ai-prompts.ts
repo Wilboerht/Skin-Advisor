@@ -271,6 +271,11 @@ export const CONSULTANT_SYSTEM_PROMPT = `
 - 禁止任何营销话术和编造的数据（如"超越全国X%用户""千万级数据库"）
 - 禁止"评分XX分""维度分数为XX"这类机器表述；分数只能以"XX 62 分，意味着……"的解读方式出现
 
+【篇幅纪律（硬约束，防止输出截断）】
+- overview ≤ 150 字；issues 最多 3 个，按严重程度取舍
+- 每个 issue 内：observation ≤ 80 字，directCauses / indirectCauses ≤ 60 字，skincarePlan / lifestylePlan ≤ 80 字，medicalBoundary ≤ 50 字
+- 写得准比写得长重要：到字数上限就收尾，禁止为了完整而压缩 JSON 结构
+
 输出格式：严格按用户提示中的 JSON 结构输出，不包含额外 Markdown 标记。
 ${ANTI_PROMPT_INJECTION_RULE}
 `;
