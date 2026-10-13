@@ -91,6 +91,48 @@ function normalizeVisionGender(data: Record<string, unknown>): void {
     else delete data.gender;
 }
 
+/** 递归删除 null 值（模型在拒绝/不确定时会把字段写成 null，zod optional 不接受 null） */
+function stripNulls(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(stripNulls);
+    if (value && typeof value === "object") {
+        const out: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+            if (v === null) continue;
+            out[k] = stripNulls(v);
+        }
+        return out;
+    }
+    return value;
+}
+
+const VISION_ZONE_KEYS = ["forehead", "tZone", "leftCheek", "rightCheek", "eyeArea", "jawline"] as const;
+
+/**
+ * 视觉输出归一化（校验前）：
+ * - 剔除 null 字段（deepseek 非人脸拒绝时会把整个维度块写成 null）；
+ * - skinType.type 缺失时删除整个可选字段；
+ * - zoneAnalysis 存在时补齐六个分区键（各分区字段本身可空）；
+ * - 性别枚举归一。
+ */
+export function normalizeVisionOutput(data: Record<string, unknown>): Record<string, unknown> {
+    const cleaned = stripNulls(data) as Record<string, unknown>;
+
+    const skinType = cleaned.skinType as { type?: unknown } | undefined;
+    if (skinType && typeof skinType === "object" && typeof skinType.type !== "string") {
+        delete cleaned.skinType;
+    }
+
+    const zones = cleaned.zoneAnalysis as Record<string, unknown> | undefined;
+    if (zones && typeof zones === "object") {
+        for (const key of VISION_ZONE_KEYS) {
+            if (!zones[key] || typeof zones[key] !== "object") zones[key] = {};
+        }
+    }
+
+    normalizeVisionGender(cleaned);
+    return cleaned;
+}
+
 /**
  * 计算指数退避延迟
  * @param attempt 当前尝试次数（从 1 开始）
@@ -241,10 +283,9 @@ async function tryVisionProviderWithKeys(
 
             const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, userPrompt, signal, userId, sessionId);
 
-            // 解析与 Zod 结构验证（先抽取 JSON → 字段容错归一 → 校验）
+            // 解析与 Zod 结构验证（抽取 JSON → null/枚举/分区归一 → 校验）
             const rawJson = extractJsonFromResponse<Record<string, unknown>>(result);
-            normalizeVisionGender(rawJson);
-            const parsed = VisionAnalysisOutputSchema.safeParse(rawJson);
+            const parsed = VisionAnalysisOutputSchema.safeParse(normalizeVisionOutput(rawJson));
             if (!parsed.success) {
                 aiLogger.warn(`Vision schema validation failed (${provider}/${model})`, {
                     issues: parsed.error.message.slice(0, 500),
