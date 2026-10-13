@@ -295,6 +295,16 @@ export async function checkAIBudget(
 // ============================================================================
 
 async function checkUserAILimit(userId: string): Promise<{ allowed: boolean; reason?: string }> {
+    // 管理员已自定义测肤次数（dailyTestLimit ≠ 系统默认 10）的用户视为受信，
+    // 豁免防刷硬限——与 usage-limit.ts getMemberQuota 的管理员覆盖口径一致
+    const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { dailyTestLimit: true },
+    });
+    if (dbUser && typeof dbUser.dailyTestLimit === "number" && dbUser.dailyTestLimit !== 10) {
+        return { allowed: true };
+    }
+
     const day = getDayBounds();
     const userCallCount = await prisma.aIUsageLog.count({
         where: {
