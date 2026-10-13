@@ -149,4 +149,13 @@ describe("backfillRecentCheckinPoints（漏发自愈）", () => {
         await backfillRecentCheckinPoints("u1", iso(day(0)));
         expect(mocks.fetch).not.toHaveBeenCalled();
     });
+
+    it("补打卡日期（前天及更早）即使漏发也不补：与发放口径一致", async () => {
+        mocks.findMany
+            .mockResolvedValueOnce([{ date: day(3), note: null }])
+            .mockResolvedValueOnce([{ date: day(3) }]);
+
+        await backfillRecentCheckinPoints("u1", iso(day(0)));
+        expect(mocks.fetch).not.toHaveBeenCalled();
+    });
 });

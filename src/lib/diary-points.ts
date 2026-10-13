@@ -4,6 +4,7 @@
  * 规则（产品口径）：手动打卡按连续天数发放积分——第 1 天 +1、第 2 天 +2、
  * 第 3 天起 +3；连续中断后重新从 +1 算起。连续天数的判定口径与护肤档案
  * 里程碑的"连续打卡"一致（测肤自动条目也计入连续天数）。
+ * 仅"当天打卡"发积分（窗口下限 UTC 昨天，兼容时区），补打卡（历史日期）不发。
  *
  * 官网是积分权威账本：本模块只负责把"谁、哪天、连续第几天、多少分"
  * 上报给官网内部 API；幂等由官网 PointLedger 的 userId+reference 唯一约束
@@ -20,7 +21,7 @@
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import { logger } from "@/lib/logger";
 import prisma from "@/lib/prisma";
-import { checkinPointsForStreak, isAutoDiaryEntry, streakEndingAt } from "@/lib/diary-utils";
+import { checkinPointsForStreak, isAutoDiaryEntry, isCheckinPointsEligibleDate, streakEndingAt } from "@/lib/diary-utils";
 
 const GRANT_PATH = "/api/v1/internal/points/grant";
 /** 单次尝试超时：打卡请求会 await 本调用，控制在用户可接受范围内 */
@@ -162,7 +163,10 @@ export async function backfillRecentCheckinPoints(userId: string, skipDateStr: s
   const manualDates = recent
     .filter((row) => !isAutoDiaryEntry(row))
     .map((row) => row.date)
-    .filter((d) => d.toISOString().slice(0, 10) !== skipDateStr);
+    .filter((d) => d.toISOString().slice(0, 10) !== skipDateStr)
+    // 补打卡（历史日期）不发积分：自愈只补偿"当天窗口内"的漏发，
+    // 更早的日期按规则本就不该发，不能借自愈通道发出去
+    .filter((d) => isCheckinPointsEligibleDate(d));
   if (manualDates.length === 0) return;
 
   const allDates = all.map((row) => row.date);

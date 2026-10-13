@@ -281,6 +281,12 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
                   编辑已有记录不重复发放积分
                 </p>
               )}
+              {/* 补打卡说明不发放积分（与后端 isCheckinPointsEligibleDate 口径一致） */}
+              {!existing && !isToday && (
+                <p className="mt-3 text-center text-[11px] font-light tracking-[0.04em] text-brand-charcoal/55">
+                  补打卡不发放积分
+                </p>
+              )}
             </div>
           </m.div>
         </div>

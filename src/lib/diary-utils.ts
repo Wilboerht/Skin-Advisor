@@ -103,6 +103,16 @@ export function checkinPointsForStreak(streak: number): number {
 }
 
 /**
+ * 打卡积分资格：仅"当天打卡"发积分，补打卡（历史日期）不发。
+ * date 是客户端本地日历日，可能落后/领先服务器 UTC 一天（时区），
+ * 故下限放宽到 UTC 昨天；早于 UTC 昨天的一定是补打卡。
+ */
+export function isCheckinPointsEligibleDate(date: Date, now: Date = new Date()): boolean {
+    const minDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1));
+    return date >= minDate;
+}
+
+/**
  * 打卡连续天数（封顶 3 天即够积分规则使用）：仅按"昨天/前天是否有条目"推导。
  * 积分规则 checkinPointsForStreak 在 streak=3 封顶，因此无需 streakEndingAt 的全量
  * 历史扫描——打卡 POST 只需回查前两天两个点，查询开销不随用户数据量增长。

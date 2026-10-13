@@ -5,6 +5,7 @@ import {
     checkinPointsForStreak,
     computeStreak,
     isAutoDiaryEntry,
+    isCheckinPointsEligibleDate,
     isDiaryDateInRange,
     parseClientDate,
     scoreToSkinState,
@@ -175,6 +176,26 @@ describe("checkinPointsForStreak", () => {
         expect(checkinPointsForStreak(3)).toBe(3);
         expect(checkinPointsForStreak(10)).toBe(3);
         expect(checkinPointsForStreak(0)).toBe(0);
+    });
+});
+
+describe("isCheckinPointsEligibleDate（补打卡不发积分）", () => {
+    // 以 2026-09-03 12:00 UTC 为"现在"
+    const now = new Date("2026-09-03T12:00:00.000Z");
+    const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
+
+    it("今天与昨天（UTC 落后时区的当天）有资格", () => {
+        expect(isCheckinPointsEligibleDate(day("2026-09-03"), now)).toBe(true);
+        expect(isCheckinPointsEligibleDate(day("2026-09-02"), now)).toBe(true);
+    });
+
+    it("明天（UTC 领先时区的当天）有资格", () => {
+        expect(isCheckinPointsEligibleDate(day("2026-09-04"), now)).toBe(true);
+    });
+
+    it("前天及更早为补打卡，无资格", () => {
+        expect(isCheckinPointsEligibleDate(day("2026-09-01"), now)).toBe(false);
+        expect(isCheckinPointsEligibleDate(day("2026-06-05"), now)).toBe(false);
     });
 });
 

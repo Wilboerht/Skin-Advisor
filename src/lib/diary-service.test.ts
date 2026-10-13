@@ -124,6 +124,26 @@ describe("upsertDiaryEntry 打卡积分口径", () => {
     expect(result.points).toBeGreaterThan(0);
   });
 
+  it("昨天（UTC 落后时区容差）打卡：仍发积分", async () => {
+    const yesterday = daysBefore(1).toISOString().slice(0, 10);
+    const result = await upsertDiaryEntry("u1", { ...validBody, date: yesterday });
+    expect(result.isFirstManualCheckin).toBe(true);
+    expect(result.streak).toBe(1);
+    expect(result.points).toBe(1);
+  });
+
+  it("补打卡（前天及更早）：不发积分、不查连续天数", async () => {
+    const threeDaysAgo = daysBefore(3).toISOString().slice(0, 10);
+    const result = await upsertDiaryEntry("u1", { ...validBody, date: threeDaysAgo });
+    expect(result.isFirstManualCheckin).toBe(false);
+    expect(result.streak).toBeUndefined();
+    expect(result.points).toBeUndefined();
+    // 条目仍正常写入
+    expect(mocks.upsert).toHaveBeenCalledTimes(1);
+    // 跳过 streak 回查（findUnique 之外不再有查询）
+    expect(mocks.findMany).not.toHaveBeenCalled();
+  });
+
   it("编辑已有手动打卡：不返回应发积分", async () => {
     mocks.findUnique.mockResolvedValue({ note: "之前的手动记录", tags: ["熬夜"] });
     const result = await upsertDiaryEntry("u1", validBody);
