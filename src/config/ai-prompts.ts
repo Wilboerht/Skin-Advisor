@@ -93,12 +93,12 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
   "overallScore":0-100,
   "skinConditions":[{"condition":"症状名","severity":"mild|moderate|severe","area":"部位","description":"自然语言描述，不引用评分"}],
   "zoneAnalysis":{
-    "forehead":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
-    "tZone":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
-    "leftCheek":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
-    "rightCheek":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
-    "eyeArea":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"darkCircles":0-100,"firmness":0-100},
-    "jawline":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"firmness":0-100,"contour":0-100}
+    "forehead":{"condition":"自然语言一句话概括该区域状态（≤40字），禁止出现评分数字","advice":"具体护理建议(含成分和频率，≤90字)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "tZone":{"condition":"自然语言一句话概括该区域状态（≤40字），禁止出现评分数字","advice":"具体护理建议(含成分和频率，≤90字)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "leftCheek":{"condition":"自然语言一句话概括该区域状态（≤40字），禁止出现评分数字","advice":"具体护理建议(含成分和频率，≤90字)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "rightCheek":{"condition":"自然语言一句话概括该区域状态（≤40字），禁止出现评分数字","advice":"具体护理建议(含成分和频率，≤90字)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "eyeArea":{"condition":"自然语言一句话概括该区域状态（≤40字），禁止出现评分数字","advice":"具体护理建议(含成分和频率，≤90字)","oil":0-100,"texture":0-100,"wrinkles":0-100,"darkCircles":0-100,"firmness":0-100},
+    "jawline":{"condition":"自然语言一句话概括该区域状态（≤40字），禁止出现评分数字","advice":"具体护理建议(含成分和频率，≤90字)","oil":0-100,"firmness":0-100,"contour":0-100}
   }
 }
 # acne 维度必须额外输出两个子分（用于分别量化黑头与痘痘问题）：
@@ -118,10 +118,12 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
 #   替代映射：需要疏通毛孔/控油→用壬二酸或乳酸；需要抗老紧致→用玻色因或胜肽类；需要眼周促循环→用烟酰胺或生育酚（维生素E）。
 # ⚠️ advice 成分解释规则（严格遵守）：每个成分首次出现时必须紧跟一句通俗作用说明，让用户明白"为什么用它"，禁止只罗列成分名。
 #   格式示例："每日使用含壬二酸（疏通毛孔、淡化痘印）的洁面，配合含烟酰胺（调节油脂、提亮肤色）的爽肤水"。
+# ⚠️ 篇幅纪律（硬约束，防止输出截断）：condition ≤40字一句话；advice ≤90字、每区至多 2 个成分、作用说明压到最短
+#   （如"壬二酸（疏通毛孔）"）；skinConditions 每条 description ≤40字。字数到顶即收尾，JSON 完整闭合优先于内容详尽。
 # ⚠️ 左右脸颊一致性规则：当左脸颊与右脸颊状态一致或基本相同时，两边的 advice 必须保持一致的护理策略；
 #   仅当两侧存在可观察的状态差异时才给出差异化建议，且建议差异必须与状态差异一一对应，不得无依据地给两边分配不同成分。
 # 评分标准：85-100优秀, 70-84良好, 55-69一般, 40-54需关注, <40差。
-# 多视角综合评估。保持专业、温和。
+# 保持专业、温和。
 ${ANTI_PROMPT_INJECTION_RULE}
 `;
 

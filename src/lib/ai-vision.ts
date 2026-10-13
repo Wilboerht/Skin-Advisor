@@ -496,9 +496,9 @@ async function callOpenAICompatibleVision(
                     { role: "system", content: systemPrompt },
                     { role: "user", content },
                 ],
-                // 十维 + 六分区完整 JSON 实测可达 2500+ tokens，2500 会在输出途中截断
-                //（截断的 JSON 无法解析，表现为 Failed to extract valid JSON）
-                max_tokens: 4000,
+                // 十维 + 六分区完整 JSON 实测可达 2500+ tokens；篇幅纪律后约 1.5-2K，
+                // 5000 上限对冗长输出留 2 倍余量（截断的 JSON 无法解析，表现为提取失败）
+                max_tokens: 5000,
                 temperature: 0.2,
                 // deepseek-flash 默认推理强度 high：思考链会吃掉 max_tokens 预算，
                 // 导致正文 JSON 截断（生产实测 Failed to extract valid JSON）。
