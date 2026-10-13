@@ -474,7 +474,11 @@ async function callOpenAICompatibleVision(
 
 // 辅助：获取默认视觉模型
 function getDefaultVisionModel(provider: AIProvider): string {
-    if (process.env.AI_VISION_MODEL) return process.env.AI_VISION_MODEL;
+    // env 覆盖只在该 provider 白名单内生效——否则 qwen 的模型名会泄漏到
+    // deepseek 兜底链（deepseek/qwen3-vl-plus 这类错位组合），白名单拒绝后
+    // "回退"又拿到同一个非法值，日志误导且配上 key 后必然 404
+    const envModel = process.env.AI_VISION_MODEL?.trim();
+    if (envModel && isAllowedAIModel(provider, envModel)) return envModel;
     switch (provider) {
         case "qwen": return "qwen-vl-plus";
         case "deepseek": return "deepseek-vl";
