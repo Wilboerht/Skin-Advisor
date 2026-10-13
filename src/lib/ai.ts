@@ -18,7 +18,7 @@ export const ALLOWED_AI_PROVIDERS: AIProvider[] = ["deepseek", "qwen"];
 
 export const ALLOWED_AI_MODELS: Record<AIProvider, string[]> = {
     deepseek: ["deepseek-chat", "deepseek-reasoner", "deepseek-vl"],
-    qwen: ["qwen-turbo", "qwen-plus", "qwen-max", "qwen-vl-max", "qwen-vl-plus"],
+    qwen: ["qwen-turbo", "qwen-plus", "qwen-max", "qwen-vl-max", "qwen-vl-plus", "qwen3-vl-plus"],
 };
 
 /**

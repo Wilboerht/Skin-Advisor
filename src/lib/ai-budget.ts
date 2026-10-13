@@ -60,6 +60,7 @@ const PRICING_TABLE: Record<string, Partial<Record<string, ModelPricing>>> = {
         "qwen-max": { input: 0.04, output: 0.12 },
         "qwen-vl-max": { input: 0.02, output: 0.02 },
         "qwen-vl-plus": { input: 0.008, output: 0.008 },
+        "qwen3-vl-plus": { input: 0.008, output: 0.008 },
     },
     deepseek: {
         // 2026年7月起峰谷定价：高峰 9-12 和 14-18 (北京时间) 价格为 2 倍
