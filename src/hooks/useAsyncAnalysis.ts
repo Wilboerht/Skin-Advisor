@@ -525,9 +525,10 @@ export function useAsyncAnalysis() {
                     }
 
                     if (visionImages.length > 0) {
-                        // 面部分析服务端超时 55s，客户端单独设置 60s 超时，避免服务端已放弃后客户端空等 90s
+                        // 面部分析服务端超时 90s，客户端单独设置 95s 超时，避免服务端已放弃后客户端空等
+                        //（qwen3-vl-plus 实测 >55s；Cloudflare 免费版 100s 返回 524，客户端必须压在 100s 内）
                         const faceAnalyzeAbort = new AbortController();
-                        const faceAnalyzeTimeout = setTimeout(() => faceAnalyzeAbort.abort(), 60 * 1000);
+                        const faceAnalyzeTimeout = setTimeout(() => faceAnalyzeAbort.abort(), 95 * 1000);
                         const onTotalAbort = () => faceAnalyzeAbort.abort();
                         abortController.signal.addEventListener('abort', onTotalAbort);
 

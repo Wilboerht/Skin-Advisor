@@ -345,10 +345,10 @@ export async function POST(request: NextRequest) {
         if (!isFreeRetryAllowed) {
             // 清理僵尸会话：超过阈值仍未完成的 analysis（服务器崩溃、网络中断等）
             // 不清除则这些会话的 analysisStartedAt 会持续占用配额。
-            // 阈值 4 分钟 > 最坏耗时（队列等待 60s + face 65s + LLM 90s），避免误杀在途分析。
+            // 阈值 5 分钟 > 最坏耗时（队列等待 60s + face 100s + LLM 90s），避免误杀在途分析。
             // 游客已被下方限额预检 401 拦截，不再按 userId: null + IP 哈希清理历史游客会话。
             if (user) {
-                const staleBefore = new Date(Date.now() - 4 * 60 * 1000);
+                const staleBefore = new Date(Date.now() - 5 * 60 * 1000);
                 await prisma.advisorSession.updateMany({
                     where: { userId: user.id, analysisStartedAt: { lt: staleBefore }, completedAt: null },
                     data: { analysisStartedAt: null },

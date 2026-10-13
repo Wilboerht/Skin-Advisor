@@ -26,7 +26,7 @@ import { aiLogger } from "@/lib/logger";
 
 import { visionQueue } from "@/lib/ai-queue";
 
-export const maxDuration = 65; // 保留 10s 缓冲给 55s serverTimeout，防止平台先杀掉
+export const maxDuration = 100; // 保留 10s 缓冲给 90s serverTimeout，防止平台先杀掉
 
 // 脸部分析结果缓存（图片 hash -> 分析结果）
 // 同一用户重复上传相同图片时跳过 AI 调用，节省成本
@@ -68,8 +68,10 @@ function setCachedResult(key: string, sessionId: string, result: Record<string, 
 
 export async function POST(request: NextRequest) {
     // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
+    // 90s：与视觉层内部超时（ai-vision.ts，90s）对齐；qwen3-vl-plus 多图实测 >55s，
+    // 旧值 55s 会在模型正常响应途中误杀请求（Cloudflare 100s 上限内）
     const abortController = new AbortController();
-    const serverTimeout = setTimeout(() => abortController.abort(), 55 * 1000);
+    const serverTimeout = setTimeout(() => abortController.abort(), 90 * 1000);
 
     const onClientAbort = () => {
         clearTimeout(serverTimeout);
@@ -152,10 +154,10 @@ export async function POST(request: NextRequest) {
         // 1.5 每日用量上限预占（复用业务 sessionId，避免与 analyze 重复扣费）
         faceSessionId = result.data.sessionId || crypto.randomUUID();
         // 清理僵尸会话：库中 ip 存的是 hashIP 哈希值，必须用哈希后查询才能命中。
-        // 阈值 4 分钟 > 最坏耗时（队列等待 60s + maxDuration 65s），避免误杀在途分析
-        const fourMinutesAgo = new Date(Date.now() - 4 * 60 * 1000);
+        // 阈值 5 分钟 > 最坏耗时（队列等待 60s + maxDuration 100s），避免误杀在途分析
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
         await prisma.advisorSession.updateMany({
-            where: { ip: hashIP(ip), analysisStartedAt: { lt: fourMinutesAgo }, completedAt: null },
+            where: { ip: hashIP(ip), analysisStartedAt: { lt: fiveMinutesAgo }, completedAt: null },
             data: { analysisStartedAt: null },
         });
         const usageReserve = await reserveUsage(request, faceSessionId);
