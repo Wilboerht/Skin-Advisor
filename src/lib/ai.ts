@@ -52,6 +52,10 @@ export interface AISettings {
 // v2 顾问报告需要 3-6K 输出 tokens，默认 6000；AI_MAX_TOKENS 可显式覆盖
 export const TEXT_REPORT_MIN_TOKENS = 6000;
 
+// max_tokens 硬上限：deepseek-flash 的推理链与正文共享输出预算（实测思考链
+// 可达 3K+ tokens），6000 封顶会在复杂输入下截断正文 JSON；放宽到 8000 留余量
+const TEXT_REPORT_MAX_TOKENS = 8000;
+
 /** 环境变量显式指定的输出上限（唯一可把 maxTokens 调低到 6000 以下的入口） */
 function getEnvMaxTokens(): number | null {
     const envMax = Number(process.env.AI_MAX_TOKENS);
@@ -580,12 +584,13 @@ async function callProviderInternal(
                 ],
                 temperature: settings.temperature,
                 // 顾问叙事报告（v2）推理链输出约需 3-6K tokens：低于 6000 有截断风险。
+                // 上限 8000：deepseek-flash 推理链与正文共享预算，需额外余量。
                 // 只有显式设置 AI_MAX_TOKENS 才能调低，此时告警提示降级风险
                 max_tokens: (() => {
                     if (settings.maxTokens < TEXT_REPORT_MIN_TOKENS) {
                         aiLogger.warn(`[AISettings] maxTokens=${settings.maxTokens} 低于 v2 报告建议值 ${TEXT_REPORT_MIN_TOKENS}，存在 JSON 截断风险`);
                     }
-                    return Math.min(settings.maxTokens, TEXT_REPORT_MIN_TOKENS);
+                    return Math.min(settings.maxTokens, TEXT_REPORT_MAX_TOKENS);
                 })()
             },
             { signal: controller.signal }
