@@ -100,7 +100,9 @@ export function normalizeMembershipLevel(level?: string | null): MemberLevel {
  * - REGULAR（普通，含 null/未知兜底）：终身总量 10 次，无每日上限
  * - SILVER（银卡）：终身池 = 10 + 20 × ⌊totalSpent/1000⌋，每日最多 10 次
  * - GOLD/DIAMOND（金卡/钻石，历史 ADVANCED 同等待遇）：总量不限，每日 10 次
- * - 管理员自定义 dailyTestLimit（≠ 系统默认 10）优先级最高，覆盖会员每日上限
+ * - 管理员自定义 dailyTestLimit（≠ 系统默认 10）优先级最高：每日上限按设定值，
+ *   且解除终身总量限制——否则普通/银卡会员的终身上限会静默架空管理员调整。
+ *   注意：schema 默认 10，显式设 10 与未设置无法区分（均视为未自定义）
  */
 export function getMemberQuota(
     user: { membershipLevel?: string | null; dailyTestLimit?: number | null; totalSpent?: number | null } | null | undefined
@@ -111,10 +113,19 @@ export function getMemberQuota(
             ? Math.max(0, user.dailyTestLimit)
             : null;
 
+    if (adminOverride !== null) {
+        return {
+            level,
+            dailyLimit: adminOverride,
+            lifetimeLimit: null,
+            unlimited: level === 'GOLD' || level === 'DIAMOND',
+        };
+    }
+
     if (level === 'GOLD' || level === 'DIAMOND') {
         return {
             level,
-            dailyLimit: adminOverride ?? UNLIMITED_DAILY_LIMIT,
+            dailyLimit: UNLIMITED_DAILY_LIMIT,
             lifetimeLimit: null,
             unlimited: true,
         };
@@ -124,7 +135,7 @@ export function getMemberQuota(
         const spent = typeof user?.totalSpent === 'number' && user.totalSpent > 0 ? user.totalSpent : 0;
         return {
             level,
-            dailyLimit: adminOverride ?? SILVER_DAILY_LIMIT,
+            dailyLimit: SILVER_DAILY_LIMIT,
             lifetimeLimit: REGULAR_TOTAL_LIMIT + SILVER_BONUS_PER_1000 * Math.floor(spent / 1000),
             unlimited: false,
         };
@@ -132,7 +143,7 @@ export function getMemberQuota(
 
     return {
         level: 'REGULAR',
-        dailyLimit: adminOverride,
+        dailyLimit: null,
         lifetimeLimit: REGULAR_TOTAL_LIMIT,
         unlimited: false,
     };
@@ -146,7 +157,7 @@ export function getMemberQuota(
  * 2. 普通会员（REGULAR）：终身总量 10 次
  * 3. 银卡（SILVER）：终身池 = 10 + 20 × ⌊totalSpent/1000⌋，每日最多 10 次
  * 4. 金卡/钻石（GOLD/DIAMOND，历史 ADVANCED 兜底）：总量不限，每日 10 次
- * 5. 管理员自定义 dailyTestLimit（≠ 系统默认 10）作为每日上限，优先于会员默认值
+ * 5. 管理员自定义 dailyTestLimit（≠ 系统默认 10）覆盖每日上限，且解除终身总量限制
  */
 export async function checkUsageLimit(request: NextRequest): Promise<UsageLimitResult> {
     // 本地开发环境不限制次数
