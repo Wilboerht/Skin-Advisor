@@ -52,4 +52,31 @@ describe("csrf", () => {
 
         expect(await verifyCsrfToken(request)).toEqual({ valid: true, reason: "ok" });
     });
+
+    it("skips verification for Bearer requests (mini-program channel)", async () => {
+        const request = new NextRequest("http://localhost/api/user/profile", {
+            method: "POST",
+            headers: { authorization: "Bearer mp-access-token" },
+        });
+
+        expect(await verifyCsrfToken(request)).toEqual({ valid: true, reason: "ok" });
+    });
+
+    it("does not skip when Bearer token is empty", async () => {
+        // Headers 会修剪值尾部空白，"Bearer " 归一为 "Bearer"，不符合豁免形态
+        const request = new NextRequest("http://localhost/api/user/profile", {
+            method: "POST",
+            headers: { authorization: "Bearer " },
+        });
+
+        expect(await verifyCsrfToken(request)).toEqual({ valid: false, reason: "missing_auth" });
+    });
+
+    it("still verifies POST without Bearer header", async () => {
+        const request = new NextRequest("http://localhost/api/user/profile", {
+            method: "POST",
+        });
+
+        expect(await verifyCsrfToken(request)).toEqual({ valid: false, reason: "missing_auth" });
+    });
 });

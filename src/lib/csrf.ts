@@ -50,6 +50,15 @@ export interface CsrfVerificationResult {
 }
 
 export async function verifyCsrfToken(request: NextRequest): Promise<CsrfVerificationResult> {
+    // 小程序 Bearer 通道豁免：CSRF 利用的是浏览器自动携带 Cookie 的
+    // ambient authority；Bearer token 需调用方主动设置 Authorization 头，
+    // 跨站伪造请求无法携带，因此该通道无 CSRF 面。
+    // token 有效性由路由层 getSessionUser/verifyMpBearerToken 判定，这里只看形态。
+    const authorization = request.headers.get("authorization");
+    if (authorization?.startsWith("Bearer ") && authorization.slice(7).trim()) {
+        return { valid: true, reason: "ok" };
+    }
+
     // 只校验非安全方法
     const unsafeMethods = ["POST", "PUT", "PATCH", "DELETE"];
     if (!unsafeMethods.includes(request.method)) {

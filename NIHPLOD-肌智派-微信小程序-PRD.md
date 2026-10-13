@@ -90,12 +90,14 @@ Content-Type: application/json
 - token 刷新：复用/适配现有 refresh 机制，小程序为 public client（无 secret），refresh 端点需接受无 client_secret 的刷新（或以 appid 白名单代替）。
 - 顺带修复既有 bug：`/api/v1/internal/wechat/send-template` 的 userId 校验正则是 cuid v1（`/^c[0-9a-z]{6,}$/i`），而官网现役 ID 已是 cuid2（任意字母开头 24 位）——放宽为 `/^[a-z][0-9a-z]{5,31}$/i`。（2026-10-13 生产故障确认）
 
-### 2.3 子站侧改动（本仓库，改动小）
+### 2.3 子站侧改动（本仓库，已实现 2026-10-13）
 
 | 改动 | 说明 |
 |---|---|
-| `getSessionUser` 支持 Bearer | 现仅认 `__Host-nihplod_sso_at` Cookie；新增 `Authorization: Bearer` 通道，走现有 ssoVerifier（JWKS 本地验签优先，introspection 兜底） |
-| CSRF 豁免边界 | Bearer 凭据无 Cookie  ambient authority，天然无 CSRF 面；仅豁免 Bearer 路径，Cookie 路径校验不变 |
+| 独立小程序验签器 | `sso-auth.ts` 新增 `mpVerifier`（audience=`wechat-miniprogram`，可用 `SSO_MP_CLIENT_ID` 覆盖）。**注意**：子站主验签器强制 audience=子站自身 client_id，小程序 token 必须用独立 audience 的验签器——JWKS 与 introspect 两条路径都不兼容跨 client |
+| `getSessionUser` 支持 Bearer | 请求带 `Authorization: Bearer` 头时只走 mpVerifier：JWKS 本地验签优先、introspect 兜底；payload.sub 复用现有 `upsertLocalUser` 建档/会员同步。验证失败直接 null（不回落 Cookie）；无 Authorization 头行为不变 |
+| CSRF 豁免边界 | `verifyCsrfToken` 对 Bearer 请求直接放行（Bearer 需调用方主动设置，无浏览器 ambient authority，无 CSRF 面）；Cookie 路径校验不变 |
+| 撤销语义 | JWKS 本地验签不感知会话撤销，靠 access token 900s 短 TTL 兜底（官网建 client 时必须 `accessTokenTtlSeconds=900`） |
 | 配额/打卡/历史 | 全部按 user.id 工作，零改动 |
 
 ### 2.4 小程序端会话管理

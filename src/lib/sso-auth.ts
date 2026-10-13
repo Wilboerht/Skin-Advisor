@@ -13,6 +13,7 @@ import { toInsecureCookieName } from "@nihplod/sso-sdk/next";
 import { SSO_INSECURE_LOCAL_DEV, SSO_SERVER_BASE_URL } from "@/lib/sso-config";
 import { AUTH_COOKIE_NAME, verifyToken } from "@/lib/auth-config";
 import { UserRole, isDisabledUser } from "@/lib/permissions";
+import { logger } from "@/lib/logger";
 import prisma from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth";
 
@@ -21,6 +22,11 @@ export { SSO_BASE_URL };
 const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID!;
 // Confidential Client 密钥：仅服务端使用（introspect / refresh），切勿暴露到浏览器
 const SSO_CLIENT_SECRET = process.env.SSO_CLIENT_SECRET;
+/**
+ * 微信小程序 OAuth 客户端 ID：主站小程序登录签发的 access token
+ * aud 固定为该值（默认 "wechat-miniprogram"），与浏览器端 SSO_CLIENT_ID 区分。
+ */
+export const MP_CLIENT_ID = process.env.SSO_MP_CLIENT_ID?.trim() || "wechat-miniprogram";
 /**
  * insecureLocalDev（本地 HTTP 开发）下 SDK 写入的 Cookie 名会去除
  * __Host-/__Secure- 前缀（浏览器拒绝在 HTTP 下写入带前缀的 Cookie），
@@ -125,6 +131,20 @@ export const ssoVerifier = createTokenVerifier({
     clientId: SSO_CLIENT_ID,
     clientSecret: SSO_CLIENT_SECRET,
     audience: SSO_CLIENT_ID,
+    issuer: SSO_BASE_URL,
+});
+
+/**
+ * 微信小程序验签器：与 ssoVerifier 完全相同的配置，仅 audience 不同
+ * （小程序登录签发的 access token aud = MP_CLIENT_ID）。
+ * 供 Authorization: Bearer 通道使用——小程序请求不携带 Cookie。
+ */
+export const mpVerifier = createTokenVerifier({
+    introspectionEndpoint: `${SSO_SERVER_BASE_URL}/api/oauth/introspect`,
+    jwksUri: `${SSO_SERVER_BASE_URL}/api/oauth/jwks`,
+    clientId: SSO_CLIENT_ID,
+    clientSecret: SSO_CLIENT_SECRET,
+    audience: MP_CLIENT_ID,
     issuer: SSO_BASE_URL,
 });
 
@@ -358,6 +378,32 @@ export async function verifySsoToken(req?: NextRequest): Promise<VerifiedTokenPa
     return ssoVerifier.verify(token);
 }
 
+/**
+ * 验证微信小程序 Bearer token（Authorization: Bearer <token>）。
+ * 没有该头或格式不符返回 null；验签失败同样返回 null。
+ * Bearer 是公共面，失败只记 warn，不打 error 日志。
+ */
+export async function verifyMpBearerToken(req: NextRequest): Promise<VerifiedTokenPayload | null> {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) return null;
+    const token = authHeader.slice(7).trim();
+    if (!token) return null;
+    // 与 verifySsoToken 一致：登出撤销窗口由本地黑名单兜底
+    if (isAccessTokenRevoked(token)) return null;
+    try {
+        const payload = await mpVerifier.verify(token);
+        if (!payload) {
+            logger.warn("[MP Auth] Bearer token verification failed");
+        }
+        return payload;
+    } catch (err) {
+        logger.warn("[MP Auth] Bearer token verification error", {
+            error: err instanceof Error ? err.message : String(err),
+        });
+        return null;
+    }
+}
+
 export async function getSsoUser(req?: NextRequest): Promise<SsoAuthUser | null> {
     const payload = await verifySsoToken(req);
     if (!payload?.sub) return null;
@@ -494,7 +540,39 @@ export async function getLocalSessionDbUser() {
  * 若本地不存在该用户则自动创建（保留肤质测试等业务关联）。
  * SSO 验证失败时兜底本地会话（微信登录用户无 SSO Cookie）。
  */
+/**
+ * SSO/小程序 token 验证通过后的公共尾部：建档/同步本地用户并组装会话结构。
+ */
+async function sessionUserFromVerifiedPayload(payload: VerifiedTokenPayload): Promise<SessionUser | null> {
+    const dbUser = await upsertLocalUser(payload);
+    if (!dbUser) return null;
+
+    // 被管理员禁用的用户不允许继续访问任何功能
+    if (isDisabledUser(dbUser.role)) return null;
+
+    return {
+        id: dbUser.id,
+        email: dbUser.email,
+        phone: dbUser.phoneNumber || undefined,
+        name: dbUser.name || undefined,
+        role: dbUser.role,
+        tokenVersion: dbUser.tokenVersion,
+        dailyTestLimit: dbUser.dailyTestLimit,
+        membershipLevel: dbUser.membershipLevel,
+        totalSpent: dbUser.totalSpent,
+    };
+}
+
 export async function getSessionUser(req?: NextRequest): Promise<SessionUser | null> {
+    // 微信小程序 Bearer 通道：请求携带 Authorization 头时只走 mpVerifier 验签，
+    // 失败直接视为未登录（由路由返回 401），不回落 Cookie 逻辑；
+    // 没有 Authorization 头时行为与原来完全一致。
+    if (req?.headers.get("authorization")) {
+        const mpPayload = await verifyMpBearerToken(req);
+        if (!mpPayload?.sub) return null;
+        return sessionUserFromVerifiedPayload(mpPayload);
+    }
+
     let payload = await verifySsoToken(req);
     // access_token（15 分钟）过期后用 refresh_token 静默轮换，
     // 避免用户在测肤等长流程中被误判为未登录（401 requireLogin）
@@ -518,23 +596,7 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
         };
     }
 
-    const dbUser = await upsertLocalUser(payload);
-    if (!dbUser) return null;
-
-    // 被管理员禁用的用户不允许继续访问任何功能
-    if (isDisabledUser(dbUser.role)) return null;
-
-    return {
-        id: dbUser.id,
-        email: dbUser.email,
-        phone: dbUser.phoneNumber || undefined,
-        name: dbUser.name || undefined,
-        role: dbUser.role,
-        tokenVersion: dbUser.tokenVersion,
-        dailyTestLimit: dbUser.dailyTestLimit,
-        membershipLevel: dbUser.membershipLevel,
-        totalSpent: dbUser.totalSpent,
-    };
+    return sessionUserFromVerifiedPayload(payload);
 }
 
 export function isSsoConfigured(): boolean {

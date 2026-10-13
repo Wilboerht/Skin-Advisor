@@ -134,3 +134,20 @@ describe("proxy C 端 CSRF：非豁免路径照常拦截", () => {
         expect(res.status).toBe(200);
     });
 });
+
+describe("proxy 小程序 Bearer 通道：API 请求直达路由层", () => {
+    it("POST /api/user/diary 携带 Bearer 时不触发 SSO 重定向，CSRF 放行后到达路由层", async () => {
+        // verifyCsrfToken 的 Bearer 豁免逻辑在其单测覆盖，这里模拟其放行结果
+        mocks.verifyCsrfToken.mockResolvedValue({ valid: true, reason: "ok" });
+        const req = new NextRequest("http://localhost/api/user/diary", {
+            method: "POST",
+            headers: { authorization: "Bearer mp-access-token" },
+        });
+        const res = await proxy(req);
+        // API 路径不走 SSO middleware，不会 302 到主站登录页
+        expect(mocks.ssoMiddleware).not.toHaveBeenCalled();
+        expect(res.headers.get("location")).toBeNull();
+        expect(res.status).toBe(200);
+    });
+});
+
