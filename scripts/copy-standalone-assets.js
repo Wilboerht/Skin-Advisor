@@ -108,5 +108,18 @@ if (fs.existsSync(envSrc)) {
   console.log('⚠️  根目录无 .env.production，跳过（本地开发可忽略）');
 }
 
+// 5. 复制 geoip-lite 数据文件 → .next/standalone/data/geoip/
+// 原因：standalone/webpack 会把 geoip-lite 内联进路由 bundle，默认数据目录
+//（__dirname/../data）失真，导致 GeoIP lookup ENOENT；geoip-lite 支持
+// global.geodatadir 覆盖（见 src/lib/geoip.ts），此处把数据放到运行时可及的位置。
+const geoipSrc = path.join(ROOT, 'node_modules', 'geoip-lite', 'data');
+const geoipDest = path.join(STANDALONE, 'data', 'geoip');
+if (fs.existsSync(geoipSrc)) {
+  copyDir(geoipSrc, geoipDest);
+  console.log('🌏 geoip-lite 数据已复制到 standalone/data/geoip/');
+} else {
+  console.log('⚠️  node_modules/geoip-lite/data 不存在，跳过 GeoIP 数据复制');
+}
+
 console.log('\n✅ standalone 静态文件准备完成！');
 console.log('   部署时只需上传 .next/standalone/ 目录 + .env.production');

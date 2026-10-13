@@ -69,8 +69,18 @@ export function resolveIPLocation(ip: string): GeoLocation | null {
     }
 
     try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        /* eslint-disable @typescript-eslint/no-require-imports */
+        const path = require('path');
+        const fs = require('fs');
+        // standalone 构建会把 geoip-lite 内联进路由 bundle，其默认数据目录
+        //（__dirname/../data）随之失真；postbuild 已把数据复制到 <cwd>/data/geoip/，
+        // 存在则优先指向它（geoip-lite 在模块加载时读取 global.geodatadir）
+        const bundledDataDir = path.join(process.cwd(), 'data', 'geoip');
+        if (fs.existsSync(path.join(bundledDataDir, 'geoip-country.dat'))) {
+            (globalThis as Record<string, unknown>).geodatadir = bundledDataDir;
+        }
         const geoip = require('geoip-lite');
+        /* eslint-enable @typescript-eslint/no-require-imports */
         const geo = geoip.lookup(ip);
 
         if (geo) {
