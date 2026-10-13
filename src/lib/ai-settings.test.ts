@@ -34,9 +34,9 @@ describe("resolveModelPreference - 模型优先级与白名单", () => {
 
     it("env 与 DB 都不合法时回退 provider 内置默认", () => {
         expect(resolveModelPreference("gpt-4o", "claude-3-opus", "qwen", "model")).toBe("qwen-plus");
-        expect(resolveModelPreference("gpt-4o", undefined, "qwen", "visionModel")).toBe("qwen-vl-plus");
-        expect(resolveModelPreference(undefined, undefined, "deepseek", "model")).toBe("deepseek-chat");
-        expect(resolveModelPreference(undefined, undefined, "deepseek", "visionModel")).toBe("deepseek-vl");
+        expect(resolveModelPreference("gpt-4o", undefined, "qwen", "visionModel")).toBe("qwen3-vl-plus");
+        expect(resolveModelPreference(undefined, undefined, "deepseek", "model")).toBe("deepseek-flash");
+        expect(resolveModelPreference(undefined, undefined, "deepseek", "visionModel")).toBe("deepseek-flash");
     });
 
     it("provider 与模型不匹配时按非法处理（qwen 不接受 deepseek-chat）", () => {

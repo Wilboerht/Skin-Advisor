@@ -17,7 +17,9 @@ export type AIProvider = "deepseek" | "qwen";
 export const ALLOWED_AI_PROVIDERS: AIProvider[] = ["deepseek", "qwen"];
 
 export const ALLOWED_AI_MODELS: Record<AIProvider, string[]> = {
-    deepseek: ["deepseek-chat", "deepseek-reasoner", "deepseek-vl"],
+    // deepseek-chat / deepseek-reasoner / deepseek-vl 已于 2026-07 从官方 API 退役，
+    // 保留在白名单仅为兼容存量 DB 配置；现役模型为 deepseek-flash / deepseek-v4-pro
+    deepseek: ["deepseek-flash", "deepseek-v4-pro", "deepseek-chat", "deepseek-reasoner", "deepseek-vl"],
     qwen: ["qwen-turbo", "qwen-plus", "qwen-max", "qwen-vl-max", "qwen-vl-plus", "qwen3-vl-plus"],
 };
 
@@ -58,8 +60,9 @@ function getEnvMaxTokens(): number | null {
 
 /** provider 内置默认模型（白名单内；env/DB 均非法时兜底） */
 function getHardDefaultModel(provider: AIProvider, kind: "model" | "visionModel"): string {
-    if (provider === "qwen") return kind === "model" ? "qwen-plus" : "qwen-vl-plus";
-    return kind === "model" ? "deepseek-chat" : "deepseek-vl";
+    if (provider === "qwen") return kind === "model" ? "qwen-plus" : "qwen3-vl-plus";
+    // deepseek-chat 已退役，flash 是现役文本/视觉通用主力
+    return "deepseek-flash";
 }
 
 /**

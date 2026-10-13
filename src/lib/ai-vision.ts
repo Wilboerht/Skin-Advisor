@@ -480,9 +480,9 @@ function getDefaultVisionModel(provider: AIProvider): string {
     const envModel = process.env.AI_VISION_MODEL?.trim();
     if (envModel && isAllowedAIModel(provider, envModel)) return envModel;
     switch (provider) {
-        case "qwen": return "qwen-vl-plus";
-        case "deepseek": return "deepseek-vl";
-        default: return "qwen-vl-plus";
+        case "qwen": return "qwen3-vl-plus";
+        case "deepseek": return "deepseek-flash";
+        default: return "deepseek-flash";
     }
 }
 

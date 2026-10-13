@@ -64,6 +64,10 @@ const PRICING_TABLE: Record<string, Partial<Record<string, ModelPricing>>> = {
     },
     deepseek: {
         // 2026年7月起峰谷定价：高峰 9-12 和 14-18 (北京时间) 价格为 2 倍
+        // deepseek-flash（V4.1-Flash，2026-09 现役主力）：谷时 $0.15/1M 输入、$0.60/1M 输出
+        "deepseek-flash": { input: 0.0011, output: 0.0043 },
+        // deepseek-v4-pro：约为 flash 的 4 倍（近似值）
+        "deepseek-v4-pro": { input: 0.0044, output: 0.0145 },
         "deepseek-chat": { input: 0.001, output: 0.002 },
         "deepseek-reasoner": { input: 0.004, output: 0.016 },
         "deepseek-vl": { input: 0.005, output: 0.005 },
