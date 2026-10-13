@@ -6,7 +6,7 @@ import crypto from "crypto";
 import { analyzeImages, type VisionImage } from "@/lib/ai-vision";
 import type { AIProvider } from "@/lib/ai";
 import { buildSkinStateVisionNote } from "@/lib/skin-state";
-import { isAIEnabled } from "@/lib/ai";
+import { isAIEnabled, getAISettings } from "@/lib/ai";
 import { circuitBreaker } from "@/lib/circuit-breaker";
 import { FaceAnalyzeRequestSchema } from "@/lib/schemas";
 import {
@@ -63,6 +63,11 @@ function getCachedResult(key: string): Record<string, unknown> | null {
 }
 
 function setCachedResult(key: string, sessionId: string, result: Record<string, unknown>): void {
+    // Map 无界增长防护：达到上限时删除最旧条目（Map 按插入序迭代，第一个键即最旧）
+    if (faceAnalysisCache.size >= FACE_CACHE_MAX_SIZE) {
+        const oldest = faceAnalysisCache.keys().next().value;
+        if (oldest !== undefined) faceAnalysisCache.delete(oldest);
+    }
     faceAnalysisCache.set(key, { result, at: Date.now(), sessionId });
 }
 
@@ -101,8 +106,11 @@ export async function POST(request: NextRequest) {
         }
 
         // 0. 熔断器检查
-        const visionServiceKey = `vision-${process.env.AI_VISION_PROVIDER || "qwen"}`;
-        if (!circuitBreaker.allowRequest(visionServiceKey)) {
+        // provider 走 getAISettings 的 sanitize（直读 env 会绕过白名单并与 visionModel 错位）；
+        // isBlocked 为纯查询，不消耗半开探测名额（名额由 ai-vision.ts 内部调用点管理）
+        const aiSettings = await getAISettings();
+        const visionServiceKey = `vision-${aiSettings.visionProvider}`;
+        if (circuitBreaker.isBlocked(visionServiceKey)) {
             const response = apiError("CIRCUIT_OPEN", "AI 视觉服务暂时不可用（熔断保护），请稍后重试", 503);
             response.headers.set("Retry-After", "60");
             return response;
@@ -323,13 +331,15 @@ export async function POST(request: NextRequest) {
             .map(img => img.data);
 
         if (validImages.length === 0) {
+            // 无有效图片属于预占后早退，需回滚额度（参照下方 [Validation] 分支）
+            if (reserved) await rollbackUsage(request, faceSessionId);
             return apiError(ErrorCode.VALIDATION_ERROR, "无有效图片数据", 400);
         }
 
         aiLogger.info(`Starting face analysis for IP ${hashIP(ip)} with ${validImages.length} images`);
 
-        // 3. 准备提示词与 Provider
-        const provider = process.env.AI_VISION_PROVIDER || "qwen";
+        // 3. 准备提示词与 Provider（复用上方已 sanitize 的配置）
+        const provider = aiSettings.visionProvider;
         let systemPrompt = VISION_ANALYSIS_SYSTEM_PROMPT;
 
         if (provider === "qwen") {
@@ -516,6 +526,15 @@ export async function POST(request: NextRequest) {
                 }
                 const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "3600");
+                return response;
+            }
+
+            // 内部视觉超时（ai-vision.ts 包装为 [Timeout]）：provider 侧失败而非客户端取消，
+            // 回滚预占并返回可重试 503（与下方通用失败分支一致）
+            if (err.message?.includes("[Timeout]")) {
+                if (reserved) await rollbackUsage(request, faceSessionId);
+                const response = apiError("AI_UNAVAILABLE", "AI 分析服务暂时不可用，请稍后重试", 503);
+                response.headers.set("Retry-After", "60");
                 return response;
             }
 

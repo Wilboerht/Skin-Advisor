@@ -569,7 +569,7 @@ async function callProviderInternal(
     // 可用 AI_TEXT_TIMEOUT_MS 覆盖（analyze 路由 maxDuration=90s，保持 10s 余量）。
     const TEXT_TIMEOUT_MS = (() => {
         const envTimeout = Number(process.env.AI_TEXT_TIMEOUT_MS);
-        return Number.isInteger(envTimeout) && envTimeout >= 5000 && envTimeout <= 120000 ? envTimeout : 80000;
+        return Number.isInteger(envTimeout) && envTimeout >= 5000 && envTimeout <= 85000 ? envTimeout : 80000;
     })();
     const { controller, cleanup } = createMergedAbortController(TEXT_TIMEOUT_MS);
     const startedAt = Date.now();
@@ -656,11 +656,11 @@ async function callProviderInternal(
 // ============================================================================
 
 function getModelForProvider(provider: string): string {
-    // 降级时使用该 provider 最便宜的模型
+    // 降级时使用该 provider 最便宜的现役模型（deepseek-chat 已退役，不可用）
     switch (provider) {
-        case "deepseek": return "deepseek-chat";
+        case "deepseek": return "deepseek-flash";
         case "qwen": return "qwen-turbo"; // qwen-turbo 比 qwen-plus 便宜 8 倍
-        default: return "deepseek-chat";
+        default: return "deepseek-flash";
     }
 }
 

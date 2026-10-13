@@ -93,7 +93,7 @@ function normalizeVisionGender(data: Record<string, unknown>): void {
 
 /** 递归删除 null 值（模型在拒绝/不确定时会把字段写成 null，zod optional 不接受 null） */
 function stripNulls(value: unknown): unknown {
-    if (Array.isArray(value)) return value.map(stripNulls);
+    if (Array.isArray(value)) return value.filter(v => v !== null).map(stripNulls);
     if (value && typeof value === "object") {
         const out: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
@@ -229,8 +229,14 @@ export async function analyzeImages(
                 return result;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
+                // 内部 visionTimeout 已在底层包装为 [Timeout] 错误（走普通失败/fallback 路径），
+                // 此处的 AbortError 只剩外部 signal（客户端断开/路由超时）一种来源
                 if (error.name === 'AbortError' || signal?.aborted) {
                     throw new Error("Vision request cancelled by client.");
+                }
+                // 预算类错误与 provider 无关，换下一个 provider 也必然失败，直接上抛
+                if (typeof error?.message === 'string' && error.message.startsWith('[AIBudget]')) {
+                    throw error;
                 }
                 lastError = error;
                 aiLogger.warn(`Vision provider ${provider} failed: ${error.message}. Switching to next...`);
@@ -294,7 +300,9 @@ async function tryVisionProviderWithKeys(
                     contentHead: result.slice(0, 150),
                     contentTail: result.slice(-150),
                 });
-                throw extractErr;
+                // [Parse] 前缀：模型输出问题而非 Key 故障，catch 里据此直抛（不轮换 Key、不记 Key 健康）
+                const extractMsg = extractErr instanceof Error ? extractErr.message : String(extractErr);
+                throw new Error(`[Parse] ${extractMsg}`);
             }
             const parsed = VisionAnalysisOutputSchema.safeParse(normalizeVisionOutput(rawJson));
             if (!parsed.success) {
@@ -302,7 +310,7 @@ async function tryVisionProviderWithKeys(
                     issues: parsed.error.message.slice(0, 500),
                     contentHead: result.slice(0, 200),
                 });
-                throw new Error(`AI response schema validation failed: ${parsed.error.message}`);
+                throw new Error(`[Parse] AI response schema validation failed: ${parsed.error.message}`);
             }
             const jsonData = parsed.data;
 
@@ -326,6 +334,8 @@ async function tryVisionProviderWithKeys(
                 throw new Error(`[Validation] ${reason}`);
             }
 
+            // 成功也记录 Key 健康：复位连续失败计数/冷却，避免单次抖动把 Key 永久打入冷宫
+            recordKeyResult(provider, apiKey, { success: true });
             return jsonData; // 成功返回
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -336,6 +346,11 @@ async function tryVisionProviderWithKeys(
             // 业务校验失败（非真人/翻拍等）与 Key 健康无关：
             // 直接抛出，不轮换 Key、不重复计费、不误标 Key 不健康
             if (typeof error?.message === 'string' && error.message.startsWith('[Validation]')) {
+                throw error;
+            }
+            // JSON 提取/schema 校验失败是模型输出问题，同样与 Key 健康无关：
+            // 直抛给 analyzeImages 走 provider fallback，不在本 provider 内空转轮换 Key
+            if (typeof error?.message === 'string' && error.message.startsWith('[Parse]')) {
                 throw error;
             }
             lastError = error;
@@ -494,7 +509,8 @@ async function callOpenAICompatibleVision(
         );
     } catch (err) {
         cleanupTimeout();
-        // 记录失败到熔断器（AbortError 除外，那是客户端主动取消）
+        // 区分 abort 来源：外部 signal（客户端断开/路由超时）已 abort 才算客户端取消；
+        // 仅内部 visionTimeout 触发时是 provider 侧超时
         const e = err as Error & { name?: string };
         const isTimeout = e.name === 'AbortError' && !signal?.aborted;
 
@@ -513,8 +529,14 @@ async function callOpenAICompatibleVision(
             sessionId,
         });
 
-        if (!isTimeout && !signal?.aborted) {
+        // 客户端主动取消不计入熔断；内部超时属于 provider 可用性问题，需要计入
+        if (!signal?.aborted) {
             circuitBreaker.recordFailure(serviceKey);
+        }
+        // 内部超时包装为 [Timeout] 错误上抛：让上层走普通的 provider 失败/重试/回滚路径，
+        // 避免被误判为 "Vision request cancelled by client."（499 不回滚额度）
+        if (isTimeout) {
+            throw new Error(`[Timeout] Vision AI 响应超时（${provider}/${model}）`);
         }
         throw err;
     }

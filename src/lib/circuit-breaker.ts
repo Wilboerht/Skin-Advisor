@@ -74,6 +74,15 @@ class AICircuitBreaker {
     }
 
     /**
+     * 纯查询：当前是否处于阻塞状态（无副作用，不消耗半开探测名额）。
+     * 供路由层预检使用；真正消耗名额的 allowRequest 仅在底层调用点执行一次，
+     * 否则路由层 + 底层双重调用会在 CIRCUIT_HALF_OPEN_MAX=2 时耗死探测名额。
+     */
+    isBlocked(service: string): boolean {
+        return !this.checkRequestAllowed(service);
+    }
+
+    /**
      * 检查是否允许通过请求（有副作用：可能触发 OPEN→HALF-OPEN 转换，递增探测计数）
      * @param service 服务标识（如 "vision-qwen", "text-deepseek"）
      * @returns true = 允许通过

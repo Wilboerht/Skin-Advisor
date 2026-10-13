@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
-import { generateText, type AIProvider } from "@/lib/ai";
+import { generateText, getAISettings, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
 import { parseConsultantReport, sanitizeConsultantReport, type ConsultantReport } from "@/lib/advisor-utils";
@@ -642,7 +642,10 @@ export async function POST(request: NextRequest) {
         const systemPrompt = CONSULTANT_SYSTEM_PROMPT;
 
         // 调用 AI
-        const provider = process.env.AI_PROVIDER || "qwen";
+        // provider 必须走 getAISettings 的白名单 sanitize：直读 env 会绕过校验，
+        // 且可能与 settings.model 错位（env 是 qwen 但 DB model 是 deepseek 系）
+        const settings = await getAISettings();
+        const provider = settings.provider;
 
         // v2-only：AI 失败不再降级为 v1 规则报告。
         // 解析失败先做一次 JSON 修复重试；仍失败则返回可重试错误（同 session 重试不再扣次）
@@ -683,9 +686,9 @@ export async function POST(request: NextRequest) {
                 throw new Error("Request cancelled during queue wait.");
             }
 
-            // 熔断器检查
+            // 熔断器检查（纯查询，不消耗半开探测名额；名额由 ai.ts 内部调用点统一管理）
             const textServiceKey = `text-${provider}`;
-            if (!circuitBreaker.allowRequest(textServiceKey)) {
+            if (circuitBreaker.isBlocked(textServiceKey)) {
                 throw new Error(`[CircuitBreaker] Text AI service ${provider} is temporarily unavailable`);
             }
 
