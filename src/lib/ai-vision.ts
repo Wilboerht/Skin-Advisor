@@ -350,7 +350,7 @@ async function callOpenAICompatibleVision(
     const client = createOpenAIClient(provider, apiKey);
 
     // 合并外部 signal + 内部 90s 超时，防止 SDK 无限挂起
-    // qwen-vl-max 4图实测 48-50s，给足余量避免生产截断
+    // 历史上 qwen-vl-max 4图实测 48-50s；2026-10 起仅传正脸单图，90s 余量充足
     const visionTimeout = new AbortController();
     const visionTimeoutId = setTimeout(() => visionTimeout.abort(), 90000);
     const mergedSignal = mergeAbortSignals(signal, visionTimeout.signal);

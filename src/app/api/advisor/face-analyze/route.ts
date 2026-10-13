@@ -138,7 +138,8 @@ export async function POST(request: NextRequest) {
             return apiError(ErrorCode.VALIDATION_ERROR, "无效的请求数据", 400, result.error.flatten());
         }
 
-        // 图片数量硬上限：4 个角度（正脸/左侧/右侧/下巴），匹配产品设计。
+        // 图片数量硬上限：4 个角度（正脸/左侧/右侧/下巴）。
+        // 2026-10 起前端只发正脸 1 张，此处保留 4 作为兼容上限。
         // 超出即认定为攻击行为，直接拒绝并记录日志。
         const MAX_FACE_IMAGES = 4;
         const imageCount = Array.isArray(result.data.images) ? result.data.images.length : 0;
