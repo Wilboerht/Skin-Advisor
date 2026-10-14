@@ -77,7 +77,17 @@ try {
   if (fs.existsSync(uploadsDest) || fs.lstatSync(uploadsDest, { throwIfNoEntry: false })) {
     const destStat = fs.lstatSync(uploadsDest);
     if (destStat.isSymbolicLink()) {
-      console.log('🔗 uploads 符号链接已存在，跳过');
+      // 校验链接目标是否正确（历史上曾出现指向 /var/www/Skin-Advisor/uploads 的坏链接：
+      // 写入落错误目录，Nginx 从 public/uploads 读不到 → 全站上传文件 404）
+      const target = fs.readlinkSync(uploadsDest);
+      const resolvedTarget = path.resolve(path.dirname(uploadsDest), target);
+      if (resolvedTarget === uploadsSrc) {
+        console.log('🔗 uploads 符号链接已存在且指向正确，跳过');
+      } else {
+        console.log(`⚠️  uploads 符号链接指向错误（${target}），重建 → ${uploadsSrc}`);
+        fs.rmSync(uploadsDest, { force: true });
+        fs.symlinkSync(uploadsSrc, uploadsDest, 'junction');
+      }
     } else if (destStat.isDirectory()) {
       // standalone 目录里已有真实 uploads（历史上传），先合并回源码目录再替换为链接
       console.log('📦 合并 standalone/public/uploads 中已有文件 → public/uploads ...');
