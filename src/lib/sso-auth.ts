@@ -24,9 +24,9 @@ const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID!;
 const SSO_CLIENT_SECRET = process.env.SSO_CLIENT_SECRET;
 /**
  * 微信小程序 OAuth 客户端 ID：主站小程序登录签发的 access token
- * aud 固定为该值（默认 "wechat-miniprogram"），与浏览器端 SSO_CLIENT_ID 区分。
+ * aud 固定为该值（默认 "wechat-mp-skin"），与浏览器端 SSO_CLIENT_ID 区分。
  */
-export const MP_CLIENT_ID = process.env.SSO_MP_CLIENT_ID?.trim() || "wechat-miniprogram";
+export const MP_CLIENT_ID = process.env.SSO_MP_CLIENT_ID?.trim() || "wechat-mp-skin";
 /**
  * insecureLocalDev（本地 HTTP 开发）下 SDK 写入的 Cookie 名会去除
  * __Host-/__Secure- 前缀（浏览器拒绝在 HTTP 下写入带前缀的 Cookie），

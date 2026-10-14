@@ -26,7 +26,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@nihplod/sso-verify", () => ({
     createTokenVerifier: (opts: { audience?: string }) => ({
         // 按 audience 区分两个验签器：ssoVerifier（子站 client_id）与 mpVerifier（小程序）
-        verify: opts.audience === "wechat-miniprogram" ? mocks.mpVerify : mocks.ssoVerify,
+        verify: opts.audience === "wechat-mp-skin" ? mocks.mpVerify : mocks.ssoVerify,
     }),
 }));
 vi.mock("@nihplod/sso-sdk/next", () => ({
@@ -88,14 +88,14 @@ beforeEach(() => {
 });
 
 describe("MP_CLIENT_ID", () => {
-    it("未配置 SSO_MP_CLIENT_ID 时默认为 wechat-miniprogram", () => {
-        expect(MP_CLIENT_ID).toBe("wechat-miniprogram");
+    it("未配置 SSO_MP_CLIENT_ID 时默认为 wechat-mp-skin", () => {
+        expect(MP_CLIENT_ID).toBe("wechat-mp-skin");
     });
 });
 
 describe("verifyMpBearerToken", () => {
     it("有效 Bearer token 返回 payload", async () => {
-        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1", aud: "wechat-miniprogram" });
+        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1", aud: "wechat-mp-skin" });
         const payload = await verifyMpBearerToken(bearerReq("valid-mp-token"));
         expect(payload?.sub).toBe("user_mp_1");
         expect(mocks.mpVerify).toHaveBeenCalledWith("valid-mp-token");

@@ -94,7 +94,7 @@ Content-Type: application/json
 
 | 改动 | 说明 |
 |---|---|
-| 独立小程序验签器 | `sso-auth.ts` 新增 `mpVerifier`（audience=`wechat-miniprogram`，可用 `SSO_MP_CLIENT_ID` 覆盖）。**注意**：子站主验签器强制 audience=子站自身 client_id，小程序 token 必须用独立 audience 的验签器——JWKS 与 introspect 两条路径都不兼容跨 client |
+| 独立小程序验签器 | `sso-auth.ts` 新增 `mpVerifier`（audience=`wechat-mp-skin`，可用 `SSO_MP_CLIENT_ID` 覆盖）。**注意**：子站主验签器强制 audience=子站自身 client_id，小程序 token 必须用独立 audience 的验签器——JWKS 与 introspect 两条路径都不兼容跨 client |
 | `getSessionUser` 支持 Bearer | 请求带 `Authorization: Bearer` 头时只走 mpVerifier：JWKS 本地验签优先、introspect 兜底；payload.sub 复用现有 `upsertLocalUser` 建档/会员同步。验证失败直接 null（不回落 Cookie）；无 Authorization 头行为不变 |
 | CSRF 豁免边界 | `verifyCsrfToken` 对 Bearer 请求直接放行（Bearer 需调用方主动设置，无浏览器 ambient authority，无 CSRF 面）；Cookie 路径校验不变 |
 | 撤销语义 | JWKS 本地验签不感知会话撤销，靠 access token 900s 短 TTL 兜底（官网建 client 时必须 `accessTokenTtlSeconds=900`） |
