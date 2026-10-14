@@ -281,12 +281,17 @@ export async function proxy(request: NextRequest) {
         }
 
         // 2. 检查 Origin / Referer（防止跨站请求）
+        // Bearer 豁免：小程序/服务端调用方持 Authorization Bearer 凭据，无浏览器
+        // ambient authority，不存在跨站伪造面（与 CSRF 豁免同理）；且小程序请求
+        // 本就不带 Origin/Referer
+        const authHeader = request.headers.get("authorization") || "";
+        const hasBearer = /^Bearer\s+\S+$/.test(authHeader);
         const reqOrigin = request.headers.get("origin");
         const referer = request.headers.get("referer");
         const isSameOrigin = isAllowedOrigin(reqOrigin) || isAllowedOrigin(referer);
 
         // 如果配置了 ALLOWED_ORIGINS 但请求不带 Origin/Referer 或不匹配，拒绝
-        if (ORIGIN_PROTECTION_ENABLED && !isSameOrigin) {
+        if (ORIGIN_PROTECTION_ENABLED && !isSameOrigin && !hasBearer) {
             return NextResponse.json(
                 { error: "Forbidden: cross-origin requests not allowed" },
                 { status: 403 }
