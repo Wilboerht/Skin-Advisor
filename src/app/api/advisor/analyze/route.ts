@@ -40,13 +40,16 @@ export const maxDuration = 90;
 /**
  * 调用官网内部 API v1 发送微信模板消息
  *
+ * 官网侧按用户身份双通道发送：公众号模板消息（H5 报告链接）+
+ * 测肤小程序订阅消息「报告完成通知」（凭 sessionId 跳小程序报告页）。
  * 增强：HMAC-SHA256 签名鉴权 + 熔断 + 指数退避重试 + 超时 + 结构化日志
  */
 async function sendOfficialWechatTemplate(
   userId: string,
   score: number,
   primaryConcern: string,
-  reportUrl: string
+  reportUrl: string,
+  sessionId?: string | null
 ): Promise<void> {
   if (!circuitBreaker.allowRequest(WECHAT_TEMPLATE_CIRCUIT_KEY)) {
     aiLogger.warn("[WechatTemplate] 熔断器开启，跳过官网模板消息推送");
@@ -55,7 +58,14 @@ async function sendOfficialWechatTemplate(
 
   const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
   const path = "/api/v1/internal/wechat/send-template";
-  const bodyText = JSON.stringify({ userId, score, primaryConcern, reportUrl });
+  const bodyText = JSON.stringify({
+    userId,
+    score,
+    primaryConcern,
+    reportUrl,
+    // 测肤小程序订阅消息的跳转参数（旧官网不识别该字段时自动忽略）
+    ...(sessionId ? { sessionId } : {}),
+  });
 
   let lastError: unknown;
 
@@ -1003,7 +1013,7 @@ export async function POST(request: NextRequest) {
                 const reportUrl = `${baseUrl}/reports/${effectiveSessionId}`;
 
                 // 异步触发，绝不阻塞前端响应时间
-                sendOfficialWechatTemplate(user.id, score, primaryConcern, reportUrl).catch((err) =>
+                sendOfficialWechatTemplate(user.id, score, primaryConcern, reportUrl, effectiveSessionId).catch((err) =>
                     aiLogger.error("[WechatTemplate] 发送函数未捕获异常", { error: String(err) })
                 );
             }
