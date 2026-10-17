@@ -19,6 +19,11 @@ export function startOfTodayShanghai(now: Date = new Date()): Date {
     return new Date(dayStartShifted - SHANGHAI_OFFSET_MS);
 }
 
+/** 返回北京时间当日的日历日（YYYY-MM-DD） */
+export function todayKeyShanghai(now: Date = new Date()): string {
+    return new Date(now.getTime() + SHANGHAI_OFFSET_MS).toISOString().slice(0, 10);
+}
+
 /**
  * 解析 datetime-local 格式（yyyy-MM-ddTHH:mm[:ss]）为北京时间，
  * 返回对应的 UTC 绝对时刻；格式非法返回 null。

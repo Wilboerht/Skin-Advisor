@@ -2,8 +2,9 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSessionUser } from '@/lib/sso-auth';
+import { isAutoDiaryEntry, parseClientDate } from './diary-utils';
 import { withDbRetry } from './utils';
-import { startOfTodayShanghai } from './time';
+import { startOfTodayShanghai, todayKeyShanghai } from './time';
 
 /**
  * 使用频率限制结果
@@ -364,18 +365,32 @@ export interface SkinTestUsageSummary {
     };
     /** 终身剩余次数；unlimited 时为 null */
     remaining: number | null;
+    /** 今日是否已完成手动打卡（自动测肤日记不计入） */
+    todayCheckedIn: boolean;
 }
 
 export async function getSkinTestUsageSummary(userId: string): Promise<SkinTestUsageSummary> {
     const today = startOfTodayShanghai();
-    const [user, totalUsed, todayUsed] = await Promise.all([
+    const todayDiaryDate = parseClientDate(todayKeyShanghai());
+    const [user, totalUsed, todayUsed, todayDiary] = await Promise.all([
         prisma.user.findUnique({
             where: { id: userId },
             select: { membershipLevel: true, totalSpent: true, dailyTestLimit: true },
         }),
         prisma.testRecord.count({ where: { userId } }),
         prisma.testRecord.count({ where: { userId, testDate: { gte: today } } }),
+        todayDiaryDate
+            ? prisma.diaryEntry.findUnique({
+                  where: { userId_date: { userId, date: todayDiaryDate } },
+                  select: { note: true, tags: true },
+              })
+            : Promise.resolve(null),
     ]);
+
+    // 与自动日记接管口径一致：自动备注且无手填标签视为自动记录，不算手动打卡
+    const todayCheckedIn =
+        !!todayDiary &&
+        (!isAutoDiaryEntry(todayDiary) || ((todayDiary.tags as unknown[] | null)?.length ?? 0) > 0);
 
     const quota = getMemberQuota(user);
     return {
@@ -388,5 +403,6 @@ export async function getSkinTestUsageSummary(userId: string): Promise<SkinTestU
             unlimited: quota.unlimited,
         },
         remaining: quota.lifetimeLimit == null ? null : Math.max(0, quota.lifetimeLimit - totalUsed),
+        todayCheckedIn,
     };
 }

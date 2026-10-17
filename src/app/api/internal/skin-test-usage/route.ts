@@ -18,7 +18,7 @@ export const maxDuration = 15;
  * 响应示例：
  *   { "level": "SILVER", "totalUsed": 23, "todayUsed": 2,
  *     "quota": { "lifetimeLimit": 50, "dailyLimit": 10, "unlimited": false },
- *     "remaining": 27 }
+ *     "remaining": 27, "todayCheckedIn": false }
  * 用户不存在（从未用过子站）：200 + level: null + totalUsed/todayUsed: 0 + 按 REGULAR 档配额。
  */
 export async function GET(request: NextRequest) {
