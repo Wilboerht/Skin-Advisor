@@ -11,7 +11,7 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
-import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
+import { CONSENT_VERSION, hasPrivacyConsent } from "@/components/advisor/PrivacyConsent";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -164,6 +164,11 @@ export default function HomeClient() {
   const [showSkinTypesModal, setShowSkinTypesModal] = useState(false);
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
+  // 当前版本隐私同意是否已存在：决定引导流程是否展示 legal 屏（登录用户同样适用）
+  const [privacyConsentPresent, setPrivacyConsentPresent] = useState(false);
+  useEffect(() => {
+    setPrivacyConsentPresent(hasPrivacyConsent());
+  }, []);
 
   // 引导流程弹窗（称呼/位置/隐私三步）打开期间隐藏底部 Dock（卸载时兜底还原）
   useEffect(() => {
@@ -237,10 +242,28 @@ export default function HomeClient() {
     safeStorage.remove(STORAGE_KEYS.ADVISOR_ANSWERS);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_GENDER);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_RESULT);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_FREE_RETRY);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_STEP);
+    // 分析中/失败暂存/锁必须一并清理：否则新测试会复用旧 session，
+    // 服务端命中已完成缓存后直接返回上一份报告。
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS);
+    // 预处理图可能尚未被异步 clearFaceImages 清掉，先同步移除，防止新测试复用旧照片
+    safeStorage.remove("advisor_processed_images");
+    try {
+      sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
+      sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
+      sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
+    } catch { /* ignore */ }
+    // 面部照片存 IndexedDB + advisor_processed_images：startNewTest 必须清掉，
+    // 避免上一次的照片被当作本次输入，也避免共享设备残留。
+    void import("@/lib/advisor-storage")
+      .then(({ advisorStorage }) => advisorStorage.clearFaceImages())
+      .catch((err) => console.warn("clearFaceImages failed", err));
     // 保留 ADVISOR_NICKNAME：昵称是用户资料而非本次测试数据，清空会导致结果页显示"您"
     // 若当前没有保存昵称且用户已登录，自动回填 user.name
     if (user?.name && !safeStorage.get(STORAGE_KEYS.ADVISOR_NICKNAME)) {
@@ -321,11 +344,12 @@ export default function HomeClient() {
         safeStorage.setSession("locationConsent", "declined");
     }
 
-    // Record privacy consent from the legal step
+    // Record privacy consent from the legal step（登录用户同样会看到 legal 屏）
     safeStorage.set(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT, JSON.stringify({
         version: CONSENT_VERSION,
         consentedAt: new Date().toISOString()
     }));
+    setPrivacyConsentPresent(true);
 
     // 最终提交前确保昵称已保存：用户填写优先，否则已登录用户回退到官网昵称
     if (nickname.trim()) {
@@ -909,6 +933,7 @@ export default function HomeClient() {
           onRegionSelect={handleRegionSelect}
           regionOptions={regionOptions}
           isLoggedIn={!!user}
+          hasConsent={privacyConsentPresent}
         />
       )}
 

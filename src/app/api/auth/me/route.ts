@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ssoVerifier, getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, upsertLocalUser, getLocalSessionDbUser, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokensSingleFlight } from "@/lib/sso-auth";
+import { rotateLocalSession, applyLocalSessionCookies, AUTH_REFRESH_COOKIE_NAME } from "@/lib/auth";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
@@ -37,6 +38,29 @@ export async function GET(req: NextRequest) {
         // 保证前端显示已登录；tokenVersion 比对与禁用检查在 getLocalSessionDbUser 内完成
         const localUser = await getLocalSessionDbUser();
         if (!localUser) {
+            // 本地 access token（30 分钟）已过期：用本地 refresh token 静默轮换。
+            // 没有这条链路，微信用户每 30 分钟就会被前端当成未登录。
+            const cookieStore = await cookies();
+            const localRefreshToken = cookieStore.get(AUTH_REFRESH_COOKIE_NAME)?.value;
+            if (localRefreshToken) {
+                const rotated = await rotateLocalSession(localRefreshToken);
+                if (rotated) {
+                    const response = NextResponse.json({
+                        user: {
+                            id: rotated.user.id,
+                            phone: rotated.user.phone || null,
+                            name: rotated.user.name || "",
+                            avatar: rotated.user.avatar || null,
+                            membershipLevel: rotated.user.membershipLevel || null,
+                            totalSpent: rotated.user.totalSpent ?? null,
+                            gender: rotated.user.gender ?? null,
+                            role: rotated.user.role || "user",
+                        },
+                    });
+                    applyLocalSessionCookies(response, rotated.issued, !SSO_INSECURE_LOCAL_DEV);
+                    return response;
+                }
+            }
             return NextResponse.json({ user: null });
         }
         return NextResponse.json({

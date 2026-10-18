@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 
 /**
@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
     info: vi.fn(),
     verifyToken: vi.fn(),
     isDisabledUser: vi.fn(),
+    fetch: vi.fn(),
 }));
 
 vi.mock("@nihplod/sso-verify", () => ({
@@ -68,7 +69,8 @@ const dbUser = {
     membershipLevel: "GOLD",
     totalSpent: 1200,
     gender: null,
-    profileSyncedAt: null,
+    // 默认资料已同步：现有用例不应触发 userinfo 回源
+    profileSyncedAt: new Date(),
     role: "user",
     dailyTestLimit: null,
     tokenVersion: 0,
@@ -81,10 +83,16 @@ const bearerReq = (token: string) => reqWith({ authorization: `Bearer ${token}` 
 
 beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal("fetch", mocks.fetch);
+    mocks.fetch.mockRejectedValue(new Error("unexpected fetch"));
     mocks.cookies.mockResolvedValue({ get: () => undefined, set: vi.fn() });
     mocks.isDisabledUser.mockReturnValue(false);
     mocks.upsert.mockResolvedValue(dbUser);
     mocks.verifyToken.mockResolvedValue(null);
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
 });
 
 describe("MP_CLIENT_ID", () => {
@@ -145,9 +153,89 @@ describe("getSessionUser Bearer 通道", () => {
             membershipLevel: "GOLD",
             totalSpent: 1200,
         });
+        // profileSyncedAt 新鲜：不回源 userinfo
+        expect(mocks.fetch).not.toHaveBeenCalled();
         // 未触碰 Cookie 路径与浏览器端验签器
         expect(mocks.cookies).not.toHaveBeenCalled();
         expect(mocks.ssoVerify).not.toHaveBeenCalled();
+    });
+
+    it("profileSyncedAt 为空 → 回源 userinfo 并同步本地资料", async () => {
+        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1" });
+        mocks.upsert
+            .mockResolvedValueOnce({ ...dbUser, name: "", membershipLevel: null, profileSyncedAt: null })
+            .mockResolvedValueOnce({
+                ...dbUser,
+                name: "新昵称",
+                membershipLevel: "DIAMOND",
+                totalSpent: 2000,
+                profileSyncedAt: new Date(),
+            });
+        mocks.fetch.mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                nickname: "新昵称",
+                avatar: "/uploads/avatar.png",
+                membership_level: "DIAMOND",
+                total_spent: 2000,
+            }),
+        });
+
+        const user = await getSessionUser(bearerReq("stale-mp-token"));
+
+        expect(mocks.fetch).toHaveBeenCalledTimes(1);
+        expect(mocks.fetch.mock.calls[0][0]).toBe("https://sso.internal/api/oauth/userinfo");
+        expect(mocks.upsert).toHaveBeenCalledTimes(2);
+        // upsertLocalUser 最终调用 prisma.user.upsert({ where, update, create, select })
+        expect(mocks.upsert.mock.calls[1][0].update).toMatchObject({
+            name: "新昵称",
+            avatarUrl: "https://nihplod.cn/uploads/avatar.png",
+            membershipLevel: "DIAMOND",
+            totalSpent: 2000,
+            profileSyncedAt: expect.any(Date),
+        });
+        expect(user).toMatchObject({
+            id: "user_mp_1",
+            name: "新昵称",
+            membershipLevel: "DIAMOND",
+            totalSpent: 2000,
+        });
+    });
+
+    it("profileSyncedAt 新鲜但 membershipLevel 为空 → 仍回源补齐会员", async () => {
+        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1" });
+        mocks.upsert
+            .mockResolvedValueOnce({ ...dbUser, membershipLevel: null, profileSyncedAt: new Date() })
+            .mockResolvedValueOnce({ ...dbUser, membershipLevel: "SILVER", profileSyncedAt: new Date() });
+        mocks.fetch.mockResolvedValue({
+            ok: true,
+            json: async () => ({ membership_level: "SILVER", total_spent: 1200 }),
+        });
+
+        const user = await getSessionUser(bearerReq("partial-sync-token"));
+
+        expect(mocks.fetch).toHaveBeenCalledTimes(1);
+        expect(mocks.upsert).toHaveBeenCalledTimes(2);
+        expect(mocks.upsert.mock.calls[1][0].update).toMatchObject({ membershipLevel: "SILVER" });
+        expect(user).toMatchObject({ membershipLevel: "SILVER" });
+    });
+
+    it("userinfo 回源失败 → 保留本地资料，不阻断鉴权", async () => {
+        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1" });
+        mocks.upsert.mockResolvedValue({ ...dbUser, profileSyncedAt: null });
+        mocks.fetch.mockRejectedValue(new Error("network down"));
+
+        const user = await getSessionUser(bearerReq("stale-mp-token-2"));
+
+        expect(mocks.fetch).toHaveBeenCalledTimes(1);
+        expect(mocks.upsert).toHaveBeenCalledTimes(1);
+        expect(user).toMatchObject({
+            id: "user_mp_1",
+            name: "小程序用户",
+            membershipLevel: "GOLD",
+        });
+        // fetchSsoUserinfo 内部已 fail-soft，不回源成功时保留本地资料
+        expect(user?.name).toBe("小程序用户");
     });
 
     it("Bearer 无效/过期 → 返回 null，不回落 Cookie 逻辑", async () => {

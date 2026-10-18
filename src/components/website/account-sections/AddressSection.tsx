@@ -71,16 +71,22 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
 
   const load = useCallback(async () => {
     setLoadError(false);
-    const { res, data } = await request("/api/account/addresses");
-    if (!res.ok || !data?.success) {
-      if (!data) return; // 401 已交给登录引导
-      setLoadError(true);
-    } else {
+    try {
+      const { res, data } = await request("/api/account/addresses");
+      if (!res.ok || !data?.success) {
+        // 401 已交给登录引导；网络异常/5xx 走 loadError + 重试按钮
+        if (data) setLoadError(true);
+        return;
+      }
       const list = data.data?.addresses ?? [];
       setAddresses(list);
       onCountChange?.(list.length);
+    } catch {
+      setLoadError(true);
+    } finally {
+      // 无论 401、网络异常还是成功，都必须结束 loading，否则面板会永久停在"地址加载中"
+      setLoading(false);
     }
-    setLoading(false);
   }, [request, onCountChange]);
 
   useEffect(() => {

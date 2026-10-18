@@ -125,7 +125,9 @@ export default function FaceScanPage() {
             console.warn("Storage full, attempting cleanup...");
             toast.warning("正在优化存储空间...");
 
-            await advisorStorage.clearAll();
+            // 只清理面部照片/旧结果，绝不能清问卷答案与隐私同意：
+            // 否则用户刚完成问卷和拍摄，进入结果页会被入口守卫判定"未授权访问"。
+            await advisorStorage.clearFaceImages();
 
             const retrySuccess = await advisorStorage.saveFaceImages(images);
             if (!retrySuccess) {
@@ -423,9 +425,9 @@ export default function FaceScanPage() {
                                     </button>
                                     <button
                                         onClick={async () => {
-                                            // 清理人脸照片缓存释放空间，但保留问卷进度
+                                            // 仅清理人脸照片缓存，保留问卷答案/隐私同意
                                             const { advisorStorage } = await import("@/lib/advisor-storage");
-                                            await advisorStorage.clearAll();
+                                            await advisorStorage.clearFaceImages();
                                             navPush("/");
                                         }}
                                         className="px-6 h-10 border border-brand-charcoal/20 text-brand-charcoal/60 hover:text-brand-charcoal hover:border-brand-charcoal/40 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"

@@ -61,4 +61,7 @@ export const STORAGE_KEYS = {
 
 // 分析中会话恢复有效期：刷新/重开页面时复用进行中 sessionId 的时间窗口
 // （ResultClient 恢复入口与 useAsyncAnalysis 复用判定共用，避免两处不一致）
-export const ANALYZING_SESSION_TTL_MS = 90 * 1000;
+//
+// 必须覆盖服务端最坏耗时：face-analyze 100s + analyze 90s + 队列等待 60s，
+// 再加网络/重连余量。原 90s 短于实际链路，用户刷新会被误判为"新测试"并再次预占额度。
+export const ANALYZING_SESSION_TTL_MS = 10 * 60 * 1000;

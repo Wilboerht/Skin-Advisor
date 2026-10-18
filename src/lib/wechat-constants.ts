@@ -9,8 +9,10 @@
  * Cookie）。读写两侧（callback/bind/logout/wechat-bind 页）必须共用本模块的
  * 常量，切勿散写硬编码 Cookie 名。
  */
-import { toInsecureCookieName } from "@nihplod/sso-sdk/next";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
+
+/** 与 @nihplod/sso-sdk/next 的 toInsecureCookieName 完全一致（避免测试/Node 环境加载 Edge SDK） */
+const toInsecureCookieName = (name: string): string => name.replace(/^__(Host|Secure)-/, "");
 
 const cookieName = (name: string): string =>
     SSO_INSECURE_LOCAL_DEV ? toInsecureCookieName(name) : name;
@@ -29,7 +31,9 @@ export const USER_ACCESS_COOKIE_OPTIONS = {
     secure,
     sameSite: "lax" as const,
     path: "/",
-    maxAge: 15 * 60, // 15 分钟
+    // 与主站 src/types/auth.ts 保持一致：access token 8 小时（不是 15 分钟）。
+    // 旧值 15 分钟会让浏览器提前丢弃仍有效的 token，账户 BFF 频繁触发刷新。
+    maxAge: 8 * 60 * 60,
 };
 
 export const USER_REFRESH_COOKIE_OPTIONS = {

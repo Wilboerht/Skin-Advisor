@@ -146,8 +146,18 @@ export function AuthModal() {
                 })
             });
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "绑定未成功");
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const message =
+                    typeof data.error?.message === "string"
+                        ? data.error.message
+                        : typeof data.error === "string"
+                            ? data.error
+                            : typeof data.message === "string"
+                                ? data.message
+                                : "绑定未成功";
+                throw new Error(message);
+            }
 
             toast.success("绑定成功！");
 

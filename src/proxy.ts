@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { createSsoMiddleware } from "@nihplod/sso-sdk/next";
 import { verifySessionSignature, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 import { verifyCsrfToken } from "@/lib/csrf";
-import { AUTH_COOKIE_NAME, verifyToken } from "@/lib/auth-config";
+import { AUTH_COOKIE_NAME, AUTH_REFRESH_COOKIE_NAME, verifyToken, verifyRefreshToken } from "@/lib/auth-config";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/sso-auth";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
 import { PUBLIC_PATHS } from "@/lib/public-paths";
@@ -110,7 +110,13 @@ export async function proxy(request: NextRequest) {
     // 注意：此处只做纯验签（proxy 层不查 DB），tokenVersion 撤销有最长 30min 窗口
     //（本地 JWT TTL）；写操作仍由 route handler / CSRF 层二次校验。
     const localAuthCookieVal = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-    const hasValidLocalSession = localAuthCookieVal ? Boolean(await verifyToken(localAuthCookieVal)) : false;
+    const localAccessValid = localAuthCookieVal ? Boolean(await verifyToken(localAuthCookieVal)) : false;
+    // access JWT（30min）过期但本地 refresh token 仍有效时，也不能让 SDK 把微信用户
+    // 302 到主站登录页：页面内的 getSessionUser 会用 refresh 做只读兜底，
+    // 写操作由 fetchWithCsrf → session-init 完成轮换。
+    const localRefreshCookieVal = request.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value;
+    const localRefreshValid = localRefreshCookieVal ? Boolean(await verifyRefreshToken(localRefreshCookieVal)) : false;
+    const hasValidLocalSession = localAccessValid || localRefreshValid;
 
     const ssoResponse = isApiPath || hasValidLocalSession ? null : await ssoMiddleware(request);
     if (ssoResponse && (ssoResponse.headers.get("location") || (ssoResponse.status >= 300 && ssoResponse.status < 400))) {

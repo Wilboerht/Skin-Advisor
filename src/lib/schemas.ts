@@ -37,7 +37,7 @@ const zoneDataSchema = z.object({
 
 export const AnalyzeRequestSchema = z.object({
     sessionId: SessionIdSchema.optional(), // 可选，如果客户端已生成
-    nickname: z.string().max(10).optional(), // 用户昵称
+    nickname: z.string().max(20).optional(), // 用户昵称（与主站 profile 的 20 字符上限一致）
     freeRetry: z.boolean().optional(), // 性别不匹配免费重试标记
     clientDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // 客户端本地日历日，用于自动生成护肤日记
     skinState: z.string().max(30).optional(), // 拍摄时肌肤状态（扫脸引导弹窗选择）

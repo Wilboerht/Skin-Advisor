@@ -16,6 +16,7 @@ import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import { parseOfficialResponse } from "@/lib/official-api";
 import { fetchOfficialMembershipLevel } from "@/lib/official-membership";
 import { signLocalSession } from "@/lib/auth";
+import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import {
     USER_COOKIE_NAME,
     USER_REFRESH_COOKIE_NAME,
@@ -182,7 +183,7 @@ export async function POST(req: NextRequest) {
             role: localUser.role,
             tokenVersion: localUser.tokenVersion,
             dailyTestLimit: localUser.dailyTestLimit,
-        });
+        }, { secure: !SSO_INSECURE_LOCAL_DEV });
 
         if (!sessionOk) {
             return apiError(ErrorCode.INTERNAL_ERROR, "会话创建失败", 500);

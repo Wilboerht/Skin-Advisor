@@ -23,10 +23,19 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
     cookies_disabled: "请开启浏览器 Cookie 后再登录",
 };
 
+/** 清理登录相关 URL 参数（必须在发起 SSO 跳转前执行，否则 return_to 会把它带回形成循环） */
+function cleanAuthUrlParams() {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("auth");
+    url.searchParams.delete("redirect");
+    window.history.replaceState({}, "", url.toString());
+}
+
 export function AuthUrlDetector() {
     const searchParams = useSearchParams();
     const { openAuthModal } = useAuthModal();
-    const { user } = useAuth();
+    const { user, isInitialized } = useAuth();
     const router = useRouter();
     const toast = useToast();
     const openAuthModalRef = useRef(openAuthModal);
@@ -40,6 +49,10 @@ export function AuthUrlDetector() {
         const redirectUrl = searchParams.get("redirect");
 
         if (authView === "login" || authView === "register" || authView === "forgot_password") {
+            // 会话初始化完成前不动作：否则已登录用户会在 /api/auth/me 返回前被误送去 SSO。
+            // 待 isInitialized 变 true 后 effect 会再次执行。
+            if (!isInitialized) return;
+
             // 仅保留站内路径，防止开放重定向
             if (redirectUrl && isSafeInternalPath(redirectUrl)) {
                 sessionStorage.setItem(STORAGE_KEYS.AUTH_REDIRECT, redirectUrl);
@@ -53,26 +66,20 @@ export function AuthUrlDetector() {
                     : isSafeInternalPath(pending)
                     ? pending
                     : null;
+                cleanAuthUrlParams();
                 if (target) {
                     sessionStorage.removeItem(STORAGE_KEYS.AUTH_REDIRECT);
                     router.push(target);
                 }
-                if (typeof window !== "undefined") {
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete("auth");
-                    url.searchParams.delete("redirect");
-                    window.history.replaceState({}, "", url.toString());
-                }
                 return;
             }
 
+            // 先清理 URL 再发起登录：openAuthModal('login') 会立即整页跳转 SSO，
+            // return_to 取当前 URL；若带着 ?auth=login，登录回跳后会再次进入本分支。
+            cleanAuthUrlParams();
             openAuthModalRef.current(authView);
-            const url = new URL(window.location.href);
-            url.searchParams.delete("auth");
-            url.searchParams.delete("redirect");
-            window.history.replaceState({}, "", url.toString());
         }
-    }, [searchParams, user, router]);
+    }, [searchParams, user, isInitialized, router]);
 
     // 检测 ?login=wechat_bind（/wechat-bind 服务端重定向而来）：
     // AuthModal 改为懒挂载后无法自行感知 URL 参数，本检测上移至常驻组件；

@@ -17,7 +17,7 @@ import { matchCharacterIP } from "@/lib/result-utils";
 import { isMobileDevice, isWeChatBrowser } from "@/lib/share-device";
 import { sanitizeFilename } from "@/lib/poster-utils";
 import { certImageUrl, renderCertImage, type CertVariant } from "@/lib/cert-image";
-import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from "@/lib/storage-keys";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import type { SessionUser } from "@/lib/auth";
 import ShareCardPage from "@/components/advisor/ShareCardPage";
@@ -243,6 +243,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const toast = useToast();
     // 预取首页/问卷路由，避免点击导航按钮时冷导航"点了没反应"；isNavigating 提供即时反馈
     const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/questions?edit=true"]);
+    // 登录态需在入口守卫之前声明：缓存报告归属校验依赖 user?.id
+    const { user, isInitialized: authInitialized } = useAuth();
 
     // 入口守卫：必须通过首页引导弹窗后才能查看结果
     // 历史报告页面（/reports/:id）会传入 id 与 initialData，跳过此守卫
@@ -255,15 +257,27 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             // 仅当本地存在报告数据或未完成的问卷答案时才放行；
             // 只有隐私授权（hasConsent）不等于有数据——放行后也会被 loadClientData 踢回问卷页，
             // 不如直接在守卫层给出明确的引导页
-            const hasResult = localStorage.getItem(STORAGE_KEYS.ADVISOR_RESULT);
+            const resultRaw = localStorage.getItem(STORAGE_KEYS.ADVISOR_RESULT);
             const hasAnswers = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
-            setAccessDenied(!hasResult && !hasAnswers);
+
+            // 共享设备换账号：缓存报告若属于其他 userId，禁止展示并清掉本地报告
+            if (resultRaw && user?.id) {
+                try {
+                    const cached = JSON.parse(resultRaw) as { userId?: unknown };
+                    if (typeof cached.userId === "string" && cached.userId !== user.id) {
+                        localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
+                        setAccessDenied(true);
+                        return;
+                    }
+                } catch { /* 缓存损坏按无报告处理 */ }
+            }
+
+            setAccessDenied(!resultRaw && !hasAnswers);
         } catch {
             setAccessDenied(true);
         }
-    }, [id, initialData]);
+    }, [id, initialData, user?.id]);
     const { trackResultView, trackResultShare, trackResultFlip, trackProductClick } = useAdvisorAnalytics();
-    const { user, isInitialized: authInitialized } = useAuth();
     const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
     const { runAnalysis, analysisState, recoverSession, startMock } = useAsyncAnalysis();
@@ -1121,18 +1135,24 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             try {
                 // 1. Try to recover an in-progress session from this browser tab (e.g. page refresh)
                 let existingSessionId: string | null = null;
-                let startedAt = 0;
                 try {
                     existingSessionId = sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
-                    startedAt = Number(sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT) || '0');
                 } catch (e) {
                     console.warn('sessionStorage access failed', e);
                 }
-                const shouldRecover = existingSessionId && (Date.now() - startedAt) < ANALYZING_SESSION_TTL_MS;
+                // 只要本地存在分析中 sessionId，就先以服务端状态为准尝试恢复。
+                // 不再用 90s 本地 TTL 直接判死：服务端可能仍在跑（face 100s + analyze 90s + 排队），
+                // 本地先判死会新建 session 并重复预占额度。只有服务端明确 not_found 才回退新分析。
+                const shouldRecover = Boolean(existingSessionId);
 
                 if (shouldRecover) {
                     const recovered = await recoverSession(existingSessionId!, abortController.signal);
-                    if (recovered) {
+                    if (recovered.status === 'error') {
+                        // 恢复失败（超时/429/5xx/登录失效）：hook 已写入错误态。
+                        // 绝不能在这里回退到全新分析，否则会重复预占额度/重复调用 AI。
+                        return;
+                    }
+                    if (recovered.status === 'completed') {
                         const { result: rawResult, sessionId: recoveredSessionId } = recovered;
 
                         // Save to localStorage for normal recovery
@@ -1173,7 +1193,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         }
                         return;
                     }
-                    // If recovery returned null (pending/not_found/forbidden), fall through to fresh analysis
+                    // 服务端明确 not_found：才允许回退到全新分析（会复用同一 sessionId 以保持幂等）
                 }
 
                 // 组件已卸载（卸载时中止了恢复轮询）则不再回退到全新分析，避免重复扣费

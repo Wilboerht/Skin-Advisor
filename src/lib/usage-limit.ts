@@ -44,8 +44,10 @@ export interface ReserveUsageResult {
      * 调用方据此决定是否可安全回滚，避免误删其他请求的预占。
      */
     alreadyReserved?: boolean;
-    /** 游客拒绝时置 true：调用方应返回 401 而非 429 */
+    /** 游客拒绝时置 true，调用方应返回 401 而非 429 */
     requireLogin?: boolean;
+    /** sessionId 已被其他用户预占：调用方应返回 404/403，避免跨用户冒用 */
+    forbidden?: boolean;
 }
 
 // ===== 会员测肤额度（四档会员规则，单点配置）=====
@@ -295,7 +297,26 @@ export async function reserveUsage(
                     skipDuplicates: true
                 });
                 if (created.count === 0) {
-                    // sessionId 已预占（重试/重复请求），本次未实际新增计数
+                    // sessionId 已预占：必须校验归属，不能把他人会话当作幂等成功。
+                    // 否则知道他人 sessionId 的请求可以复用其预占免费跑完整分析，
+                    // 后续 upsert 还会把会话 userId 改成当前请求者。
+                    const existing = await tx.testRecord.findUnique({
+                        where: { sessionId },
+                        select: { userId: true },
+                    });
+                    if (!existing) {
+                        // createMany 0 行却没有记录：极端并发/脏数据，按可重试失败处理
+                        return { success: false, role: 'member', error: '请稍后再试。' };
+                    }
+                    if (existing.userId !== userId) {
+                        return {
+                            success: false,
+                            role: 'member',
+                            forbidden: true,
+                            error: '报告会话不存在或无权访问',
+                        };
+                    }
+                    // 本人的重复请求/重试：幂等成功，本次未实际新增计数
                     return { success: true, role: 'member', alreadyReserved: true };
                 }
                 return { success: true, role: 'member' };

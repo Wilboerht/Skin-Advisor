@@ -213,10 +213,12 @@ export async function getOfficialCsrfToken(): Promise<OfficialCsrfToken | null> 
             return null;
         }
 
-        const raw = await res.json() as OfficialApiResponse<{ token: string }>;
-        const token = raw.data?.token;
+        // 主站 /api/auth/csrf 仅通过 Set-Cookie 下发 token（不暴露在 JSON body），
+        // 子站需用 Cookie 值作为 header token；旧版本从 body 读取的兼容逻辑保留。
+        const raw = await res.json().catch(() => null) as OfficialApiResponse<{ token?: string }> | null;
+        const token = raw?.data?.token || match[1];
         if (!token) {
-            logger.error("[OfficialAPI] Official CSRF response missing token field");
+            logger.error("[OfficialAPI] Official CSRF response missing token");
             return null;
         }
 

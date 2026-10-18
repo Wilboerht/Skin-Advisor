@@ -11,7 +11,7 @@ import { createHash } from "crypto";
 import { createTokenVerifier, type VerifiedTokenPayload } from "@nihplod/sso-verify";
 import { toInsecureCookieName } from "@nihplod/sso-sdk/next";
 import { SSO_INSECURE_LOCAL_DEV, SSO_SERVER_BASE_URL } from "@/lib/sso-config";
-import { AUTH_COOKIE_NAME, verifyToken } from "@/lib/auth-config";
+import { AUTH_COOKIE_NAME, AUTH_REFRESH_COOKIE_NAME, verifyToken, verifyRefreshToken } from "@/lib/auth-config";
 import { UserRole, isDisabledUser } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 import prisma from "@/lib/prisma";
@@ -101,6 +101,8 @@ export async function fetchSsoUserinfo(accessToken: string): Promise<SsoProfileC
         // 服务器间调用：配置了 SSO_SERVER_BASE_URL 时走内网直连
         const res = await fetch(`${SSO_SERVER_BASE_URL}/api/oauth/userinfo`, {
             headers: { Authorization: `Bearer ${accessToken}` },
+            // 资料同步是鉴权增强路径：主站不可达时 3 秒内放弃，不能拖住子站业务请求
+            signal: AbortSignal.timeout(3000),
         });
         if (!res.ok) return null;
         const data = (await res.json()) as Record<string, unknown>;
@@ -221,13 +223,19 @@ export interface RefreshedTokens {
  * 直接复用已轮换的新 token，而不是拿已作废的旧 refresh token 再换一次。
  */
 const inflightRefresh = new Map<string, Promise<RefreshedTokens | null>>();
+/** 登出时已毒化的 refresh token：即使在途轮换完成，也不得把新 token 返回给调用方 */
+const poisonedRefreshTokens = new Set<string>();
 const REFRESH_RESULT_TTL_MS = 30 * 1000;
 
 export function refreshSsoTokensSingleFlight(refreshToken: string): Promise<RefreshedTokens | null> {
     const existing = inflightRefresh.get(refreshToken);
     if (existing) return existing;
 
-    const promise = refreshSsoTokens(refreshToken);
+    const promise = refreshSsoTokens(refreshToken).then((tokens) => {
+        // 登出发生在轮换请求返回前：丢弃结果，防止 Set-Cookie 把会话复活
+        if (poisonedRefreshTokens.has(refreshToken)) return null;
+        return tokens;
+    });
     inflightRefresh.set(refreshToken, promise);
     promise.finally(() => {
         setTimeout(() => {
@@ -256,10 +264,13 @@ export function awaitInflightRotation(refreshToken: string): Promise<RefreshedTo
  * /api/auth/me（session-init）轮换响应把新 token 种回浏览器。
  */
 export function poisonRefreshCache(refreshToken: string): void {
-    if (inflightRefresh.has(refreshToken)) return;
+    // 必须覆盖已有 promise：旧实现遇到在途轮换直接 return，
+    // 轮换完成后仍会把新 token 种回浏览器，表现为"退出后又自动登录"。
+    poisonedRefreshTokens.add(refreshToken);
     const poisoned = Promise.resolve(null);
     inflightRefresh.set(refreshToken, poisoned);
     setTimeout(() => {
+        poisonedRefreshTokens.delete(refreshToken);
         if (inflightRefresh.get(refreshToken) === poisoned) {
             inflightRefresh.delete(refreshToken);
         }
@@ -339,6 +350,9 @@ export async function refreshSsoTokens(refreshToken: string): Promise<RefreshedT
         const res = await fetch(`${SSO_SERVER_BASE_URL}/api/oauth/token`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            // 主站不可达/Cloudflare 慢时，不能无限挂起：登出会等待在途轮换，
+            // 刷新失败也应快速降级为未登录而不是卡住页面。
+            signal: AbortSignal.timeout(8000),
             body: new URLSearchParams({
                 grant_type: "refresh_token",
                 refresh_token: refreshToken,
@@ -535,17 +549,105 @@ export async function getLocalSessionDbUser() {
 }
 
 /**
+ * 本地 access token 过期时的只读兜底：校验本地 refresh token（不轮换、不写 Cookie）。
+ *
+ * 仅用于 GET/读接口的会话识别（账户 BFF 的会员/积分读取、历史列表等）。
+ * 写操作仍应通过 /api/auth/session-init 完成轮换，保证浏览器拿到新的 access/CSRF Cookie。
+ */
+async function getLocalSessionDbUserFromRefreshToken() {
+    try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get(AUTH_REFRESH_COOKIE_NAME)?.value;
+        if (!token) return null;
+        const payload = await verifyRefreshToken(token);
+        const sub = typeof payload?.sub === "string" ? payload.sub : null;
+        if (!sub) return null;
+
+        const dbUser = await prisma.user.findUnique({
+            where: { id: sub },
+            select: {
+                id: true,
+                email: true,
+                phoneNumber: true,
+                name: true,
+                avatarUrl: true,
+                membershipLevel: true,
+                totalSpent: true,
+                gender: true,
+                role: true,
+                dailyTestLimit: true,
+                tokenVersion: true,
+            },
+        });
+        if (!dbUser) return null;
+        if (typeof payload?.tokenVersion === "number" && payload.tokenVersion !== dbUser.tokenVersion) return null;
+        if (isDisabledUser(dbUser.role)) return null;
+
+        const tokenHash = createHash("sha256").update(token).digest("hex");
+        const stored = await prisma.refreshToken.findFirst({
+            where: {
+                token: tokenHash,
+                userId: sub,
+                revokedAt: null,
+                expiresAt: { gt: new Date() },
+            },
+            select: { id: true },
+        });
+        if (!stored) return null;
+
+        return dbUser;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * 兼容旧 getSession() 的 SSO 版实现。
  * 通过 access_token 验证主站身份后，返回本地 User 表的完整会话信息。
  * 若本地不存在该用户则自动创建（保留肤质测试等业务关联）。
  * SSO 验证失败时兜底本地会话（微信登录用户无 SSO Cookie）。
  */
+/** 本地用户资料回源间隔：与 Cookie 会话 /api/auth/me 的 6 小时刷新口径一致 */
+const PROFILE_SYNC_TTL_MS = 6 * 60 * 60 * 1000;
+
 /**
  * SSO/小程序 token 验证通过后的公共尾部：建档/同步本地用户并组装会话结构。
+ *
+ * 小程序 Bearer 通道首次访问时本地没有用户副本（或副本早已过期），
+ * 仅 upsert(payload) 只能拿到 id/phone，name/membershipLevel 为空，
+ * 会导致报告昵称回退“护肤达人”、test-limit 按 REGULAR 配额。
+ * 因此携带 accessToken 时按 PROFILE_SYNC_TTL_MS 回源 userinfo 补齐资料；
+ * 回源失败不阻断鉴权，保留本地已有资料。
  */
-async function sessionUserFromVerifiedPayload(payload: VerifiedTokenPayload): Promise<SessionUser | null> {
-    const dbUser = await upsertLocalUser(payload);
+async function sessionUserFromVerifiedPayload(
+    payload: VerifiedTokenPayload,
+    accessToken?: string
+): Promise<SessionUser | null> {
+    let dbUser = await upsertLocalUser(payload);
     if (!dbUser) return null;
+
+    if (accessToken) {
+        const syncedAt = dbUser.profileSyncedAt ? new Date(dbUser.profileSyncedAt).getTime() : 0;
+        // membershipLevel 为空时即使 profileSyncedAt 刚被 profile webhook 刷新，也要回源一次：
+        // webhook 可能只带昵称/头像，不带 membership（会员权益判定不能依赖这种部分同步）
+        const stale = !syncedAt || Date.now() - syncedAt > PROFILE_SYNC_TTL_MS;
+        if (stale || !dbUser.membershipLevel) {
+            try {
+                const profile = await fetchSsoUserinfo(accessToken);
+                if (profile) {
+                    const synced = await upsertLocalUser(payload, profile, {
+                        profileSyncedAt: new Date(),
+                    });
+                    if (synced) dbUser = synced;
+                }
+            } catch (err) {
+                logger.warn("[MP Auth] profile sync failed", {
+                    userId: payload.sub,
+                    error: err instanceof Error ? err.message : String(err),
+                });
+            }
+        }
+    }
 
     // 被管理员禁用的用户不允许继续访问任何功能
     if (isDisabledUser(dbUser.role)) return null;
@@ -570,7 +672,9 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
     if (req?.headers.get("authorization")) {
         const mpPayload = await verifyMpBearerToken(req);
         if (!mpPayload?.sub) return null;
-        return sessionUserFromVerifiedPayload(mpPayload);
+        // 原始 token 用于回源主站 userinfo（仅服务端调用，不落日志）
+        const accessToken = (req.headers.get("authorization") || "").slice("Bearer ".length).trim();
+        return sessionUserFromVerifiedPayload(mpPayload, accessToken);
     }
 
     let payload = await verifySsoToken(req);
@@ -580,14 +684,18 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
         payload = await refreshSessionFromCookie();
     }
     if (!payload?.sub) {
-        // 微信登录兜底：仅本地 JWT 会话（无 SSO Cookie），不 upsert
-        const localUser = await getLocalSessionDbUser();
+        // 微信登录兜底：仅本地 JWT 会话（无 SSO Cookie），不 upsert。
+        // 本地 access JWT（30min）过期时，读接口用本地 refresh token 做只读兜底；
+        // 写接口会在 CSRF 层 401，由 fetchWithCsrf → session-init 完成正式轮换。
+        const localUser = (await getLocalSessionDbUser()) ?? (await getLocalSessionDbUserFromRefreshToken());
         if (!localUser) return null;
         return {
             id: localUser.id,
             email: localUser.email,
             phone: localUser.phoneNumber || undefined,
             name: localUser.name || undefined,
+            avatar: localUser.avatarUrl,
+            gender: localUser.gender === "male" || localUser.gender === "female" ? localUser.gender : null,
             role: localUser.role,
             tokenVersion: localUser.tokenVersion,
             dailyTestLimit: localUser.dailyTestLimit,

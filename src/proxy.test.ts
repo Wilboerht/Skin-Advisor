@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 const mocks = vi.hoisted(() => ({
     verifyCsrfToken: vi.fn(),
     verifyToken: vi.fn(),
+    verifyRefreshToken: vi.fn(),
     verifySessionSignature: vi.fn(),
     ssoMiddleware: vi.fn<(req: NextRequest) => Promise<NextResponse | null>>(),
 }));
@@ -28,7 +29,9 @@ vi.mock("@/lib/csrf", () => ({
 }));
 vi.mock("@/lib/auth-config", () => ({
     AUTH_COOKIE_NAME: "__Host-auth_token",
+    AUTH_REFRESH_COOKIE_NAME: "__Host-auth_refresh_token",
     verifyToken: mocks.verifyToken,
+    verifyRefreshToken: mocks.verifyRefreshToken,
 }));
 vi.mock("@/lib/sso-auth", () => ({
     ACCESS_TOKEN_COOKIE: "sso_access_token",
@@ -48,6 +51,7 @@ beforeEach(() => {
     // 模拟"无 Cookie、无 CSRF token"时 CSRF 校验失败（与生产 verifyCsrfToken 一致）
     mocks.verifyCsrfToken.mockResolvedValue({ valid: false, reason: "missing_auth" });
     mocks.verifyToken.mockResolvedValue(null);
+    mocks.verifyRefreshToken.mockResolvedValue(null);
     mocks.verifySessionSignature.mockResolvedValue(null);
     // 默认已登录/公开路径：SSO middleware 不重定向
     mocks.ssoMiddleware.mockResolvedValue(null);
@@ -114,6 +118,20 @@ describe("proxy SSO 重定向：authorize 跳转追加 prompt=consent", () => {
         const req = new NextRequest("http://localhost/profile");
         const res = await proxy(req);
         expect(res.headers.get("location")).toBeNull();
+    });
+
+    it("本地 access JWT 过期但 refresh token 有效：跳过 SSO middleware（微信会话续期）", async () => {
+        mocks.verifyToken.mockResolvedValue(null);
+        mocks.verifyRefreshToken.mockResolvedValue({ sub: "u-wx" });
+        const req = new NextRequest("http://localhost/reports/abc", {
+            headers: {
+                cookie: "__Host-auth_token=expired; __Host-auth_refresh_token=valid-refresh",
+            },
+        });
+        const res = await proxy(req);
+        expect(mocks.ssoMiddleware).not.toHaveBeenCalled();
+        expect(res.headers.get("location")).toBeNull();
+        expect(res.status).toBe(200);
     });
 });
 

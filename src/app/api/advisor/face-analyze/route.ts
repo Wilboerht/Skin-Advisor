@@ -169,6 +169,17 @@ export async function POST(request: NextRequest) {
             where: { ip: hashIP(ip), analysisStartedAt: { lt: fiveMinutesAgo }, completedAt: null },
             data: { analysisStartedAt: null },
         });
+
+        // 已完成会话不允许再次调用视觉分析（必须在预占之前检查，避免先扣次再拒绝）：
+        // 否则用户可用同一个已完成 sessionId + 新图片反复刷视觉 AI。
+        const completedSession = await prisma.advisorSession.findUnique({
+            where: { sessionId: faceSessionId },
+            select: { completedAt: true },
+        });
+        if (completedSession?.completedAt) {
+            return apiError("ANALYSIS_COMPLETED", "该会话已完成分析，请开始新的测试", 409);
+        }
+
         const usageReserve = await reserveUsage(request, faceSessionId);
         if (!usageReserve.success) {
             // 游客测肤需登录：返回 401（非 429），前端据此引导登录
@@ -177,6 +188,9 @@ export async function POST(request: NextRequest) {
                     { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: usageReserve.error }, requireLogin: true },
                     { status: 401 }
                 );
+            }
+            if (usageReserve.forbidden) {
+                return apiError(ErrorCode.NOT_FOUND, usageReserve.error || "报告会话不存在或无权访问", 404);
             }
             const response = apiError(ErrorCode.RATE_LIMITED, usageReserve.error || "今日测试次数已用完，请明天再试", 429);
             Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));

@@ -26,11 +26,42 @@ export interface AsyncAnalysisState {
 }
 
 export interface SessionStatusResponse {
-    status: 'pending' | 'analyzing' | 'completed' | 'not_found' | 'forbidden';
+    status: 'pending' | 'analyzing' | 'completed' | 'not_found' | 'forbidden' | 'unauthorized' | 'rate_limited' | 'transient_error';
     sessionId: string;
     result?: Record<string, unknown> | null;
     rawResult?: Record<string, unknown> | null;
     error?: string;
+    /** 429 时服务端 Retry-After 的毫秒值（未提供则用默认退避） */
+    retryAfterMs?: number;
+}
+
+/** 会话恢复的确定性失败（区别于 429/5xx/网络抖动等可重试错误） */
+class SessionRecoveryError extends Error {
+    constructor(
+        public readonly reason: 'not_found' | 'forbidden' | 'unauthorized' | 'timeout',
+        message: string
+    ) {
+        super(message);
+        this.name = 'SessionRecoveryError';
+    }
+}
+
+function parseRetryAfterMs(res: Response): number | undefined {
+    const raw = res.headers.get('retry-after');
+    if (!raw) return undefined;
+    const seconds = Number(raw);
+    if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+    const date = Date.parse(raw);
+    if (Number.isFinite(date)) return Math.max(0, date - Date.now());
+    return undefined;
+}
+
+function clearAnalyzingSessionMarkers(): void {
+    try {
+        sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
+        sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
+    } catch { /* ignore */ }
 }
 
 const ANALYSIS_LOCK_TTL_MS = 90 * 1000;
@@ -208,21 +239,51 @@ export function useAsyncAnalysis() {
 
     // --- Session recovery helpers ---
 
-    const checkSessionStatus = useCallback(async (sessionId: string): Promise<SessionStatusResponse> => {
+    const checkSessionStatus = useCallback(async (
+        sessionId: string,
+        signal?: AbortSignal
+    ): Promise<SessionStatusResponse> => {
+        // 单次状态查询 10s 超时：网络挂起时不能把整条恢复链路无限拖住
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10_000);
+        const onOuterAbort = () => controller.abort();
+        signal?.addEventListener('abort', onOuterAbort, { once: true });
+
         try {
-            const res = await fetch(`/api/advisor/session/status?sessionId=${encodeURIComponent(sessionId)}`);
-            if (!res.ok) {
+            const res = await fetch(`/api/advisor/session/status?sessionId=${encodeURIComponent(sessionId)}`, {
+                cache: 'no-store',
+                signal: controller.signal,
+            });
+            if (res.status === 404) {
                 const data = await res.json().catch(() => ({}));
+                return { status: 'not_found', sessionId, error: data.error || '会话不存在' };
+            }
+            if (res.status === 401) {
+                return { status: 'unauthorized', sessionId, error: '登录状态已失效' };
+            }
+            if (res.status === 403) {
+                return { status: 'forbidden', sessionId, error: '无权访问该会话' };
+            }
+            if (res.status === 429) {
                 return {
-                    status: 'not_found',
+                    status: 'rate_limited',
                     sessionId,
-                    error: data.error || `HTTP ${res.status}`
+                    retryAfterMs: parseRetryAfterMs(res),
+                    error: '请求过于频繁',
                 };
+            }
+            if (!res.ok) {
+                return { status: 'transient_error', sessionId, error: `HTTP ${res.status}` };
             }
             return await res.json();
         } catch (e: unknown) {
+            // 调用方主动取消（页面卸载/用户离开）：向上抛，避免被误判为瞬时故障
+            if (signal?.aborted) throw e;
             const err = e instanceof Error ? e : new Error(String(e));
-            return { status: 'not_found', sessionId, error: err.message };
+            return { status: 'transient_error', sessionId, error: err.message };
+        } finally {
+            clearTimeout(timeoutId);
+            signal?.removeEventListener('abort', onOuterAbort);
         }
     }, []);
 
@@ -236,23 +297,37 @@ export function useAsyncAnalysis() {
         }
     ): Promise<SessionStatusResponse> => {
         // 60 × 3s = 180s 总轮询时长，与客户端 fetch 180s 超时对齐
-        // （服务端 maxDuration=90s + 最长 60s 队列等待，临界慢分析不应在完成前被判超时）
+        // （服务端 maxDuration=90s + 最长 60s 队列等待 + 视觉阶段，临界慢分析不应在完成前被判超时）
         const { intervalMs = 3000, maxAttempts = 60 } = options || {};
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             if (options?.signal?.aborted) {
                 throw new Error('已取消等待');
             }
-            const status = await checkSessionStatus(sessionId);
+            const status = await checkSessionStatus(sessionId, options?.signal);
+
             if (status.status === 'completed') {
                 return status;
             }
-            if (status.status === 'not_found' || status.status === 'forbidden') {
-                throw new Error(status.error || '会话不存在或无权访问');
+            if (status.status === 'not_found') {
+                // 确定性不存在：交给调用方决定是否重建会话。不要在这里静默新建。
+                throw new SessionRecoveryError('not_found', status.error || '会话不存在');
             }
+            if (status.status === 'forbidden') {
+                throw new SessionRecoveryError('forbidden', status.error || '无权访问该会话');
+            }
+            if (status.status === 'unauthorized') {
+                throw new SessionRecoveryError('unauthorized', status.error || '登录状态已失效');
+            }
+
+            // pending / analyzing / rate_limited / transient_error：继续等待。
+            // 429/5xx/网络抖动不能当成"会话不存在"，否则会触发重复分析/重复扣次。
             if (attempt < maxAttempts - 1) {
                 options?.onProgress?.(attempt + 1);
+                const waitMs = status.status === 'rate_limited'
+                    ? Math.max(intervalMs, status.retryAfterMs ?? intervalMs)
+                    : intervalMs;
                 await new Promise(resolve => {
-                    const timeoutId = setTimeout(resolve, intervalMs);
+                    const timeoutId = setTimeout(resolve, waitMs);
                     options?.signal?.addEventListener('abort', () => {
                         clearTimeout(timeoutId);
                         resolve(undefined);
@@ -260,7 +335,7 @@ export function useAsyncAnalysis() {
                 });
             }
         }
-        throw new Error('分析结果准备时间有点长，请重试一次。');
+        throw new SessionRecoveryError('timeout', '分析结果准备时间有点长，请稍后重试。');
     }, [checkSessionStatus]);
 
     const runAnalysis = useCallback(async () => {
@@ -680,6 +755,8 @@ export function useAsyncAnalysis() {
 
             // Save Result (include sessionId for sharing recovery)
             result.sessionId = sessionId;
+            // 绑定报告所属用户：共享设备换账号后，ResultClient 据此拒绝展示上一账号的报告
+            result.userId = user?.id ?? null;
             try {
                 localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(result));
             } catch (e) {
@@ -740,13 +817,7 @@ export function useAsyncAnalysis() {
                 releaseAnalysisLock();
                 if (analysisSucceeded) {
                     clearFailedAnalysisRetry();
-                    try {
-                        sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
-                        sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
-                        localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
-                    } catch (e) {
-                        console.warn("sessionStorage/localStorage access failed", e);
-                    }
+                    clearAnalyzingSessionMarkers();
                 }
             }
         }
@@ -796,38 +867,98 @@ export function useAsyncAnalysis() {
 
     // --- Session recovery helpers ---
 
-    const recoverSession = useCallback(async (sessionId: string, signal?: AbortSignal): Promise<{ result: Record<string, unknown>; sessionId: string } | null> => {
-        if (isRunningRef.current) return null;
+    const recoverSession = useCallback(async (
+        sessionId: string,
+        signal?: AbortSignal
+    ): Promise<
+        | { status: 'completed'; result: Record<string, unknown>; sessionId: string }
+        | { status: 'not_found' }
+        | { status: 'error'; message: string }
+    > => {
+        if (isRunningRef.current) {
+            return { status: 'error', message: '上一次分析还在进行中，请稍后重试。' };
+        }
         if (!acquireAnalysisLock(sessionId)) {
             console.warn(`[useAsyncAnalysis] Analysis lock already held for another session, skipping recovery`);
-            return null;
+            return { status: 'error', message: '上一次分析还在进行中，请稍后重试。' };
         }
         isRunningRef.current = true;
 
         setAnalysisState({ status: 'analyzing_skin', progress: 55, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
 
+        const sleep = (ms: number) => new Promise<void>((resolve, reject) => {
+            if (signal?.aborted) {
+                reject(new Error('已取消等待'));
+                return;
+            }
+            const timeoutId = setTimeout(resolve, ms);
+            signal?.addEventListener('abort', () => {
+                clearTimeout(timeoutId);
+                reject(new Error('已取消等待'));
+            }, { once: true });
+        });
+
         try {
-            const statusRes = await checkSessionStatus(sessionId);
+            let statusRes = await checkSessionStatus(sessionId, signal);
+
+            // 视觉阶段（analyze 尚未创建 AdvisorSession 行）时可能短暂 not_found。
+            // 在判定"会话不存在"前多等几秒，避免刷新时把仍在跑的面部分析误判为失败并重复调用。
+            for (let attempt = 0; statusRes.status === 'not_found' && attempt < 4; attempt++) {
+                await sleep(2000);
+                statusRes = await checkSessionStatus(sessionId, signal);
+            }
+
             if (statusRes.status === 'completed' && statusRes.rawResult) {
+                clearAnalyzingSessionMarkers();
                 setAnalysisState({ status: 'completed', progress: 100, error: null });
-                return { result: statusRes.rawResult, sessionId };
+                return { status: 'completed', result: statusRes.rawResult, sessionId };
             }
-            if (statusRes.status === 'analyzing') {
-                const pollResult = await pollSessionResult(sessionId, {
-                    onProgress: (attempt) => {
-                        setAnalysisState(prev => ({ ...prev, progress: Math.min(85, 55 + attempt * 1) }));
-                    },
-                    signal
-                });
-                if (pollResult.status === 'completed' && pollResult.rawResult) {
-                    setAnalysisState({ status: 'completed', progress: 100, error: null });
-                    return { result: pollResult.rawResult, sessionId };
-                }
+
+            if (statusRes.status === 'not_found') {
+                // 确定性不存在：由调用方决定是否启动全新分析（保持同一 sessionId）
+                return { status: 'not_found' };
             }
-            return null; // pending / not_found / forbidden -> caller should run fresh analysis
+
+            if (statusRes.status === 'forbidden' || statusRes.status === 'unauthorized') {
+                const message = statusRes.status === 'unauthorized'
+                    ? '登录状态已失效，请重新登录后查看报告。'
+                    : '该报告不属于当前账号，或无权访问。';
+                setAnalysisState({ status: 'error', progress: 0, error: message });
+                return { status: 'error', message };
+            }
+
+            // pending / analyzing / rate_limited / transient_error：统一进入轮询。
+            // 轮询内部会把瞬时错误当作可重试状态，不会新建会话。
+            const pollResult = await pollSessionResult(sessionId, {
+                onProgress: (attempt) => {
+                    setAnalysisState(prev => ({ ...prev, progress: Math.max(prev.progress, Math.min(85, 55 + attempt * 1)) }));
+                },
+                signal
+            });
+            if (pollResult.status === 'completed' && pollResult.rawResult) {
+                clearAnalyzingSessionMarkers();
+                setAnalysisState({ status: 'completed', progress: 100, error: null });
+                return { status: 'completed', result: pollResult.rawResult, sessionId };
+            }
+
+            const message = '分析结果准备时间有点长，请稍后重试。';
+            setAnalysisState({ status: 'error', progress: 0, error: message });
+            return { status: 'error', message };
         } catch (e: unknown) {
+            if (signal?.aborted) {
+                // 页面卸载/用户离开：不写状态，交给调用方直接返回
+                return { status: 'error', message: '已取消等待' };
+            }
             console.error('Recover session failed:', e);
-            return null;
+            const isDefinitive = e instanceof SessionRecoveryError && e.reason === 'not_found';
+            if (isDefinitive) {
+                return { status: 'not_found' };
+            }
+            const message = e instanceof SessionRecoveryError && e.reason === 'timeout'
+                ? '分析结果准备时间有点长，请稍后重试。'
+                : e instanceof Error ? e.message : '恢复分析状态失败，请稍后重试。';
+            setAnalysisState({ status: 'error', progress: 0, error: message });
+            return { status: 'error', message };
         } finally {
             isRunningRef.current = false;
             releaseAnalysisLock();

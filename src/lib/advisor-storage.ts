@@ -409,8 +409,11 @@ export const advisorStorage = {
                 try { localStorage.removeItem(key); } catch { /* ignore */ }
             }
         });
-        // 补充非 STORAGE_KEYS 但本流程使用的遗留 key
-        const legacyKeys = ["advisor_scan_mode"];
+        // 补充非 STORAGE_KEYS 但本流程使用的遗留 key：
+        // - advisor_processed_images：预处理后的面部照片（可能是 base64），登出必须清除
+        // - advisor_result_idb：结果存 IndexedDB 的标记，不清会留下脏标记
+        // - advisor_scan_mode：旧版扫脸模式
+        const legacyKeys = ["advisor_scan_mode", "advisor_processed_images", "advisor_result_idb"];
         legacyKeys.forEach((key) => {
             try { localStorage.removeItem(key); } catch { /* ignore */ }
         });

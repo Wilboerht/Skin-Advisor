@@ -263,6 +263,8 @@ export async function POST(request: NextRequest) {
     // 在 try 外声明，供 catch 中清理 session 状态使用。
     // 默认空字符串仅用于避免 TS 2454；真正使用时会在下面重新赋值为有效 sessionId。
     let effectiveSessionId = "";
+    // 预占结果也需在 catch 中可见：预占后、AI 调用前的任何异常都应退还额度
+    let reservedResult: ReserveUsageResult | null = null;
 
     try {
         // 1. 解析请求体（带 guard，malformed JSON 返回 400 而非 500）
@@ -410,7 +412,6 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        let reservedResult: ReserveUsageResult | null = null;
         if (!isFreeRetryAllowed) {
             if (hasPriorReservation) {
                 // 复用 face-analyze 的既有预占（等价 alreadyReserved）：
@@ -425,6 +426,9 @@ export async function POST(request: NextRequest) {
                             { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: reserved.error }, requireLogin: true },
                             { status: 401 }
                         );
+                    }
+                    if (reserved.forbidden) {
+                        return apiError(ErrorCode.NOT_FOUND, reserved.error || "报告会话不存在或无权访问", 404);
                     }
                     const response = apiError(ErrorCode.RATE_LIMITED, reserved.error || "您已达到今日测试上限", 429);
                     Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
@@ -1022,9 +1026,28 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(sanitizedResult, { headers: rateLimitHeaders });
 
     } catch (error: unknown) {
-        // 清理 analysisStartedAt，避免 session 因任何异常（AI 失败、超时、取消）永久卡在 analyzing
+        // 清理 analysisStartedAt，避免 session 在任何异常（AI 失败、超时、取消）后卡在 analyzing
         if (effectiveSessionId) {
             await clearAnalysisStartedAt(effectiveSessionId);
+
+            // 预占后、AI 调用前（行锁/upsert/产品查询/prompt 构建）的异常不能让用户白扣额度。
+            // 只有确认本次没有任何成功的视觉/文本 AI 消耗时才回滚。
+            if (reservedResult && !reservedResult.alreadyReserved) {
+                try {
+                    const [visionConsumed, textConsumed] = await Promise.all([
+                        hasSuccessfulFaceAnalysis(effectiveSessionId),
+                        hasSuccessfulTextAnalysis(effectiveSessionId),
+                    ]);
+                    if (!visionConsumed && !textConsumed) {
+                        await rollbackUsage(request, effectiveSessionId);
+                    }
+                } catch (rollbackError) {
+                    logger.warn("[analyze] Failed to check/rollback reservation after unexpected error", {
+                        sessionId: effectiveSessionId,
+                        error: String(rollbackError),
+                    });
+                }
+            }
         }
 
         const err = error instanceof Error ? error : new Error(String(error));

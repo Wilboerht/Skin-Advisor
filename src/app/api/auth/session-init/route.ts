@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, ssoVerifier, upsertLocalUser, refreshSsoTokensSingleFlight, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, type RefreshedTokens } from "@/lib/sso-auth";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
-import { signLocalSession } from "@/lib/auth";
+import { signLocalSession, rotateLocalSession, applyLocalSessionCookies, AUTH_REFRESH_COOKIE_NAME } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { isDisabledUser } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
@@ -73,7 +73,22 @@ export async function GET(req: NextRequest) {
         }
 
         if (!accessToken || !payload?.sub) {
-            logger.warn("[session-init] No valid SSO session (access expired, refresh missing or revoked)");
+            // 微信登录用户没有 SSO Cookie：本地 access JWT 过期后，
+            // 用本地 refresh token 轮换新会话，而不是把用户踢回主站登录。
+            const cookieStore = await cookies();
+            const localRefreshToken = cookieStore.get(AUTH_REFRESH_COOKIE_NAME)?.value;
+            if (localRefreshToken) {
+                const rotated = await rotateLocalSession(localRefreshToken);
+                if (rotated) {
+                    const response = wantsJson
+                        ? NextResponse.json({ ok: true })
+                        : NextResponse.redirect(new URL(returnTo, siteOrigin));
+                    applyLocalSessionCookies(response, rotated.issued, !SSO_INSECURE_LOCAL_DEV);
+                    return response;
+                }
+            }
+
+            logger.warn("[session-init] No valid SSO session and local refresh failed");
             return fail("no_session", 401);
         }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createLogoutRouteHandler } from "@nihplod/sso-sdk/next";
-import { clearLocalSession, revokeLocalRefreshToken } from "@/lib/auth";
+import { clearLocalSession, revokeLocalRefreshToken, poisonLocalRefreshCache } from "@/lib/auth";
 import { AUTH_REFRESH_COOKIE_NAME } from "@/lib/auth-config";
 import { verifyCsrfToken } from "@/lib/csrf";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
@@ -145,6 +145,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // 本地 refresh token 同步撤销（原实现只清 Cookie，DB 里哈希长期有效）
   const localRefreshToken = req.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value ?? null;
   if (localRefreshToken) {
+    // 先毒化在途轮换，再撤销旧 token：防止退出瞬间的 /api/auth/me 轮换把新会话种回
+    poisonLocalRefreshCache(localRefreshToken);
     revocations.push(revokeLocalRefreshToken(localRefreshToken));
   }
   if (revocations.length > 0) {

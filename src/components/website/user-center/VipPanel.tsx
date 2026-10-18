@@ -195,12 +195,17 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
   }, [updateBenefitsScroll, vipData, loading]);
 
   const loadVIPData = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await fetch("/api/account/membership");
       const data = (await res.json().catch(() => null)) as
-        | (VIPData & { error?: { code?: string } })
+        | (VIPData & { error?: { code?: string } | string })
         | null;
-      const errorCode = data?.error?.code;
+      // membership 路由返回扁平 { error: "UNAUTHORIZED" | ... }，
+      // 兼容旧嵌套结构，避免 INSUFFICIENT_SCOPE 分支变成死代码。
+      const errorCode = typeof data?.error === "string"
+        ? data.error.toUpperCase()
+        : data?.error?.code?.toUpperCase();
       // 会话失效 / scope 缺失（旧 token 未含 membership）：统一走登录引导
       if (
         res.status === 401 ||
@@ -341,8 +346,15 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
 
   if (!vipData) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-stone-400">暂无会员信息</p>
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <p className="text-sm text-stone-400">会员信息加载失败</p>
+        <button
+          type="button"
+          onClick={() => void loadVIPData()}
+          className="rounded-full border border-stone-200 px-4 py-1.5 text-xs text-stone-600 transition-colors hover:bg-white/60 cursor-pointer"
+        >
+          重试
+        </button>
       </div>
     );
   }

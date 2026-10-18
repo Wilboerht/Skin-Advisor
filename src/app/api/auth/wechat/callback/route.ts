@@ -23,7 +23,7 @@ import {
 import prisma from "@/lib/prisma";
 import { UserRole } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
-import { getPublicOrigin } from "@/lib/sso-config";
+import { getPublicOrigin, SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import { isSafeInternalPath } from "@/lib/url-utils";
 
 export const dynamic = "force-dynamic";
@@ -225,7 +225,7 @@ export async function GET(req: NextRequest) {
             role: localUser.role,
             tokenVersion: localUser.tokenVersion,
             dailyTestLimit: localUser.dailyTestLimit,
-        });
+        }, { secure: !SSO_INSECURE_LOCAL_DEV });
 
         if (!sessionSigned) {
             const errorUrl = new URL(redirect, siteOrigin);

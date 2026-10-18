@@ -21,6 +21,8 @@ interface OnboardingFlowProps {
     onRegionSelect: (region: string) => void;
     regionOptions: { group: string; regions: string[] }[];
     isLoggedIn: boolean;
+    /** 当前版本隐私同意是否已存在：已同意可跳过 legal 屏（登录用户也不例外） */
+    hasConsent: boolean;
 }
 
 type LocationSubView = "main" | "region";
@@ -38,12 +40,15 @@ export function OnboardingFlowModal({
     onRegionSelect,
     regionOptions,
     isLoggedIn,
+    hasConsent,
 }: OnboardingFlowProps) {
     const toast = useToast();
     const { openLegalDoc } = useLegalDocModal();
     // Determine which screens to show
     const hasNicknameScreen = !isLoggedIn || !nickname;
-    const hasLegalScreen = !isLoggedIn;
+    // 登录用户也需要显式同意：换设备/清缓存后本地无同意记录时必须展示 legal 屏。
+    // 之前用 !isLoggedIn 判断，导致已登录用户被静默写入同意记录但从未看到条款。
+    const hasLegalScreen = !hasConsent;
 
     const getScreens = useCallback(() => {
         const s: string[] = [];
@@ -107,6 +112,15 @@ export function OnboardingFlowModal({
         onSkipLocation();
     };
 
+    /** 最后一屏直接完成，否则进入下一屏（不再按 isLoggedIn 跳过 legal 屏） */
+    const advanceOrFinish = () => {
+        if (activeIndex >= totalScreens - 1) {
+            finish();
+        } else {
+            goNext();
+        }
+    };
+
     /* ---- Nickname handlers ---- */
     const handleNicknameNext = () => {
         if (!nickname.trim()) return;
@@ -118,11 +132,7 @@ export function OnboardingFlowModal({
     const handleLocationAcceptWrapper = async () => {
         try {
             await onLocationAccept();
-            if (isLoggedIn) {
-                finish();
-            } else {
-                goNext();
-            }
+            advanceOrFinish();
         } catch {
             toast.warning("无法获取位置信息，请手动选择所在地区");
             setLocationView("region");
@@ -131,31 +141,19 @@ export function OnboardingFlowModal({
 
     const handleDecline = () => {
         onLocationDecline();
-        if (isLoggedIn) {
-            finish();
-        } else {
-            goNext();
-        }
+        advanceOrFinish();
     };
 
     /* ---- Region select handlers ---- */
     const handleRegionOption = (region: string) => {
         onRegionSelect(region);
         setLocationView("main");
-        if (isLoggedIn) {
-            finish();
-        } else {
-            goNext();
-        }
+        advanceOrFinish();
     };
 
     const handleSkipRegion = () => {
         setLocationView("main");
-        if (isLoggedIn) {
-            finish();
-        } else {
-            goNext();
-        }
+        advanceOrFinish();
     };
 
 
