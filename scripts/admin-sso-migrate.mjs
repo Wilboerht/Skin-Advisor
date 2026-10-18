@@ -14,7 +14,6 @@
  * - 回填不会清空 password，保留 1-2 周回滚能力。
  * - 删除未匹配账号前会写一条 AdminAuditLog，历史审计保留（adminId 由 FK 置空）。
  */
-import "dotenv/config";
 import dotenv from "dotenv";
 import { randomUUID } from "crypto";
 import pg from "pg";
@@ -143,7 +142,9 @@ async function main() {
     console.log("==========================================");
     console.log(" 管理员 SSO 迁移计划");
     console.log("==========================================");
-    console.log(`模式: ${APPLY ? "APPLY" : "DRY-RUN"}`);
+    console.log(
+      `模式: ${APPLY ? "APPLY" : DELETE_UNMATCHED ? "DELETE-UNMATCHED" : "DRY-RUN"}`
+    );
     console.log(`子站账号: ${subResult.rows.length}`);
     console.log(`主站有效管理员: ${mainResult.rows.length}`);
     console.log("");

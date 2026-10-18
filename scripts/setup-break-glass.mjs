@@ -16,7 +16,6 @@
  *   /admin/emergency-login 登录。
  * - 密码/TOTP secret 请存入密码管理器，不要提交到 git。
  */
-import "dotenv/config";
 import dotenv from "dotenv";
 import { randomBytes, randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
