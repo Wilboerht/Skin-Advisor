@@ -6,8 +6,8 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env.pro
  * 用法：
  *   node scripts/run-cron.js /api/cron/data-cleanup
  *
- * 配合 Linux crontab：
- *   */30 * * * * cd /path/to/app && /usr/bin/node scripts/run-cron.js /api/cron/data-cleanup >> /var/log/myskin-cron.log 2>&1
+ * 配合 Linux crontab（每 30 分钟执行一次）：
+ *   cd /path/to/app && /usr/bin/node scripts/run-cron.js /api/cron/data-cleanup >> /var/log/myskin-cron.log 2>&1
  */
 
 const CRON_SECRET = process.env.CRON_SECRET;
