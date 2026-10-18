@@ -284,7 +284,8 @@ async function checkApiKeyValid(provider: AIProvider, apiKey: string): Promise<b
     }
 
     try {
-        const client = createOpenAIClient(provider, apiKey);
+        // 健康探测必须快速失败：3s 超时 + 不重试，避免请求路径被主站/供应商网络拖住
+        const client = createOpenAIClient(provider, apiKey, { timeout: 3000, maxRetries: 0 });
         await client.models.list();
         keyValidityCache.set(cacheKey, { valid: true, checkedAt: Date.now() });
         return true;
@@ -339,11 +340,21 @@ export function getProviderConfig(provider: AIProvider) {
     }
 }
 
-export function createOpenAIClient(provider: AIProvider, apiKey: string) {
+export function createOpenAIClient(
+    provider: AIProvider,
+    apiKey: string,
+    options?: { timeout?: number; maxRetries?: number }
+) {
     const config = getProviderConfig(provider);
     return new OpenAI({
         apiKey: apiKey,
         baseURL: config.baseUrl,
+        // 默认关闭 SDK 自动重试：应用层已做多 Key 轮询/降级/repair，
+        // SDK 默认 maxRetries=2 会把一次逻辑调用放大成 3 次 HTTP 请求，
+        // 容易撞路由超时并让预算预估严重偏低。
+        maxRetries: options?.maxRetries ?? 0,
+        // 与文本 AI 内部 80s 超时对齐；路由 85s 会先兜底
+        timeout: options?.timeout ?? 80_000,
     });
 }
 

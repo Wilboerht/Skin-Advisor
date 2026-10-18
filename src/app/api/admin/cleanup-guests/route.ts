@@ -3,6 +3,7 @@ import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { verifyAdminSession, logAdminAction } from "@/lib/admin-auth";
+import { canPerformSystemSetup } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 
 /**
@@ -32,7 +33,10 @@ export async function POST(req: NextRequest) {
     let adminId: string | null = null;
 
     if (admin) {
-        // 使用 admin session 鉴权
+        // 破坏性清理仅超级管理员可手动执行；定时任务仍走 ADMIN_SECRET Bearer
+        if (!canPerformSystemSetup(admin.role)) {
+            return NextResponse.json({ error: "Forbidden - super_admin required" }, { status: 403 });
+        }
         authMethod = "admin_session";
         adminId = admin.adminId;
     } else if (secret && authHeader?.startsWith("Bearer ")) {
@@ -87,15 +91,40 @@ export async function POST(req: NextRequest) {
 
             // 3. 执行数据库事务物理删除
             const deletedStats = await prisma.$transaction(async (tx) => {
+                // 查询与删除之间可能发生登录绑定 / expiresAt 续期（TOCTOU）；
+                // 在事务内重新确认仍是「无主 + 已过期」后才删除
+                const stillExpired = await tx.advisorSession.findMany({
+                    where: {
+                        sessionId: { in: sessionIds },
+                        userId: null,
+                        OR: [
+                            { expiresAt: { lt: nowDate } },
+                            { expiresAt: null, createdAt: { lt: nullExpiryFallback } },
+                        ],
+                    },
+                    select: { sessionId: true },
+                });
+                const confirmedIds = stillExpired.map((s) => s.sessionId);
+                if (confirmedIds.length === 0) {
+                    return { sessions: 0, testRecords: 0 };
+                }
+
                 const testRecords = await tx.testRecord.deleteMany({
                     where: {
                         userId: null,
-                        sessionId: { in: sessionIds }
+                        sessionId: { in: confirmedIds }
                     }
                 });
 
                 const sessions = await tx.advisorSession.deleteMany({
-                    where: { sessionId: { in: sessionIds } }
+                    where: {
+                        sessionId: { in: confirmedIds },
+                        userId: null,
+                        OR: [
+                            { expiresAt: { lt: nowDate } },
+                            { expiresAt: null, createdAt: { lt: nullExpiryFallback } },
+                        ],
+                    }
                 });
 
                 return {

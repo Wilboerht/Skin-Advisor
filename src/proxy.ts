@@ -50,7 +50,12 @@ const AI_ENDPOINTS = ["/api/advisor/analyze", "/api/advisor/face-analyze"];
 const ADMIN_PUBLIC_PATHS = [
     "/admin/login",
     "/api/admin/auth/login",
-    "/api/admin/setup",
+    // 主站 Admin SSO 入口/回调（登录前无本地会话）
+    "/api/admin/auth/sso/start",
+    "/api/admin/auth/sso/callback",
+    // break-glass 应急登录（默认禁用，由路由内 ADMIN_BREAK_GLASS_ENABLED 控制）
+    "/admin/emergency-login",
+    "/api/admin/auth/emergency-login",
     "/api/admin/cleanup-guests", // 支持 ADMIN_SECRET Bearer token（定时任务）
 ];
 
@@ -168,7 +173,7 @@ export async function proxy(request: NextRequest) {
         response.headers.set("Access-Control-Allow-Origin", origin);
         response.headers.set("Access-Control-Allow-Credentials", "true");
         response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-        response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Setup-Secret, X-CSRF-Token");
+        response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-CSRF-Token");
     }
 
     // 预检请求直接返回

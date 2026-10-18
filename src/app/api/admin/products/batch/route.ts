@@ -52,6 +52,14 @@ export const POST = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (r
             );
         }
 
+        // 批量删除属破坏性操作，仅 super_admin 可执行
+        if (action === 'delete' && admin.role !== AdminRole.SUPER_ADMIN) {
+            return NextResponse.json(
+                { success: false, error: "Forbidden - super_admin required" },
+                { status: 403 }
+            );
+        }
+
         let result: { count: number } | undefined;
 
         await prisma.$transaction(async (tx) => {

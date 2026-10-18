@@ -13,6 +13,9 @@ interface AdminSession {
     adminId: string;
     username: string;
     role: string;
+    externalAdminId?: string | null;
+    authSource?: string;
+    mainTotpEnabled?: boolean | null;
 }
 
 /**
@@ -39,7 +42,17 @@ export const verifyAdminSession = cache(async (): Promise<AdminSession | null> =
         // Verify admin exists and is active in database
         const admin = await prisma.adminUser.findUnique({
             where: { id: sessionData.adminId as string },
-            select: { id: true, username: true, role: true, active: true, passwordChangedAt: true, sessionRevokedAt: true }
+            select: {
+                id: true,
+                username: true,
+                role: true,
+                active: true,
+                passwordChangedAt: true,
+                sessionRevokedAt: true,
+                externalAdminId: true,
+                authSource: true,
+                mainTotpEnabled: true,
+            }
         });
 
         if (!admin || !admin.active) {
@@ -63,7 +76,10 @@ export const verifyAdminSession = cache(async (): Promise<AdminSession | null> =
         return {
             adminId: admin.id,
             username: admin.username,
-            role: admin.role
+            role: admin.role,
+            externalAdminId: admin.externalAdminId,
+            authSource: admin.authSource,
+            mainTotpEnabled: admin.mainTotpEnabled,
         };
     } catch (error) {
         logger.error("Session verification error", { error: String(error) });

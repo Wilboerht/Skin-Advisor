@@ -223,6 +223,45 @@ function sanitizeAiOutput(obj: unknown): unknown {
 }
 
 /**
+ * 免费重试的资格校验：**原会话**必须确实存在"面部识别性别"与"原问卷性别"不一致。
+ *
+ * 注意比较的是原会话 answers.gender，而不是本次重试的新答案：
+ * 用户可能把问卷改成与面部识别一致（或坚持原选择），两种修正都合法。
+ * 客户端只在置信度 >0.85 时展示重试弹窗；服务端按同一口径再次校验，
+ * 防止用户对任意已完成会话传 freeRetry=true 生成第二份报告/覆盖原报告。
+ */
+function isValidFreeRetryReason(
+    existingResult: Record<string, unknown>,
+    originalAnswers: unknown
+): boolean {
+    const face = existingResult.faceAnalysis as Record<string, unknown> | undefined;
+    if (!face) return false;
+
+    const gender = face.gender as unknown;
+    let faceGender: string | null = null;
+    let confidence = 1;
+
+    if (typeof gender === "string") {
+        faceGender = gender;
+    } else if (gender && typeof gender === "object") {
+        const g = gender as Record<string, unknown>;
+        if (typeof g.value === "string") faceGender = g.value;
+        if (typeof g.confidence === "number") {
+            confidence = g.confidence > 1 ? g.confidence / 100 : g.confidence;
+        }
+    }
+
+    const answersObj = originalAnswers && typeof originalAnswers === "object"
+        ? originalAnswers as Record<string, unknown>
+        : null;
+    const questionnaireGender = typeof answersObj?.gender === "string" ? answersObj.gender : null;
+
+    return !!faceGender && !!questionnaireGender
+        && faceGender !== questionnaireGender
+        && confidence > 0.85;
+}
+
+/**
  * 清理 analysisStartedAt，避免 session 因中途失败/异常永久卡在 analyzing。
  * 用 updateMany 而非 update：异常发生在 upsert 占位之前时行不存在，
  * 0 行静默跳过，避免 P2025 触发的无意义重试。已完成的会话不动。
@@ -231,10 +270,32 @@ async function clearAnalysisStartedAt(sessionId: string): Promise<void> {
     let cleanedUp = false;
     for (let attempt = 0; attempt < 3 && !cleanedUp; attempt++) {
         try {
+            // 普通未完成会话
             await prisma.advisorSession.updateMany({
                 where: { sessionId, analysisStartedAt: { not: null }, completedAt: null },
                 data: { analysisStartedAt: null }
             });
+
+            // 免费重试失败：completedAt 保留旧报告，但 analysisStartedAt 已被改写为
+            // 本次重试开始时间（> completedAt）。不清掉会让会话永久卡在"重试进行中"。
+            const session = await prisma.advisorSession.findUnique({
+                where: { sessionId },
+                select: { analysisStartedAt: true, completedAt: true },
+            });
+            if (
+                session?.completedAt
+                && session.analysisStartedAt
+                && session.analysisStartedAt.getTime() > session.completedAt.getTime()
+            ) {
+                await prisma.advisorSession.updateMany({
+                    where: {
+                        sessionId,
+                        completedAt: { not: null },
+                        analysisStartedAt: session.analysisStartedAt,
+                    },
+                    data: { analysisStartedAt: null },
+                });
+            }
             cleanedUp = true;
         } catch (cleanupErr) {
             logger.error(`[analyze] DB cleanup attempt ${attempt + 1}/3 failed:`, cleanupErr);
@@ -252,7 +313,8 @@ export async function POST(request: NextRequest) {
     // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
     const abortController = new AbortController();
     const requestStartedAt = Date.now();
-    const serverTimeout = setTimeout(() => abortController.abort(), 90 * 1000);
+    // 比 maxDuration(90s) 少 5s：保证平台杀进程前有机会走 catch/finally 清理
+    const serverTimeout = setTimeout(() => abortController.abort(), 85 * 1000);
 
     const onClientAbort = () => {
         clearTimeout(serverTimeout);
@@ -306,6 +368,14 @@ export async function POST(request: NextRequest) {
             return response;
         }
 
+        // AI 紧急开关：必须在预占额度前拦截。
+        // 之前只在 face-analyze / check-config 里检查，关闭 AI 后最贵的文本分析仍会继续产生费用。
+        if (process.env.AI_ENABLED === "false") {
+            const response = apiError(ErrorCode.SERVICE_UNAVAILABLE, "AI 服务暂停中，请稍后再试", 503);
+            response.headers.set("Retry-After", "300");
+            return response;
+        }
+
         // 4. 检查使用限制 (Guest/Member)
         // 提前获取用户会话，避免 freeRetry 路径中重复调用 getSessionUser()
         const user = await getSessionUser(request);
@@ -326,7 +396,7 @@ export async function POST(request: NextRequest) {
             // Ownership verification is deferred to the DB transaction (lockResult) for atomicity.
             const existingSession = await prisma.advisorSession.findUnique({
                 where: { sessionId },
-                select: { completedAt: true, analysisResult: true }
+                select: { completedAt: true, analysisResult: true, answers: true }
             });
             if (!existingSession?.completedAt || !existingSession?.analysisResult) {
                 return apiError(ErrorCode.FORBIDDEN, "免费重试无效：请重新进行测试", 403);
@@ -336,6 +406,9 @@ export async function POST(request: NextRequest) {
             if (freeRetryExistingResult?.freeRetryUsed) {
                 // 快速路径：已使用过免费重试，无需进入事务
                 return apiError(ErrorCode.RATE_LIMITED, "免费重试已使用，每个会话仅限一次", 429);
+            }
+            if (!isValidFreeRetryReason(freeRetryExistingResult, existingSession.answers)) {
+                return apiError(ErrorCode.FORBIDDEN, "免费重试仅适用于性别识别不一致的情况", 403);
             }
             isFreeRetryAllowed = true;
         }
@@ -363,6 +436,12 @@ export async function POST(request: NextRequest) {
                 const staleBefore = new Date(Date.now() - 5 * 60 * 1000);
                 await prisma.advisorSession.updateMany({
                     where: { userId: user.id, analysisStartedAt: { lt: staleBefore }, completedAt: null },
+                    data: { analysisStartedAt: null },
+                });
+                // 免费重试失败/进程被杀：completedAt 仍在，但 analysisStartedAt 已过期，
+                // 同样要清理，否则 session/status 会一直判定"重试进行中"。
+                await prisma.advisorSession.updateMany({
+                    where: { userId: user.id, analysisStartedAt: { lt: staleBefore }, completedAt: { not: null } },
                     data: { analysisStartedAt: null },
                 });
             }
@@ -446,7 +525,7 @@ export async function POST(request: NextRequest) {
 
             const session = await tx.advisorSession.findUnique({
                 where: { sessionId: effectiveSessionId },
-                select: { completedAt: true, analysisStartedAt: true, analysisResult: true, ip: true, userId: true }
+                select: { completedAt: true, analysisStartedAt: true, analysisResult: true, answers: true, ip: true, userId: true }
             });
 
             // 再次检查是否已完成（可能刚刚完成）。免费重试需要重新跑 AI，不走缓存。
@@ -483,10 +562,19 @@ export async function POST(request: NextRequest) {
                 if (existingResult?.freeRetryUsed) {
                     return { status: 'free_retry_used' as const };
                 }
+                // 4) 行锁内再次校验重试原因，防止预筛后结果被其他请求改写
+                if (!isValidFreeRetryReason(existingResult, session.answers)) {
+                    return { status: 'free_retry_invalid' as const };
+                }
             }
 
-            // 若已有其他请求正在分析，返回 analyzing 状态，让客户端轮询
-            if (session?.analysisStartedAt && !session?.completedAt) {
+            // 若已有其他请求正在分析，返回 analyzing 状态，让客户端轮询。
+            // 免费重试的会话 completedAt 仍在，用 analysisStartedAt > completedAt
+            // 判定"重试进行中"，阻止并发的第二次免费重试同时跑 AI。
+            const retryInProgress = !!session?.completedAt
+                && !!session?.analysisStartedAt
+                && new Date(session.analysisStartedAt).getTime() > new Date(session.completedAt).getTime();
+            if (session?.analysisStartedAt && (!session?.completedAt || retryInProgress)) {
                 return { status: 'analyzing' as const };
             }
 
@@ -687,7 +775,9 @@ export async function POST(request: NextRequest) {
         try {
             // P3: 请求队列处理 - 申请令牌（防止并发过高打爆 LLM API）
             // 透传 userId 使队列的 maxConcurrentPerUser 生效
-            await analysisQueue.acquire({ signal: abortController.signal, userId: user?.id });
+            // 队列等待计入总预算：最多等 30s，给文本 AI 留出约 50s
+            // （原默认 60s 会让生成阶段只剩 25-30s，必然撞 85s 路由超时）
+            await analysisQueue.acquire({ timeoutMs: 30_000, signal: abortController.signal, userId: user?.id });
             queueAcquired = true;
 
             // 记录队列状态到响应头

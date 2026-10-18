@@ -128,7 +128,8 @@ model AdminUser {
   id        String   @id @default(cuid())
   username  String   @unique
   email     String?  @unique
-  password  String   // 加密后的密码
+  // SSO 影子账号不存密码；仅 break-glass / 过渡期本地登录保留 bcrypt 哈希
+  password  String?
   name      String?
   // NOTE: role should ideally be an enum (super_admin, admin).
   // Kept as String for broader database compatibility.
@@ -138,6 +139,20 @@ model AdminUser {
   sessionRevokedAt  DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  // ===== 主站 Admin SSO 影子字段 =====
+  // 主站 Admin.id（不可变主键；不要用 email 作为跨系统主键）
+  externalAdminId     String?   @unique
+  // 主站角色，仅用于展示/审计
+  externalRole        String?
+  // 主站 Admin.tokenVersion：变化时撤销子站会话
+  externalTokenVersion Int?
+  // 主站 TOTP 状态，仅用于前台提示
+  mainTotpEnabled     Boolean?
+  // local | sso | break_glass
+  authSource          String    @default("local")
+  lastLoginAt         DateTime?
+  lastSyncedAt        DateTime?
 
   auditLogs AdminAuditLog[]
 }

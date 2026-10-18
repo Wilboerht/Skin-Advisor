@@ -280,7 +280,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const { trackResultView, trackResultShare, trackResultFlip, trackProductClick } = useAdvisorAnalytics();
     const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
-    const { runAnalysis, analysisState, recoverSession, startMock } = useAsyncAnalysis();
+    const { runAnalysis, analysisState, recoverSession, reset, startMock } = useAsyncAnalysis();
 
     // Mock 预览仅本地开发可用（与 face-scan 入口的门控一致），生产环境忽略 mock 参数走正常流程；
     // mock=done 是 mock 数据注入后的 URL 标记，同样按 mock 会话处理（不写趋势快照/不上报埋点/不发起 session claim）
@@ -443,26 +443,42 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 综合评分百分位（后端聚合；样本不足时后端按分数给出 72–93 展示性排名）：
     // 仅评分可用时请求，请求失败则不展示副标
     const [scorePercentile, setScorePercentile] = useState<number | null>(null);
+    // 首帧就按"有分数"初始化 loading，避免 effect 执行前保存按钮短暂可点
+    const [percentileLoading, setPercentileLoading] = useState(
+        typeof faceAnalysis?.overallScore === "number" && !isMock
+    );
     const overallScore = faceAnalysis?.overallScore;
     useEffect(() => {
-        if (typeof overallScore !== "number") return;
+        if (typeof overallScore !== "number") {
+            // 分数变为 undefined 时清空旧百分位，避免封面/证书展示与当前报告不符的副标
+            setScorePercentile(null);
+            setPercentileLoading(false);
+            return;
+        }
         // mock 预览（本地 UI 走查，无真实聚合）：给演示百分位，保证「超过 X% 用户」徽章可见
         if (isMock) {
             setScorePercentile(96);
+            setPercentileLoading(false);
             return;
         }
         let cancelled = false;
         // 评分变化（如重新分析）先清掉旧百分位，避免展示与当前分数不符的副标
         setScorePercentile(null);
+        setPercentileLoading(true);
         (async () => {
             try {
-                const res = await fetch(`/api/advisor/score-percentile?score=${Math.round(overallScore)}`);
+                const res = await fetch(
+                    `/api/advisor/score-percentile?score=${Math.round(overallScore)}`,
+                    { signal: AbortSignal.timeout(8000) }
+                );
                 if (!res.ok) return;
                 const data = await res.json();
                 if (cancelled) return;
                 setScorePercentile(typeof data.percentile === "number" ? data.percentile : null);
             } catch {
                 // 静默降级：不展示百分比副标
+            } finally {
+                if (!cancelled) setPercentileLoading(false);
             }
         })();
         return () => { cancelled = true; };
@@ -638,7 +654,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     useEffect(() => {
         try { setStoredSkinState(localStorage.getItem(STORAGE_KEYS.ADVISOR_SKIN_STATE) || null); } catch { /* ignore */ }
     }, []);
-    const skinStateValue = result?.skinState ?? storedSkinState;
+    // 历史报告不要把当前 localStorage 的肌肤状态回填进去：旧报告可能没记录该字段，
+    // 用当前会话的"带妆"状态会让用户误以为旧报告也是带妆拍摄。
+    const skinStateValue = result?.skinState ?? (isHistoricalReport ? null : storedSkinState);
     // 带妆拍摄提示：不依赖 AI 是否按提示词写入"仅供参考"，报告顶部固定展示
     const isMakeupCapture = isMakeupState(skinStateValue);
 
@@ -672,16 +690,21 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         trackResultView({ genderMismatch: true });
     }, [isMock, showGenderMismatchModal, trackResultView]);
 
-    // SSR 水合安全：初始值固定 false，挂载后再从 localStorage 同步（同 ackedSessionId）
+    // SSR 水合安全：初始值固定 false，挂载后再同步。
+    // 优先使用服务端落库的 freeRetryUsed（跨设备可靠）；localStorage 仅作当前会话兜底。
     const [hasUsedFreeRetry, setHasUsedFreeRetry] = useState(false);
     useEffect(() => {
+        if (result?.freeRetryUsed) {
+            setHasUsedFreeRetry(true);
+            return;
+        }
         if (!sessionId) return;
         try {
             const freeRetry = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
             const freeRetrySessionId = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
             setHasUsedFreeRetry(freeRetry && freeRetrySessionId === sessionId);
         } catch { /* ignore */ }
-    }, [sessionId]);
+    }, [sessionId, result?.freeRetryUsed]);
 
     // 进页后空闲时预载当前派系×性别的两版证书底图（各 ~120KB），点保存时无需等网络
     useEffect(() => {
@@ -899,11 +922,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // result_view 埋点：等首次数据恢复（clientDataLoaded）且游客端"上一次摘要"恢复完成后
     // 再上报，保证 cohort 标记（首测/派系变化）不因时序竞争而缺失；mock 会话不上报
     useEffect(() => {
-        if (hasTrackedView.current || !clientDataLoaded) return;
+        // 必须等结果真正可见再上报：分析中提前上报会污染 result_view 漏斗，
+        // 且后续真实浏览因 hasTrackedView 不再上报。
+        if (!result || hasTrackedView.current || !clientDataLoaded) return;
         if (serverPreviousSummary === undefined && guestPrevSnapshot === undefined) return;
         trackView();
         hasTrackedView.current = true;
-    }, [clientDataLoaded, serverPreviousSummary, guestPrevSnapshot, trackView]);
+    }, [clientDataLoaded, result, serverPreviousSummary, guestPrevSnapshot, trackView]);
 
     // --- Environment Data Integration ---
     // REMOVED: Weather component has been disabled per user request
@@ -1388,13 +1413,32 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         返回首页
                                     </button>
                                 </>
-                            ) : (
+                            ) : isQuotaError ? (
                                 <button
-                                    onClick={() => navPush(isQuotaError ? "/" : errorRetryTarget)}
+                                    onClick={() => navPush("/")}
                                     className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                 >
-                                    {isQuotaError ? "返回首页" : errorRetryLabel}
+                                    返回首页
                                 </button>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            // 失败会话已暂存 sessionId：服务端幂等，重试不会额外扣次
+                                            reset();
+                                            void runAnalysis();
+                                        }}
+                                        className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    >
+                                        重试分析
+                                    </button>
+                                    <button
+                                        onClick={() => navPush(errorRetryTarget)}
+                                        className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    >
+                                        {errorRetryLabel}
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -1527,11 +1571,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             skinType={result?.skinProfile?.type || 'combination'}
                                             budget={ipBudget}
                                             skincareFrequency={ipSkincareFrequency}
+                                            persona={certPersonaKey}
                                             gender={socialGender}
                                             summary={result?.analysis?.summary}
                                             concerns={result?.skinProfile?.concerns}
                                             onDownloadPoster={handleRequestSavePoster}
                                             isPosterLoading={isGeneratingPoster}
+                                            isPercentileLoading={percentileLoading}
                                             onOpenReport={handleFlipToReport}
                                             onReTest={handleReTest}
                                             reTestBlockedReason={reTestBlockedReason}

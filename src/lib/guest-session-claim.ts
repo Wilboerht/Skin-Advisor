@@ -32,6 +32,12 @@ function diaryDateStrFallback(completedAt: Date): string {
 
 export async function lazyClaimGuestSessions(userId: string, ip: string): Promise<number> {
     try {
+        // 隐私默认关闭：CGNAT/公司/学校共享出口下，按 IP 批量认领会把别人的
+        // 皮肤报告归到当前账号。游客测肤已下线，仅保留显式 session/claim。
+        // 历史数据迁移如有需要，显式设置 ENABLE_LEGACY_IP_CLAIM="true" 临时开启。
+        if (process.env.ENABLE_LEGACY_IP_CLAIM !== "true") {
+            return 0;
+        }
         // 仅对合法 IP 字面量执行认领：getClientIP 未配置可信代理时可能退回
         // "unknown" 等非 IP 标识，若据此认领会把该标识哈希下的游客会话错误归并
         if (!isIP(ip)) {

@@ -258,8 +258,8 @@ export const PUT = withAdminAuth(async (
 });
 
 // DELETE /api/admin/products/[id] - Delete product
-// Available to super_admin and admin
-export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
+// 破坏性操作仅 super_admin
+export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (
     request: NextRequest,
     { admin, params }
 ) => {

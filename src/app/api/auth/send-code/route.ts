@@ -6,11 +6,17 @@ import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { cookies } from "next/headers";
 import { logger } from "@/lib/logger";
 import { PHONE_REGEX } from "@/lib/validation";
+import { isSameOriginRequest } from "@/lib/same-origin";
 
 
 
 export async function POST(req: NextRequest) {
     try {
+        // 该端点豁免了 proxy CSRF，必须自行校验同源，防止跨站短信轰炸
+        if (!isSameOriginRequest(req)) {
+            return apiError(ErrorCode.FORBIDDEN, "请求来源无效", 403);
+        }
+
         const ip = getClientIP(req);
         // Shared rate limit key with forgot-password: 3 req/5min per IP
         const ipLimit = await rateLimit(`sms-send-ip-${ip}`, "login", { maxRequests: 3, windowMs: 5 * 60 * 1000 });

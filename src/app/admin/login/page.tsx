@@ -8,6 +8,8 @@ import {
   AlertCircle,
   Loader2,
   ChevronDown,
+  LogIn,
+  KeyRound,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,19 +24,44 @@ interface FormErrors {
 function AdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawRedirect = searchParams.get("redirect") || "/admin/products";
-  // Strict allowlist to prevent open redirect
-  const ALLOWED_REDIRECTS = [
-    "/admin/products",
-    "/admin/users",
-    "/admin/audit-logs",
-    "/admin/admins",
-    "/admin/recommendation-rules",
-  ];
-  const redirectTo = ALLOWED_REDIRECTS.includes(rawRedirect) ? rawRedirect : "/admin/products";
+  const rawRedirect = searchParams.get("redirect") || "/admin";
+  // 只允许站内 /admin 路径，防止开放重定向
+  const redirectTo =
+    rawRedirect.startsWith("/admin") &&
+    !rawRedirect.startsWith("/admin/login") &&
+    !rawRedirect.startsWith("/admin/emergency-login")
+      ? rawRedirect
+      : "/admin";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showLocalLogin, setShowLocalLogin] = useState(false);
+
+  const ssoError = searchParams.get("error");
+  const ssoErrorText = (() => {
+    switch (ssoError) {
+      case "sso_forbidden":
+        return "您的账号没有测肤子站访问权限，请联系主站超级管理员授予「测肤子站访问」。";
+      case "sso_expired":
+        return "主站登录已过期，请重新登录。";
+      case "sso_state":
+        return "登录状态校验失败，请重新发起登录。";
+      case "sso_unreachable":
+        return "主站认证服务暂时不可用，请稍后重试。";
+      case "sso_conflict":
+        return "账号邮箱已绑定其他主站管理员，请联系主站处理。";
+      case "sso_disabled":
+        return "管理员 SSO 暂未启用，请使用本地密码登录（过渡期）。";
+      case "sso_not_configured":
+        return "管理员 SSO 配置不完整，请联系主站运维检查环境变量。";
+      case "sso_rate_limited":
+        return "操作过于频繁，请稍后再试。";
+      case "sso_failed":
+        return "主站管理员认证失败，请重新登录。";
+      default:
+        return "";
+    }
+  })();
 
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
@@ -215,7 +242,48 @@ function AdminLoginForm() {
 
               {/* 表单区域 */}
               <div className="px-8 pb-10 sm:px-10">
-                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                {ssoErrorText && (
+                  <div
+                    role="alert"
+                    className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800"
+                  >
+                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-600" />
+                    <span>{ssoErrorText}</span>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    if (redirectTo !== "/admin") params.set("return_to", redirectTo);
+                    const query = params.toString();
+                    window.location.href =
+                      "/api/admin/auth/sso/start" + (query ? `?${query}` : "");
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#8B7355]/30 bg-[#8B7355] py-3.5 text-[13px] font-bold tracking-wider text-white shadow-sm transition-all duration-300 hover:bg-[#6D5A3F]"
+                >
+                  <LogIn className="h-4 w-4" />
+                  使用 NIHPLOD 管理员账号登录
+                </button>
+
+                <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-400">
+                  管理员账号、密码与二次验证统一由主站管理
+                </p>
+
+                <div className="mt-5 border-t border-[#E8E2D9] pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowLocalLogin((prev) => !prev)}
+                    className="mx-auto flex items-center gap-1.5 text-[11px] text-slate-400 transition-colors hover:text-slate-600"
+                  >
+                    <KeyRound className="h-3 w-3" />
+                    {showLocalLogin ? "收起本地登录" : "本地密码登录（过渡期）"}
+                  </button>
+                </div>
+
+                {showLocalLogin && (
+                <form onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
                   {/* 账号 */}
                   <div>
                     <input
@@ -321,6 +389,7 @@ function AdminLoginForm() {
                     )}
                   </button>
                 </form>
+                )}
               </div>
             </div>
           </OrbitalIcons>

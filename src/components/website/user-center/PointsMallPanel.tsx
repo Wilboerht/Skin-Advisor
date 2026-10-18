@@ -280,6 +280,13 @@ function computeExpiringSoon(data: PointsData): { points: number; date: number }
   return points > 0 && earliest !== null ? { points, date: earliest } : null;
 }
 
+/** 兑换幂等键生成（仅在事件处理器中调用，避免 React render 纯度规则） */
+function createRedeemRequestId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export function PointsMallPanel() {
   const [giftsData, setGiftsData] = useState<GiftsData | null>(null);
   const [giftsLoading, setGiftsLoading] = useState(true);
@@ -300,6 +307,10 @@ export function PointsMallPanel() {
   /** 当前打开详情抽屉的礼品（null 表示关闭） */
   const [detailGift, setDetailGift] = useState<GiftItem | null>(null);
   const [redeeming, setRedeeming] = useState(false);
+  // 兑换幂等键：每次打开确认视图只生成一次；失败重试复用同一个 requestId，
+  // 避免官网已扣分/建单但响应超时后，用户重点导致重复兑换。
+  const [redeemRequestId, setRedeemRequestId] = useState<string | null>(null);
+  const redeemingRef = useRef(false);
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [addressesLoading, setAddressesLoading] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -470,6 +481,8 @@ export function PointsMallPanel() {
   /** 打开兑换确认视图：加载地址并预选默认地址 */
   const openRedeem = (g: GiftItem) => {
     setConfirmGift(g);
+    // 幂等键在打开确认视图时生成一次：失败后重试复用，避免重复扣分/发货
+    setRedeemRequestId(createRedeemRequestId());
     setShowNewAddress(false);
     setNewRecipient("");
     setNewPhone("");
@@ -480,12 +493,11 @@ export function PointsMallPanel() {
   };
 
   const handleRedeem = async () => {
-    if (!confirmGift) return;
-    // crypto.randomUUID 仅在安全上下文（https）可用，非安全上下文降级随机串
-    const requestId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    if (!confirmGift || redeemingRef.current) return;
+    // 极端双击/重入保护：同一确认视图只允许一个在途请求
+    redeemingRef.current = true;
+    // 复用打开确认视图时生成的幂等键；兜底理论上不会走到
+    const requestId = redeemRequestId ?? createRedeemRequestId();
 
     setRedeeming(true);
     try {
@@ -540,16 +552,24 @@ export function PointsMallPanel() {
         requestId,
       });
       setConfirmGift(null);
+      setRedeemRequestId(null);
       setShowNewAddress(false);
       setView("main");
-      // 面板内成功提示（5 秒后自动消失）
+      // 成功提示：5 秒后自动消失
       setRedeemSuccess(true);
       await loadPointsData();
       await loadGiftsData();
       await loadRedemptions();
     } catch (e) {
-      showError(e instanceof Error ? e.message : "兑换失败，请稍后重试");
+      const message = e instanceof Error ? e.message : "";
+      // 官网超时/不可达时结果可能已成功：不要鼓励直接重试，先让用户查兑换记录
+      if (/官网服务|UPSTREAM|超时|timeout/i.test(message)) {
+        showError("兑换结果未知，请先在「我的兑换记录」中确认，避免重复兑换");
+      } else {
+        showError(message || "兑换失败，请稍后重试");
+      }
     } finally {
+      redeemingRef.current = false;
       setRedeeming(false);
     }
   };
@@ -1159,6 +1179,7 @@ export function PointsMallPanel() {
                     type="button"
                     onClick={() => {
                       setConfirmGift(null);
+                      setRedeemRequestId(null);
                       setShowNewAddress(false);
                       setView("main");
                     }}

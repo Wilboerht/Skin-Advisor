@@ -7,7 +7,12 @@ import { percentileFromDistribution } from "@/lib/score-percentile";
  * 聚合与缓存实现见 lib/score-percentile-db.ts（内部客服报告接口共用同一口径）。
  */
 export async function GET(request: NextRequest) {
-    const raw = Number(request.nextUrl.searchParams.get("score"));
+    const rawParam = request.nextUrl.searchParams.get("score");
+    // Number(null) === 0：缺少参数时不能静默按 0 分计算百分位
+    if (rawParam == null || rawParam.trim() === "") {
+        return NextResponse.json({ error: "score is required" }, { status: 400 });
+    }
+    const raw = Number(rawParam);
     if (!Number.isFinite(raw) || raw < 0 || raw > 100) {
         return NextResponse.json({ error: "score must be a number between 0 and 100" }, { status: 400 });
     }

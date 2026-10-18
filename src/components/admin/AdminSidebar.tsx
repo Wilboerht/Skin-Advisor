@@ -16,16 +16,17 @@ import {
     Shield,
     Download,
     Activity,
-    UserCog,
     Wand2,
     BarChart3,
     FileSpreadsheet,
+    LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSuperAdmin } from "@/lib/permissions";
 import { motion, AnimatePresence } from "framer-motion";
 
 const BASE_MENU_ITEMS = [
+    { href: "/admin", label: "仪表盘", icon: LayoutDashboard },
     { href: "/admin/products", label: "产品管理", icon: Package },
     { href: "/admin/recommendation-rules", label: "推荐规则", icon: Wand2 },
     { href: "/admin/ai-costs", label: "AI成本", icon: BarChart3 },
@@ -59,9 +60,8 @@ export default function AdminSidebar() {
             .catch(() => {});
     }, [pathname]);
 
-    const menuItems = isSuperAdmin(admin?.role ?? null)
-        ? [...BASE_MENU_ITEMS, { href: "/admin/admins", label: "管理员", icon: UserCog }]
-        : BASE_MENU_ITEMS;
+    // 管理员账号统一由主站管理，子站不再提供管理员管理入口
+    const menuItems = BASE_MENU_ITEMS;
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {

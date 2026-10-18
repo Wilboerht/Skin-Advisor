@@ -151,13 +151,18 @@ export async function createSignedSession(
         adminId: string;
         username: string;
         role: string;
-    }
+    },
+    options?: { ttlMs?: number }
 ): Promise<string> {
     const now = Date.now();
+    const ttlMs =
+        typeof options?.ttlMs === "number" && options.ttlMs > 0
+            ? options.ttlMs
+            : SESSION_MAX_AGE_MS;
     const payload = {
         ...sessionData,
         iat: now,
-        exp: now + SESSION_MAX_AGE_MS,
+        exp: now + ttlMs,
     };
     const data = JSON.stringify(payload);
     const signature = await signSessionData(data);

@@ -73,7 +73,22 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
         const [users, total] = await Promise.all([
             prisma.user.findMany({
                 where,
-                include: {
+                // 显式列出可返回字段：绝不返回 password / tokenVersion /
+                // privacyConsent* 等敏感字段（此前 include 会带出全部标量字段）
+                select: {
+                    id: true,
+                    email: true,
+                    phoneNumber: true,
+                    name: true,
+                    avatarUrl: true,
+                    role: true,
+                    previousRole: true,
+                    membershipLevel: true,
+                    totalSpent: true,
+                    gender: true,
+                    dailyTestLimit: true,
+                    createdAt: true,
+                    updatedAt: true,
                     _count: {
                         select: { advisorSessions: true }
                     },

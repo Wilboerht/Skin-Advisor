@@ -140,7 +140,8 @@ export default async function ReportDetailPage(props: {
     return (
         <>
             {isExpired && <ReportExpiredBanner />}
-            <ResultClient id={id} initialData={initialData} previousSummary={previousSummary} />
+            {/* key=id：/reports/A → /reports/B 时强制重建客户端状态，避免串报告 */}
+            <ResultClient key={id} id={id} initialData={initialData} previousSummary={previousSummary} />
         </>
     );
 }

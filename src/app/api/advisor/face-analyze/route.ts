@@ -413,7 +413,8 @@ export async function POST(request: NextRequest) {
             // 这是一个异步操作，如果队列已满会等待，直到超时
             aiLogger.debug(`[Queue] Requesting lock. Stats:`, visionQueue.getStats() as unknown as Record<string, unknown>);
             // 透传 userId 使队列的 maxConcurrentPerUser 生效
-            await visionQueue.acquire({ signal: abortController.signal, userId: session?.id });
+            // 队列等待最多 20s：给 qwen3-vl-plus（实测 >55s）留出足够生成时间
+            await visionQueue.acquire({ timeoutMs: 20_000, signal: abortController.signal, userId: session?.id });
             acquired = true;
             aiLogger.debug(`[Queue] Lock acquired.`);
 

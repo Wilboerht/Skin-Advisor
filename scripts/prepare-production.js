@@ -86,7 +86,17 @@ function isPlaceholder(value) {
   return PLACEHOLDER_PATTERNS.some(p => p.test(value.trim()));
 }
 
-const secretVars = ['JWT_SECRET', 'ADMIN_SESSION_SECRET', 'CRON_SECRET', 'IP_HASH_SALT', 'ADMIN_SECRET', 'SETUP_SECRET', 'INTERNAL_API_SECRET'];
+const secretVars = [
+  'JWT_SECRET',
+  'ADMIN_SESSION_SECRET',
+  'CRON_SECRET',
+  'IP_HASH_SALT',
+  'ADMIN_SECRET',
+  'INTERNAL_API_SECRET',
+  'ADMIN_SSO_CLIENT_SECRET',
+  'ADMIN_SSO_SECRET',
+  'BREAK_GLASS_TOTP_SECRET',
+];
 for (const key of secretVars) {
   const value = process.env[key];
   if (value && isPlaceholder(value)) {
@@ -108,13 +118,33 @@ if (postgresPassword && (postgresPassword === 'postgres' || postgresPassword.len
   hasError = true;
 }
 
-// 提示移除一次性初始管理员密码
-if (process.env.ADMIN_INITIAL_PASSWORD) {
-  console.warn('   ⚠️  警告: ADMIN_INITIAL_PASSWORD 已设置。首次 setup 完成后请立即从环境变量中移除该值。');
-  if (process.env.ADMIN_INITIAL_PASSWORD.length < 12) {
-    console.error('   ❌ 错误: ADMIN_INITIAL_PASSWORD 长度过短（至少 12 位）');
+// 主站管理员 SSO 必配项（子站不再维护管理员密码）
+if (process.env.ADMIN_SSO_ENABLED !== 'false') {
+  const ssoVars = [
+    'ADMIN_SSO_AUTHORIZE_URL',
+    'ADMIN_SSO_TOKEN_URL',
+    'ADMIN_SSO_STATUS_URL',
+    'ADMIN_SSO_CLIENT_ID',
+    'ADMIN_SSO_CLIENT_SECRET',
+    'ADMIN_SSO_REDIRECT_URI',
+    'ADMIN_SSO_SECRET',
+  ];
+  for (const key of ssoVars) {
+    if (!process.env[key]) {
+      console.error(`   ❌ 错误: ${key} 环境变量未设置（ADMIN_SSO_ENABLED=true 时必配）！`);
+      hasError = true;
+    }
+  }
+  if (process.env.ADMIN_SSO_SECRET && process.env.ADMIN_SSO_SECRET.length < 32) {
+    console.error('   ❌ 错误: ADMIN_SSO_SECRET 长度至少 32 位');
     hasError = true;
   }
+}
+
+// break-glass 开启时必须配置 TOTP secret
+if (process.env.ADMIN_BREAK_GLASS_ENABLED === 'true' && !process.env.BREAK_GLASS_TOTP_SECRET) {
+  console.error('   ❌ 错误: ADMIN_BREAK_GLASS_ENABLED=true 时必须配置 BREAK_GLASS_TOTP_SECRET');
+  hasError = true;
 }
 
 if (hasError) {

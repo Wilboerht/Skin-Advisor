@@ -7,10 +7,15 @@
  * 规则为全站唯一实现：微信回调 / 微信入口 / session-init / AuthModal 等均引用此处。
  */
 export function isSafeInternalPath(path: string | null | undefined): path is string {
-    return (
-        typeof path === "string" &&
-        path.startsWith("/") &&
-        !path.startsWith("//") &&
-        !path.startsWith("/\\")
-    );
+    if (typeof path !== "string") return false;
+    // WHATWG URL 会剥离 tab/换行："/\t/evil.com" 会被解析成 "//evil.com"。
+    // 控制字符、反斜杠一律拒绝，再用 URL 解析做最终同源校验。
+    if (/[\u0000-\u001F\u007F\\]/.test(path)) return false;
+    if (!path.startsWith("/") || path.startsWith("//")) return false;
+    try {
+        const parsed = new URL(path, "http://internal.local");
+        return parsed.origin === "http://internal.local";
+    } catch {
+        return false;
+    }
 }

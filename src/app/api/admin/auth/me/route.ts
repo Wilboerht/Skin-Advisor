@@ -14,7 +14,12 @@ export async function GET() {
 
         const adminFromDb = await prisma.adminUser.findUnique({
             where: { id: admin.adminId },
-            select: { name: true }
+            select: {
+                name: true,
+                authSource: true,
+                externalAdminId: true,
+                mainTotpEnabled: true,
+            }
         });
 
         return NextResponse.json({
@@ -23,7 +28,10 @@ export async function GET() {
                 id: admin.adminId,
                 name: adminFromDb?.name || admin.username,
                 username: admin.username,
-                role: admin.role
+                role: admin.role,
+                authSource: adminFromDb?.authSource ?? admin.authSource ?? "local",
+                externalAdminId: adminFromDb?.externalAdminId ?? admin.externalAdminId ?? null,
+                mainTotpEnabled: adminFromDb?.mainTotpEnabled ?? admin.mainTotpEnabled ?? null,
             }
         });
     } catch (error) {

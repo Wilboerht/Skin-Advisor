@@ -10,6 +10,19 @@ import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
 import { logger } from "@/lib/logger";
 
+function maskEmail(email: string | null): string | null {
+    if (!email) return null;
+    const [local, domain] = email.split("@");
+    if (!domain) return "***";
+    return `${local.charAt(0)}***@${domain}`;
+}
+
+function maskPhone(phone: string | null): string | null {
+    if (!phone) return null;
+    if (phone.length < 7) return "***";
+    return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
+}
+
 // GET /api/admin/users/[id] - Get user details
 // Available to super_admin and admin
 export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
@@ -31,6 +44,7 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
             select: {
                 id: true,
                 email: true,
+                phoneNumber: true,
                 name: true,
                 role: true,
                 previousRole: true,
@@ -66,7 +80,8 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
         if (!canViewFullPII(admin.role)) {
             return NextResponse.json({
                 ...user,
-                email: user.email ? `${user.email.charAt(0)}***@${user.email.split('@')[1] || '***'}` : null,
+                email: maskEmail(user.email),
+                phoneNumber: maskPhone(user.phoneNumber),
             });
         }
 
@@ -165,6 +180,22 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
         const updatedUser = await prisma.user.update({
             where: { id },
             data: updateData,
+            // 显式白名单：响应中不得出现 password / tokenVersion 等敏感字段
+            select: {
+                id: true,
+                email: true,
+                phoneNumber: true,
+                name: true,
+                avatarUrl: true,
+                role: true,
+                previousRole: true,
+                membershipLevel: true,
+                totalSpent: true,
+                gender: true,
+                dailyTestLimit: true,
+                createdAt: true,
+                updatedAt: true,
+            },
         });
 
         // 禁用/启用/角色变更时撤销该用户现有 JWT
@@ -190,7 +221,15 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
         });
 
         revalidateTag("admin-stats", "max");
-        return NextResponse.json(updatedUser);
+        // 非超管响应同样脱敏，避免通过 PATCH 返回值绕过列表 PII 保护
+        const safeUser = canViewFullPII(admin.role)
+            ? updatedUser
+            : {
+                ...updatedUser,
+                email: maskEmail(updatedUser.email),
+                phoneNumber: maskPhone(updatedUser.phoneNumber),
+            };
+        return NextResponse.json(safeUser);
     } catch (error) {
         logger.error("Admin user PATCH error:", error);
         return apiError(ErrorCode.INTERNAL_ERROR, "Failed to update user", 500);
@@ -198,7 +237,7 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
 });
 
 // DELETE /api/admin/users/[id] - Delete user
-export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
+export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (
     request: NextRequest,
     { admin, params }
 ) => {
@@ -232,7 +271,8 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
             action: "delete",
             resource: "User",
             resourceId: id,
-            details: { email: user.email, name: user.name },
+            // 审计详情只保留非 PII 的最小上下文，避免普通 admin 通过审计日志绕过脱敏
+            details: { role: user.role, hadEmail: Boolean(user.email), hadName: Boolean(user.name) },
             ...clientInfo,
         });
 

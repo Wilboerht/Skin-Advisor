@@ -19,5 +19,8 @@ export async function POST(req: NextRequest) {
         path: "/api/oauth/points/redeem",
         method: "POST",
         body,
+        // 兑换是扣积分/建单的写操作，默认 8s 太短：官网超时但已成功时，
+        // 前端会误判失败并重试。给足 25s，配合客户端稳定 requestId 做幂等。
+        timeoutMs: 25_000,
     });
 }

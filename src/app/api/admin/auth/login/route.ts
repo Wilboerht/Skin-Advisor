@@ -14,6 +14,11 @@ export async function POST(request: NextRequest) {
     const clientInfo = getClientInfo(request);
     const ip = getClientIP(request);
 
+    // 管理员账号统一由主站 SSO 管理；本地密码登录仅用于过渡期回滚
+    if (process.env.ADMIN_LOCAL_LOGIN_ENABLED !== "true") {
+        return apiError(ErrorCode.FORBIDDEN, "请使用 NIHPLOD 主站管理员账号登录", 403);
+    }
+
     // Rate limit: max 5 login attempts per 15 minutes per IP
     const ipLimit = await rateLimit(`admin-login-ip-${ip}`, "login");
     if (!ipLimit.success) {
@@ -54,6 +59,7 @@ export async function POST(request: NextRequest) {
                 active: true,
                 password: true,
                 passwordChangedAt: true,
+                authSource: true,
             }
         });
 
@@ -73,6 +79,22 @@ export async function POST(request: NextRequest) {
         const accountLimit = await rateLimit(`admin-login-account-${admin.id}`, "login");
         if (!accountLimit.success) {
             return apiError(ErrorCode.RATE_LIMITED, "Too many login attempts for this account. Please try again later.", 429);
+        }
+
+        // 应急账号必须走 /admin/emergency-login（密码 + TOTP），不能用普通表单
+        if (admin.authSource === "break_glass") {
+            return apiError(ErrorCode.FORBIDDEN, "请使用应急登录入口", 403);
+        }
+
+        // SSO 影子账号没有本地密码，直接按凭据错误处理。
+        if (!admin.password) {
+            await logAdminAction({
+                action: "login_failed",
+                resource: "AdminUser",
+                details: { username: normalizedUsername, reason: "no_local_password" },
+                ...clientInfo
+            });
+            return INVALID_CREDENTIALS_RESPONSE;
         }
 
         // SECURITY: Reject non-bcrypt passwords entirely. All admin passwords MUST be bcrypt hashed.

@@ -11,6 +11,33 @@ let cachedFilters: { actions: string[]; resources: string[] } | null = null;
 let cacheTimestamp = 0;
 const FILTERS_CACHE_TTL = 5 * 60 * 1000;
 
+// 审计详情中可能包含的 PII 字段。普通 admin 只保留操作上下文，
+// 防止通过审计详情绕过用户列表的 email/phone 脱敏策略。
+const SENSITIVE_DETAIL_KEYS = new Set([
+    "email", "name", "username", "phone", "phonenumber", "mobile",
+    "ip", "ipaddress", "useragent", "password", "token", "accesstoken",
+    "refreshtoken", "secret", "openid", "unionid", "address", "recipient",
+]);
+
+function sanitizeAuditDetails(value: unknown, depth = 0): unknown {
+    if (depth > 8) return "***";
+    if (Array.isArray(value)) return value.map((item) => sanitizeAuditDetails(item, depth + 1));
+    if (value && typeof value === "object") {
+        const result: Record<string, unknown> = {};
+        for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+            result[key] = SENSITIVE_DETAIL_KEYS.has(key.toLowerCase())
+                ? (item == null ? null : "***")
+                : sanitizeAuditDetails(item, depth + 1);
+        }
+        return result;
+    }
+    if (typeof value === "string") {
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "***";
+        if (/^1[3-9]\d{9}$/.test(value)) return "***";
+    }
+    return value;
+}
+
 // GET /api/admin/audit-logs - List audit logs with filtering
 // Available to super_admin and admin
 // 非超管脱敏 ip/userAgent：与导出接口仅超管可用的策略保持一致，
@@ -106,16 +133,23 @@ export const GET = withAdminAuth(async (request, { admin }) => {
             cacheTimestamp = Date.now();
         }
 
-        // 非超管：脱敏敏感字段（ip/userAgent），保留操作审计能力
-        const data = admin.role === "super_admin"
+        // 非超管：脱敏 ip/userAgent 与 details 内的 PII，保留操作审计能力
+        const isSuperAdmin = admin.role === "super_admin";
+        const data = isSuperAdmin
             ? logs
-            : logs.map(log => ({ ...log, ip: log.ip ? "***" : null, userAgent: log.userAgent ? "***" : null }));
+            : logs.map(log => ({
+                ...log,
+                ip: log.ip ? "***" : null,
+                userAgent: log.userAgent ? "***" : null,
+                details: sanitizeAuditDetails(log.details),
+            }));
 
         return NextResponse.json({
             success: true,
             data,
             filters: {
-                admins,
+                // 管理员筛选列表仅超管可见（与 /api/admin/admins 的 super_admin 限制一致）
+                admins: isSuperAdmin ? admins : [],
                 ...cachedFilters!,
             },
             pagination: {

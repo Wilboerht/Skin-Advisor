@@ -119,7 +119,8 @@ export default function FaceScanPage() {
 
         const { advisorStorage } = await import("@/lib/advisor-storage");
 
-        const success = await advisorStorage.saveFaceImages(images);
+        // 只持久化正面照：侧脸/下巴不参与分析与展示，减少本地照片残留
+        const success = await advisorStorage.saveFaceImages({ front: images.front });
 
         if (!success) {
             console.warn("Storage full, attempting cleanup...");
@@ -129,7 +130,7 @@ export default function FaceScanPage() {
             // 否则用户刚完成问卷和拍摄，进入结果页会被入口守卫判定"未授权访问"。
             await advisorStorage.clearFaceImages();
 
-            const retrySuccess = await advisorStorage.saveFaceImages(images);
+            const retrySuccess = await advisorStorage.saveFaceImages({ front: images.front });
             if (!retrySuccess) {
                 toast.error("存储空间不足，请清理浏览器缓存后重试");
                 setIsSubmitting(false);
@@ -158,12 +159,9 @@ export default function FaceScanPage() {
             const { preprocessFaceImage, getBase64Size } = await import("@/lib/image-processing");
             const { uploadImage } = await import("@/lib/upload-client");
 
-            const angles = [
-                { key: "front" as const, label: "front" },
-                { key: "left" as const, label: "left" },
-                { key: "right" as const, label: "right" },
-                { key: "chin" as const, label: "chin" },
-            ];
+            // 视觉分析只使用正面照；侧脸/下巴既不上传也不参与分析。
+            // 旧实现把 4 张全部上传到公开 OSS，扩大隐私暴露面且无实际用途。
+            const angles = [{ key: "front" as const, label: "front" }];
 
             const processedEntries = await Promise.all(
                 angles.map(async ({ key, label }) => {

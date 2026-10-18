@@ -29,6 +29,8 @@ function cleanAuthUrlParams() {
     const url = new URL(window.location.href);
     url.searchParams.delete("auth");
     url.searchParams.delete("redirect");
+    // 主站重置密码不支持 URL token；避免历史遗留 token 留在地址栏
+    url.searchParams.delete("token");
     window.history.replaceState({}, "", url.toString());
 }
 

@@ -17,6 +17,7 @@ import { parseOfficialResponse } from "@/lib/official-api";
 import { fetchOfficialMembershipLevel } from "@/lib/official-membership";
 import { signLocalSession } from "@/lib/auth";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
+import { isSameOriginRequest } from "@/lib/same-origin";
 import {
     USER_COOKIE_NAME,
     USER_REFRESH_COOKIE_NAME,
@@ -36,6 +37,11 @@ interface OfficialBindUser {
 
 export async function POST(req: NextRequest) {
     try {
+        // 该端点豁免了 proxy CSRF，必须自行校验同源，防止登录 CSRF
+        if (!isSameOriginRequest(req)) {
+            return apiError(ErrorCode.FORBIDDEN, "请求来源无效", 403);
+        }
+
         const ip = getClientIP(req);
         const ipLimit = await rateLimit(`wechat-bind-ip-${ip}`, "login", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
         if (!ipLimit.success) {

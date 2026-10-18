@@ -24,6 +24,8 @@ export interface IPMatchParams {
     skinType: string;         // 肤质类型: dry | oily | combination_dry | combination_oily | combination | sensitive | normal
     budget?: string;          // 预算: budget | mid | premium | luxury
     skincareFrequency?: string; // 护肤频率: daily | regular | occasional | rarely
+    /** 服务端已落库的派系 key：优先使用，保证报告正文/封面/证书三处一致 */
+    persona?: string;
 }
 
 /** 8 派定义（按优先级排序） */
@@ -113,6 +115,11 @@ function normalizeSkinType(raw: string | undefined): string {
  * 按优先级依次匹配，返回第一个命中的 IP
  */
 export function matchCharacterIP(params: IPMatchParams): CharacterIP {
+    // 服务端已落库的派系优先：历史报告/参数缺失时也不会和证书/正文算出不同派系
+    if (params.persona) {
+        const preferred = IP_DEFINITIONS.find((ip) => ip.key === params.persona);
+        if (preferred) return preferred;
+    }
     const normalized = { ...params, skinType: normalizeSkinType(params.skinType) };
     for (const ip of SORTED_IPS) {
         if (ip.match(normalized)) {

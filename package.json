@@ -9,7 +9,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "admin:sso:migrate": "node scripts/admin-sso-migrate.mjs",
+    "admin:break-glass": "node scripts/setup-break-glass.mjs"
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.0.1",

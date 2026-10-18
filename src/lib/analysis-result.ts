@@ -61,6 +61,8 @@ export interface ComprehensiveResult {
     nickname?: string;
     /** 报告版本：2 = 顾问叙事报告（新结果恒为 2）；历史 v1 记录缺省，前端展示升级提示 */
     reportVersion?: number;
+    /** 该会话是否已使用过性别不一致免费重试（服务端落库，跨设备可靠） */
+    freeRetryUsed?: boolean;
     /** 顾问叙事报告数据（v2-only；历史 v1 记录无此字段） */
     consultantReport?: ConsultantReport;
 }
@@ -108,6 +110,8 @@ function normalizeConsultantReport(raw: unknown): ConsultantReport | undefined {
         .filter((i): i is Record<string, unknown> => !!i && typeof i === "object")
         .map((i) => ({
             ...i,
+            // ConsultantReport 会直接 .trim()：历史 v2 报告缺该字段时整页会崩
+            medicalBoundary: typeof i.medicalBoundary === "string" ? i.medicalBoundary : "",
             relatedDimensions: Array.isArray(i.relatedDimensions) ? i.relatedDimensions : [],
         }));
     return {
@@ -135,8 +139,18 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
 
     return {
         skinProfile: {
-            type: (skinProfile?.type as string | undefined) || (skinProfile?.skinType as string | undefined) || "combination",
-            typeLabel: (skinProfile?.typeLabel as string | undefined) || (skinProfile?.skinTypeLabel as string | undefined) || "混合性肌肤",
+            // 历史脏数据里 type/typeLabel 可能是数字/对象，直接 || 会把非字符串传给
+            // matchCharacterIP、ShareCard 等消费端并触发 .trim 崩溃。
+            type: typeof skinProfile?.type === "string"
+                ? skinProfile.type
+                : typeof skinProfile?.skinType === "string"
+                    ? skinProfile.skinType
+                    : "combination",
+            typeLabel: typeof skinProfile?.typeLabel === "string"
+                ? skinProfile.typeLabel
+                : typeof skinProfile?.skinTypeLabel === "string"
+                    ? skinProfile.skinTypeLabel
+                    : "混合性肌肤",
             concerns: toStringArray(skinProfile?.concerns),
             skinAge: toFiniteNumber(skinProfile?.skinAge),
         },
@@ -147,14 +161,16 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
         },
         dataSource: normalizeDataSource(record.dataSource, record.source),
         products: Array.isArray(record.products)
-            ? (record.products as ComprehensiveResult["products"])
+            ? record.products.filter((p): p is NonNullable<ComprehensiveResult["products"]>[number] =>
+                !!p && typeof p === "object")
             : [],
-        persona: record.persona as string | undefined,
+        persona: typeof record.persona === "string" ? record.persona : undefined,
         expiresAt: record.expiresAt as string | undefined,
         analyzedAt: record.analyzedAt as string | undefined,
         skinState: typeof record.skinState === "string" ? record.skinState : undefined,
         nickname: typeof record.nickname === "string" ? record.nickname : undefined,
         reportVersion: typeof record.reportVersion === "number" ? record.reportVersion : undefined,
+        freeRetryUsed: record.freeRetryUsed === true ? true : undefined,
         consultantReport: normalizeConsultantReport(record.consultantReport),
     };
 }

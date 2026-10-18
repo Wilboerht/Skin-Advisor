@@ -63,9 +63,17 @@ export async function GET(request: NextRequest) {
         // 4. 状态判断
         const isCompleted = !!session.completedAt && !!session.analysisResult;
         const isStarted = !!session.analysisStartedAt;
+        // 免费重试进行中：completedAt 保留旧报告，analysisStartedAt 被更新为本次重试开始时间。
+        // 此时必须返回 analyzing，否则轮询会立刻拿到旧报告，前端误以为重试已完成。
+        const retryInProgress = !!session.completedAt
+            && !!session.analysisStartedAt
+            && new Date(session.analysisStartedAt).getTime() > new Date(session.completedAt).getTime();
+        // 重试超过 5 分钟视为僵尸：回落到旧报告，避免前端无限轮询
+        const retryStale = retryInProgress
+            && Date.now() - new Date(session.analysisStartedAt!).getTime() > 5 * 60 * 1000;
 
         let status: "pending" | "analyzing" | "completed";
-        if (isCompleted) {
+        if (isCompleted && (!retryInProgress || retryStale)) {
             status = "completed";
         } else if (isStarted) {
             status = "analyzing";

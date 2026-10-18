@@ -201,8 +201,11 @@ export function releasePendingReservation(requestType: string, estimatedCost: nu
     }
 }
 
-function getPendingReservationCost(requestType: string): number {
-    return pendingReservations.get(requestType) || 0;
+/** 全类型在途预占合计：日/月预算是全局口径，不能只算 text 或 vision 单一类型 */
+function getTotalPendingReservationCost(): number {
+    let total = 0;
+    for (const cost of pendingReservations.values()) total += cost;
+    return total;
 }
 
 /**
@@ -211,9 +214,12 @@ function getPendingReservationCost(requestType: string): number {
  * @returns true 表示安全继续，false 表示应中止重试
  */
 export function isBudgetSafeForRetry(requestType: string): boolean {
+    // 保留参数签名供调用方按类型传入；预算判断已改为全类型合计
+    void requestType;
     const budget = getBudgetConfig();
-    const pendingCost = getPendingReservationCost(requestType);
-    // 在途预留超过日预算的 40% 时拒绝进一步重试（8并发安全余量）
+    // 在途预占按全类型合计判断（文本+视觉共享同一份日预算）
+    const pendingCost = getTotalPendingReservationCost();
+    // 在途预占接近日预算的 40% 时拒绝下一次重试（8 并发安全余量按全类型合计）
     if (budget.dailyCostBudget && pendingCost >= budget.dailyCostBudget * 0.4) {
         return false;
     }
@@ -240,8 +246,9 @@ export async function checkAIBudget(
     }
 
     const budget = getBudgetConfig();
-    const stats = await getUsageStats(requestType);
-    const pendingCost = requestType ? getPendingReservationCost(requestType) : 0;
+    // 预算阈值是全局口径：文本 + 视觉一起统计，避免两者各自花满一份预算。
+    const stats = await getUsageStats();
+    const pendingCost = getTotalPendingReservationCost();
 
     // 实际用量 = 已入库用量 + 在途预留
     const effectiveDailyCost = stats.dailyCost + pendingCost;

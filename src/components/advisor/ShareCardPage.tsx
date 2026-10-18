@@ -25,6 +25,8 @@ interface ShareCardPageProps {
     skinType: string;
     budget?: string;
     skincareFrequency?: string;
+    /** 服务端落库的派系 key；优先于本地参数匹配，保证与证书/正文一致 */
+    persona?: string;
     /** 性别未就绪时不渲染 IP 形象，避免男性用户首帧闪现女版角色 */
     gender?: string;
     summary?: string;
@@ -32,6 +34,8 @@ interface ShareCardPageProps {
     concerns?: string[];
     onDownloadPoster: () => void;
     isPosterLoading?: boolean;
+    /** 百分位仍在请求中：保存按钮需等待，避免证书缺少"超过 X%"或性别未就绪 */
+    isPercentileLoading?: boolean;
     /** 翻到第二面（完整报告）的入口；缺省时仅展示保存证书按钮 */
     onOpenReport?: () => void;
     /** 重新测试入口（正常消耗测试次数）；缺省时不展示 */
@@ -69,11 +73,13 @@ export default function ShareCardPage({
     skinType,
     budget,
     skincareFrequency,
+    persona,
     gender = "",
     summary,
     concerns = [],
     onDownloadPoster,
     isPosterLoading = false,
+    isPercentileLoading = false,
     onOpenReport,
     onReTest,
     reTestBlockedReason = null,
@@ -81,9 +87,12 @@ export default function ShareCardPage({
     isReturning = false,
 }: ShareCardPageProps) {
     const reduceMotion = useReducedMotion();
-    // 纯问卷场景无评分：传中性分 80；matchCharacterIP 按 skinType 匹配派系（评分不再影响肤质派系命中）
-    const ipParams: IPMatchParams = { score: score ?? 80, skinType, budget, skincareFrequency };
+    // 纯问卷场景无评分：传中性分 80；matchCharacterIP 优先使用服务端 persona，
+    // 缺失时才按 skinType/budget/频率匹配，避免封面与证书/正文派系不一致。
+    const ipParams: IPMatchParams = { score: score ?? 80, skinType, budget, skincareFrequency, persona };
     const characterReady = gender === "male" || gender === "female";
+    // 性别/百分位未就绪时禁止保存：避免男性用户拿到 female 兜底形象，或证书缺百分位
+    const posterDisabled = isPosterLoading || isPercentileLoading || !characterReady;
     const characterImage = getCharacterImage({ ...ipParams, gender });
     const characterIp = matchCharacterIP(ipParams);
     const skinTypeName = characterIp.name;
@@ -285,16 +294,16 @@ export default function ShareCardPage({
                     <button
                         type="button"
                         onClick={onDownloadPoster}
-                        disabled={isPosterLoading}
-                        aria-busy={isPosterLoading}
+                        disabled={posterDisabled}
+                        aria-busy={posterDisabled}
                         className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#22304E]/10 bg-white px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#22304E]/75 shadow-[2px_3px_0_0_rgba(34,48,78,0.28)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[1px_2px_0_0_rgba(34,48,78,0.28)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        {isPosterLoading ? (
+                        {isPosterLoading || isPercentileLoading ? (
                             <Loader2 className="h-[13px] w-[13px] flex-none animate-spin" strokeWidth={2} />
                         ) : (
                             <ImageDown className="h-[13px] w-[13px] flex-none" strokeWidth={1.75} />
                         )}
-                        {isPosterLoading ? "生成中..." : "保存证书"}
+                        {isPosterLoading || isPercentileLoading ? "生成中..." : "保存证书"}
                     </button>
                     {onGift && (
                         <button
@@ -506,16 +515,16 @@ export default function ShareCardPage({
                 )}
                 <button
                     onClick={onDownloadPoster}
-                    disabled={isPosterLoading}
-                    aria-busy={isPosterLoading}
+                    disabled={posterDisabled}
+                    aria-busy={posterDisabled}
                     className="inline-flex min-w-[224px] h-11 px-8 items-center justify-center gap-2 rounded-full border border-[#1D3A5F]/55 text-[#1D3A5F] text-[14px] font-medium tracking-[0.08em] transition-colors duration-200 hover:border-[#1D3A5F] hover:bg-[#1D3A5F]/[0.05] active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D3A5F]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F2EDE5] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                    {isPosterLoading ? (
+                    {isPosterLoading || isPercentileLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />
                     ) : (
                         <ImageDown className="w-4 h-4" strokeWidth={1.75} />
                     )}
-                    {isPosterLoading ? "生成中..." : "保存测肤证书"}
+                    {isPosterLoading || isPercentileLoading ? "生成中..." : "保存测肤证书"}
                 </button>
             </m.div>
             </div>

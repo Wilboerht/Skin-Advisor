@@ -346,7 +346,10 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
   useEffect(() => {
     if (!active || !userId) return;
     let cancelled = false;
-    // 时序守卫自增：切号/重开时作废所有在途请求的写回（配合各回调里的 seq 比对）
+    // 每次打开档案都清掉 60s 短缓存：测肤完成后立即打开也能看到刚生成的报告/趋势，
+    // 避免"日记有记录但测肤列表/趋势还是旧数据"的不一致。
+    bustShortCache();
+    // 时间线/趋势：账号切换后/重开弹层时清空进行中请求并重置游标，避免旧请求结果写回
     requestSeqRef.current += 1;
 
     setEntries([]);
