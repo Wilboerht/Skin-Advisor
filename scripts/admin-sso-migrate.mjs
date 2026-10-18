@@ -101,9 +101,11 @@ async function main() {
         .filter((row) => row.email)
         .map((row) => [row.email.toLowerCase(), row])
     );
+    const mainById = new Map(mainResult.rows.map((row) => [row.id, row]));
 
     const subResult = await subClient.query(`
       SELECT id, username, email, role, active, "externalAdminId",
+             "externalRole", "externalTokenVersion", "mainTotpEnabled",
              "authSource", "lastLoginAt"
       FROM "AdminUser"
       ORDER BY "createdAt" ASC
@@ -111,7 +113,7 @@ async function main() {
 
     const matched = [];
     const unmatched = [];
-    const alreadyLinked = [];
+    const linked = [];
 
     for (const row of subResult.rows) {
       // break-glass 是本地应急账号，不属于 SSO 迁移/清理范围
@@ -120,7 +122,14 @@ async function main() {
         continue;
       }
       if (row.externalAdminId) {
-        alreadyLinked.push(row);
+        const mainAdmin = mainById.get(row.externalAdminId) ?? null;
+        const advisorRole = mainAdmin ? resolveAdvisorRole(mainAdmin) : null;
+        linked.push({
+          sub: row,
+          main: mainAdmin,
+          advisorRole,
+          active: Boolean(mainAdmin && advisorRole && mainAdmin.status === "ACTIVE"),
+        });
         continue;
       }
       const email = row.email ? row.email.toLowerCase() : null;
@@ -155,8 +164,17 @@ async function main() {
           `=> ${item.advisorRole ?? "无权限"}${item.active ? "" : "（停用）"}`
       );
     }
-    for (const row of alreadyLinked) {
-      console.log(`ℹ️  已绑定: ${row.username} -> ${row.externalAdminId}`);
+    for (const item of linked) {
+      if (!item.main) {
+        console.log(
+          `⚠️  已绑定但主站账号不存在: ${item.sub.username} -> ${item.sub.externalAdminId}（将停用）`
+        );
+      } else {
+        console.log(
+          `ℹ️  已绑定: ${item.sub.username} -> ${item.main.id} ` +
+            `=> ${item.advisorRole ?? "无权限"}${item.active ? "" : "（停用）"}`
+        );
+      }
     }
     for (const row of unmatched) {
       const recent =
@@ -200,6 +218,53 @@ async function main() {
           ]
         );
         console.log(`   已更新 ${item.sub.username}`);
+      }
+
+      console.log("开始刷新已绑定账号（重新计算权限/启停）...");
+      for (const item of linked) {
+        const sub = item.sub;
+        if (!item.main) {
+          await subClient.query(
+            `UPDATE "AdminUser"
+             SET "active" = FALSE,
+                 "sessionRevokedAt" = NOW(),
+                 "lastSyncedAt" = NOW(),
+                 "updatedAt" = NOW()
+             WHERE id = $1`,
+            [sub.id]
+          );
+          console.log(`   已停用 ${sub.username}（主站账号不存在）`);
+          continue;
+        }
+
+        const versionChanged =
+          sub.externalTokenVersion !== null &&
+          sub.externalTokenVersion !== item.main.tokenVersion;
+        await subClient.query(
+          `UPDATE "AdminUser"
+           SET "externalRole" = $1,
+               "externalTokenVersion" = $2,
+               "mainTotpEnabled" = $3,
+               "role" = $4,
+               "active" = $5,
+               "authSource" = 'sso',
+               "lastSyncedAt" = NOW(),
+               "updatedAt" = NOW(),
+               "sessionRevokedAt" = CASE WHEN $6::boolean THEN NOW() ELSE "sessionRevokedAt" END
+           WHERE id = $7`,
+          [
+            item.main.role,
+            item.main.tokenVersion ?? 0,
+            Boolean(item.main.totpEnabled),
+            item.advisorRole ?? sub.role,
+            item.active,
+            versionChanged || !item.active,
+            sub.id,
+          ]
+        );
+        console.log(
+          `   已刷新 ${sub.username} => ${item.advisorRole ?? "无权限"}${item.active ? "" : "（停用）"}`
+        );
       }
     }
 
