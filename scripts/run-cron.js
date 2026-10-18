@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env.production') });
 /**
  * Cron 任务执行脚本（云服务器环境）
  *

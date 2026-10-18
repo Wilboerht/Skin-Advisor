@@ -12,6 +12,11 @@ export async function GET(
         const { path: pathSegments } = await params;
         const relativePath = pathSegments.join("/");
 
+        // 人脸照片仅服务端分析读取，不走公网文件路由
+        if (relativePath === "guest" || relativePath.startsWith("guest/")) {
+            return new NextResponse("Not found", { status: 404 });
+        }
+
         // 目标目录：public/uploads
         const uploadDir = path.join(process.cwd(), "public", "uploads");
         const filePath = path.join(uploadDir, relativePath);

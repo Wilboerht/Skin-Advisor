@@ -212,17 +212,19 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        // ===== 9. 清理过期上传文件（保留 30 天，递归处理嵌套目录）=====
-        // 旧实现只对根目录条目 unlink，guest/、advisor/ 等子目录会因 EISDIR 被吞掉永不清理
+        // ===== 9. 清理过期上传文件（guest 24 小时，其他 30 天，递归处理嵌套目录）=====
+        // 人脸照片属于敏感数据，按 24 小时保留；products/ 等永久资产继续豁免。
         let deletedFiles = 0;
+        let deletedGuestFiles = 0;
         try {
             const fs = await import("fs/promises");
             const path = await import("path");
             const uploadDir = path.resolve(process.cwd(), "public", "uploads");
             const fileCutoff = now - 30 * 24 * 60 * 60 * 1000;
+            const guestCutoff = now - 24 * 60 * 60 * 1000;
 
             // 递归按 mtime 清理；目录自底向上、仅在过期且已清空时删除
-            const cleanDir = async (dir: string, isRoot: boolean): Promise<void> => {
+            const cleanDir = async (dir: string, isRoot: boolean, cutoff: number): Promise<void> => {
                 const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
                 for (const entry of entries) {
                     // products/ 子目录存的是展品图等永久资产，豁免清理
@@ -230,23 +232,26 @@ export async function GET(request: NextRequest) {
                     const fullPath = path.join(dir, entry.name);
                     try {
                         if (entry.isDirectory()) {
-                            await cleanDir(fullPath, false);
+                            const isGuestDir = isRoot && entry.name === "guest";
+                            const childCutoff = isGuestDir ? guestCutoff : cutoff;
+                            await cleanDir(fullPath, false, childCutoff);
                             const stat = await fs.stat(fullPath);
                             const remaining = await fs.readdir(fullPath);
-                            if (stat.mtimeMs < fileCutoff && remaining.length === 0) {
+                            if (remaining.length === 0 && (stat.mtimeMs < childCutoff || isGuestDir)) {
                                 await fs.rmdir(fullPath);
                             }
                         } else if (entry.isFile()) {
                             const stat = await fs.stat(fullPath);
-                            if (stat.mtimeMs < fileCutoff) {
+                            if (stat.mtimeMs < cutoff) {
                                 await fs.unlink(fullPath);
                                 deletedFiles++;
+                                if (cutoff === guestCutoff) deletedGuestFiles++;
                             }
                         }
                     } catch { /* skip unreadable files */ }
                 }
             };
-            await cleanDir(uploadDir, true);
+            await cleanDir(uploadDir, true, fileCutoff);
         } catch { /* upload dir may not exist */ }
 
         return NextResponse.json({
@@ -259,6 +264,7 @@ export async function GET(request: NextRequest) {
                 instances: deletedInstances.count,
                 refreshTokens: deletedRefreshTokens.count,
                 files: deletedFiles,
+                guestFiles: deletedGuestFiles,
             },
         });
     } catch (error: unknown) {
