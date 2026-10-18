@@ -104,6 +104,16 @@ export async function proxy(request: NextRequest) {
         return NextResponse.next();
     }
 
+    // ==================== break-glass 默认关闭 ====================
+    // 在 proxy 层直接返回 404，避免页面因动态流式渲染在 notFound() 之前
+    // 已发出 200 头，形成“状态 200 + 404 内容”的软 404。
+    if (
+        (pathname === "/admin/emergency-login" || pathname === "/admin/emergency-login/") &&
+        process.env.ADMIN_BREAK_GLASS_ENABLED !== "true"
+    ) {
+        return new NextResponse(null, { status: 404 });
+    }
+
     // ==================== SSO 一网通登录保护 ====================
     // API 路径不走 SSO middleware：无 token 时 SDK 会 302 到主站 authorize，
     // fetch 跨域跟随重定向必失败（应得 401）。API 的鉴权由各 route handler
