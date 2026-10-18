@@ -1,28 +1,14 @@
 "use client";
 
-import { useState, FormEvent, useEffect, useCallback, Suspense, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Eye,
-  EyeOff,
-  AlertCircle,
-  Loader2,
-  ChevronDown,
-  LogIn,
-  KeyRound,
-} from "lucide-react";
+import { useState, useEffect, Suspense, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import { AlertCircle, Loader2, ChevronDown, LogIn } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { OrbitalIcons } from "@/components/ui/OrbitalIcons";
 
-interface FormErrors {
-  username?: string;
-  password?: string;
-}
-
 function AdminLoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const rawRedirect = searchParams.get("redirect") || "/admin";
   // 只允许站内 /admin 路径，防止开放重定向
@@ -32,10 +18,6 @@ function AdminLoginForm() {
     !rawRedirect.startsWith("/admin/emergency-login")
       ? rawRedirect
       : "/admin";
-
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showLocalLogin, setShowLocalLogin] = useState(false);
 
   const ssoError = searchParams.get("error");
   const ssoErrorText = (() => {
@@ -51,7 +33,7 @@ function AdminLoginForm() {
       case "sso_conflict":
         return "账号邮箱已绑定其他主站管理员，请联系主站处理。";
       case "sso_disabled":
-        return "管理员 SSO 暂未启用，请使用本地密码登录（过渡期）。";
+        return "管理员 SSO 暂未启用，请联系主站运维。";
       case "sso_not_configured":
         return "管理员 SSO 配置不完整，请联系主站运维检查环境变量。";
       case "sso_rate_limited":
@@ -63,10 +45,6 @@ function AdminLoginForm() {
     }
   })();
 
-  const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [breadcrumbOpen, setBreadcrumbOpen] = useState(false);
   const breadcrumbRef = useRef<HTMLDivElement>(null);
@@ -99,82 +77,6 @@ function AdminLoginForm() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [breadcrumbOpen]);
-
-  const validateForm = useCallback((): boolean => {
-    const errors: FormErrors = {};
-
-    if (!username.trim()) {
-      errors.username = "请输入账号";
-    }
-
-    if (!password) {
-      errors.password = "请输入密码";
-    } else if (password.length < 6) {
-      errors.password = "密码至少需要 6 位";
-    }
-
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
-  }, [username, password]);
-
-  const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
-      setError("");
-      setFieldErrors({});
-
-      if (!validateForm()) {
-        return;
-      }
-
-      setIsLoading(true);
-
-      try {
-        const response = await fetch("/api/admin/auth/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ username, password }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-          setError(data.error || "登录失败，请稍后重试");
-          return;
-        }
-
-        router.push(redirectTo);
-        router.refresh();
-      } catch {
-        setError("网络错误，请检查网络连接");
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [username, password, redirectTo, router, validateForm]
-  );
-
-  const handleUsernameChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setUsername(e.target.value);
-      if (fieldErrors.username) {
-        setFieldErrors((prev) => ({ ...prev, username: undefined }));
-      }
-    },
-    [fieldErrors.username]
-  );
-
-  const handlePasswordChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setPassword(e.target.value);
-      if (fieldErrors.password) {
-        setFieldErrors((prev) => ({ ...prev, password: undefined }));
-      }
-    },
-    [fieldErrors.password]
-  );
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-brand-cream px-6">
@@ -219,9 +121,7 @@ function AdminLoginForm() {
         <div
           className={cn(
             "transition-all duration-700",
-            mounted
-              ? "translate-y-0 opacity-100"
-              : "translate-y-4 opacity-0"
+            mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
           )}
         >
           <OrbitalIcons className="min-h-[620px] min-w-[380px] sm:min-h-[860px] sm:min-w-[860px]">
@@ -240,7 +140,7 @@ function AdminLoginForm() {
                 <div className="h-1" />
               </div>
 
-              {/* 表单区域 */}
+              {/* 登录区域 */}
               <div className="px-8 pb-10 sm:px-10">
                 {ssoErrorText && (
                   <div
@@ -270,126 +170,6 @@ function AdminLoginForm() {
                 <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-400">
                   管理员账号、密码与二次验证统一由主站管理
                 </p>
-
-                <div className="mt-5 border-t border-[#E8E2D9] pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowLocalLogin((prev) => !prev)}
-                    className="mx-auto flex items-center gap-1.5 text-[11px] text-slate-400 transition-colors hover:text-slate-600"
-                  >
-                    <KeyRound className="h-3 w-3" />
-                    {showLocalLogin ? "收起本地登录" : "本地密码登录（过渡期）"}
-                  </button>
-                </div>
-
-                {showLocalLogin && (
-                <form onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
-                  {/* 账号 */}
-                  <div>
-                    <input
-                      id="username"
-                      type="text"
-                      value={username}
-                      onChange={handleUsernameChange}
-                      required
-                      autoComplete="username"
-                      disabled={isLoading}
-                      placeholder="用户名"
-                      aria-invalid={!!fieldErrors.username}
-                      aria-describedby={fieldErrors.username ? "username-error" : undefined}
-                      className={cn(
-                        "block w-full rounded-xl border bg-white py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 disabled:opacity-50",
-                        fieldErrors.username
-                          ? "border-red-300 focus:border-red-400 focus:bg-white focus:ring-4 focus:ring-red-100"
-                          : "border-[#E8E2D9] focus:border-[#C9A86C]/60 focus:bg-white focus:ring-4 focus:ring-[#C9A86C]/15"
-                      )}
-                    />
-                    <p
-                      id="username-error"
-                      className={cn(
-                        "mt-1.5 flex items-center gap-1 text-xs text-red-500 transition-all duration-200",
-                        fieldErrors.username ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none h-0 mt-0"
-                      )}
-                    >
-                      <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                      <span>{fieldErrors.username || ""}</span>
-                    </p>
-                  </div>
-
-                  {/* 密码 */}
-                  <div className="relative">
-                    <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={handlePasswordChange}
-                      required
-                      autoComplete="current-password"
-                      disabled={isLoading}
-                      minLength={6}
-                      placeholder="密码"
-                      aria-invalid={!!fieldErrors.password}
-                      aria-describedby={fieldErrors.password ? "password-error" : undefined}
-                      className={cn(
-                        "block w-full rounded-xl border bg-white py-3.5 px-5 pr-10 text-[13px] text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 disabled:opacity-50",
-                        fieldErrors.password
-                          ? "border-red-300 focus:border-red-400 focus:bg-white focus:ring-4 focus:ring-red-100"
-                          : "border-[#E8E2D9] focus:border-[#C9A86C]/60 focus:bg-white focus:ring-4 focus:ring-[#C9A86C]/15"
-                      )}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 transition-colors hover:text-slate-600 focus:outline-none"
-                      aria-label={showPassword ? "隐藏密码" : "显示密码"}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                    <p
-                      id="password-error"
-                      className={cn(
-                        "mt-1.5 flex items-center gap-1 text-xs text-red-500 transition-all duration-200",
-                        fieldErrors.password ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none h-0 mt-0"
-                      )}
-                    >
-                      <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                      <span>{fieldErrors.password || ""}</span>
-                    </p>
-                  </div>
-
-                  {/* 错误提示 */}
-                  {error && (
-                    <div
-                      role="alert"
-                      aria-live="polite"
-                      className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-xs font-medium text-red-700"
-                    >
-                      <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 text-red-500" />
-                      <span>{error}</span>
-                    </div>
-                  )}
-
-                  {/* 登录按钮 */}
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#8B7355]/30 bg-[#8B7355] py-3.5 text-[13px] font-bold tracking-wider text-white shadow-sm transition-all duration-300 hover:bg-[#6D5A3F] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        登录中...
-                      </>
-                    ) : (
-                      "登 录"
-                    )}
-                  </button>
-                </form>
-                )}
               </div>
             </div>
           </OrbitalIcons>
@@ -432,11 +212,13 @@ function AdminLoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-brand-cream">
-        <Loader2 className="h-8 w-8 animate-spin text-[#8B7355]" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-brand-cream">
+          <Loader2 className="h-8 w-8 animate-spin text-[#8B7355]" />
+        </div>
+      }
+    >
       <AdminLoginForm />
     </Suspense>
   );
