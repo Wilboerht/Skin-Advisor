@@ -5,10 +5,11 @@ import { EmergencyLoginForm } from "./EmergencyLoginForm";
 export const dynamic = "force-dynamic";
 
 export default async function EmergencyLoginPage() {
-  // 显式读取请求头，确保 env 开关在运行时判断，而不是构建期静态化
+  // 显式读取请求头，确保 env 开关在运行时判断，而不是构建期静态化。
+  // 使用方括号读取，避免构建器把 process.env.X 静态内联成构建时的值。
   await headers();
 
-  if (process.env.ADMIN_BREAK_GLASS_ENABLED !== "true") {
+  if (process.env["ADMIN_BREAK_GLASS_ENABLED"] !== "true") {
     notFound();
   }
 

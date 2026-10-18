@@ -497,22 +497,36 @@ export async function fetchMainAdminStatuses(
   config: AdminSsoConfig
 ): Promise<MainAdminStatus[]> {
   if (adminIds.length === 0) return [];
-  const response = await fetch(config.statusUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      client_id: config.clientId,
-      client_secret: config.clientSecret,
-      adminIds: adminIds.slice(0, 100),
-    }),
-    signal: AbortSignal.timeout(5000),
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(config.statusUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+        adminIds: adminIds.slice(0, 100),
+      }),
+      signal: AbortSignal.timeout(5000),
+      cache: "no-store",
+    });
+  } catch {
+    throw new AdminSsoError("STATUS_ENDPOINT_UNREACHABLE", "主站状态接口不可达", 502);
+  }
+
   const json = (await response.json().catch(() => null)) as
-    | { success?: boolean; data?: { admins?: MainAdminStatus[] } }
+    | {
+        success?: boolean;
+        data?: { admins?: MainAdminStatus[] };
+        error?: { code?: string; message?: string };
+      }
     | null;
   if (!response.ok || !json?.success) {
-    throw new AdminSsoError("STATUS_ENDPOINT_FAILED", "主站管理员状态同步失败", 502);
+    throw new AdminSsoError(
+      json?.error?.code || "STATUS_ENDPOINT_FAILED",
+      json?.error?.message || "主站管理员状态同步失败",
+      response.status >= 400 ? response.status : 502
+    );
   }
   return json.data?.admins ?? [];
 }
