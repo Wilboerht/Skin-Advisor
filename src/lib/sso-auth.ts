@@ -601,14 +601,16 @@ async function getLocalSessionDbUserFromRefreshToken() {
     }
 }
 
-/**
- * 兼容旧 getSession() 的 SSO 版实现。
- * 通过 access_token 验证主站身份后，返回本地 User 表的完整会话信息。
- * 若本地不存在该用户则自动创建（保留肤质测试等业务关联）。
- * SSO 验证失败时兜底本地会话（微信登录用户无 SSO Cookie）。
- */
 /** 本地用户资料回源间隔：与 Cookie 会话 /api/auth/me 的 6 小时刷新口径一致 */
 const PROFILE_SYNC_TTL_MS = 6 * 60 * 60 * 1000;
+/** userinfo 回源失败后的全局退避：主站故障时避免每个 Bearer 请求都等 3 秒 */
+const PROFILE_SYNC_BACKOFF_MS = 60_000;
+let profileSyncBackoffUntil = 0;
+
+/** 仅测试使用：重置 userinfo 回源退避状态 */
+export function resetProfileSyncBackoffForTests(): void {
+    profileSyncBackoffUntil = 0;
+}
 
 /**
  * SSO/小程序 token 验证通过后的公共尾部：建档/同步本地用户并组装会话结构。
@@ -629,18 +631,31 @@ async function sessionUserFromVerifiedPayload(
     if (accessToken) {
         const syncedAt = dbUser.profileSyncedAt ? new Date(dbUser.profileSyncedAt).getTime() : 0;
         // membershipLevel 为空时即使 profileSyncedAt 刚被 profile webhook 刷新，也要回源一次：
-        // webhook 可能只带昵称/头像，不带 membership（会员权益判定不能依赖这种部分同步）
+        // webhook 可能只带昵称/头像，不带 membership（会员权益判定不能依赖这种部分同步）。
+        // 仅当 token 本身含 membership scope 时才因等级为空触发，避免旧 token 每请求都回源。
+        const scope =
+            typeof (payload as { scope?: unknown }).scope === "string"
+                ? (payload as { scope: string }).scope
+                : "";
+        const canSyncMembership = scope.split(/\s+/).includes("membership");
         const stale = !syncedAt || Date.now() - syncedAt > PROFILE_SYNC_TTL_MS;
-        if (stale || !dbUser.membershipLevel) {
+        const needsSync = stale || (canSyncMembership && !dbUser.membershipLevel);
+
+        // 主站 userinfo 故障时做 60 秒负缓存，避免每个请求都等满 3 秒超时
+        if (needsSync && Date.now() >= profileSyncBackoffUntil) {
             try {
                 const profile = await fetchSsoUserinfo(accessToken);
                 if (profile) {
+                    profileSyncBackoffUntil = 0;
                     const synced = await upsertLocalUser(payload, profile, {
                         profileSyncedAt: new Date(),
                     });
                     if (synced) dbUser = synced;
+                } else {
+                    profileSyncBackoffUntil = Date.now() + PROFILE_SYNC_BACKOFF_MS;
                 }
             } catch (err) {
+                profileSyncBackoffUntil = Date.now() + PROFILE_SYNC_BACKOFF_MS;
                 logger.warn("[MP Auth] profile sync failed", {
                     userId: payload.sub,
                     error: err instanceof Error ? err.message : String(err),

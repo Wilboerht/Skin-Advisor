@@ -57,6 +57,7 @@ import {
     getSessionUser,
     verifyMpBearerToken,
     markAccessTokenRevoked,
+    resetProfileSyncBackoffForTests,
     MP_CLIENT_ID,
 } from "./sso-auth";
 
@@ -83,6 +84,7 @@ const bearerReq = (token: string) => reqWith({ authorization: `Bearer ${token}` 
 
 beforeEach(() => {
     vi.clearAllMocks();
+    resetProfileSyncBackoffForTests();
     vi.stubGlobal("fetch", mocks.fetch);
     mocks.fetch.mockRejectedValue(new Error("unexpected fetch"));
     mocks.cookies.mockResolvedValue({ get: () => undefined, set: vi.fn() });
@@ -203,7 +205,7 @@ describe("getSessionUser Bearer 通道", () => {
     });
 
     it("profileSyncedAt 新鲜但 membershipLevel 为空 → 仍回源补齐会员", async () => {
-        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1" });
+        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1", scope: "openid profile membership" });
         mocks.upsert
             .mockResolvedValueOnce({ ...dbUser, membershipLevel: null, profileSyncedAt: new Date() })
             .mockResolvedValueOnce({ ...dbUser, membershipLevel: "SILVER", profileSyncedAt: new Date() });
@@ -236,6 +238,24 @@ describe("getSessionUser Bearer 通道", () => {
         });
         // fetchSsoUserinfo 内部已 fail-soft，不回源成功时保留本地资料
         expect(user?.name).toBe("小程序用户");
+    });
+
+    it("userinfo 回源失败后的 60 秒内不再重复回源", async () => {
+        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1" });
+        mocks.upsert.mockResolvedValue({ ...dbUser, membershipLevel: null, profileSyncedAt: null });
+        mocks.fetch.mockRejectedValue(new Error("network down"));
+
+        await getSessionUser(bearerReq("backoff-token-1"));
+        expect(mocks.fetch).toHaveBeenCalledTimes(1);
+
+        // 模拟退避期内另一个请求：不应再次等待 userinfo
+        mocks.fetch.mockClear();
+        mocks.upsert.mockClear();
+        mocks.upsert.mockResolvedValue({ ...dbUser, membershipLevel: null, profileSyncedAt: null });
+
+        await getSessionUser(bearerReq("backoff-token-2"));
+        expect(mocks.fetch).not.toHaveBeenCalled();
+        expect(mocks.upsert).toHaveBeenCalledTimes(1);
     });
 
     it("Bearer 无效/过期 → 返回 null，不回落 Cookie 逻辑", async () => {

@@ -1,11 +1,24 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // usage-limit.ts 顶层引入 sso-auth（→ sso-sdk → next/server ESM 在 vitest 下解析失败），
-// 本测试只覆盖纯函数 getMemberQuota，mock 掉重依赖即可
-vi.mock("@/lib/sso-auth", () => ({ getSessionUser: vi.fn() }));
-vi.mock("@/lib/prisma", () => ({ default: {} }));
+// 本测试通过 mock 隔离重依赖；getMemberQuota 为纯函数，getSkinTestUsageSummary 用 Prisma mock。
+const prismaMock = vi.hoisted(() => ({
+    user: { findUnique: vi.fn() },
+    testRecord: { count: vi.fn() },
+    diaryEntry: { findUnique: vi.fn() },
+}));
 
-import { getMemberQuota } from "./usage-limit";
+vi.mock("@/lib/sso-auth", () => ({ getSessionUser: vi.fn() }));
+vi.mock("@/lib/prisma", () => ({ default: prismaMock }));
+
+import { getMemberQuota, getSkinTestUsageSummary } from "./usage-limit";
+
+beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.user.findUnique.mockResolvedValue(null);
+    prismaMock.testRecord.count.mockResolvedValue(0);
+    prismaMock.diaryEntry.findUnique.mockResolvedValue(null);
+});
 
 describe("getMemberQuota", () => {
     it("普通会员默认：终身 10 次、无每日上限", () => {
@@ -38,5 +51,57 @@ describe("getMemberQuota", () => {
     it("银卡无覆盖：终身池 = 10 + 20×⌊消费/1000⌋，每日 10 次", () => {
         const q = getMemberQuota({ membershipLevel: "SILVER", dailyTestLimit: 10, totalSpent: 2500 });
         expect(q).toMatchObject({ dailyLimit: 10, lifetimeLimit: 50, unlimited: false });
+    });
+});
+
+describe("getSkinTestUsageSummary 会员覆盖", () => {
+    it("子站无本地用户 + 主站 GOLD/6000 → 按 GOLD 配额返回", async () => {
+        const summary = await getSkinTestUsageSummary("user_gold", {
+            level: "GOLD",
+            totalSpent: 6000,
+        });
+
+        expect(summary).toMatchObject({
+            level: "GOLD",
+            totalUsed: 0,
+            todayUsed: 0,
+            quota: { lifetimeLimit: null, dailyLimit: 10, unlimited: true },
+            remaining: null,
+            todayCheckedIn: false,
+        });
+    });
+
+    it("本地 REGULAR + 主站 SILVER/2500 → 按 SILVER 终身池 50 次", async () => {
+        prismaMock.user.findUnique.mockResolvedValue({
+            membershipLevel: "REGULAR",
+            totalSpent: 0,
+            dailyTestLimit: 10,
+        });
+        prismaMock.testRecord.count
+            .mockResolvedValueOnce(12)
+            .mockResolvedValueOnce(2);
+
+        const summary = await getSkinTestUsageSummary("user_silver", {
+            level: "SILVER",
+            totalSpent: 2500,
+        });
+
+        expect(summary).toMatchObject({
+            level: "SILVER",
+            totalUsed: 12,
+            todayUsed: 2,
+            quota: { lifetimeLimit: 50, dailyLimit: 10, unlimited: false },
+            remaining: 38,
+        });
+    });
+
+    it("无 override 且子站无用户 → 保持 level null + REGULAR 配额", async () => {
+        const summary = await getSkinTestUsageSummary("user_never_used");
+
+        expect(summary).toMatchObject({
+            level: null,
+            quota: { lifetimeLimit: 10, dailyLimit: null, unlimited: false },
+            remaining: 10,
+        });
     });
 });

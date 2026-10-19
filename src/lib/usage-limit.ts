@@ -372,8 +372,15 @@ export async function rollbackUsage(
  *
  * 统计口径：仅 TestRecord 实际落库计数（终身 + 北京时间当日），不含在途分析。
  * 与 checkUsageLimit().usage 口径一致（两者都只按 TestRecord 计），会员面板展示与预检结果不会互相打架。
- * 用户不存在（从未用过子站）时 level 返回 null，quota 按 REGULAR 档计算。
+ * 用户不存在（从未用过子站）且主站未传会员覆盖时 level 返回 null，quota 按 REGULAR 档计算。
  */
+export interface SkinTestUsageMembershipOverride {
+    /** 主站会员等级（REGULAR/SILVER/GOLD/DIAMOND）；缺省时沿用子站本地副本 */
+    level?: string | null;
+    /** 主站累计消费额（元）；缺省时沿用子站本地副本 */
+    totalSpent?: number | null;
+}
+
 export interface SkinTestUsageSummary {
     /** 归一化后的会员档位；用户不存在时为 null */
     level: MemberLevel | null;
@@ -390,7 +397,10 @@ export interface SkinTestUsageSummary {
     todayCheckedIn: boolean;
 }
 
-export async function getSkinTestUsageSummary(userId: string): Promise<SkinTestUsageSummary> {
+export async function getSkinTestUsageSummary(
+    userId: string,
+    membership?: SkinTestUsageMembershipOverride
+): Promise<SkinTestUsageSummary> {
     const today = startOfTodayShanghai();
     const todayDiaryDate = parseClientDate(todayKeyShanghai());
     const [user, totalUsed, todayUsed, todayDiary] = await Promise.all([
@@ -413,9 +423,25 @@ export async function getSkinTestUsageSummary(userId: string): Promise<SkinTestU
         !!todayDiary &&
         (!isAutoDiaryEntry(todayDiary) || ((todayDiary.tags as unknown[] | null)?.length ?? 0) > 0);
 
-    const quota = getMemberQuota(user);
+    // 主站是会员等级/累计消费的权威来源：本地用户缺失或资料尚未同步时，
+    // 用主站传入的 level/totalSpent 计算配额，避免“GOLD 用户显示 REGULAR 剩余次数”。
+    const effectiveUser = user
+        ? {
+              ...user,
+              membershipLevel: membership?.level ?? user.membershipLevel,
+              totalSpent: membership?.totalSpent ?? user.totalSpent,
+          }
+        : membership?.level
+          ? {
+                membershipLevel: membership.level,
+                totalSpent: membership.totalSpent ?? 0,
+                dailyTestLimit: null,
+            }
+          : null;
+
+    const quota = getMemberQuota(effectiveUser);
     return {
-        level: user ? quota.level : null,
+        level: effectiveUser ? quota.level : null,
         totalUsed,
         todayUsed,
         quota: {

@@ -6,6 +6,8 @@ import { logger } from "@/lib/logger";
 
 export const maxDuration = 15;
 
+const MEMBERSHIP_LEVELS = new Set(["REGULAR", "SILVER", "GOLD", "DIAMOND"]);
+
 /**
  * 内部接口：查询指定用户的测肤用量与会员配额（供主站会员面板调用）
  *
@@ -42,8 +44,16 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Invalid userId" }, { status: 400 });
     }
 
+    // 主站会员等级/累计消费作为配额覆盖（子站本地用户可能从未创建或尚未同步）。
+    // 非法值一律忽略，回落到子站本地 User 或 REGULAR 档。
+    const levelParam = request.nextUrl.searchParams.get("level") || "";
+    const level = MEMBERSHIP_LEVELS.has(levelParam) ? levelParam : undefined;
+    const totalSpentRaw = request.nextUrl.searchParams.get("totalSpent");
+    const totalSpentNum = totalSpentRaw !== null && totalSpentRaw !== "" ? Number(totalSpentRaw) : NaN;
+    const totalSpent = Number.isFinite(totalSpentNum) && totalSpentNum >= 0 ? Math.floor(totalSpentNum) : undefined;
+
     try {
-        const summary = await getSkinTestUsageSummary(userId);
+        const summary = await getSkinTestUsageSummary(userId, { level, totalSpent });
         return NextResponse.json(summary);
     } catch (error) {
         logger.error("[internal/skin-test-usage] failed", { error: String(error) });
