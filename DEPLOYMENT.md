@@ -52,8 +52,14 @@ curl -s http://localhost:3002/api/health
 > 全新空库：不要 resolve，直接 `migrate deploy` 让 baseline 建表。
 
 ```bash
-# 1) 备份生产库
-pg_dump "$DATABASE_URL" > /root/secure-backups/skin_advisor_db_$(date +%Y%m%d_%H%M).sql
+# 1) 备份生产库（先建目录，避免重定向失败）
+mkdir -p /root/secure-backups
+set -a; . ./.env.production; set +a
+DB_URL="${DATABASE_URL%%\?*}"   # pg_dump 不识别 Prisma 的 ?schema=public
+pg_dump "$DB_URL" > "/root/secure-backups/skin_advisor_db_$(date +%Y%m%d_%H%M).sql"
+chmod 700 /root/secure-backups
+chmod 600 /root/secure-backups/*.sql
+ls -lh /root/secure-backups/
 
 # 2) 只在生产库标记 baseline 已应用（不执行建表；生产表已存在）
 npx prisma migrate resolve --applied 20261020000000_baseline

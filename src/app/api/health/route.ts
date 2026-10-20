@@ -59,7 +59,8 @@ export async function GET(req: NextRequest) {
     // 4. 官网 API 可达性（仅已配置时检查）
     const officialUrl = process.env.OFFICIAL_API_URL;
     if (officialUrl) {
-        checks.official_api = await checkHttp(`${officialUrl}/api/health`, 3000);
+        // 主站经 Cloudflare 回源偶尔 >3s；3s 会造成 health 误报 degraded。
+        checks.official_api = await checkHttp(`${officialUrl}/api/health`, 5000);
     }
 
     const healthy = Object.values(checks).every(v => v === "ok" || v === "disabled");
