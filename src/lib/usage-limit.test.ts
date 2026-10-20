@@ -4,20 +4,23 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // 本测试通过 mock 隔离重依赖；getMemberQuota 为纯函数，getSkinTestUsageSummary 用 Prisma mock。
 const prismaMock = vi.hoisted(() => ({
     user: { findUnique: vi.fn() },
-    testRecord: { count: vi.fn() },
+    testRecord: { count: vi.fn(), deleteMany: vi.fn() },
     diaryEntry: { findUnique: vi.fn() },
+    $transaction: vi.fn(),
 }));
 
 vi.mock("@/lib/sso-auth", () => ({ getSessionUser: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ default: prismaMock }));
 
-import { getMemberQuota, getSkinTestUsageSummary } from "./usage-limit";
+import { getMemberQuota, getSkinTestUsageSummary, rollbackUsage } from "./usage-limit";
 
 beforeEach(() => {
     vi.clearAllMocks();
     prismaMock.user.findUnique.mockResolvedValue(null);
     prismaMock.testRecord.count.mockResolvedValue(0);
+    prismaMock.testRecord.deleteMany.mockResolvedValue({ count: 1 });
     prismaMock.diaryEntry.findUnique.mockResolvedValue(null);
+    prismaMock.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn(prismaMock));
 });
 
 describe("getMemberQuota", () => {
@@ -102,6 +105,17 @@ describe("getSkinTestUsageSummary 会员覆盖", () => {
             level: null,
             quota: { lifetimeLimit: 10, dailyLimit: null, unlimited: false },
             remaining: 10,
+        });
+    });
+});
+
+describe("rollbackUsage 归属用户", () => {
+    it("传入预占 userId 时不依赖 getSessionUser，会话过期也能回滚", async () => {
+        const ok = await rollbackUsage(null as never, "sess-1", "user-1");
+
+        expect(ok).toBe(true);
+        expect(prismaMock.testRecord.deleteMany).toHaveBeenCalledWith({
+            where: { sessionId: "sess-1", userId: "user-1" },
         });
     });
 });

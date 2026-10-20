@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
     // 这个 TOKEN 必须和微信公众平台后台配置的一致
     const token = process.env.WECHAT_TOKEN;
     if (!token) {
-        logger.error("WECHAT_TOKEN is not configured");
-        return new NextResponse("Server Configuration Error", { status: 500 });
+        logger.warn("WECHAT_TOKEN is not configured; webhook disabled");
+        return new NextResponse("Not found", { status: 404 });
     }
 
     // 参数校验
@@ -96,8 +96,8 @@ export async function POST(request: NextRequest) {
 
     const token = process.env.WECHAT_TOKEN;
     if (!token) {
-        logger.error("WECHAT_TOKEN is not configured");
-        return new NextResponse("Server Configuration Error", { status: 500 });
+        logger.warn("WECHAT_TOKEN is not configured; webhook disabled");
+        return new NextResponse("Not found", { status: 404 });
     }
 
     if (!signature || !timestamp || !nonce) {

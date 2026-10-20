@@ -373,7 +373,8 @@ export async function generateText(
     preferredProvider?: AIProvider,
     signal?: AbortSignal,
     userId?: string | null,
-    sessionId?: string | null
+    sessionId?: string | null,
+    timeoutMs?: number
 ): Promise<string> {
     // 如果外部 signal 已 abort，直接抛出
     if (signal?.aborted) {
@@ -406,7 +407,7 @@ export async function generateText(
             const model = provider === primaryProvider ? primaryModel : getModelForProvider(provider);
 
             try {
-                const result = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, userPrompt, settings, signal, userId, sessionId);
+                const result = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, userPrompt, settings, signal, userId, sessionId, timeoutMs);
                 aiLogger.info(`AI Generation Success using provider: ${provider}`);
                 return result;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -438,7 +439,8 @@ async function callProviderWithRetry(
     settings: AISettings,
     signal?: AbortSignal,
     userId?: string | null,
-    sessionId?: string | null
+    sessionId?: string | null,
+    timeoutMs?: number
 ): Promise<string> {
     let apiKeys = getApiKeysForProvider(provider, settings);
 
@@ -458,7 +460,7 @@ async function callProviderWithRetry(
         const apiKey = apiKeys[i];
         try {
             if (i > 0) aiLogger.info(`Retrying with key ${i + 1}/${apiKeys.length} for ${provider}`);
-            const result = await callProviderInternal(provider, apiKey, model, systemPrompt, userPrompt, settings, signal, userId, sessionId);
+            const result = await callProviderInternal(provider, apiKey, model, systemPrompt, userPrompt, settings, signal, userId, sessionId, timeoutMs);
             recordKeyResult(provider, apiKey, { success: true });
             return result;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -475,6 +477,10 @@ async function callProviderWithRetry(
             const isServerError = status && status >= 500;
 
             if (isAbort) {
+                throw error;
+            }
+            // 内部超时不是 key 的问题，不能换 key 重试；直接交给上层降级/退款。
+            if (typeof error.message === 'string' && error.message.startsWith('[Timeout]')) {
                 throw error;
             }
 
@@ -523,7 +529,8 @@ async function callProviderInternal(
     settings: AISettings,
     signal?: AbortSignal,
     userId?: string | null,
-    sessionId?: string | null
+    sessionId?: string | null,
+    timeoutOverrideMs?: number
 ): Promise<string> {
     const serviceKey = `text-${provider}`;
 
@@ -582,6 +589,10 @@ async function callProviderInternal(
     // 顾问叙事报告（v2）在 qwen-plus 上生成 3-6K tokens 需要 60s+，30s 必超时。
     // 可用 AI_TEXT_TIMEOUT_MS 覆盖（analyze 路由 maxDuration=90s，保持 10s 余量）。
     const TEXT_TIMEOUT_MS = (() => {
+        // 路由传入的剩余预算优先：队列等待后不能再用完整的 80s 超时，否则外层先 abort。
+        if (typeof timeoutOverrideMs === "number" && Number.isFinite(timeoutOverrideMs)) {
+            return Math.max(5_000, Math.min(85_000, Math.floor(timeoutOverrideMs)));
+        }
         const envTimeout = Number(process.env.AI_TEXT_TIMEOUT_MS);
         return Number.isInteger(envTimeout) && envTimeout >= 5000 && envTimeout <= 85000 ? envTimeout : 80000;
     })();
@@ -638,7 +649,9 @@ async function callProviderInternal(
         return completion.choices[0]?.message?.content || "";
     } catch (err) {
         const e = err as Error & { name?: string };
-        const isTimeout = e.name === 'AbortError' && !signal?.aborted;
+        // 以内部 controller 是否 abort 为准：OpenAI SDK 有时把超时包装成普通 Error
+        // （如 "This operation was aborted"），只看 e.name === 'AbortError' 会漏判。
+        const isTimeout = controller.signal.aborted && !signal?.aborted;
 
         // 记录失败/超时调用（超时时服务商可能已处理并计费）
         await recordAIUsage({
@@ -658,6 +671,10 @@ async function callProviderInternal(
         // 客户端主动取消或内部超时不应计入熔断器失败统计
         if (!isTimeout && !signal?.aborted) {
             circuitBreaker.recordFailure(serviceKey);
+        }
+        if (isTimeout) {
+            // 内部超时必须走 provider 失败/降级/退款路径，不能被上层当成客户端取消。
+            throw new Error(`[Timeout] Text AI 响应超时（${provider}/${model}）`);
         }
         throw err;
     } finally {

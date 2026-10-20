@@ -600,8 +600,18 @@ export default function QuestionsPage() {
     const processSubmission = (finalAnswers: Record<string, unknown>) => {
         setIsSubmitting(true);
         safeStorage.set(STORAGE_KEYS.ADVISOR_ANSWERS, JSON.stringify(finalAnswers));
+        // 新问卷提交：清掉上一份结果/分析中标记，避免 /result 恢复旧报告劫持新会话。
+        // 免费重试的旧 sessionId 单独保存在 ADVISOR_FREE_RETRY_SESSION_ID，不受影响。
+        safeStorage.remove(STORAGE_KEYS.ADVISOR_RESULT);
+        safeStorage.remove(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
+        try {
+            sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
+            sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
+        } catch { /* ignore */ }
         trackQuestionnaireComplete(finalAnswers);
-        navPush("/face-scan");
+        // 性别不一致免费重试：复用已存的面部结果，跳过 face-scan/视觉 AI，直接进入 analyze。
+        const isFreeRetry = safeStorage.get(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
+        navPush(isFreeRetry ? "/result?status=analyzing" : "/face-scan");
     };
 
     // 辅助函数：处理带特定答案的完成逻辑

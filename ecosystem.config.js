@@ -4,12 +4,19 @@
  * 不要启用 cluster 模式，否则多个进程会竞争处理同一限流计数
  * 
  * 安全警告：切勿在此文件中硬编码 API Key！
- * 所有敏感配置应通过 env_file 指定的 .env.production 文件加载。
+ * 敏感配置由 scripts/copy-standalone-assets.js 复制到
+ * .next/standalone/.env.production，standalone server.js 启动时读取。
+ * PM2 的 env_file 不是官方支持的配置项，不要依赖它。
  */
 module.exports = {
     apps: [{
         name: 'skin-advisor',
-        script: 'node .next/standalone/server.js',
+        // 直接以 Node 运行 standalone server，避免 bash -c 包装导致
+        // PM2 无法正确监控 Node 内存/信号。
+        script: '.next/standalone/server.js',
+        cwd: __dirname,
+        interpreter: 'node',
+        node_args: '--max-old-space-size=2048',
         instances: 1,
         exec_mode: 'fork',
         env: {
@@ -28,13 +35,11 @@ module.exports = {
         autorestart: true,
         max_restarts: 10,
         min_uptime: '10s',
-        // 内存限制
-        max_memory_restart: '6G',
+        // 内存限制：服务器 4G，Node heap 2G；3G RSS 触发重启，低于整机 OOM
+        max_memory_restart: '3G',
         // 优雅关闭 (15s 充足余量)
         kill_timeout: 15000,
         listen_timeout: 10000,
-        // 环境变量文件
-        env_file: './.env.production',
     }]
 };
 

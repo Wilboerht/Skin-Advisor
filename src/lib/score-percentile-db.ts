@@ -33,6 +33,8 @@ async function loadDistribution(): Promise<ScoreDistribution> {
                    COALESCE("analysisCompletedAt", "completedAt", "createdAt") AS ordered_at
             FROM "AdvisorSession"
             WHERE "userId" IS NOT NULL
+              -- 排除 face-analyze 的中间态（只有 faceAnalysis、报告未完成）
+              AND "completedAt" IS NOT NULL
               AND ("analysisResult"->'faceAnalysis'->>'overallScore') ~ '^[0-9]+(\\.[0-9]+)?$'
             ORDER BY "userId", ordered_at DESC
         )

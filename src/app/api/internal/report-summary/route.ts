@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { extractReportSummary } from "@/lib/internal-report";
+import { isCompletedAnalysisResult } from "@/lib/analysis-result";
 import { getScoreDistribution } from "@/lib/score-percentile-db";
 import { percentileFromDistribution } from "@/lib/score-percentile";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
             select: { analysisResult: true, answers: true, expiresAt: true, createdAt: true },
         });
 
-        if (!session?.analysisResult) {
+        if (!session?.analysisResult || !isCompletedAnalysisResult(session.analysisResult)) {
             return NextResponse.json({ found: false }, { status: 404 });
         }
         if (session.expiresAt && new Date() > new Date(session.expiresAt)) {

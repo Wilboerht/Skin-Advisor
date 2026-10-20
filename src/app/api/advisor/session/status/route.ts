@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
-import { normalizeAnalysisResult } from "@/lib/analysis-result";
+import { isCompletedAnalysisResult, normalizeAnalysisResult } from "@/lib/analysis-result";
 import { logger } from "@/lib/logger";
 
 export const maxDuration = 10;
@@ -60,8 +60,10 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // 4. 状态判断
-        const isCompleted = !!session.completedAt && !!session.analysisResult;
+        // 4. 状态判断：以 analysisResult 的实际内容为准。
+        // completedAt 是展示/排序字段；持久化拆步后它可能短暂为空，但报告已经可读。
+        const rawResult = session.analysisResult as Record<string, unknown> | null;
+        const isCompleted = isCompletedAnalysisResult(rawResult);
         const isStarted = !!session.analysisStartedAt;
         // 免费重试进行中：completedAt 保留旧报告，analysisStartedAt 被更新为本次重试开始时间。
         // 此时必须返回 analyzing，否则轮询会立刻拿到旧报告，前端误以为重试已完成。

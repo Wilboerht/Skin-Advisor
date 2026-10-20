@@ -130,6 +130,19 @@ function normalizeConsultantReport(raw: unknown): ConsultantReport | undefined {
  * - 新格式: { skinProfile, analysis, products, dataSource }
  * - 旧格式: { skinAnalysis, faceAnalysis, products, ... }
  */
+/**
+ * 是否为“可展示的完整报告”，用于区分 face-analyze 写入的中间态
+ * （analysisResult 只有 faceAnalysis）与 v2/旧 v1 完整报告。
+ */
+export function isCompletedAnalysisResult(raw: unknown): boolean {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return false;
+    const record = raw as Record<string, unknown>;
+    if (record.reportVersion === 2) return true;
+    if (record.consultantReport != null && typeof record.consultantReport === "object") return true;
+    // 旧 v1 报告：没有 reportVersion，但有肤质/分析主体
+    return record.skinProfile != null || record.skinAnalysis != null || record.analysis != null;
+}
+
 export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | null {
     if (!raw || typeof raw !== 'object') return null;
     const record = raw as Record<string, unknown>;

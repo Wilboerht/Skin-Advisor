@@ -34,7 +34,7 @@ describe("parseFailedAnalysisRetry", () => {
         expect(parsed).toEqual(record());
     });
 
-    it("超过 30 分钟视为过期", () => {
+    it("超过 TTL 视为过期", () => {
         const raw = serializeFailedAnalysisRetry(record());
         expect(parseFailedAnalysisRetry(raw, 1_000_000 + FAILED_ANALYSIS_RETRY_TTL_MS - 1)).not.toBeNull();
         expect(parseFailedAnalysisRetry(raw, 1_000_000 + FAILED_ANALYSIS_RETRY_TTL_MS)).toBeNull();

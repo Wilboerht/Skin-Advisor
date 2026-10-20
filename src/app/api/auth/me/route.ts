@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ssoVerifier, getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, upsertLocalUser, getLocalSessionDbUser, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokensSingleFlight } from "@/lib/sso-auth";
+import { ssoVerifier, getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, upsertLocalUser, getLocalSessionDbUser, isAccessTokenRevoked, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokensSingleFlight } from "@/lib/sso-auth";
 import { rotateLocalSession, applyLocalSessionCookies, AUTH_REFRESH_COOKIE_NAME } from "@/lib/auth";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import { apiError } from "@/lib/api-response";
@@ -16,7 +16,9 @@ export async function GET(req: NextRequest) {
     }
 
     const token = await getAccessToken(req);
-    let payload = token ? await ssoVerifier.verify(token) : null;
+    // 登出撤销黑名单：不能直接 ssoVerifier.verify，否则已撤销的 access token
+    // 仍可在 TTL 内重新换发本地会话。
+    let payload = token && !isAccessTokenRevoked(token) ? await ssoVerifier.verify(token) : null;
 
     // access_token（15 分钟）过期后，用 refresh_token 静默轮换，避免页面停留期间掉登录态
     // 单飞：并发 /api/auth/me 共享同一次轮换，避免一次性 refresh_token 互相踩踏
@@ -26,7 +28,7 @@ export async function GET(req: NextRequest) {
         const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
         if (refreshToken) {
             refreshed = await refreshSsoTokensSingleFlight(refreshToken);
-            if (refreshed) {
+            if (refreshed && !isAccessTokenRevoked(refreshed.access_token)) {
                 payload = await ssoVerifier.verify(refreshed.access_token);
             }
         }
@@ -99,7 +101,9 @@ export async function GET(req: NextRequest) {
             localUser = await upsertLocalUser(payload, {
                 nickname: info.nickname ?? profileClaims?.nickname,
                 avatar: info.avatar ?? profileClaims?.avatar,
-                phone: info.phone ?? profileClaims?.phone,
+                // 手机号只接受已验证 access token（payload.phone）或服务端 userinfo；
+                // id_token 未验签，不能用于落库/授权。
+                phone: info.phone,
                 membershipLevel: info.membershipLevel,
                 totalSpent: info.totalSpent,
                 gender: info.gender,
@@ -115,7 +119,7 @@ export async function GET(req: NextRequest) {
     const response = NextResponse.json({
         user: {
             id: payload.sub,
-            phone: localUser?.phoneNumber || payload.phone || profileClaims?.phone || maskedPhone,
+            phone: localUser?.phoneNumber || payload.phone || maskedPhone,
             // 不再回退手机号：手机号只用于 phone 字段，昵称缺失时前端自行展示默认文案
             name: localUser?.name || "",
             avatar: localUser?.avatarUrl || null,

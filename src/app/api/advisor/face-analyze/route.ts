@@ -22,11 +22,45 @@ import { recordAIUsage } from "@/lib/ai-budget";
 import { hashIP } from "@/lib/privacy";
 import { isManagedUploadPath } from "@/lib/upload-paths";
 import prisma from "@/lib/prisma";
+import { withDbRetry } from "@/lib/utils";
+import { Prisma } from "@prisma/client";
 import { aiLogger } from "@/lib/logger";
 
 import { visionQueue } from "@/lib/ai-queue";
 
 export const maxDuration = 100; // 保留 10s 缓冲给 90s serverTimeout，防止平台先杀掉
+
+/**
+ * 只允许服务端签发的 guest/ 上传对象，且远程 URL 必须来自配置的 OSS 域名。
+ * 防止把任意 http(s) URL 交给视觉 provider 抓取（SSRF/分析非本站图片）。
+ */
+function isAllowedRemoteUploadUrl(value: string): boolean {
+    if (!/^https?:\/\//i.test(value)) return true;
+    if (!isManagedUploadPath(value)) return false;
+    try {
+        const host = new URL(value).hostname.toLowerCase();
+        const allowed = new Set<string>();
+        const publicDomain = process.env.ALI_OSS_PUBLIC_DOMAIN;
+        if (publicDomain) {
+            try {
+                const normalized = /^https?:\/\//i.test(publicDomain)
+                    ? publicDomain
+                    : `https://${publicDomain}`;
+                allowed.add(new URL(normalized).hostname.toLowerCase());
+            } catch {
+                // ignore invalid public domain
+            }
+        }
+        if (process.env.ALI_OSS_BUCKET && process.env.ALI_OSS_REGION) {
+            allowed.add(
+                `${process.env.ALI_OSS_BUCKET}.${process.env.ALI_OSS_REGION}.aliyuncs.com`.toLowerCase()
+            );
+        }
+        return allowed.has(host);
+    } catch {
+        return false;
+    }
+}
 
 // 脸部分析结果缓存（图片 hash -> 分析结果）
 // 同一用户重复上传相同图片时跳过 AI 调用，节省成本
@@ -73,10 +107,13 @@ function setCachedResult(key: string, sessionId: string, result: Record<string, 
 
 export async function POST(request: NextRequest) {
     // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
-    // 90s：与视觉层内部超时（ai-vision.ts，90s）对齐；qwen3-vl-plus 多图实测 >55s，
-    // 旧值 55s 会在模型正常响应途中误杀请求（Cloudflare 100s 上限内）
+    // 视觉内部超时 70s + 队列 15s = 85s，路由 90s 留 5s 清理；Cloudflare 100s 上限内
     const abortController = new AbortController();
-    const serverTimeout = setTimeout(() => abortController.abort(), 90 * 1000);
+    let serverTimedOut = false;
+    const serverTimeout = setTimeout(() => {
+        serverTimedOut = true;
+        abortController.abort();
+    }, 90 * 1000);
 
     const onClientAbort = () => {
         clearTimeout(serverTimeout);
@@ -87,6 +124,8 @@ export async function POST(request: NextRequest) {
     // 0.1 拒绝超大请求体（> 10MB），防止恶意大文件耗尽带宽
     const contentLength = Number(request.headers.get("content-length") || 0);
     if (contentLength > 10 * 1024 * 1024) {
+        clearTimeout(serverTimeout);
+        request.signal.removeEventListener('abort', onClientAbort);
         return NextResponse.json(
             { error: "图片过大，请压缩后上传" },
             { status: 413 }
@@ -98,6 +137,8 @@ export async function POST(request: NextRequest) {
     let faceSessionId: string | undefined;
     // 预占是否已成功：外层 catch 仅在预占后才回滚，避免预占前异常触发误回滚
     let reserved = false;
+    // 预占归属用户：回滚不依赖会话仍然有效，避免留下孤儿 TestRecord
+    let reservationUserId: string | undefined;
 
     try {
         // 0. 检查 AI 开关
@@ -162,26 +203,113 @@ export async function POST(request: NextRequest) {
 
         // 1.5 每日用量上限预占（复用业务 sessionId，避免与 analyze 重复扣费）
         faceSessionId = result.data.sessionId || crypto.randomUUID();
+        const authUser = await getSessionUser(request);
+        if (!authUser) {
+            return NextResponse.json(
+                { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: "请先登录后再进行面部分析" }, requireLogin: true },
+                { status: 401 }
+            );
+        }
+        const ipHash = hashIP(ip);
+
         // 清理僵尸会话：库中 ip 存的是 hashIP 哈希值，必须用哈希后查询才能命中。
         // 阈值 5 分钟 > 最坏耗时（队列等待 60s + maxDuration 100s），避免误杀在途分析
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
         await prisma.advisorSession.updateMany({
-            where: { ip: hashIP(ip), analysisStartedAt: { lt: fiveMinutesAgo }, completedAt: null },
+            where: { ip: ipHash, analysisStartedAt: { lt: fiveMinutesAgo }, completedAt: null },
             data: { analysisStartedAt: null },
         });
 
-        // 已完成会话不允许再次调用视觉分析（必须在预占之前检查，避免先扣次再拒绝）：
-        // 否则用户可用同一个已完成 sessionId + 新图片反复刷视觉 AI。
-        const completedSession = await prisma.advisorSession.findUnique({
+        // 确保会话占位行存在：面部分析结果需要按 sessionId 持久化，
+        // 后续 /analyze 只信服务端结果，不再信任客户端回传的 faceAnalysis。
+        await prisma.advisorSession.upsert({
             where: { sessionId: faceSessionId },
-            select: { completedAt: true },
+            update: {},
+            create: {
+                sessionId: faceSessionId,
+                userId: authUser.id,
+                ip: ipHash,
+                faceScanUsed: false,
+            },
         });
-        if (completedSession?.completedAt) {
+
+        const existingSession = await prisma.advisorSession.findUnique({
+            where: { sessionId: faceSessionId },
+            select: { userId: true, completedAt: true, analysisStartedAt: true, analysisResult: true },
+        });
+        if (!existingSession) {
+            return apiError(ErrorCode.INTERNAL_ERROR, "会话创建失败，请重试", 500);
+        }
+        if (existingSession.userId && existingSession.userId !== authUser.id) {
+            // 不暴露会话存在性
+            return apiError(ErrorCode.NOT_FOUND, "报告会话不存在或无权访问", 404);
+        }
+        const existingFace = (existingSession.analysisResult as Record<string, unknown> | null)?.faceAnalysis as
+            | Record<string, unknown>
+            | undefined;
+        if (existingFace) {
+            // 服务端已有结果：重复请求 / 免费重试直接复用，不扣次、不调 AI
+            return NextResponse.json(existingFace, {
+                headers: { ...rateLimitHeaders, "X-Cache": "SESSION" },
+            });
+        }
+        if (existingSession.completedAt) {
             return apiError("ANALYSIS_COMPLETED", "该会话已完成分析，请开始新的测试", 409);
+        }
+        // 文本分析已在进行：不要同时启动视觉，避免报告用的 face 结果与文本结果错位
+        if (existingSession.analysisStartedAt && existingSession.analysisStartedAt > fiveMinutesAgo) {
+            return NextResponse.json(
+                { status: "analyzing", sessionId: faceSessionId, message: "分析正在进行中，请稍候" },
+                { status: 202, headers: rateLimitHeaders }
+            );
+        }
+
+        // 条件 claim：同一 session 同一时刻只允许一个 face-analyze 调用视觉 AI。
+        // 之前只要 reserveUsage 返回 alreadyReserved 就继续调用，导致同一 session 重复计费。
+        const claimed = await prisma.advisorSession.updateMany({
+            where: {
+                sessionId: faceSessionId,
+                faceScanCompletedAt: null,
+                // 文本分析已开始/进行中时不允许再启动视觉
+                analysisStartedAt: null,
+                AND: [
+                    { OR: [{ userId: authUser.id }, { userId: null }] },
+                    { OR: [{ faceScanStartedAt: null }, { faceScanStartedAt: { lt: fiveMinutesAgo } }] },
+                ],
+            },
+            data: {
+                faceScanStartedAt: new Date(),
+                faceScanUsed: true,
+                userId: authUser.id,
+                ip: ipHash,
+            },
+        });
+        if (claimed.count === 0) {
+            const after = await prisma.advisorSession.findUnique({
+                where: { sessionId: faceSessionId },
+                select: { analysisResult: true, userId: true },
+            });
+            const afterFace = (after?.analysisResult as Record<string, unknown> | null)?.faceAnalysis as
+                | Record<string, unknown>
+                | undefined;
+            if (afterFace && after?.userId === authUser.id) {
+                return NextResponse.json(afterFace, {
+                    headers: { ...rateLimitHeaders, "X-Cache": "SESSION" },
+                });
+            }
+            return NextResponse.json(
+                { status: "analyzing", sessionId: faceSessionId, message: "面部分析正在进行中，请稍候" },
+                { status: 202, headers: rateLimitHeaders }
+            );
         }
 
         const usageReserve = await reserveUsage(request, faceSessionId);
         if (!usageReserve.success) {
+            // claim 后预占失败：释放租约，让用户可以重新发起
+            await prisma.advisorSession.updateMany({
+                where: { sessionId: faceSessionId, faceScanCompletedAt: null },
+                data: { faceScanStartedAt: null },
+            }).catch(() => undefined);
             // 游客测肤需登录：返回 401（非 429），前端据此引导登录
             if (usageReserve.requireLogin) {
                 return NextResponse.json(
@@ -201,6 +329,7 @@ export async function POST(request: NextRequest) {
         // alreadyReserved（刷新重试同 sessionId，幂等命中既有预占）时不得回滚：
         // 该 TestRecord 由首次请求创建，此处回滚会误删他人预占导致漏扣一次。
         reserved = !usageReserve.alreadyReserved;
+        reservationUserId = usageReserve.userId ?? authUser.id;
 
         // Dynamic imports for file handling
         const fs = await import('fs/promises');
@@ -218,6 +347,11 @@ export async function POST(request: NextRequest) {
         // 注意：本地上传的 publicUrl 以 /uploads/ 开头，需去掉该前缀再定位到实际文件
         const resolveLocalUploadPath = (imgData: string): string | null => {
             try {
+                // 只允许服务端签发的 guest/ 上传对象，不能读取 products/avatars 等任意文件
+                if (!isManagedUploadPath(imgData)) {
+                    aiLogger.warn(`Blocked non-managed local upload path: ${imgData}`);
+                    return null;
+                }
                 let relativePath = imgData.startsWith('/') ? imgData.slice(1) : imgData;
                 // 统一去掉 /uploads/ 前缀，避免重复 public/uploads/uploads/... 路径
                 if (relativePath.startsWith('uploads/')) {
@@ -240,7 +374,13 @@ export async function POST(request: NextRequest) {
         // Helper to resolve and optionally compress image data
         const resolveImageData = async (imgData: string, compress: boolean = false) => {
             if (!imgData) return null;
-            if (imgData.startsWith('http')) return imgData; // Full URL
+            if (imgData.startsWith('http')) {
+                if (!isAllowedRemoteUploadUrl(imgData)) {
+                    aiLogger.warn(`Blocked non-managed remote image URL: ${imgData}`);
+                    return null;
+                }
+                return imgData;
+            }
 
             // Handle Local Files
             let buffer: Buffer | null = null;
@@ -336,6 +476,50 @@ export async function POST(request: NextRequest) {
             return loadedCoordinates;
         };
 
+        // 把面部分析结果持久化到会话，供 /analyze 使用。
+        // 客户端回传的 faceAnalysis 不再作为可信来源；重复请求/免费重试直接复用这里的结果。
+        const persistFaceResult = async (faceResult: Record<string, unknown>) => {
+            const sid = faceSessionId;
+            if (!sid) throw new Error("missing faceSessionId");
+            try {
+                await withDbRetry(async () => {
+                    const row = await prisma.advisorSession.findUnique({
+                        where: { sessionId: sid },
+                        select: { analysisResult: true },
+                    });
+                    const existing = (row?.analysisResult as Record<string, unknown> | null) ?? {};
+                    await prisma.advisorSession.update({
+                        where: { sessionId: sid },
+                        data: {
+                            analysisResult: { ...existing, faceAnalysis: faceResult } as unknown as Prisma.InputJsonValue,
+                            faceScanStartedAt: null,
+                            faceScanCompletedAt: new Date(),
+                            faceScanUsed: true,
+                            userId: authUser.id,
+                            ip: ipHash,
+                        },
+                    });
+                });
+            } catch (err) {
+                // 持久化失败时释放租约，允许客户端用同 session 重试；
+                // 视觉调用已发生，不能回滚额度（保留预占，避免免费重试漏洞）。
+                await prisma.advisorSession.updateMany({
+                    where: { sessionId: sid, faceScanCompletedAt: null },
+                    data: { faceScanStartedAt: null },
+                }).catch(() => undefined);
+                throw err;
+            }
+        };
+
+        // 失败/早退时释放 faceScanStartedAt 租约，否则同一会话 5 分钟内重试只会拿到 202。
+        const releaseFaceClaim = async () => {
+            if (!faceSessionId) return;
+            await prisma.advisorSession.updateMany({
+                where: { sessionId: faceSessionId, faceScanCompletedAt: null },
+                data: { faceScanStartedAt: null },
+            }).catch(() => undefined);
+        };
+
         // Initial Load (Compressed Quality to prevent Payload Too Large & reduce latency)
         let validImages = await loadImages(true);
 
@@ -345,8 +529,9 @@ export async function POST(request: NextRequest) {
             .map(img => img.data);
 
         if (validImages.length === 0) {
-            // 无有效图片属于预占后早退，需回滚额度（参照下方 [Validation] 分支）
-            if (reserved) await rollbackUsage(request, faceSessionId);
+            // 无有效图片属于预占后早退，需回滚额度并释放租约
+            await releaseFaceClaim();
+            if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
             return apiError(ErrorCode.VALIDATION_ERROR, "无有效图片数据", 400);
         }
 
@@ -361,7 +546,7 @@ export async function POST(request: NextRequest) {
         }
 
         // --- Registered user deep analysis prompt injection ---
-        const session = await getSessionUser(request);
+        const session = authUser;
         const isLoggedIn = !!session;
 
         if (isLoggedIn && REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION) {
@@ -399,6 +584,15 @@ export async function POST(request: NextRequest) {
                     totalTokens: 0,
                     success: true,
                 });
+                try {
+                    await persistFaceResult(cachedResult);
+                } catch (persistErr) {
+                    aiLogger.error("[FaceAnalyze] Failed to persist cached face result", {
+                        error: String(persistErr),
+                        sessionId: faceSessionId,
+                    });
+                    return apiError("AI_UNAVAILABLE", "分析结果保存未成功，请重试", 503);
+                }
                 return NextResponse.json(cachedResult, {
                     headers: {
                         ...rateLimitHeaders,
@@ -413,8 +607,8 @@ export async function POST(request: NextRequest) {
             // 这是一个异步操作，如果队列已满会等待，直到超时
             aiLogger.debug(`[Queue] Requesting lock. Stats:`, visionQueue.getStats() as unknown as Record<string, unknown>);
             // 透传 userId 使队列的 maxConcurrentPerUser 生效
-            // 队列等待最多 20s：给 qwen3-vl-plus（实测 >55s）留出足够生成时间
-            await visionQueue.acquire({ timeoutMs: 20_000, signal: abortController.signal, userId: session?.id });
+            // 队列等待最多 15s：视觉内部超时 70s，合计 85s，留出路由 90s 缓冲
+            await visionQueue.acquire({ timeoutMs: 15_000, signal: abortController.signal, userId: session?.id });
             acquired = true;
             aiLogger.debug(`[Queue] Lock acquired.`);
 
@@ -433,13 +627,17 @@ export async function POST(request: NextRequest) {
             } catch (e: unknown) {
                 const err = e as Error;
                 if (err.message?.includes("cancelled") || err.name === 'AbortError') {
-                    throw new Error("Face analysis cancelled (client timeout or disconnect)");
+                    // 服务端 90s 预算耗尽可重试/退款；只有客户端主动断开才按 499 处理
+                    if (serverTimedOut) {
+                        throw new Error("[Timeout] Face analysis aborted by server timeout");
+                    }
+                    throw new Error("Face analysis cancelled (client disconnect)");
                 }
                 // 图片验证拦截（非真人/翻拍/遮挡等），直接返回友好提示
                 if (err.message?.includes("[Validation]")) {
                     const reason = err.message.replace("[Validation] ", "");
                     aiLogger.warn(`Face validation failed: ${reason}`);
-                    if (reserved) await rollbackUsage(request, faceSessionId);
+                    if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
                     return apiError("VALIDATION_FAILED", "图片验证失败", 400, reason || "未检测到清晰人脸，请重新拍摄");
                 }
                 // Retry if payload error
@@ -455,7 +653,7 @@ export async function POST(request: NextRequest) {
                     if (perImageAvgKB < 100) {
                         aiLogger.warn(`[FaceAnalyze] Payload error but images already small (avg ${perImageAvgKB.toFixed(0)}KB), not retrying`);
                         // 回滚预占（非用户原因）
-                        if (reserved) await rollbackUsage(request, faceSessionId);
+                        if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
                         const response = apiError("AI_PAYLOAD_ERROR", "AI 视觉服务请求异常，请稍后重试", 503);
                         response.headers.set("Retry-After", "30");
                         return response;
@@ -497,7 +695,7 @@ export async function POST(request: NextRequest) {
                         if (re.message?.includes("[Validation]")) {
                             const reason = re.message.replace("[Validation] ", "");
                             aiLogger.warn(`Face validation failed on retry: ${reason}`);
-                            if (reserved) await rollbackUsage(request, faceSessionId);
+                            if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
                             return apiError("VALIDATION_FAILED", "图片验证失败", 400, reason || "未检测到清晰人脸，请重新拍摄");
                         }
                         throw retryErr;
@@ -512,12 +710,23 @@ export async function POST(request: NextRequest) {
             if (validation && validation.isValid === false) {
                 aiLogger.warn(`Face validation failed: ${validation.message}`);
                 // 图片验证失败属于非用户主动消耗额度场景，回滚预占
-                if (reserved) await rollbackUsage(request, faceSessionId);
+                if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
                 return apiError("VALIDATION_FAILED", "图片验证失败", 400, validation.message || "未检测到清晰人脸，请重新拍摄");
             }
 
             // 缓存有效结果（不含 validation 字段的纯结果）
             setCachedResult(cacheKey, faceSessionId || ip, analysisResult);
+
+            // 先持久化到会话，再返回；/analyze 只读服务端结果。
+            try {
+                await persistFaceResult(analysisResult);
+            } catch (persistErr) {
+                aiLogger.error("[FaceAnalyze] Failed to persist face result", {
+                    error: String(persistErr),
+                    sessionId: faceSessionId,
+                });
+                return apiError("AI_UNAVAILABLE", "分析结果保存未成功，请重试", 503);
+            }
 
             return NextResponse.json(analysisResult, {
                 headers: {
@@ -531,12 +740,14 @@ export async function POST(request: NextRequest) {
         } catch (aiError: unknown) {
             const err = aiError instanceof Error ? aiError : new Error(String(aiError));
             aiLogger.error("AI Analysis Failed", { error: err.message });
+            // 视觉失败/取消：释放租约，允许同 session 重试（额度是否回滚由下方分支决定）
+            await releaseFaceClaim();
 
             // 单用户日限（[AIUserLimit]）：用户侧限额，不是平台故障——
             // 429 + 直接展示原因，不能用"服务暂不可用"误导
             if (err.message?.includes("[AIUserLimit]")) {
                 if (faceSessionId && reserved) {
-                    await rollbackUsage(request, faceSessionId);
+                    await rollbackUsage(request, faceSessionId, reservationUserId);
                 }
                 const msg = err.message.replace("[AIUserLimit]", "").trim() || "今日分析次数已达上限";
                 return apiError("USER_DAILY_LIMIT", msg, 429);
@@ -547,7 +758,7 @@ export async function POST(request: NextRequest) {
             if (isBudgetExceeded) {
                 aiLogger.warn("AI vision budget exceeded, rejecting request", { error: err.message });
                 if (faceSessionId && reserved) {
-                    await rollbackUsage(request, faceSessionId);
+                    await rollbackUsage(request, faceSessionId, reservationUserId);
                 }
                 const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "3600");
@@ -557,7 +768,7 @@ export async function POST(request: NextRequest) {
             // 内部视觉超时（ai-vision.ts 包装为 [Timeout]）：provider 侧失败而非客户端取消，
             // 回滚预占并返回可重试 503（与下方通用失败分支一致）
             if (err.message?.includes("[Timeout]")) {
-                if (reserved) await rollbackUsage(request, faceSessionId);
+                if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
                 const response = apiError("AI_UNAVAILABLE", "AI 分析服务暂时不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "60");
                 return response;
@@ -571,7 +782,7 @@ export async function POST(request: NextRequest) {
 
             // 队列超时特有错误（AI 未被调用，零消耗）
             if (err.message?.includes("Queue timeout") || err.message?.includes("Server busy")) {
-                if (reserved) await rollbackUsage(request, faceSessionId);
+                if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
                 const response = apiError("SERVER_BUSY", "服务器繁忙，请稍后再试", 503);
                 response.headers.set("Retry-After", "30");
                 return response;
@@ -579,7 +790,7 @@ export async function POST(request: NextRequest) {
 
             // AI 服务不可用（API 错误，Provider 未成功处理），回滚预占
             aiLogger.warn("AI service unavailable, rolling back usage");
-            if (reserved) await rollbackUsage(request, faceSessionId);
+            if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
             const response = apiError("AI_UNAVAILABLE", "AI 分析服务暂时不可用，请稍后重试", 503);
             response.headers.set("Retry-After", "60");
             return response;
@@ -628,12 +839,18 @@ export async function POST(request: NextRequest) {
 
     } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
+        if (faceSessionId) {
+            await prisma.advisorSession.updateMany({
+                where: { sessionId: faceSessionId, faceScanCompletedAt: null },
+                data: { faceScanStartedAt: null },
+            }).catch(() => undefined);
+        }
         if (err.message?.includes("cancelled") || (err as { name?: string }).name === 'AbortError') {
             return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消，请重试", 499);
         }
         // 服务器内部错误，非用户原因，回滚预占（仅限预占成功后的异常）
         if (faceSessionId && reserved) {
-            await rollbackUsage(request, faceSessionId);
+            await rollbackUsage(request, faceSessionId, reservationUserId);
         }
         // 使用脱敏 logger，避免 error 对象泄露请求上下文
         aiLogger.error("Critical error in face analysis", {

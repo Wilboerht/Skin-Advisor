@@ -98,6 +98,16 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 
+    # 人脸/游客上传禁止走公网文件服务，避免生物特征照片被直接访问和 CDN 缓存
+    location /uploads/guest/ {
+        return 404;
+        add_header Cache-Control "no-store" always;
+    }
+
+    location /api/file/guest/ {
+        return 404;
+    }
+
     location /uploads/ {
         alias /path/to/your/project/public/uploads/;
         expires 30d;

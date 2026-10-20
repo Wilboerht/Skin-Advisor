@@ -101,6 +101,8 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
   const [birthdayLockedHint, setBirthdayLockedHint] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  // 历史头像文件可能已被清理（avatars/ 30 天清理旧策略），加载失败时回退默认图
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   // 资料读请求序号：账号切换/连续重取时作废旧响应，避免写回串场
   const profileSeqRef = useRef(0);
@@ -234,7 +236,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
     savingRef.current = true;
     setSaving("avatar");
     try {
-      const url = await uploadImage(file, file.name || "avatar.jpg");
+      const url = await uploadImage(file, file.name || "avatar.jpg", { kind: "avatar" });
       await requestProfilePatch({ avatar: url });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "头像上传未成功，请稍后再试");
@@ -304,6 +306,11 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
   // 空串（历史脏数据/无昵称）同样回退，避免面板标题显示空白
   const displayName = profile?.nickname || user.name || "朋友";
   const displayAvatar = profile?.avatar ?? user.avatar;
+  // 头像 URL 失效（历史文件被清理/远端 404）时回退默认图，避免展示破图
+  const avatarSrc = avatarLoadError || !displayAvatar ? "/images/default-avatar.png" : displayAvatar;
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [displayAvatar]);
   // 性别：BFF 资料优先（含主站 claim）；资料未加载/字段缺失（undefined）时回退会话字段，null = 保密
   const genderValue = profile?.gender !== undefined ? profile.gender ?? null : user.gender ?? null;
   const genderLabel = genderValue === "male" ? "男" : genderValue === "female" ? "女" : "保密";
@@ -353,10 +360,11 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
             >
               {/* 未自定义头像的新用户使用默认头像（与主站 / SSO 输出口径一致） */}
               <Image
-                src={displayAvatar || "/images/default-avatar.png"}
+                src={avatarSrc}
                 alt=""
                 fill
                 unoptimized
+                onError={() => setAvatarLoadError(true)}
                 className="object-cover"
               />
               <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition-all group-hover:bg-black/30">

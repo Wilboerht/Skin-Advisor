@@ -42,6 +42,11 @@ export async function authorizeAccountBff(
 
     const token = await resolveOfficialAccessToken(req);
     if (!token) {
+        // 诊断用：区分“本地会话有效但官网 token 解析失败”与真正的未登录
+        logger.warn("[account-bff] No official access token", {
+            userId: user.id,
+            scope: options.scope,
+        });
         return { error: bffError("UNAUTHORIZED", "登录已过期，请重新登录", 401) };
     }
 

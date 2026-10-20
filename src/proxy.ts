@@ -43,6 +43,23 @@ function isPublicPath(pathname: string): boolean {
 }
 const SENSITIVE_PATHS = ["/api/admin", "/api/cron"];
 
+// 页面缓存策略：只有公开静态内容页允许 CDN 短期缓存。
+// 报告/结果/个人中心/日记包含个人数据，必须禁止共享缓存与浏览器缓存。
+const PRIVATE_PAGE_PREFIXES = ["/reports", "/result", "/profile", "/diary"];
+const PUBLIC_CACHE_PAGE_PREFIXES = [
+    "/faq",
+    "/privacy",
+    "/terms",
+    "/services",
+    "/preview",
+    "/questions",
+    "/face-scan",
+];
+
+function matchesPathPrefix(pathname: string, prefix: string): boolean {
+    return pathname === prefix || pathname.startsWith(prefix + "/");
+}
+
 // AI 端点列表（高价值目标，需严格防护）
 const AI_ENDPOINTS = ["/api/advisor/analyze", "/api/advisor/face-analyze"];
 
@@ -403,18 +420,31 @@ export async function proxy(request: NextRequest) {
         response.headers.set("Cache-Control", "no-store, private");
     }
 
-    // 公共内容页允许 CDN 短期缓存（不含 admin 和 api）
+    // 页面缓存：个人页强制 private/no-store；公开页才允许 CDN 短期缓存。
     if (
         !pathname.startsWith("/api/") &&
         !pathname.startsWith("/admin/") &&
         !pathname.startsWith("/_next/") &&
-        !pathname.match(/\.\w+$/) &&
-        !response.headers.has("Cache-Control")
+        !pathname.match(/\.\w+$/)
     ) {
-        response.headers.set(
-            "Cache-Control",
-            "public, max-age=300, s-maxage=600, stale-while-revalidate=86400"
-        );
+        const isPrivatePage = PRIVATE_PAGE_PREFIXES.some((p) => matchesPathPrefix(pathname, p));
+        const isPublicCachePage =
+            pathname === "/" || PUBLIC_CACHE_PAGE_PREFIXES.some((p) => matchesPathPrefix(pathname, p));
+
+        if (isPrivatePage) {
+            response.headers.set("Cache-Control", "private, no-store");
+            const vary = response.headers.get("Vary");
+            if (!vary) {
+                response.headers.set("Vary", "Cookie");
+            } else if (!/\bCookie\b/i.test(vary)) {
+                response.headers.set("Vary", `${vary}, Cookie`);
+            }
+        } else if (isPublicCachePage && !response.headers.has("Cache-Control")) {
+            response.headers.set(
+                "Cache-Control",
+                "public, max-age=300, s-maxage=600, stale-while-revalidate=86400"
+            );
+        }
     }
 
     return response;

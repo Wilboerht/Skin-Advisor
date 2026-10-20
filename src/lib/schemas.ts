@@ -168,14 +168,16 @@ export const FaceAnalyzeRequestSchema = z.object({
         ).max(MAX_VISION_IMAGES, `最多上传 ${MAX_VISION_IMAGES} 张照片`),
         // 兼容旧的对象格式 { front: "base64" }
         z.object({
-            front: z.string().optional(),
-            left: z.string().optional(),
-            right: z.string().optional(),
-            chin: z.string().optional(),
+            front: z.string().max(MAX_IMAGE_BASE64_CHARS, "单张图片过大，请压缩后重试").optional(),
+            left: z.string().max(MAX_IMAGE_BASE64_CHARS, "单张图片过大，请压缩后重试").optional(),
+            right: z.string().max(MAX_IMAGE_BASE64_CHARS, "单张图片过大，请压缩后重试").optional(),
+            chin: z.string().max(MAX_IMAGE_BASE64_CHARS, "单张图片过大，请压缩后重试").optional(),
         })
     ]).optional(),
     image: z.string().max(MAX_IMAGE_BASE64_CHARS, "单张图片过大，请压缩后重试").optional(), // 兼容旧版单图
     skinState: z.string().max(30).optional(), // 拍摄时肌肤状态（bare/sunscreen/washed/light_makeup/heavy_makeup）
+    // 性别不一致免费重试：复用已完成会话的服务端面部结果，不重复调用视觉模型
+    freeRetry: z.boolean().optional(),
 }).refine(data => {
     if (data.image) return true;
     if (Array.isArray(data.images)) return data.images.length > 0;

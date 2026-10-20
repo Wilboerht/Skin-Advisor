@@ -48,6 +48,11 @@ export interface ReserveUsageResult {
     requireLogin?: boolean;
     /** sessionId 已被其他用户预占：调用方应返回 404/403，避免跨用户冒用 */
     forbidden?: boolean;
+    /**
+     * 预占归属用户 id。调用方回滚时应传回该 id，避免请求期间会话过期后
+     * rollbackUsage 重新 getSessionUser 失败，导致 TestRecord 永久残留。
+     */
+    userId?: string;
 }
 
 // ===== 会员测肤额度（四档会员规则，单点配置）=====
@@ -284,11 +289,11 @@ export async function reserveUsage(
                 const usedToday = count;
                 const usedTotal = lifetimeCount;
                 if (quota.dailyLimit != null && usedToday >= quota.dailyLimit) {
-                    return { success: false, error: DAILY_EXHAUSTED_MESSAGE, role: 'member' };
+                    return { success: false, error: DAILY_EXHAUSTED_MESSAGE, role: 'member', userId };
                 }
                 if (quota.lifetimeLimit != null && usedTotal >= quota.lifetimeLimit) {
                     const error = quota.level === 'SILVER' ? SILVER_EXHAUSTED_MESSAGE : REGULAR_EXHAUSTED_MESSAGE;
-                    return { success: false, error, role: 'member' };
+                    return { success: false, error, role: 'member', userId };
                 }
                 // upsert 语义：createMany + skipDuplicates 天然幂等，
                 // 按实际插入行数判断是否首次预占，避免重试导致的漏计/重复计数。
@@ -306,7 +311,7 @@ export async function reserveUsage(
                     });
                     if (!existing) {
                         // createMany 0 行却没有记录：极端并发/脏数据，按可重试失败处理
-                        return { success: false, role: 'member', error: '请稍后再试。' };
+                        return { success: false, role: 'member', error: '请稍后再试。', userId };
                     }
                     if (existing.userId !== userId) {
                         return {
@@ -317,9 +322,9 @@ export async function reserveUsage(
                         };
                     }
                     // 本人的重复请求/重试：幂等成功，本次未实际新增计数
-                    return { success: true, role: 'member', alreadyReserved: true };
+                    return { success: true, role: 'member', alreadyReserved: true, userId };
                 }
-                return { success: true, role: 'member' };
+                return { success: true, role: 'member', userId };
             });
         });
     } catch (e: unknown) {
@@ -327,10 +332,10 @@ export async function reserveUsage(
         // P2002 = unique constraint violation — createMany skipDuplicates 下不应再触发，
         // 保留作兼容兜底：视为幂等成功，但标记 alreadyReserved，调用方不得据此回滚。
         if ((err as { code?: string }).code === 'P2002' || err.message?.includes('Unique constraint')) {
-            return { success: true, role: 'member', alreadyReserved: true };
+            return { success: true, role: 'member', alreadyReserved: true, userId: user.id };
         }
         console.error('Failed to reserve usage:', e);
-        return { success: false, error: '请稍后再试。', role: 'member' };
+        return { success: false, error: '请稍后再试。', role: 'member', userId: user.id };
     }
 }
 
@@ -345,18 +350,21 @@ export async function reserveUsage(
  */
 export async function rollbackUsage(
     request: NextRequest,
-    sessionId: string
+    sessionId: string,
+    userId?: string
 ): Promise<boolean> {
-    // 归属校验：只有登录用户存在预占；sessionId 无法单独作为删除凭证
-    const user = await getSessionUser(request);
-    if (!user) return false;
+    // 归属校验：优先使用预占时捕获的 userId。
+    // 原实现重新 getSessionUser，若请求期间 SSO/本地会话过期，回滚直接失败，
+    // 会留下大量“无 AI 消费但已扣次”的孤儿 TestRecord。
+    const ownerId = userId ?? (await getSessionUser(request))?.id;
+    if (!ownerId) return false;
 
     try {
         await withDbRetry(async () => {
             await prisma.$transaction(async (tx) => {
                 // 按 sessionId + userId 精确删除本次预占的 TestRecord
                 await tx.testRecord.deleteMany({
-                    where: { sessionId, userId: user.id }
+                    where: { sessionId, userId: ownerId }
                 });
             });
         });

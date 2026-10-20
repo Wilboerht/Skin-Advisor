@@ -443,10 +443,11 @@ async function callOpenAICompatibleVision(
 
     const client = createOpenAIClient(provider, apiKey);
 
-    // 合并外部 signal + 内部 90s 超时，防止 SDK 无限挂起
-    // 历史上 qwen-vl-max 4图实测 48-50s；2026-10 起仅传正脸单图，90s 余量充足
+    // 合并外部 signal + 内部 70s 超时，防止 SDK 无限挂起。
+    // 路由 90s / 队列 15s：70s + 15s = 85s，给外层 abort 和客户端留出缓冲。
+    // 历史上 qwen-vl-max 4图实测 48-50s；2026-10 起仅传正脸单图，70s 覆盖单图生成。
     const visionTimeout = new AbortController();
-    const visionTimeoutId = setTimeout(() => visionTimeout.abort(), 90000);
+    const visionTimeoutId = setTimeout(() => visionTimeout.abort(), 70000);
     const mergedSignal = mergeAbortSignals(signal, visionTimeout.signal);
     const cleanupTimeout = () => clearTimeout(visionTimeoutId);
 
@@ -516,7 +517,8 @@ async function callOpenAICompatibleVision(
         // 区分 abort 来源：外部 signal（客户端断开/路由超时）已 abort 才算客户端取消；
         // 仅内部 visionTimeout 触发时是 provider 侧超时
         const e = err as Error & { name?: string };
-        const isTimeout = e.name === 'AbortError' && !signal?.aborted;
+        // 以内部 controller 是否 abort 为准，SDK 可能把超时包装成普通 Error
+        const isTimeout = visionTimeout.signal.aborted && !signal?.aborted;
 
         // 记录失败/超时调用
         await recordAIUsage({

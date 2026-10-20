@@ -63,6 +63,9 @@ export interface SsoProfileClaims {
  * id_token 由 SSO 回调的 SDK 验签后写入 httpOnly Cookie，此处只取
  * nickname/avatar 等展示字段；即便 Cookie 被篡改，最坏结果只是本人
  * 看到自己设置的昵称/头像，不影响身份与权限（sub 来自 access token）。
+ *
+ * 注意：phone 不从这里读取。id_token 未验签，手机号又会参与积分等
+ * 授权查询，必须只接受已验证 access token 或服务端 userinfo 返回值。
  */
 export async function getIdTokenProfileClaims(): Promise<SsoProfileClaims | null> {
     const cookieStore = await cookies();
@@ -76,7 +79,6 @@ export async function getIdTokenProfileClaims(): Promise<SsoProfileClaims | null
         return {
             nickname: typeof payload.nickname === "string" ? payload.nickname : undefined,
             avatar: typeof payload.avatar === "string" ? payload.avatar : undefined,
-            phone: typeof payload.phone === "string" ? payload.phone : undefined,
         };
     } catch {
         return null;

@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { cache } from "react";
 import ResultClient from "../../result/ResultClient";
-import { type ComprehensiveResult, type PreviousTestSummary, normalizeAnalysisResult } from "@/lib/analysis-result";
+import { type ComprehensiveResult, type PreviousTestSummary, isCompletedAnalysisResult, normalizeAnalysisResult } from "@/lib/analysis-result";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getSessionUser } from "@/lib/sso-auth";
@@ -104,6 +104,10 @@ export default async function ReportDetailPage(props: {
                 isExpired = true;
             }
             const rawResult = session.analysisResult as unknown as Record<string, unknown>;
+            // face-analyze 会先把面部结果写进 analysisResult；这不是完整报告，不能出页。
+            if (!isCompletedAnalysisResult(rawResult)) {
+                notFound();
+            }
             const result = normalizeAnalysisResult(rawResult);
             if (!result) {
                 notFound();
@@ -209,7 +213,7 @@ export async function generateMetadata(props: {
             if (session && session.archivedAt) {
                 title = "报告已归档";
                 description = "该历史报告已归档为统计数据，请查看最新报告。";
-            } else if (session && session.analysisResult) {
+            } else if (session?.analysisResult && isCompletedAnalysisResult(session.analysisResult)) {
                 const rawResult = session.analysisResult as unknown as Record<string, unknown>;
                 const faceAnalysis = rawResult.faceAnalysis as Record<string, unknown> | undefined;
                 // 新格式 skinProfile 优先，旧格式 skinAnalysis 兜底（与 normalizeAnalysisResult 一致）

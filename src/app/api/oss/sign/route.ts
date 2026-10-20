@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { generateUploadSignature } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { getSessionUser } from "@/lib/sso-auth";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
@@ -18,10 +19,18 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { filename, type, sessionId, guestId, cookieId, fingerprint } = body;
+        const { filename, type, sessionId, guestId, cookieId, fingerprint, kind } = body;
 
         if (!filename || !type) {
             return NextResponse.json({ error: "Missing filename or type" }, { status: 400 });
+        }
+
+        const uploadKind: "face" | "avatar" = kind === "avatar" ? "avatar" : "face";
+
+        // 头像属于用户永久资料，必须登录后才能签发；面部照片仍允许登录前拍摄。
+        const avatarUser = uploadKind === "avatar" ? await getSessionUser(request) : null;
+        if (uploadKind === "avatar" && !avatarUser) {
+            return NextResponse.json({ error: "请先登录后再上传头像" }, { status: 401 });
         }
 
         // 2. 白名单校验：仅允许图片 MIME 与扩展名
@@ -32,17 +41,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "仅支持 jpg/png/webp/gif 图片上传" }, { status: 400 });
         }
 
-        // 3. 游客路径隔离：使用可溯源但不暴露原始标识的短哈希作为前缀
-        // 标识优先级与历史 extractGuestIdentifiers 一致：body 字段优先，请求头兜底
-        const rawId = sessionId || guestId || cookieId
-            || request.headers.get("x-guest-cookie-id")
-            || fingerprint
-            || request.headers.get("x-fingerprint")
-            || crypto.randomUUID();
+        // 3. 路径隔离：使用可溯源但不暴露原始标识的短哈希作为前缀。
+        // 头像使用登录用户 id 作为稳定标识，便于按用户归集；面部照片按游客/会话标识。
+        const rawId = uploadKind === "avatar"
+            ? avatarUser?.id
+            : (sessionId || guestId || cookieId
+                || request.headers.get("x-guest-cookie-id")
+                || fingerprint
+                || request.headers.get("x-fingerprint")
+                || crypto.randomUUID());
         const idHash = crypto.createHash("sha256").update(String(rawId)).digest("hex").slice(0, 16);
         const date = new Date().toISOString().split("T")[0];
         const randomId = crypto.randomUUID();
-        const objectName = `guest/${idHash}/${date}/${randomId}${ext}`;
+        const prefix = uploadKind === "avatar" ? "avatars" : "guest";
+        const objectName = `${prefix}/${idHash}/${date}/${randomId}${ext}`;
 
         // 4. 生成签名
         const signature = await generateUploadSignature(filename, type, objectName);

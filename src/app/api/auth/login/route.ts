@@ -9,6 +9,7 @@ import {
     toInsecureCookieName,
 } from "@nihplod/sso-sdk/next";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
+import { isSafeInternalPath } from "@/lib/url-utils";
 
 /**
  * SSO 登录入口（BFF 模式）。
@@ -45,11 +46,10 @@ async function computeCodeChallenge(verifier: string): Promise<string> {
     return base64UrlEncode(new Uint8Array(digest));
 }
 
-/** return_to 仅允许站内相对路径，防开放重定向 */
+/** return_to 仅允许站内相对路径，防开放重定向（使用全站唯一实现） */
 function sanitizeReturnTo(value: string | null): string {
-    if (!value) return "/";
-    if (!value.startsWith("/") || value.startsWith("//")) return "/";
-    return value.slice(0, 2048);
+    if (!value || value.length > 2048) return "/";
+    return isSafeInternalPath(value) ? value : "/";
 }
 
 export async function GET(req: NextRequest) {

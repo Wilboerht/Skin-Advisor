@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, ssoVerifier, upsertLocalUser, refreshSsoTokensSingleFlight, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, type RefreshedTokens } from "@/lib/sso-auth";
+import { getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, ssoVerifier, upsertLocalUser, isAccessTokenRevoked, refreshSsoTokensSingleFlight, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, type RefreshedTokens } from "@/lib/sso-auth";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
 import { signLocalSession, rotateLocalSession, applyLocalSessionCookies, AUTH_REFRESH_COOKIE_NAME } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { isDisabledUser } from "@/lib/permissions";
+import { isSafeInternalPath } from "@/lib/url-utils";
 import { logger } from "@/lib/logger";
 
 /**
@@ -22,11 +23,9 @@ import { logger } from "@/lib/logger";
  */
 function getSafeReturnTo(req: NextRequest): string {
     const returnTo = req.nextUrl.searchParams.get("return_to") || "/";
-    // 仅允许相对路径，防止开放重定向（Open Redirect）
-    if (returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.startsWith("/\\")) {
-        return returnTo;
-    }
-    return "/";
+    // 全站唯一实现，拒绝控制字符/反斜杠/协议相对 URL（Open Redirect）
+    if (returnTo.length > 2048) return "/";
+    return isSafeInternalPath(returnTo) ? returnTo : "/";
 }
 
 export async function GET(req: NextRequest) {
@@ -55,7 +54,10 @@ export async function GET(req: NextRequest) {
 
     try {
         let accessToken = await getAccessToken(req);
-        let payload = accessToken ? await ssoVerifier.verify(accessToken) : null;
+        // 已登出撤销的 access token 不能换发本地会话
+        let payload = accessToken && !isAccessTokenRevoked(accessToken)
+            ? await ssoVerifier.verify(accessToken)
+            : null;
 
         // access_token（15 分钟）过期时用 refresh_token 静默轮换——
         // 没有这一步，fetchWithCsrf 的会话重建在 access token 过期后必然失败
@@ -65,7 +67,7 @@ export async function GET(req: NextRequest) {
             const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
             if (refreshToken) {
                 rotated = await refreshSsoTokensSingleFlight(refreshToken);
-                if (rotated) {
+                if (rotated && !isAccessTokenRevoked(rotated.access_token)) {
                     payload = await ssoVerifier.verify(rotated.access_token);
                     accessToken = rotated.access_token;
                 }
@@ -98,7 +100,8 @@ export async function GET(req: NextRequest) {
         const dbUser = await upsertLocalUser(payload, {
             nickname: profileClaims?.nickname ?? userinfo?.nickname,
             avatar: profileClaims?.avatar ?? userinfo?.avatar,
-            phone: profileClaims?.phone,
+            // 手机号只信已验证 access token 或服务端 userinfo，id_token 不验签不可用于授权
+            phone: userinfo?.phone,
             membershipLevel: userinfo?.membershipLevel,
             totalSpent: userinfo?.totalSpent,
             // gender 三态透传（undefined 不动 / null 清除 / 值设定，见 sso-auth.ts SsoProfileClaims）

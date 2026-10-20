@@ -7,7 +7,9 @@
  * 走正常预占与扣次。
  */
 
-export const FAILED_ANALYSIS_RETRY_TTL_MS = 30 * 60 * 1000;
+// 与服务端 TestRecord 预占的保留期对齐：失败后同 session 重试不再扣次。
+// 30 分钟会把“稍后重试”的用户推到新 session，重新扣一次；改为 24h。
+export const FAILED_ANALYSIS_RETRY_TTL_MS = 24 * 60 * 60 * 1000;
 
 export interface FailedAnalysisRetry {
     sessionId: string;

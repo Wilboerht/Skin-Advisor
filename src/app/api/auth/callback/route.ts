@@ -7,6 +7,7 @@ import {
 } from "@nihplod/sso-sdk/next";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
 import { isPublicPath } from "@/lib/public-paths";
+import { isSafeInternalPath } from "@/lib/url-utils";
 
 const ssoCallback = createCallbackRouteHandler({
   clientId: process.env.NEXT_PUBLIC_SSO_CLIENT_ID!,
@@ -22,9 +23,8 @@ const ssoCallback = createCallbackRouteHandler({
 
 /** return_to 仅允许站内相对路径，防开放重定向（与 login 入口同一规则） */
 function sanitizeReturnTo(value: string | null): string {
-  if (!value) return "/";
-  if (!value.startsWith("/") || value.startsWith("//")) return "/";
-  return value.slice(0, 2048);
+  if (!value || value.length > 2048) return "/";
+  return isSafeInternalPath(value) ? value : "/";
 }
 
 /**

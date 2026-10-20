@@ -19,6 +19,9 @@ describe("isSafeInternalPath", () => {
         expect(isSafeInternalPath("/\t/evil.com")).toBe(false);
         expect(isSafeInternalPath("/\n/evil.com")).toBe(false);
         expect(isSafeInternalPath("/\u0000evil.com")).toBe(false);
+        // Next searchParams 会先解码，模拟 /%09/evil.com 与 /%5Cevil.com
+        expect(isSafeInternalPath(decodeURIComponent("/%09/evil.com"))).toBe(false);
+        expect(isSafeInternalPath(decodeURIComponent("/%5Cevil.com"))).toBe(false);
     });
 
     it("拒绝空值/非字符串", () => {

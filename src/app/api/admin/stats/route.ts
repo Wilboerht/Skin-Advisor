@@ -84,7 +84,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
                 COUNT("completedAt") as completed
             FROM "AdvisorSession"
             WHERE "createdAt" >= ${weekAgo}
-            GROUP BY TO_CHAR("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${TIMEZONE}, 'YYYY-MM-DD')
+            GROUP BY 1
             ORDER BY day
         `;
         } catch (error) {

@@ -6,7 +6,7 @@ import path from "path";
 import { enforceStorageLimits } from "@/lib/shared-upload-utils";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { getSessionUser } from "@/lib/sso-auth";
-import { isManagedUploadPath } from "@/lib/upload-paths";
+import { isManagedUploadPath, isAvatarUploadPath } from "@/lib/upload-paths";
 import { logger } from "@/lib/logger";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -41,7 +41,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // 严格路径白名单（先于文件系统解析，拒绝一切非签名生成规则的路径）
-    if (filePath.includes("\\") || !isManagedUploadPath(filePath)) {
+    // guest/ = 面部临时上传；avatars/ = 用户头像永久上传
+    if (filePath.includes("\\") || (!isManagedUploadPath(filePath) && !isAvatarUploadPath(filePath))) {
         return apiError(ErrorCode.VALIDATION_ERROR, "Invalid upload path", 400);
     }
 

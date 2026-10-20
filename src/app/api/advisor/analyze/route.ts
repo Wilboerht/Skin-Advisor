@@ -11,6 +11,7 @@ import { buildConsultantPrompt, CONSULTANT_SYSTEM_PROMPT, type PersonaRoutineCon
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import prisma from "@/lib/prisma";
+import { withDbRetry } from "@/lib/utils";
 import { getSkinTypeLabel, getConcernLabel, type FaceAnalysisResult } from "@/lib/advisor-utils";
 // import { PRODUCTS_CATALOG } from "@/config/products"; // Deprecated, use DB or matchProducts
 import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
@@ -22,6 +23,7 @@ import { resolveIPLocation } from "@/lib/geoip";
 import { getSessionUser } from "@/lib/sso-auth";
 import { hashIP } from "@/lib/privacy";
 import { matchCharacterIP } from "@/lib/result-utils";
+import { isCompletedAnalysisResult } from "@/lib/analysis-result";
 import { getEnvContextFromLocation } from "@/lib/weather-context";
 
 import { checkUsageLimit, reserveUsage, rollbackUsage, GUEST_REQUIRE_LOGIN_MESSAGE, type ReserveUsageResult } from "@/lib/usage-limit";
@@ -309,12 +311,25 @@ async function clearAnalysisStartedAt(sessionId: string): Promise<void> {
     }
 }
 
+/**
+ * 报告是否已完成：以 analysisResult 的实际内容为准，而不是 completedAt。
+ * 持久化拆成“结果先写、completedAt 后写”后，completedAt 失败也不应让报告消失。
+ */
+function isReportCompleted(result: unknown): boolean {
+    return isCompletedAnalysisResult(result);
+}
+
 export async function POST(request: NextRequest) {
     // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
     const abortController = new AbortController();
     const requestStartedAt = Date.now();
+    // 区分“服务端 85s 超时”与“客户端主动断开”：前者可重试/退款，后者不能
+    let serverTimedOut = false;
     // 比 maxDuration(90s) 少 5s：保证平台杀进程前有机会走 catch/finally 清理
-    const serverTimeout = setTimeout(() => abortController.abort(), 85 * 1000);
+    const serverTimeout = setTimeout(() => {
+        serverTimedOut = true;
+        abortController.abort();
+    }, 85 * 1000);
 
     const onClientAbort = () => {
         clearTimeout(serverTimeout);
@@ -327,6 +342,8 @@ export async function POST(request: NextRequest) {
     let effectiveSessionId = "";
     // 预占结果也需在 catch 中可见：预占后、AI 调用前的任何异常都应退还额度
     let reservedResult: ReserveUsageResult | null = null;
+    // 预占归属用户：回滚时不依赖会话仍然有效，避免留下孤儿 TestRecord
+    let reservationUserId: string | undefined;
 
     try {
         // 1. 解析请求体（带 guard，malformed JSON 返回 400 而非 500）
@@ -344,7 +361,8 @@ export async function POST(request: NextRequest) {
             return apiError(ErrorCode.VALIDATION_ERROR, "请求参数错误", 400, result.error.flatten().fieldErrors);
         }
 
-        const { answers, faceAnalysis, sessionId, nickname, freeRetry, clientDate, privacyConsent, skinState } = result.data;
+        // faceAnalysis 不再从请求体读取：只使用 /face-analyze 服务端持久化的结果
+        const { answers, sessionId, nickname, freeRetry, clientDate, privacyConsent, skinState } = result.data;
 
         // 提取客户端标识（用于会话归属与审计）
         const userAgent = request.headers.get("user-agent");
@@ -379,6 +397,7 @@ export async function POST(request: NextRequest) {
         // 4. 检查使用限制 (Guest/Member)
         // 提前获取用户会话，避免 freeRetry 路径中重复调用 getSessionUser()
         const user = await getSessionUser(request);
+        reservationUserId = user?.id;
 
         // freeRetry 有效性标记：外部仅做快速预筛（session 存在 + 已完成），
         // ownership 验证与 freeRetryUsed 原子性检查一并移入 DB 行锁事务内，消除 TOCTOU 窗口。
@@ -398,7 +417,7 @@ export async function POST(request: NextRequest) {
                 where: { sessionId },
                 select: { completedAt: true, analysisResult: true, answers: true }
             });
-            if (!existingSession?.completedAt || !existingSession?.analysisResult) {
+            if (!existingSession || !isReportCompleted(existingSession.analysisResult)) {
                 return apiError(ErrorCode.FORBIDDEN, "免费重试无效：请重新进行测试", 403);
             }
             // 缓存已有的 analysisResult，避免事务内重复查询
@@ -477,7 +496,7 @@ export async function POST(request: NextRequest) {
                 where: { sessionId: effectiveSessionId },
                 select: { completedAt: true, analysisResult: true, userId: true, ip: true }
             });
-            if (existingSession?.completedAt && existingSession?.analysisResult) {
+            if (existingSession && isReportCompleted(existingSession.analysisResult)) {
                 // 归属校验：仅会话所有者可读取缓存结果（防止 IDOR 读他人完整报告）
                 const owned = user?.id
                     ? existingSession.userId === user.id
@@ -514,63 +533,101 @@ export async function POST(request: NextRequest) {
                     return response;
                 }
                 reservedResult = reserved;
+                reservationUserId = reserved.userId ?? user?.id;
             }
         }
 
-        // 分布式锁：防止同一 sessionId 并发重复跑 AI
-        // 使用数据库行锁 (SELECT FOR UPDATE) 保证同一时刻只有一个分析流程在执行
+        // 清理该 session 的僵尸分析标记（免费重试同样适用）：
+        // 5 分钟 > 队列等待 + 视觉/文本最坏耗时，避免误杀在途请求。
+        const staleAnalysisBefore = new Date(Date.now() - 5 * 60 * 1000);
+        await prisma.advisorSession.updateMany({
+            where: { sessionId: effectiveSessionId, analysisStartedAt: { lt: staleAnalysisBefore } },
+            data: { analysisStartedAt: null },
+        });
+
+        // 并发保护：先插入占位行，再对 analysisStartedAt 做条件 claim。
+        // 原实现 SELECT ... FOR UPDATE 对“不存在的行”不加锁，两个并发请求都能通过。
         const lockResult = await prisma.$transaction(async (tx) => {
-            // 锁定 session 行（不存在则跳过）
-            await tx.$executeRaw`SELECT * FROM "AdvisorSession" WHERE "sessionId" = ${effectiveSessionId} FOR UPDATE`;
+            await tx.advisorSession.upsert({
+                where: { sessionId: effectiveSessionId },
+                update: {},
+                create: {
+                    sessionId: effectiveSessionId,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    answers: answers as any,
+                    ip: ipHash,
+                    userId: user?.id || null,
+                    faceScanUsed: false,
+                },
+            });
 
             const session = await tx.advisorSession.findUnique({
                 where: { sessionId: effectiveSessionId },
-                select: { completedAt: true, analysisStartedAt: true, analysisResult: true, answers: true, ip: true, userId: true }
+                select: {
+                    completedAt: true,
+                    analysisStartedAt: true,
+                    faceScanStartedAt: true,
+                    faceScanCompletedAt: true,
+                    analysisResult: true,
+                    answers: true,
+                    ip: true,
+                    userId: true,
+                }
             });
 
+            const serverFace = (session?.analysisResult as Record<string, unknown> | null)?.faceAnalysis as
+                | FaceAnalysisResult
+                | undefined;
+
+            // 会话归属：不允许在他人未完成会话上跑 AI / 写报告
+            if (session?.userId && session.userId !== user?.id) {
+                return { status: 'forbidden' as const };
+            }
+
+            // 视觉分析仍在进行：先让客户端轮询，避免文本报告先落库、face 结果后到而错位
+            if (
+                !serverFace
+                && session?.faceScanStartedAt
+                && !session.faceScanCompletedAt
+                && session.faceScanStartedAt > staleAnalysisBefore
+            ) {
+                return { status: 'analyzing' as const };
+            }
+
             // 再次检查是否已完成（可能刚刚完成）。免费重试需要重新跑 AI，不走缓存。
-            if (!isFreeRetryAllowed && session?.completedAt && session?.analysisResult) {
-                // 归属校验（行锁内）：仅会话所有者可读取缓存结果
+            if (!isFreeRetryAllowed && isReportCompleted(session?.analysisResult)) {
                 const owned = user?.id
-                    ? session.userId === user.id
-                    : session.ip === hashIP(ip);
+                    ? session?.userId === user.id
+                    : session?.ip === hashIP(ip);
                 if (!owned) {
                     return { status: 'forbidden' as const };
                 }
-                return { status: 'completed' as const, result: session.analysisResult };
+                return { status: 'completed' as const, result: session?.analysisResult };
             }
 
-            // 免费重试原子性防护（ownership + freeRetryUsed 均在行锁内校验，消除 TOCTOU 窗口）：
+            // 免费重试原子性防护（ownership + freeRetryUsed 均在事务内校验，消除 TOCTOU 窗口）：
             if (isFreeRetryAllowed) {
-                // 1) 行锁内重新验证 session 有效性（防止外部预筛与事务之间的竞态）
-                if (!session?.completedAt || !session?.analysisResult) {
+                if (!session || !isReportCompleted(session.analysisResult)) {
                     return { status: 'free_retry_invalid' as const };
                 }
-                // 2) Ownership verification under row lock
                 const currentIpHash = hashIP(ip);
                 if (user?.id) {
                     if (session.userId !== user.id) {
                         return { status: 'free_retry_invalid' as const };
                     }
-                } else {
-                    if (session.ip && session.ip !== currentIpHash) {
-                        return { status: 'free_retry_invalid' as const };
-                    }
+                } else if (session.ip && session.ip !== currentIpHash) {
+                    return { status: 'free_retry_invalid' as const };
                 }
-                // 3) 行锁内再次检查 freeRetryUsed 标记（双重检查，防御并发）
                 const existingResult = session.analysisResult as Record<string, unknown>;
                 if (existingResult?.freeRetryUsed) {
                     return { status: 'free_retry_used' as const };
                 }
-                // 4) 行锁内再次校验重试原因，防止预筛后结果被其他请求改写
                 if (!isValidFreeRetryReason(existingResult, session.answers)) {
                     return { status: 'free_retry_invalid' as const };
                 }
             }
 
             // 若已有其他请求正在分析，返回 analyzing 状态，让客户端轮询。
-            // 免费重试的会话 completedAt 仍在，用 analysisStartedAt > completedAt
-            // 判定"重试进行中"，阻止并发的第二次免费重试同时跑 AI。
             const retryInProgress = !!session?.completedAt
                 && !!session?.analysisStartedAt
                 && new Date(session.analysisStartedAt).getTime() > new Date(session.completedAt).getTime();
@@ -578,50 +635,59 @@ export async function POST(request: NextRequest) {
                 return { status: 'analyzing' as const };
             }
 
-            // 保存会话占位记录（标记分析开始，不设置 completedAt——防止超时后状态不一致）
-            // 同时保存问卷答案，用于历史审计与复购分析
             const consentFields = privacyConsent ? {
                 privacyConsentAt: new Date(privacyConsent.consentedAt),
                 privacyConsentVersion: privacyConsent.version
             } : {};
-            await tx.advisorSession.upsert({
-                where: { sessionId: effectiveSessionId },
-                update: {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    answers: answers as any,
-                    analysisSource: faceAnalysis ? "hybrid" : "text",
-                    faceScanUsed: !!faceAnalysis,
-                    analysisStartedAt: new Date(),
-                    // 保留已有的 completedAt（如 freeRetry 的原始会话）
-                    // Save Geo Info
-                    province: geoLocation?.region,
-                    city: geoLocation?.city,
-                    ip: hashIP(ip),
-                    userId: user?.id || null,
-                    ...consentFields
-                },
-                create: {
+
+            // 原子 claim：只有成功把 analysisStartedAt 从 null 置为当前时间的请求才能跑 AI。
+            // 免费重试允许 completedAt 保留（旧报告），用 analysisStartedAt 表示重试进行中。
+            const claimed = await tx.advisorSession.updateMany({
+                where: {
                     sessionId: effectiveSessionId,
+                    analysisStartedAt: null,
+                    ...(isFreeRetryAllowed ? {} : { completedAt: null }),
+                    // 视觉分析进行中时不允许文本 claim；已完成（有 face）或未开始则允许
+                    AND: [
+                        { OR: [{ faceScanCompletedAt: { not: null } }, { faceScanStartedAt: null }] },
+                    ],
+                },
+                data: {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     answers: answers as any,
-                    analysisSource: faceAnalysis ? "hybrid" : "text",
-                    faceScanUsed: !!faceAnalysis,
+                    analysisSource: serverFace ? "hybrid" : "text",
+                    faceScanUsed: !!serverFace,
                     analysisStartedAt: new Date(),
                     province: geoLocation?.region,
                     city: geoLocation?.city,
-                    ip: hashIP(ip),
+                    ip: ipHash,
                     userId: user?.id || null,
-                    ...consentFields
-                }
+                    ...consentFields,
+                },
             });
 
-            return { status: 'started' as const };
+            if (claimed.count === 0) {
+                const after = await tx.advisorSession.findUnique({
+                    where: { sessionId: effectiveSessionId },
+                    select: { analysisStartedAt: true, analysisResult: true, userId: true },
+                });
+                if (
+                    !isFreeRetryAllowed
+                    && after?.userId === user?.id
+                    && isReportCompleted(after?.analysisResult)
+                ) {
+                    return { status: 'completed' as const, result: after?.analysisResult };
+                }
+                return { status: 'analyzing' as const };
+            }
+
+            return { status: 'started' as const, faceAnalysis: serverFace ?? null };
         });
 
         if (lockResult.status === 'forbidden') {
             // 竞态窗口内完成的会话不属于当前请求者：退还本次预占并返回 404（不暴露会话存在性）
             if (reservedResult && !reservedResult.alreadyReserved) {
-                await rollbackUsage(request, effectiveSessionId);
+                await rollbackUsage(request, effectiveSessionId, reservationUserId);
             }
             return apiError(ErrorCode.NOT_FOUND, "报告不存在或无权访问", 404);
         }
@@ -631,7 +697,7 @@ export async function POST(request: NextRequest) {
             // 返回缓存时退还本次预占：仅当本请求实际新增了计数时才回滚
             //（P2002 幂等命中时 alreadyReserved=true，回滚会误删其他请求的预占）
             if (reservedResult && !reservedResult.alreadyReserved) {
-                await rollbackUsage(request, effectiveSessionId);
+                await rollbackUsage(request, effectiveSessionId, reservationUserId);
             }
             console.log(`[analyze] Returning cached result after lock for session ${effectiveSessionId}`);
             return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
@@ -653,6 +719,13 @@ export async function POST(request: NextRequest) {
                 { status: 202, headers: rateLimitHeaders }
             );
         }
+
+        if (lockResult.status !== 'started') {
+            return apiError(ErrorCode.INTERNAL_ERROR, "分析状态异常，请重试", 500);
+        }
+
+        // 只使用 /face-analyze 服务端持久化的结果；客户端 faceAnalysis 已不再读取。
+        const faceAnalysis = lockResult.faceAnalysis;
 
         // 5. 构建 AI 提示词与调用
         // Resolve Skin Type (Priority: Face Analysis > User Answer)
@@ -796,7 +869,17 @@ export async function POST(request: NextRequest) {
                 throw new Error(`[CircuitBreaker] Text AI service ${provider} is temporarily unavailable`);
             }
 
-            rawAiOutput = await generateText(systemPrompt, userPrompt, provider as AIProvider, abortController.signal, user?.id, effectiveSessionId);
+            // 队列等待已消耗预算：给文本模型传剩余时间，避免内层 80s 超时晚于路由 85s abort
+            const remainingTextBudgetMs = () => Math.max(5_000, 85_000 - (Date.now() - requestStartedAt) - 5_000);
+            rawAiOutput = await generateText(
+                systemPrompt,
+                userPrompt,
+                provider as AIProvider,
+                abortController.signal,
+                user?.id,
+                effectiveSessionId,
+                remainingTextBudgetMs()
+            );
             try {
                 consultantReport = finalizeConsultantReport(rawAiOutput);
             } catch (parseErr: unknown) {
@@ -821,20 +904,44 @@ export async function POST(request: NextRequest) {
                     aiOutputTail: rawAiOutput.slice(-200),
                 });
                 const repairPrompt = `${userPrompt}\n\n【格式修复】上一次输出无法解析（${isSchemaIssue ? "字段结构不符合上述 JSON 要求" : "不是合法 JSON 或输出被截断"}）。请严格按上述 JSON 结构重新输出完整结果：不要 Markdown 代码块、不要任何解释文字，确保所有字段完整且 JSON 正确闭合。`;
-                const repairText = await generateText(systemPrompt, repairPrompt, provider as AIProvider, abortController.signal, user?.id, effectiveSessionId);
+                const repairText = await generateText(
+                    systemPrompt,
+                    repairPrompt,
+                    provider as AIProvider,
+                    abortController.signal,
+                    user?.id,
+                    effectiveSessionId,
+                    remainingTextBudgetMs()
+                );
                 rawAiOutput = repairText;
                 consultantReport = finalizeConsultantReport(repairText);
             }
         } catch (e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));
             if (err.message?.includes("cancelled") || err.name === 'AbortError') {
-                logger.warn("Text analysis cancelled (client timeout or disconnect)");
+                if (serverTimedOut) {
+                    // 服务端 85s 预算耗尽不是客户端取消，必须允许重试并退还未被 AI 消费的额度
+                    logger.warn("Text analysis aborted by server timeout");
+                    const [visionConsumed, textConsumed] = await Promise.all([
+                        hasSuccessfulFaceAnalysis(effectiveSessionId),
+                        hasSuccessfulTextAnalysis(effectiveSessionId),
+                    ]);
+                    if (reservedResult && !reservedResult.alreadyReserved && !visionConsumed && !textConsumed) {
+                        await rollbackUsage(request, effectiveSessionId, reservationUserId);
+                    }
+                    await clearAnalysisStartedAt(effectiveSessionId);
+                    const response = apiError(ErrorCode.AI_SERVICE_ERROR, "报告生成超时，请点击重试", 503);
+                    response.headers.set("Retry-After", "30");
+                    return response;
+                }
+
+                logger.warn("Text analysis cancelled (client disconnect)");
                 // 仅排队等待期间取消时回滚：此时 AI 尚未被调用，零消耗
                 // AI 调用进行中取消不回滚：API 可能已处理并计费
                 const isQueueOnlyCancel = err.message === "Request cancelled during queue wait.";
                 if (isQueueOnlyCancel) {
                     if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                        await rollbackUsage(request, effectiveSessionId);
+                        await rollbackUsage(request, effectiveSessionId, reservationUserId);
                     }
                 }
                 await clearAnalysisStartedAt(effectiveSessionId);
@@ -844,7 +951,7 @@ export async function POST(request: NextRequest) {
                 // 单用户日限：用户侧限额（429 + 明确原因），不回退为"服务暂不可用"的平台口径
                 aiLogger.warn("User daily AI limit reached", { error: err.message });
                 if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                    await rollbackUsage(request, effectiveSessionId);
+                    await rollbackUsage(request, effectiveSessionId, reservationUserId);
                 }
                 await clearAnalysisStartedAt(effectiveSessionId);
                 const msg = err.message.replace("[AIUserLimit]", "").trim() || "今日分析次数已达上限";
@@ -853,7 +960,7 @@ export async function POST(request: NextRequest) {
             if (err.message?.includes("[AIBudget]")) {
                 aiLogger.warn("AI budget exceeded, rejecting request", { error: err.message });
                 if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                    await rollbackUsage(request, effectiveSessionId);
+                    await rollbackUsage(request, effectiveSessionId, reservationUserId);
                 }
                 await clearAnalysisStartedAt(effectiveSessionId);
                 const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
@@ -863,7 +970,7 @@ export async function POST(request: NextRequest) {
             if (err.message?.includes("[CircuitBreaker]")) {
                 aiLogger.warn("Circuit breaker open, rejecting request", { error: err.message });
                 if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                    await rollbackUsage(request, effectiveSessionId);
+                    await rollbackUsage(request, effectiveSessionId, reservationUserId);
                 }
                 await clearAnalysisStartedAt(effectiveSessionId);
                 const response = apiError("AI_CIRCUIT_OPEN", "服务暂不可用，请稍后重试", 503);
@@ -892,7 +999,7 @@ export async function POST(request: NextRequest) {
                 hasSuccessfulTextAnalysis(effectiveSessionId),
             ]);
             if (reservedResult && !reservedResult.alreadyReserved && !visionConsumed && !textConsumed) {
-                await rollbackUsage(request, effectiveSessionId);
+                await rollbackUsage(request, effectiveSessionId, reservationUserId);
             }
             await clearAnalysisStartedAt(effectiveSessionId);
             const response = apiError(ErrorCode.AI_SERVICE_ERROR, "报告生成失败，请点击重试（不会额外消耗次数）", 503);
@@ -976,7 +1083,7 @@ export async function POST(request: NextRequest) {
         // 仅使用客户端传来的真实面部分析（用户真的扫过脸）
         const finalFaceAnalysis = faceAnalysis || null;
         if (finalFaceAnalysis) {
-            const fa = finalFaceAnalysis as Record<string, unknown>;
+            const fa = finalFaceAnalysis as unknown as Record<string, unknown>;
             // Preserve gender if available in original input
             if (faceAnalysis?.gender && !fa.gender) {
                 fa.gender = faceAnalysis.gender;
@@ -1025,60 +1132,55 @@ export async function POST(request: NextRequest) {
             // 报告保留 90 天（游客已被前置 401 拦截，此处仅登录用户可达；TS 兜底同样按 90 天）
             const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
 
-            // Persist result to DB — do NOT swallow errors (ghost analysis bug)
+            // 持久化拆两步：先写结果，再写 completedAt。
+            // 结果写成功即视为报告可恢复；completedAt 失败不应让 ghost analysis 重跑 AI。
+            const existingSession = await prisma.advisorSession.findUnique({
+                where: { sessionId: effectiveSessionId },
+                select: { analysisResult: true },
+            });
+            const mergedResult = {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ...(existingSession?.analysisResult as any || {}),
+                ...sanitizedResult,
+                ...(isFreeRetryAllowed ? { freeRetryUsed: true } : {}),
+            };
+
             try {
-                await prisma.$transaction(async (tx) => {
-                    // Fetch existing session first to avoid overwriting parallel data
-                    const existingSession = await tx.advisorSession.findUnique({
+                await withDbRetry(async () => {
+                    await prisma.advisorSession.update({
                         where: { sessionId: effectiveSessionId },
-                        select: { analysisResult: true }
-                    });
-
-                    // Merge current results with any existing data
-                    const mergedResult = {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        ...(existingSession?.analysisResult as any || {}),
-                        ...sanitizedResult,
-                        ...(isFreeRetryAllowed ? { freeRetryUsed: true } : {})
-                    };
-
-                    await tx.advisorSession.upsert({
-                        where: { sessionId: effectiveSessionId },
-                        update: {
+                        data: {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: mergedResult as any,
                             analysisSource: faceAnalysis ? "hybrid" : "text",
-                            completedAt: new Date(),
-                            province: geoLocation?.region,
-                            city: geoLocation?.city,
-                            expiresAt: expiresAt,
-                            // 保留已有的 answers，不覆盖问卷数据
+                            // 报告结果已落库，立即释放分析中标记；completedAt 稍后补
+                            analysisStartedAt: null,
                         },
-                        create: {
-                            sessionId: effectiveSessionId,
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            answers: answers as any,
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            analysisResult: mergedResult as any,
-                            analysisSource: faceAnalysis ? "hybrid" : "text",
-                            completedAt: new Date(),
-                            province: geoLocation?.region,
-                            city: geoLocation?.city,
-                            expiresAt: expiresAt,
-                            ip: ipHash,
-                            userId: user?.id || null,
-                            userAgent,
-                            ...parseUserAgent(userAgent)
-                        }
                     });
                 });
             } catch (txErr) {
-                logger.error("Failed to persist final analysis:", txErr);
-                // 落库失败：清理分析中标记，否则用户立即重试会命中 analyzing 分支死等
+                logger.error("Failed to persist final analysis result:", txErr);
                 await clearAnalysisStartedAt(effectiveSessionId);
                 const response = apiError(ErrorCode.SERVICE_UNAVAILABLE, "分析结果保存未成功，请重试", 503, "DATABASE_PERSISTENCE_ERROR");
                 Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
                 return response;
+            }
+
+            // completedAt 仅用于展示/排序/统计；失败时结果仍可按 analysisResult 读取。
+            try {
+                await prisma.advisorSession.update({
+                    where: { sessionId: effectiveSessionId },
+                    data: {
+                        completedAt: new Date(),
+                        expiresAt,
+                        province: geoLocation?.region,
+                        city: geoLocation?.city,
+                        userAgent,
+                        ...parseUserAgent(userAgent),
+                    },
+                });
+            } catch (completeErr) {
+                logger.error("Failed to set completedAt (analysisResult already saved):", completeErr);
             }
 
             // ====== 护肤日记自动生成：测肤完成后写入/更新当日条目 ======
@@ -1129,7 +1231,7 @@ export async function POST(request: NextRequest) {
                         hasSuccessfulTextAnalysis(effectiveSessionId),
                     ]);
                     if (!visionConsumed && !textConsumed) {
-                        await rollbackUsage(request, effectiveSessionId);
+                        await rollbackUsage(request, effectiveSessionId, reservationUserId);
                     }
                 } catch (rollbackError) {
                     logger.warn("[analyze] Failed to check/rollback reservation after unexpected error", {

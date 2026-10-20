@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeAnalysisResult } from "./analysis-result";
+import { isCompletedAnalysisResult, normalizeAnalysisResult } from "./analysis-result";
 
 describe("normalizeAnalysisResult", () => {
     it("保留服务端 freeRetryUsed 标记", () => {
@@ -20,6 +20,15 @@ describe("normalizeAnalysisResult", () => {
         expect(result?.skinProfile.type).toBe("combination");
         expect(result?.skinProfile.typeLabel).toBe("混合性肌肤");
         expect(result?.products).toHaveLength(1);
+    });
+
+    it("isCompletedAnalysisResult：mid-flight face 结果不是完整报告", () => {
+        expect(isCompletedAnalysisResult({ faceAnalysis: { overallScore: 80 } })).toBe(false);
+        expect(isCompletedAnalysisResult({ reportVersion: 2 })).toBe(true);
+        expect(isCompletedAnalysisResult({ consultantReport: { overview: "x" } })).toBe(true);
+        expect(isCompletedAnalysisResult({ skinAnalysis: { type: "dry" } })).toBe(true);
+        expect(isCompletedAnalysisResult({ skinProfile: { type: "dry" } })).toBe(true);
+        expect(isCompletedAnalysisResult(null)).toBe(false);
     });
 
     it("v2 报告缺 medicalBoundary 时补空串，避免报告页崩溃", () => {

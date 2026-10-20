@@ -15,6 +15,10 @@ export default async function ResultPage(props: {
     // 登录用户且 URL 带了已完成报告的 id 时，直接跳转到历史报告页 /reports/:id，
     // 避免客户端先渲染 /result 再跳转的闪烁。
     // 会话数据由 ResultClient 客户端恢复（localStorage / 分析流程），此处无需重复预加载。
+    if (id && !user) {
+        // 带报告 id 但未登录：不能靠客户端 localStorage 缓存绕过服务端所有权校验。
+        redirect(`/?auth=login&redirect=${encodeURIComponent(`/reports/${id}`)}`);
+    }
     if (id && status !== 'analyzing' && user) {
         redirect(`/reports/${id}`);
     }

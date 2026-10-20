@@ -80,10 +80,12 @@ const nextConfig: NextConfig = {
     ],
   },
   compiler: {
+    // 保留 info：logger.info 走 console.info，生产剥离后 instance-check/启动诊断完全不可见
     removeConsole: process.env.NODE_ENV === 'production'
-      ? { exclude: ['error', 'warn'] }
+      ? { exclude: ['error', 'warn', 'info'] }
       : false,
   },
+  poweredByHeader: false,
   async rewrites() {
     return [
       {

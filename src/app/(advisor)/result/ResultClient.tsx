@@ -264,7 +264,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             if (resultRaw && user?.id) {
                 try {
                     const cached = JSON.parse(resultRaw) as { userId?: unknown };
-                    if (typeof cached.userId === "string" && cached.userId !== user.id) {
+                    // 没有 userId 的历史缓存无法证明归属，一律清掉，避免共享设备串号。
+                    if (cached.userId !== user.id) {
                         localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
                         setAccessDenied(true);
                         return;
@@ -1185,7 +1186,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             // DB 快照不含 sessionId，补齐后再写入（与正常分析路径 useAsyncAnalysis 保存前补 sessionId 一致），
                             // 否则后续无 ?status=analyzing 的 /result 恢复会丢失 sessionId（海报二维码退化为 ?gift=1、
                             // 证书编号缺失、性别弹窗被抑制、auto-claim 不执行）
-                            localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify({ ...rawResult, sessionId: recoveredSessionId }));
+                            localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify({
+                                ...rawResult,
+                                sessionId: recoveredSessionId,
+                                // 恢复缓存也必须带归属，否则换账号后守卫无法识别
+                                userId: userRef.current?.id ?? null,
+                            }));
                         } catch (e) {
                             console.warn('localStorage save failed', e);
                         }
@@ -1424,9 +1430,16 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 <>
                                     <button
                                         onClick={() => {
-                                            // 失败会话已暂存 sessionId：服务端幂等，重试不会额外扣次
+                                            // 失败会话已暂存 sessionId：服务端幂等，重试不会额外扣次。
+                                            // 清掉“分析中”恢复标记，避免 effect 先去 recover 已失败的 pending 会话；
+                                            // 保留 ADVISOR_FAILED_ANALYSIS，让 runAnalysis 复用同一 session。
+                                            try {
+                                                sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
+                                                sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
+                                                localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
+                                            } catch { /* ignore */ }
+                                            analysisStartedRef.current = false;
                                             reset();
-                                            void runAnalysis();
                                         }}
                                         className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >

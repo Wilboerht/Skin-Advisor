@@ -36,7 +36,15 @@ yarn-error.log*
 .env
 .env.local
 .env.production
+.env*.bak*
 !.env.example
+
+# runtime data / uploads / logs（可能含人脸照片、密钥备份、PII）
+/uploads
+/public/uploads
+/logs
+/q*.sql
+/q3
 
 # vercel
 .vercel

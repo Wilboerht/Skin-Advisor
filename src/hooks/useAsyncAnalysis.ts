@@ -358,7 +358,7 @@ export function useAsyncAnalysis() {
                 timeoutId = setTimeout(() => {
                     abortController.abort();
                     reject(new Error("分析时间较长，请检查网络后重试。"));
-                }, 180 * 1000); // 180 秒，服务端 maxDuration=90s，队列场景需更充裕
+                }, 240 * 1000); // 视觉 95s + 文本 85s + 队列/网络开销，180s 会误杀最坏链路
             });
             return { promise, cancel: () => clearTimeout(timeoutId) };
         };
@@ -511,8 +511,9 @@ export function useAsyncAnalysis() {
                 }
             }
 
+            // 免费重试复用服务端已存的面部结果，跳过视觉 AI；普通流程仍走 face-analyze。
             // if (imagesStr) { -> Handled by checking if images is not null
-            if (images) {
+            if (images && !isFreeRetryEarly) {
                 // 阶段切换时给一个即时跳跃，让用户感知到进展
                 setAnalysisState(prev => ({ ...prev, status: 'analyzing_face', progress: Math.max(prev.progress, 25) }));
                 
@@ -776,6 +777,14 @@ export function useAsyncAnalysis() {
                 }
             }
             trackAnalysisComplete("ai");
+
+            // 分析成功后立即清理本地人脸照片（服务端也已在 face-analyze 后删除上传文件）。
+            // 旧实现只在 startNewTest/登出时清理，UI 承诺的“分析后删除”没有兑现。
+            try {
+                await advisorStorage.clearFaceImages();
+            } catch (clearErr) {
+                console.warn("Failed to clear local face images after analysis", clearErr);
+            }
 
             // Only clear freeRetry flag after successful server response
             if (isFreeRetry) {

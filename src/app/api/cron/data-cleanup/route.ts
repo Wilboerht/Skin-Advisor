@@ -227,8 +227,8 @@ export async function GET(request: NextRequest) {
             const cleanDir = async (dir: string, isRoot: boolean, cutoff: number): Promise<void> => {
                 const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
                 for (const entry of entries) {
-                    // products/ 子目录存的是展品图等永久资产，豁免清理
-                    if (isRoot && entry.name === "products") continue;
+                    // products/ 展品图、avatars/ 用户头像属于永久资产，豁免清理
+                    if (isRoot && (entry.name === "products" || entry.name === "avatars")) continue;
                     const fullPath = path.join(dir, entry.name);
                     try {
                         if (entry.isDirectory()) {
@@ -254,6 +254,29 @@ export async function GET(request: NextRequest) {
             await cleanDir(uploadDir, true, fileCutoff);
         } catch { /* upload dir may not exist */ }
 
+        // ===== 10. 清理孤儿预占：没有会话、没有成功 AI 日志、超过 24 小时 =====
+        // 这些通常是 face-analyze 预占后请求中断/回滚失败留下的 TestRecord，
+        // 会白扣用户额度；有成功 AI 消费的预占不在这里删（另行补偿）。
+        const orphanCutoff = new Date(now - 24 * 60 * 60 * 1000);
+        let deletedOrphanReservations = 0;
+        try {
+            deletedOrphanReservations = await prisma.$executeRaw`
+                DELETE FROM "TestRecord" tr
+                WHERE tr."testDate" < ${orphanCutoff}
+                  AND NOT EXISTS (
+                    SELECT 1 FROM "AdvisorSession" s WHERE s."sessionId" = tr."sessionId"
+                  )
+                  AND NOT EXISTS (
+                    SELECT 1 FROM "AIUsageLog" l
+                    WHERE l."sessionId" = tr."sessionId" AND l.success = true
+                  )
+            `;
+        } catch (orphanErr) {
+            logger.error("[Cleanup] Orphan reservation cleanup failed", {
+                error: orphanErr instanceof Error ? orphanErr.message : String(orphanErr),
+            });
+        }
+
         return NextResponse.json({
             success: true,
             timestamp: new Date().toISOString(),
@@ -265,6 +288,7 @@ export async function GET(request: NextRequest) {
                 refreshTokens: deletedRefreshTokens.count,
                 files: deletedFiles,
                 guestFiles: deletedGuestFiles,
+                orphanReservations: deletedOrphanReservations,
             },
         });
     } catch (error: unknown) {
