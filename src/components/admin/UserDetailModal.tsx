@@ -42,7 +42,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const [editingLimit, setEditingLimit] = useState(false);
-  const [newLimit, setNewLimit] = useState(1);
+  const [newLimit, setNewLimit] = useState(10);
   const [saving, setSaving] = useState(false);
   const [limitDirty, setLimitDirty] = useState(false);
   const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
@@ -65,7 +65,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
       })
       .then((data) => {
         setUser(data);
-        setNewLimit(data.dailyTestLimit || 1);
+        setNewLimit(data.dailyTestLimit ?? 10);
       })
       .catch((err) => {
         if (err.name === "AbortError") return;
@@ -193,7 +193,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#1A1A1A]/60">每日测试次数上限</p>
-                <p className="text-xs text-[#1A1A1A]/40 mt-1">默认为 1 次，可为特定用户调整</p>
+                <p className="text-xs text-[#1A1A1A]/40 mt-1">系统默认 10 次；自定义值会覆盖会员默认配额</p>
               </div>
               {editingLimit ? (
                 <div className="flex items-center gap-2">
@@ -213,19 +213,20 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                     {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                     保存
                   </button>
-                  <button
-                    onClick={() => {
-                      setEditingLimit(false);
-                      setNewLimit(user.dailyTestLimit || 1);
-                    }}
-                    className="px-3 py-1.5 text-[#1A1A1A]/50 text-sm hover:bg-[#1A1A1A]/5 rounded-lg"
-                  >
-                    取消
-                  </button>
+                   <button
+                     onClick={() => {
+                       setEditingLimit(false);
+                       setNewLimit(user.dailyTestLimit ?? 10);
+                       setLimitDirty(false);
+                     }}
+                     className="px-3 py-1.5 text-[#1A1A1A]/50 text-sm hover:bg-[#1A1A1A]/5 rounded-lg"
+                   >
+                     取消
+                   </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-amber-700">{user.dailyTestLimit || 1}</span>
+                  <span className="text-2xl font-bold text-amber-700">{user.dailyTestLimit ?? 10}</span>
                   <span className="text-sm text-[#1A1A1A]/50">次/天</span>
                   <button
                     onClick={() => setEditingLimit(true)}

@@ -124,13 +124,16 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             // provider 过滤与其他统计口径保持一致，避免筛选后趋势图仍含全部 provider
             prisma.$queryRaw<Array<{ date: string; cost: number; count: number }>>`
                 SELECT 
-                    DATE("createdAt" AT TIME ZONE 'Asia/Shanghai') as date,
+                    TO_CHAR(
+                        ("createdAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Shanghai',
+                        'YYYY-MM-DD'
+                    ) as date,
                     SUM("estimatedCost")::float as cost,
                     COUNT(*)::int as count
                 FROM "AIUsageLog"
                 WHERE "createdAt" >= ${new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)}
                 ${provider ? Prisma.sql`AND "provider" = ${provider}` : Prisma.empty}
-                GROUP BY DATE("createdAt" AT TIME ZONE 'Asia/Shanghai')
+                GROUP BY 1
                 ORDER BY date DESC
             `,
         ]);

@@ -15,6 +15,7 @@ import {
     MAX_TAG_ARRAY_LENGTH,
     AFFILIATE_PLATFORM_KEYS,
     validateImageUrl,
+    recommendReasonsSchema,
 } from "@/types/product";
 import { logger } from "@/lib/logger";
 
@@ -144,6 +145,13 @@ export const POST = withAdminAuth(async (request, { admin }) => {
         }
         if (!validateStringArray(body.negativeFor)) {
             return NextResponse.json({ error: `negativeFor must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
+        }
+
+        if (body.recommendReasons !== undefined && body.recommendReasons !== null) {
+            const parsedReasons = recommendReasonsSchema.safeParse(body.recommendReasons);
+            if (!parsedReasons.success) {
+                return NextResponse.json({ error: "Invalid recommendReasons format" }, { status: 400 });
+            }
         }
 
         // Validate affiliateLinks values are valid URLs and only known keys

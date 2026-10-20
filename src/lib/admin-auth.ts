@@ -8,6 +8,7 @@ import { getClientIP } from "@/lib/ratelimit";
 import { verifySessionSignature, createSignedSession, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 import { logger } from "@/lib/logger";
 import { AdminRole, VALID_ADMIN_ROLES } from "@/lib/permissions";
+import { shouldBlockSsoAdminWithoutTotp } from "@/lib/admin-policy";
 
 interface AdminSession {
     adminId: string;
@@ -56,6 +57,18 @@ export const verifyAdminSession = cache(async (): Promise<AdminSession | null> =
         });
 
         if (!admin || !admin.active) {
+            return null;
+        }
+
+        // TOTP 强制策略：截止日后，未开启主站 TOTP 的 SSO 管理员不能再访问后台。
+        // break-glass / local 账号不受影响。
+        if (
+            admin.authSource === "sso" &&
+            shouldBlockSsoAdminWithoutTotp(admin.mainTotpEnabled)
+        ) {
+            logger.warn("[Security] SSO admin session rejected: TOTP enforcement active", {
+                adminId: admin.id,
+            });
             return null;
         }
 

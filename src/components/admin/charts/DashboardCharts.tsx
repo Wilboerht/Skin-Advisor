@@ -33,6 +33,7 @@ export function useDashboardStats() {
     useEffect(() => {
         const controller = new AbortController();
         setLoading(true);
+        setError(null);
         adminFetch('/api/admin/stats', { signal: controller.signal })
             .then(res => {
                 if (!res.ok) {

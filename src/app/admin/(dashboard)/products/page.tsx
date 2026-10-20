@@ -12,6 +12,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const PRODUCT_FETCH_LIMIT = 1000;
+
 export default async function ProductsPage() {
     const admin = await verifyAdminSession();
     if (!admin) {
@@ -22,7 +24,7 @@ export default async function ProductsPage() {
     // 若未来产品数量显著增长，应改为服务端分页（skip/take）+ 前端分页 UI。
     const products = await prisma.product.findMany({
         orderBy: { createdAt: 'desc' },
-        take: 1000
+        take: PRODUCT_FETCH_LIMIT
     });
 
     // Serialize for client component — normalize image paths and safely parse JSON fields
@@ -47,5 +49,11 @@ export default async function ProductsPage() {
         updatedAt: p.updatedAt.toISOString(),
     }));
 
-    return <ProductsClient initialProducts={serializedProducts} />;
+    return (
+        <ProductsClient
+            initialProducts={serializedProducts}
+            role={admin.role}
+            truncated={products.length >= PRODUCT_FETCH_LIMIT}
+        />
+    );
 }

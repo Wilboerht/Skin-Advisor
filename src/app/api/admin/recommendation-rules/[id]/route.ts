@@ -119,7 +119,8 @@ export const PUT = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
 });
 
 // DELETE /api/admin/recommendation-rules/[id]
-export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (req: NextRequest, { admin, params }) => {
+// 破坏性操作仅 super_admin（与产品删除保持一致）
+export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (req: NextRequest, { admin, params }) => {
     // Rate limit
     const ip = getClientIP(req);
     const limitResult = await rateLimit(`admin-rule-delete-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });

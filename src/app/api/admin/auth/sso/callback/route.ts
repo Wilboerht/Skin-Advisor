@@ -14,6 +14,7 @@ import {
 } from "@/lib/admin-sso";
 import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 import { logAdminAction } from "@/lib/admin-auth";
+import { shouldBlockSsoAdminWithoutTotp } from "@/lib/admin-policy";
 import { getPublicOrigin } from "@/lib/sso-config";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
@@ -96,6 +97,16 @@ export async function GET(request: NextRequest) {
   try {
     const assertion = await exchangeAdminSsoCode(code, verifier, config);
     const claims = await verifyAdminSsoAssertion(assertion, config);
+    if (shouldBlockSsoAdminWithoutTotp(claims.totp)) {
+      await logAdminAction({
+        action: "login_sso_blocked_totp",
+        resource: "AdminUser",
+        details: { externalAdminId: claims.sub },
+        ip,
+        userAgent: request.headers.get("user-agent") || "unknown",
+      });
+      return redirectToLogin(origin, "sso_totp_required");
+    }
     const localRole = resolveLocalAdminRole(claims);
     if (!localRole) {
       return redirectToLogin(origin, "sso_forbidden");

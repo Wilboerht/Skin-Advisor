@@ -31,27 +31,43 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         ]);
 
         // ===== 肤质分布 (使用 SQL 在数据库端聚合，避免全表加载到内存) =====
-        // 注意：数据实际存储在 analysisResult->skinProfile->type，不是根级的 skinType
+        // 新版数据在 analysisResult->skinProfile->type；旧版兼容 skinAnalysis.type/skinType。
         // raw SQL 容错：聚合查询失败时降级为空分布，
         // 不让仪表盘整体 500（基础统计仍可展示）
         let skinTypeRaw: Array<{ skin_type: string; count: bigint }> = [];
         try {
             skinTypeRaw = await prisma.$queryRaw<Array<{ skin_type: string; count: bigint }>>`
             SELECT 
-                LOWER("analysisResult"->'skinProfile'->>'type') as skin_type,
+                LOWER(COALESCE(
+                    "analysisResult"->'skinProfile'->>'type',
+                    "analysisResult"->'skinAnalysis'->>'type',
+                    "analysisResult"->'skinAnalysis'->>'skinType'
+                )) as skin_type,
                 COUNT(*) as count
             FROM "AdvisorSession"
-            WHERE "analysisResult" IS NOT NULL 
-              AND "analysisResult"->'skinProfile'->>'type' IS NOT NULL
-            GROUP BY LOWER("analysisResult"->'skinProfile'->>'type')
+            WHERE "analysisResult" IS NOT NULL
+            GROUP BY 1
+            HAVING LOWER(COALESCE(
+                "analysisResult"->'skinProfile'->>'type',
+                "analysisResult"->'skinAnalysis'->>'type',
+                "analysisResult"->'skinAnalysis'->>'skinType'
+            )) IS NOT NULL
         `;
         } catch (error) {
             logger.warn("[admin/stats] skin type aggregation failed, degrading to empty distribution:", error);
         }
 
-        const validSkinTypes = ['dry', 'oily', 'combination', 'sensitive', 'normal'];
+        const validSkinTypes = [
+            'dry', 'oily', 'combination', 'combination_dry', 'combination_oily', 'sensitive', 'normal',
+        ];
         const skinTypeCount: Record<string, number> = {
-            'dry': 0, 'oily': 0, 'combination': 0, 'sensitive': 0, 'normal': 0
+            'dry': 0,
+            'oily': 0,
+            'combination': 0,
+            'combination_dry': 0,
+            'combination_oily': 0,
+            'sensitive': 0,
+            'normal': 0,
         };
 
         skinTypeRaw.forEach(row => {
@@ -63,8 +79,18 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             }
         });
 
+        const skinTypeLabels: Record<string, string> = {
+            dry: 'Dry',
+            oily: 'Oily',
+            combination: 'Combination',
+            combination_dry: 'Combination Dry',
+            combination_oily: 'Combination Oily',
+            sensitive: 'Sensitive',
+            normal: 'Normal',
+        };
+
         const skinTypeDistribution = Object.entries(skinTypeCount).map(([name, value]) => ({
-            name: name.charAt(0).toUpperCase() + name.slice(1),
+            name: skinTypeLabels[name] || name.charAt(0).toUpperCase() + name.slice(1),
             value,
             fill: getSkinTypeColor(name)
         }));
@@ -169,6 +195,8 @@ function getSkinTypeColor(type: string): string {
         'dry': '#5B8FB9',
         'oily': '#C19F70',
         'combination': '#8B7355',
+        'combination_dry': '#4E8C87',
+        'combination_oily': '#6B8E9E',
         'sensitive': '#D97706',
         'normal': '#3D4430'
     };

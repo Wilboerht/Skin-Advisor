@@ -8,6 +8,37 @@
  * .next/standalone/.env.production，standalone server.js 启动时读取。
  * PM2 的 env_file 不是官方支持的配置项，不要依赖它。
  */
+/* eslint-disable @typescript-eslint/no-require-imports */
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+
+function readProductionEnv() {
+    try {
+        const envPath = path.join(__dirname, '.env.production');
+        return fs.existsSync(envPath) ? dotenv.parse(fs.readFileSync(envPath)) : {};
+    } catch {
+        return {};
+    }
+}
+
+const productionEnv = readProductionEnv();
+const internalApiKeys = productionEnv.INTERNAL_API_KEYS;
+if (internalApiKeys) {
+    try {
+        const parsed = JSON.parse(internalApiKeys);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+            throw new Error('必须是非空 JSON 数组');
+        }
+    } catch (error) {
+        throw new Error(`.env.production 的 INTERNAL_API_KEYS 不是合法 JSON: ${error.message}`);
+    }
+}
+const securityEnv = {};
+for (const key of ['INTERNAL_API_KEYS', 'ADVISOR_INTERNAL_SECRET', 'INTERNAL_API_REQUIRE_SIGNED_QUERY']) {
+    if (productionEnv[key]) securityEnv[key] = productionEnv[key];
+}
+
 module.exports = {
     apps: [{
         name: 'skin-advisor',
@@ -22,6 +53,7 @@ module.exports = {
         env: {
             NODE_ENV: 'production',
             PORT: 3002,
+            ...securityEnv,
             // QWEN_API_KEY 等敏感配置请从 .env.production 读取
             // 不要在这里写死，以免泄露到 Git 仓库
         },

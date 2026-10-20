@@ -99,6 +99,19 @@ export default function AdminAICostsPage() {
     const [error, setError] = useState<string | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    const fetchHealth = useCallback(async () => {
+        try {
+            const res = await adminFetch("/api/admin/ai-health");
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+            if (json && json.status && json.circuits && Array.isArray(json.circuits)) {
+                setHealth(json as AIHealthData);
+            }
+        } catch {
+            // 健康信息是辅助信息，失败不阻断成本报表
+        }
+    }, []);
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -127,25 +140,16 @@ export default function AdminAICostsPage() {
         } finally {
             setIsRefreshing(false);
         }
-    }, [period]);
+        await fetchHealth();
+    }, [period, fetchHealth]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
     useEffect(() => {
-        adminFetch("/api/admin/ai-health")
-            .then((res) => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
-            })
-            .then((json) => {
-                if (json && json.status && json.circuits && Array.isArray(json.circuits)) {
-                    setHealth(json as AIHealthData);
-                }
-            })
-            .catch(() => {});
-    }, []);
+        fetchHealth();
+    }, [fetchHealth]);
 
     if (loading && !isRefreshing) {
         return (

@@ -43,11 +43,24 @@ describe("extractSessionStats", () => {
         expect(JSON.stringify(stats)).not.toContain("pregnant");
     });
 
+    it("新版热层：从 skinProfile.typeLabel 提取 AI 肤质", () => {
+        const stats = extractSessionStats(
+            {
+                persona: "desert",
+                skinProfile: { type: "combination_dry", typeLabel: "混干性肌肤", concerns: [], skinAge: 29 },
+            },
+            { ageRange: "26-30", skinType: "combination_dry", primaryConcern: ["spots"] }
+        );
+        expect(stats.skinTypeLabel).toBe("混干性肌肤");
+        expect(stats.selfSkinType).toBe("combination_dry");
+    });
+
     it("空输入返回全 null 字段", () => {
         const stats = extractSessionStats(null, null);
         expect(stats.persona).toBeNull();
         expect(stats.dimensions).toBeNull();
         expect(stats.ageRange).toBeNull();
+        expect(stats.skinTypeLabel).toBeNull();
     });
 });
 
@@ -160,12 +173,35 @@ describe("buildArchivedSummary", () => {
         expect(fa.dimensions.texture.score).toBe(66);
     });
 
+    it("新版 skinProfile 归档后保留 type/typeLabel", () => {
+        const summary = buildArchivedSummary(
+            {
+                persona: "desert",
+                skinProfile: { type: "combination_dry", typeLabel: "混干性肌肤", skinAge: 29 },
+                faceAnalysis: { overallScore: 88 },
+            },
+            { ageRange: "26-30", skinType: "combination_dry" }
+        );
+
+        expect(summary.skinProfile).toMatchObject({
+            skinAge: 29,
+            type: "combination_dry",
+            typeLabel: "混干性肌肤",
+        });
+        expect(summary.skinAnalysis?.typeLabel).toBe("混干性肌肤");
+
+        const stats = extractSessionStats(summary, null);
+        expect(stats.skinTypeLabel).toBe("混干性肌肤");
+        expect(stats.overallScore).toBe(88);
+    });
+
     it("空输入不抛异常", () => {
         const summary = buildArchivedSummary(null, undefined);
         expect(summary.archived).toBe(true);
         expect(summary.persona).toBeNull();
         expect(summary.faceAnalysis).toBeNull();
         expect(summary.skinAnalysis).toBeNull();
+        expect(summary.skinProfile).toBeNull();
         expect(summary.profile).toBeNull();
     });
 });

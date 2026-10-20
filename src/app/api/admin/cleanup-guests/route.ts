@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { verifyAdminSession, logAdminAction } from "@/lib/admin-auth";
 import { canPerformSystemSetup } from "@/lib/permissions";
+import { isSameOriginRequest } from "@/lib/same-origin";
 import { logger } from "@/lib/logger";
 
 /**
@@ -33,6 +34,10 @@ export async function POST(req: NextRequest) {
     let adminId: string | null = null;
 
     if (admin) {
+        // Cookie 分支：该路由在 proxy 的 admin 公开路径中，必须自行校验同源请求
+        if (!isSameOriginRequest(req)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
         // 破坏性清理仅超级管理员可手动执行；定时任务仍走 ADMIN_SECRET Bearer
         if (!canPerformSystemSetup(admin.role)) {
             return NextResponse.json({ error: "Forbidden - super_admin required" }, { status: 403 });

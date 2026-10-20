@@ -61,6 +61,26 @@ for (const key of optionalVars) {
   }
 }
 
+const internalApiKeysRaw = process.env.INTERNAL_API_KEYS;
+if (internalApiKeysRaw) {
+  try {
+    const parsed = JSON.parse(internalApiKeysRaw);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('必须是非空 JSON 数组');
+    }
+    for (const item of parsed) {
+      if (!item || typeof item.project !== 'string' || typeof item.key !== 'string' || typeof item.secret !== 'string') {
+        throw new Error('每个条目必须包含 project/key/secret');
+      }
+    }
+    console.log(`   ✅ INTERNAL_API_KEYS: ${parsed.length} 个密钥`);
+  } catch (error) {
+    console.error(`   ❌ 错误: INTERNAL_API_KEYS 不是合法 JSON: ${error.message}`);
+    console.error("      不要用 export $(cat .env.production)、xargs、tr -d '\"' 注入该变量。");
+    hasError = true;
+  }
+}
+
 if (hasError) {
   console.error('\n❌ 环境变量检查失败，请配置后重试。');
   process.exit(1);

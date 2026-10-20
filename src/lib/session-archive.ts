@@ -25,8 +25,12 @@ export interface ArchivedSessionSummary {
     persona: string | null;
     /** 肤质类型标签（与报告页 metadata 读取路径兼容：skinAnalysis.typeLabel） */
     skinAnalysis: { typeLabel: string | null } | null;
-    /** 肌肤年龄（趋势对比卡肌龄对比数据源；读取路径与热层一致：skinProfile.skinAge） */
-    skinProfile: { skinAge: number | null } | null;
+    /** 肌肤年龄与肤质（趋势/统计读取；新版热层使用 skinProfile.type/typeLabel） */
+    skinProfile: {
+        skinAge: number | null;
+        type?: string | null;
+        typeLabel?: string | null;
+    } | null;
     /** 面部评分明细（形状与 skin-trends 读取兼容） */
     faceAnalysis: {
         overallScore: number | null;
@@ -74,6 +78,7 @@ export function extractSessionStats(
 
     const faceAnalysis = result?.faceAnalysis as Record<string, unknown> | undefined;
     const skinAnalysis = result?.skinAnalysis as Record<string, unknown> | undefined;
+    const skinProfile = result?.skinProfile as Record<string, unknown> | undefined;
     // 冷层摘要：白名单字段在 analysisResult.profile 下
     const profile = result?.profile as Record<string, unknown> | undefined;
 
@@ -85,7 +90,11 @@ export function extractSessionStats(
 
     return {
         persona: (result?.persona as string | undefined) ?? null,
-        skinTypeLabel: (skinAnalysis?.typeLabel as string | undefined) ?? null,
+        // 新版热层写在 skinProfile，旧版冷/热层写在 skinAnalysis
+        skinTypeLabel:
+            (skinProfile?.typeLabel as string | undefined) ??
+            (skinAnalysis?.typeLabel as string | undefined) ??
+            null,
         overallScore: (faceAnalysis?.overallScore as number | undefined) ?? null,
         // texture 缺失时由区域均值派生（热层有 zoneAnalysis；冷层已在归档时固化）
         dimensions: faceAnalysis ? resolveTrendDimensions(faceAnalysis) : null,
@@ -110,6 +119,12 @@ export function buildArchivedSummary(
     const skinAgeRaw = skinProfileRaw?.skinAge ?? skinAnalysis?.skinAge;
     const skinAge = typeof skinAgeRaw === "number" && Number.isFinite(skinAgeRaw) ? skinAgeRaw : null;
 
+    const skinTypeRaw = skinProfileRaw?.type ?? skinAnalysis?.type ?? skinAnalysis?.skinType;
+    const skinType = typeof skinTypeRaw === "string" && skinTypeRaw.trim() ? skinTypeRaw : null;
+    const skinTypeLabelRaw = skinProfileRaw?.typeLabel ?? skinAnalysis?.typeLabel;
+    const skinTypeLabel =
+        typeof skinTypeLabelRaw === "string" && skinTypeLabelRaw.trim() ? skinTypeLabelRaw : null;
+
     const hasProfile = ans !== null && ANSWERS_WHITELIST.some((k) => ans[k] !== undefined);
 
     // 归档时固化派生纹理分：冷层不再保留 zoneAnalysis，若不在此写回，
@@ -127,10 +142,12 @@ export function buildArchivedSummary(
     return {
         archived: true,
         persona: (result?.persona as string | undefined) ?? null,
-        skinAnalysis: skinAnalysis
-            ? { typeLabel: (skinAnalysis.typeLabel as string | undefined) ?? null }
-            : null,
-        skinProfile: skinAge !== null ? { skinAge } : null,
+        // 冷层同时保留旧版 skinAnalysis.typeLabel，兼容历史读取方
+        skinAnalysis: skinTypeLabel ? { typeLabel: skinTypeLabel } : null,
+        skinProfile:
+            skinAge !== null || skinType !== null || skinTypeLabel !== null
+                ? { skinAge, type: skinType, typeLabel: skinTypeLabel }
+                : null,
         faceAnalysis: faceAnalysis
             ? {
                 overallScore: (faceAnalysis.overallScore as number | undefined) ?? null,

@@ -72,6 +72,7 @@ const ACTION_COLORS: Record<string, string> = {
     login: "bg-emerald-100 text-emerald-700",
     logout: "bg-[#1A1A1A]/5 text-[#5E5E5E]",
     login_failed: "bg-red-100 text-red-700",
+    login_sso_blocked_totp: "bg-red-100 text-red-700",
     create: "bg-blue-100 text-blue-700",
     update: "bg-amber-100 text-amber-700",
     delete: "bg-red-100 text-red-700",
@@ -214,6 +215,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
             logout: '登出',
             login_failed: '登录失败',
             login_sso: '主站 SSO 登录',
+            login_sso_blocked_totp: 'SSO 登录被 TOTP 策略拦截',
             login_break_glass: '应急账号登录',
             login_break_glass_failed: '应急登录失败',
             admin_sso_sync_revoke: '同步撤销会话',
@@ -248,6 +250,9 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
             });
             if (exportStartDate) params.append("startDate", exportStartDate);
             if (exportEndDate) params.append("endDate", exportEndDate);
+            if (selectedAdmin !== "all") params.append("adminId", selectedAdmin);
+            if (selectedAction !== "all") params.append("action", selectedAction);
+            if (selectedResource !== "all") params.append("resource", selectedResource);
 
             // Use backend export API
             const res = await adminFetch(`/api/admin/export?${params.toString()}`);
@@ -256,16 +261,29 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                 throw new Error(err.error || "导出失败");
             }
 
+            const truncated = res.headers.get("X-Export-Truncated") === "true";
+            const disposition = res.headers.get("Content-Disposition") || "";
+            const filenameMatch = disposition.match(/filename="([^"]+)"/i);
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            const filename = `audit_logs_export_${new Date().toISOString().split("T")[0]}.csv`;
-            link.setAttribute("download", filename);
+            link.setAttribute(
+                "download",
+                filenameMatch?.[1] ||
+                    `audit_logs_export_${new Date().toISOString().split("T")[0]}.csv`
+            );
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
+
+            if (truncated) {
+                const limit = res.headers.get("X-Export-Row-Limit") || "上限";
+                toast.error(`导出已达到 ${limit} 条上限，数据可能不完整，请缩小筛选范围后重试`);
+            } else {
+                toast.success("导出完成");
+            }
         } catch {
             toast.error("导出失败，请稍后重试");
         } finally {

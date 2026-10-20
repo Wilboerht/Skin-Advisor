@@ -24,25 +24,39 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ProductFormModal } from "./ProductFormModal";
 import { PaginationBar } from "@/components/ui/PaginationBar";
 import { SerializedProduct } from "@/types/product";
+import { isSuperAdmin } from "@/lib/permissions";
 
 interface ProductsClientProps {
     initialProducts: SerializedProduct[];
+    role: string;
+    truncated?: boolean;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
+const BATCH_SIZE = 100;
+
+function chunkIds(ids: string[], size: number): string[][] {
+    const chunks: string[][] = [];
+    for (let i = 0; i < ids.length; i += size) {
+        chunks.push(ids.slice(i, i + size));
+    }
+    return chunks;
+}
 
 const ProductRow = memo(function ProductRow({
     product,
     isSelected,
     onSelect,
     onDelete,
-    onEdit
+    onEdit,
+    canDelete
 }: {
     product: SerializedProduct;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
     onEdit: (product: SerializedProduct) => void;
+    canDelete: boolean;
 }) {
     return (
         <tr
@@ -127,14 +141,16 @@ const ProductRow = memo(function ProductRow({
                     >
                         <Edit className="h-4 w-4" />
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => onDelete(product.id)}
-                        className="rounded p-2 text-red-600 hover:bg-red-50 transition-colors"
-                        aria-label={`删除 ${product.name}`}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </button>
+                    {canDelete && (
+                        <button
+                            type="button"
+                            onClick={() => onDelete(product.id)}
+                            className="rounded p-2 text-red-600 hover:bg-red-50 transition-colors"
+                            aria-label={`删除 ${product.name}`}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
             </td>
         </tr>
@@ -150,9 +166,10 @@ async function parseErrorMessage(res: Response, fallback: string): Promise<strin
     }
 }
 
-export default function ProductsClient({ initialProducts }: ProductsClientProps) {
+export default function ProductsClient({ initialProducts, role, truncated = false }: ProductsClientProps) {
     const router = useRouter();
     const toast = useToast();
+    const canDelete = isSuperAdmin(role);
     const [products, setProducts] = useState(initialProducts);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [batchLoading, setBatchLoading] = useState<string | null>(null);
@@ -219,6 +236,40 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         }
     };
 
+    const runBatchAction = async (action: string, fallbackError: string): Promise<boolean> => {
+        if (selectedIds.length === 0) return true;
+
+        let processed = 0;
+        try {
+            for (const ids of chunkIds(selectedIds, BATCH_SIZE)) {
+                const res = await adminFetch('/api/admin/products/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids, action }),
+                });
+
+                if (!res.ok) {
+                    const message = await parseErrorMessage(res, fallbackError);
+                    toast.error(
+                        processed > 0
+                            ? `已处理 ${processed} 个，后续失败：${message}`
+                            : message
+                    );
+                    return false;
+                }
+                processed += ids.length;
+            }
+            return true;
+        } catch {
+            toast.error(
+                processed > 0
+                    ? `已处理 ${processed} 个，后续发生网络异常`
+                    : "网络异常，请稍后重试"
+            );
+            return false;
+        }
+    };
+
     const handleBatchAction = async (action: string) => {
         if (selectedIds.length === 0) {
             return;
@@ -226,23 +277,13 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
         setBatchLoading(action);
         try {
-            const res = await adminFetch('/api/admin/products/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: selectedIds, action }),
-            });
-
-            if (res.ok) {
-                setIsRefreshing(true);
-                router.refresh();
+            const success = await runBatchAction(action, "批量操作失败");
+            setIsRefreshing(true);
+            router.refresh();
+            if (success) {
                 setSelectedIds([]);
-                toast.success("批量操作完成");
-            } else {
-                const message = await parseErrorMessage(res, "批量操作失败");
-                toast.error(message);
+                toast.success(`批量操作完成（${selectedIds.length} 个产品）`);
             }
-        } catch {
-            toast.error("网络异常，请稍后重试");
         } finally {
             setBatchLoading(null);
         }
@@ -251,23 +292,12 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     const handleDelete = async () => {
         if (deleteConfirm.batch) {
             if (selectedIds.length === 0) return;
-            try {
-                const res = await adminFetch('/api/admin/products/batch', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ids: selectedIds, action: 'delete' }),
-                });
-
-                if (res.ok) {
-                    setIsRefreshing(true);
-                    router.refresh();
-                    setSelectedIds([]);
-                } else {
-                    const message = await parseErrorMessage(res, "批量删除失败");
-                    toast.error(message);
-                }
-            } catch {
-                toast.error("网络异常，请稍后重试");
+            const success = await runBatchAction('delete', "批量删除失败");
+            setIsRefreshing(true);
+            router.refresh();
+            if (success) {
+                setSelectedIds([]);
+                toast.success(`批量删除完成（${selectedIds.length} 个产品）`);
             }
         } else if (deleteConfirm.id) {
             try {
@@ -316,6 +346,12 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     添加产品
                 </button>
             </div>
+
+            {truncated && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    产品数量已达到 1000 条展示上限，仅显示最近创建的产品；更早的产品请通过数据库或后续分页功能查看。
+                </div>
+            )}
 
             {/* Filter Controls */}
             <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-sm">
@@ -417,14 +453,16 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     >
                         {batchLoading === 'unfeature' ? <Loader2 className="w-4 h-4 animate-spin" /> : '取消精选置顶'}
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => setDeleteConfirm({ show: true, id: null, batch: true })}
-                        disabled={batchLoading !== null}
-                        className="px-4 py-2 text-xs font-bold bg-rose-500/10 text-rose-700 border border-rose-500/20 hover:bg-rose-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
-                    >
-                        批量删除
-                    </button>
+                    {canDelete && (
+                        <button
+                            type="button"
+                            onClick={() => setDeleteConfirm({ show: true, id: null, batch: true })}
+                            disabled={batchLoading !== null}
+                            className="px-4 py-2 text-xs font-bold bg-rose-500/10 text-rose-700 border border-rose-500/20 hover:bg-rose-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
+                        >
+                            批量删除
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => setSelectedIds([])}
@@ -475,6 +513,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                                     setEditingProduct(p);
                                     setModalOpen(true);
                                 }}
+                                canDelete={canDelete}
                             />
                         ))}
                         {paginatedProducts.length === 0 && (

@@ -26,6 +26,10 @@ function AdminLoginForm() {
         return "您的账号没有测肤子站访问权限，请联系主站超级管理员授予「测肤子站访问」。";
       case "sso_expired":
         return "主站登录已过期，请重新登录。";
+      case "sso_totp_required":
+        return "后台已启用二次验证强制策略，请先在 NIHPLOD 主站开启 TOTP 后再登录。";
+      case "sso_denied":
+        return "主站授权已取消或未通过，请重新登录。";
       case "sso_state":
         return "登录状态校验失败，请重新发起登录。";
       case "sso_unreachable":

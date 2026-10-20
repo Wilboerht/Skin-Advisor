@@ -86,7 +86,19 @@ export async function POST(request: NextRequest) {
             return apiError(ErrorCode.FORBIDDEN, "请使用应急登录入口", 403);
         }
 
-        // SSO 影子账号没有本地密码，直接按凭据错误处理。
+        // 本地密码登录只允许真正的本地账号；SSO 影子账号必须走主站 SSO。
+        // 即使历史迁移保留了 password 字段，也不能在本地绕过主站 TOTP。
+        if (admin.authSource !== "local") {
+            await logAdminAction({
+                action: "login_failed",
+                resource: "AdminUser",
+                details: { username: normalizedUsername, reason: "non_local_auth_source" },
+                ...clientInfo
+            });
+            return INVALID_CREDENTIALS_RESPONSE;
+        }
+
+        // 本地账号没有密码时按凭据错误处理。
         if (!admin.password) {
             await logAdminAction({
                 action: "login_failed",
@@ -152,7 +164,7 @@ export async function POST(request: NextRequest) {
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
             path: "/",
-            maxAge: 60 * 60 * 2 // 2 hours, with sliding refresh on activity
+            maxAge: 60 * 60 * 2 // 固定 2 小时 TTL（当前无滑动续期；SSO 登录见 ADMIN_SSO_SESSION_TTL_MINUTES）
         });
 
         // Log successful login

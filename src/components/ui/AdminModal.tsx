@@ -59,7 +59,10 @@ export function AdminModal({
   "aria-describedby": ariaDescribedby,
 }: AdminModalProps) {
   const mounted = useMounted();
-  const containerRef = useFocusTrap<HTMLDivElement>(isOpen);
+  // Escape 由 focus trap 栈统一处理：只有最上层弹层响应，避免嵌套弹层一次关两层
+  const containerRef = useFocusTrap<HTMLDivElement>(isOpen, () => {
+    if (!disabled) onClose();
+  });
   // 检测用户是否偏好减少动画
   const [reducedMotion, setReducedMotion] = useState(false);
 
@@ -71,17 +74,6 @@ export function AdminModal({
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !disabled) {
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose, disabled]);
 
   // Body scroll lock: 使用模块级引用计数支持跨实例嵌套模态框
   useEffect(() => {

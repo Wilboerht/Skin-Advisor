@@ -9,6 +9,7 @@ import { SKIN_TYPE_OPTIONS } from "@/types/product";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { AdminModal } from "@/components/ui/AdminModal";
+import { isSuperAdmin } from "@/lib/permissions";
 
 interface Product {
     id: string;
@@ -44,11 +45,13 @@ export default function RecommendationRulesPage() {
     const toast = useToast();
     const [rules, setRules] = useState<RecommendationRule[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
+    const [productsTruncated, setProductsTruncated] = useState(false);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingRule, setEditingRule] = useState<RecommendationRule | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<RecommendationRule | null>(null);
+    const [role, setRole] = useState<string>("");
 
     // Form state
     const [formName, setFormName] = useState("");
@@ -75,7 +78,9 @@ export default function RecommendationRulesPage() {
             const res = await adminFetch("/api/admin/products?limit=500");
             if (!res.ok) throw new Error("Failed to fetch");
             const data = await res.json();
-            setProducts(data.products || []);
+            const list = data.products || [];
+            setProducts(list);
+            setProductsTruncated(list.length >= 500);
         } catch {
             // Silent fail
         }
@@ -85,6 +90,12 @@ export default function RecommendationRulesPage() {
         // Intentional mount-only data fetch: setLoading(false) runs in promise finally,
         // not synchronously during render.
         Promise.all([fetchRules(), fetchProducts()]).finally(() => setLoading(false));
+        adminFetch("/api/admin/auth/me")
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data: { user?: { role?: string } } | null) => {
+                if (data?.user?.role) setRole(data.user.role);
+            })
+            .catch(() => {});
     }, [fetchRules, fetchProducts]);
 
     const resetForm = () => {
@@ -244,6 +255,12 @@ export default function RecommendationRulesPage() {
                 </button>
             </div>
 
+            {productsTruncated && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    可选产品已达到 500 条上限，仅显示最近创建的产品；更早的产品暂时无法在规则中关联。
+                </div>
+            )}
+
             <div className="bg-white rounded-xl border border-[#3D4430]/10 overflow-hidden">
                 <table className="w-full text-left">
                     <thead className="bg-[#F8F7F4] text-xs font-bold tracking-wider text-[#5E5E5E] uppercase">
@@ -319,13 +336,15 @@ export default function RecommendationRulesPage() {
                                             <Pencil className="w-3.5 h-3.5" />
                                             编辑
                                         </button>
-                                        <button
-                                            onClick={() => setDeleteTarget(rule)}
-                                            className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 transition-colors"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                            删除
-                                        </button>
+                                        {isSuperAdmin(role) && (
+                                            <button
+                                                onClick={() => setDeleteTarget(rule)}
+                                                className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 transition-colors"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                                删除
+                                            </button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>

@@ -287,9 +287,7 @@ export default function ProductForm({
             toast.error("请完善必填项");
             return;
         }
-        setSaving(true);
-        onSubmittingChange?.(true);
-
+        // 先完成全部本地校验，再进入 submitting 状态，避免失败分支卡住关闭按钮
         const filteredLinks: Record<string, string> = {};
         Object.entries(affiliateLinks).forEach(([k, v]) => {
             if (v.trim()) filteredLinks[k] = v.trim();
@@ -303,10 +301,12 @@ export default function ProductForm({
             } catch {
                 setErrors((errs) => ({ ...errs, [`affiliateLinks_${k}`]: "请输入有效链接" }));
                 toast.error("请填写有效的电商链接");
-                setSaving(false);
                 return;
             }
         }
+
+        setSaving(true);
+        onSubmittingChange?.(true);
 
         const payload = {
             ...formData,

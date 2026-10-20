@@ -5,6 +5,7 @@ import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
 import { logger } from "@/lib/logger";
+import { parseBeijingDate } from "@/lib/time";
 
 // 筛选器缓存 (5min TTL，actions/resources 几乎不变)
 let cachedFilters: { actions: string[]; resources: string[] } | null = null;
@@ -78,24 +79,23 @@ export const GET = withAdminAuth(async (request, { admin }) => {
             whereCondition.adminId = adminId;
         }
 
-        // Date range filter
+        // Date range filter（与导出接口一致：按北京时间日界解析）
         if (startDate || endDate) {
             whereCondition.createdAt = {};
             if (startDate) {
-                const d = new Date(startDate);
-                if (isNaN(d.getTime())) {
+                const d = parseBeijingDate(startDate);
+                if (!d) {
                     return NextResponse.json({ error: "Invalid startDate" }, { status: 400 });
                 }
                 whereCondition.createdAt.gte = d;
             }
             if (endDate) {
-                const d = new Date(endDate);
-                if (isNaN(d.getTime())) {
+                const d = parseBeijingDate(endDate);
+                if (!d) {
                     return NextResponse.json({ error: "Invalid endDate" }, { status: 400 });
                 }
-                // Include the entire end date (add 1 day)
-                d.setDate(d.getDate() + 1);
-                whereCondition.createdAt.lte = d;
+                // 包含结束日全天（北京时间次日零点）
+                whereCondition.createdAt.lte = new Date(d.getTime() + 24 * 60 * 60 * 1000);
             }
         }
 

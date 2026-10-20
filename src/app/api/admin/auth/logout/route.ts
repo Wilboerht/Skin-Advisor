@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // 服务端撤销当前会话，防止 Cookie 被窃取后继续使用
+        // 撤销该管理员的所有会话（含其他设备），防止 Cookie 被窃取后继续使用
         revokeAdminSessions(admin.adminId);
 
         // 持久化撤销时间戳到 DB（服务器重启/多实例场景下仍生效）

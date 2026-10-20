@@ -17,8 +17,7 @@ function authorized(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) return false;
   const authHeader = request.headers.get("authorization");
-  const querySecret = request.nextUrl.searchParams.get("secret");
-  return authHeader === `Bearer ${cronSecret}` || querySecret === cronSecret;
+  return authHeader === `Bearer ${cronSecret}`;
 }
 
 function localRoleFromStatus(status: MainAdminStatus): "super_admin" | "admin" | null {

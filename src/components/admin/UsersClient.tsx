@@ -8,7 +8,7 @@ import { UserDetailModal } from "./UserDetailModal";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/DropdownMenu";
 import { PaginationBar } from "@/components/ui/PaginationBar";
 import { useToast } from "@/components/ui/Toast";
-import { isDisabledUser, UserRole } from "@/lib/permissions";
+import { isDisabledUser, isSuperAdmin, UserRole } from "@/lib/permissions";
 
 interface User {
   id: string;
@@ -33,8 +33,9 @@ interface Pagination {
   totalPages: number;
 }
 
-export function UsersClient() {
+export function UsersClient({ role }: { role: string }) {
   const toast = useToast();
+  const canManageDeletion = isSuperAdmin(role);
   const [users, setUsers] = useState<User[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,15 +161,17 @@ export function UsersClient() {
             管理注册用户 &middot; 共 {pagination?.total || 0} 人
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            className="flex items-center rounded-lg border border-[#E9E9E7] bg-white px-4 py-2 text-sm font-medium text-[#5E5E5E] shadow-sm hover:bg-[#1A1A1A]/[0.02] transition-colors"
-            onClick={() => window.open("/api/admin/export?type=users", "_blank")}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            导出用户
-          </button>
-        </div>
+        {canManageDeletion && (
+          <div className="flex items-center gap-3">
+            <button
+              className="flex items-center rounded-lg border border-[#E9E9E7] bg-white px-4 py-2 text-sm font-medium text-[#5E5E5E] shadow-sm hover:bg-[#1A1A1A]/[0.02] transition-colors"
+              onClick={() => window.open("/api/admin/export?type=users", "_blank")}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              导出用户
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/60 p-3 text-sm text-amber-800">
@@ -344,20 +347,22 @@ export function UsersClient() {
             >
               {users.find((u) => u.id === showDropdown)?.role === UserRole.DISABLED ? "启用用户" : "禁用用户"}
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                const user = users.find((u) => u.id === showDropdown);
-                if (user) {
-                  setSelectedUser(user);
-                  setShowDeleteModal(true);
-                  setShowDropdown(null);
-                }
-              }}
-              icon={<Trash2 className="w-4 h-4" />}
-              danger
-            >
-              删除用户
-            </DropdownMenuItem>
+            {canManageDeletion && (
+              <DropdownMenuItem
+                onClick={() => {
+                  const user = users.find((u) => u.id === showDropdown);
+                  if (user) {
+                    setSelectedUser(user);
+                    setShowDeleteModal(true);
+                    setShowDropdown(null);
+                  }
+                }}
+                icon={<Trash2 className="w-4 h-4" />}
+                danger
+              >
+                删除用户
+              </DropdownMenuItem>
+            )}
           </>
         )}
       </DropdownMenu>

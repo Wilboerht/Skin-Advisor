@@ -33,6 +33,7 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
         // 截断标注：达到 take 上限时在响应头与文件名中显式标注，避免静默丢数据
         let truncated = false;
         let rowLimit = 0;
+        let auditFilters: Record<string, string | null> | null = null;
 
         switch (type) {
             case "products":
@@ -57,7 +58,13 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
 
             case "users":
                 const users = await prisma.user.findMany({
-                    include: {
+                    // 显式白名单：导出不需要密码哈希、tokenVersion 等字段
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        role: true,
+                        createdAt: true,
                         _count: { select: { advisorSessions: true } },
                     },
                     orderBy: { createdAt: "desc" },
@@ -159,7 +166,25 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
             case "audit-logs":
                 const startDate = request.nextUrl.searchParams.get("startDate") || undefined;
                 const endDate = request.nextUrl.searchParams.get("endDate") || undefined;
-                const where: { createdAt?: { gte?: Date; lte?: Date } } = {};
+                const adminId = request.nextUrl.searchParams.get("adminId") || undefined;
+                const action = request.nextUrl.searchParams.get("action") || undefined;
+                const resource = request.nextUrl.searchParams.get("resource") || undefined;
+                const where: {
+                    createdAt?: { gte?: Date; lte?: Date };
+                    adminId?: string;
+                    action?: string;
+                    resource?: string;
+                } = {};
+                if (adminId && adminId !== "all") where.adminId = adminId;
+                if (action && action !== "all") where.action = action;
+                if (resource && resource !== "all") where.resource = resource;
+                auditFilters = {
+                    adminId: adminId || null,
+                    action: action || null,
+                    resource: resource || null,
+                    startDate: startDate || null,
+                    endDate: endDate || null,
+                };
                 if (startDate) {
                     // 固定按北京时间零点解析；非法日期返回 400 而非 Invalid Date 导致 500
                     const d = parseBeijingDate(startDate);
@@ -229,7 +254,12 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
             adminId: admin.adminId,
             action: "export",
             resource: type.charAt(0).toUpperCase() + type.slice(1),
-            details: { count: data.length, truncated, rowLimit },
+            details: {
+                count: data.length,
+                truncated,
+                rowLimit,
+                ...(auditFilters ? { filters: auditFilters } : {}),
+            },
             ...clientInfo,
         });
 

@@ -19,6 +19,7 @@ import {
     MAX_TAG_ARRAY_LENGTH,
     AFFILIATE_PLATFORM_KEYS,
     validateImageUrl,
+    recommendReasonsSchema,
 } from "@/types/product";
 import { logger } from "@/lib/logger";
 
@@ -151,9 +152,9 @@ export const PUT = withAdminAuth(async (
             }
         }
 
-        // Validate JSON string array fields
+        // Validate JSON string array fields（这些字段在 schema 中非空，只允许省略，不允许 null）
         const validateStringArray = (value: unknown) => {
-            if (value === undefined || value === null) return true;
+            if (value === undefined) return true;
             if (!Array.isArray(value)) return false;
             if (value.length > MAX_TAG_ARRAY_LENGTH) return false;
             return value.every((item) => typeof item === "string" && item.length <= MAX_TAG_ITEM_LENGTH);
@@ -170,6 +171,13 @@ export const PUT = withAdminAuth(async (
         }
         if (!validateStringArray(updateData.negativeFor)) {
             return apiError(ErrorCode.VALIDATION_ERROR, `negativeFor must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)`, 400);
+        }
+
+        if (updateData.recommendReasons !== undefined && updateData.recommendReasons !== null) {
+            const parsedReasons = recommendReasonsSchema.safeParse(updateData.recommendReasons);
+            if (!parsedReasons.success) {
+                return apiError(ErrorCode.VALIDATION_ERROR, "Invalid recommendReasons format", 400);
+            }
         }
 
         // Validate affiliateLinks

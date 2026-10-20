@@ -51,6 +51,11 @@ export default function AdminSidebar() {
     const exportMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        // 移动端点击导航后自动收起侧栏
+        setMobileOpen(false);
+    }, [pathname]);
+
+    useEffect(() => {
         // adminFetch 统一拦截 401：会话过期时自动跳转 /admin/login
         adminFetch("/api/admin/auth/me")
             .then(res => res.ok ? res.json() : null)

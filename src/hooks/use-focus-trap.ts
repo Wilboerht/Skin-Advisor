@@ -52,8 +52,9 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: 
         }
 
         const handleKeyDown = (e: KeyboardEvent) => {
+            // 只有最上层弹层处理键盘事件，避免嵌套弹层互相抢焦点/重复关闭
+            if (trapStack[trapStack.length - 1] !== trapId) return;
             if (e.key === "Escape") {
-                if (trapStack[trapStack.length - 1] !== trapId) return;
                 onEscapeRef.current?.();
                 return;
             }

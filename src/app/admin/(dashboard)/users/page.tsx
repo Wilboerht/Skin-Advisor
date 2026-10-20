@@ -16,5 +16,5 @@ export default async function UsersPage() {
         redirect("/admin/login");
     }
     // User management available to super_admin and admin
-    return <UsersClient />;
+    return <UsersClient role={admin.role} />;
 }
