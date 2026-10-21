@@ -1687,8 +1687,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             description: p.description || null,
                                             keyIngredients: p.keyIngredients || [],
                                             benefits: p.benefits || [],
-                                            affiliateLinks: p.affiliateLinks || null,
-                                            howToUse: p.howToUse || null,
+                        affiliateLinks: p.affiliateLinks || null,
+                        purchaseLinks: p.purchaseLinks || [],
+                        origin: p.origin || null,
+                        capacity: p.capacity || null,
+                        howToUse: p.howToUse || null,
                                             source: p.source,
                                         } satisfies ProductCardData))}
                                         isLoading={loading}

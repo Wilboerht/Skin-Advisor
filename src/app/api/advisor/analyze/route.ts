@@ -1049,6 +1049,9 @@ export async function POST(request: NextRequest) {
                         keyIngredients: catalogProduct.keyIngredients || [],
                         benefits: catalogProduct.benefits || [],
                         affiliateLinks: catalogProduct.affiliateLinks || null,
+                        purchaseLinks: catalogProduct.purchaseLinks || null,
+                        origin: catalogProduct.origin || null,
+                        capacity: catalogProduct.capacity || null,
                         howToUse: catalogProduct.howToUse || null,
                         source: "ai" as const,
                         reason: sanitizeReason(p.reason || algorithmRecs.find((r) => String(r.id) === String(p.id))?.reason || "为您精选的护肤产品")

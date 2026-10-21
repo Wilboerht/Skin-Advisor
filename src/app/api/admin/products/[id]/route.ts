@@ -12,6 +12,8 @@ import {
     MAX_PRICE_LENGTH,
     MAX_DESCRIPTION_LENGTH,
     MAX_HOW_TO_USE_LENGTH,
+    MAX_ORIGIN_LENGTH,
+    MAX_CAPACITY_LENGTH,
     MAX_IMAGE_URL_LENGTH,
     MAX_AFFILIATE_URL_LENGTH,
     MAX_IMAGE_COUNT,
@@ -20,7 +22,9 @@ import {
     AFFILIATE_PLATFORM_KEYS,
     validateImageUrl,
     recommendReasonsSchema,
+    purchaseLinksSchema,
 } from "@/types/product";
+import { buildAffiliateLinks, normalizeProductPurchaseLinks } from "@/lib/product-links";
 import { logger } from "@/lib/logger";
 
 // GET /api/admin/products/[id] - Get product details
@@ -69,8 +73,8 @@ export const PUT = withAdminAuth(async (
         const allowedFields = [
             'name', 'category', 'image', 'images', 'price', 'description',
             'keyIngredients', 'suitableSkinTypes', 'benefits', 'negativeFor',
-            'active', 'featured', 'howToUse',
-            'affiliateLinks', 'recommendReasons'
+            'active', 'featured', 'howToUse', 'origin', 'capacity',
+            'affiliateLinks', 'purchaseLinks', 'recommendReasons'
         ];
 
         const updateData: Record<string, unknown> = {};
@@ -121,6 +125,22 @@ export const PUT = withAdminAuth(async (
         } else if (updateData.howToUse !== undefined) {
             if (typeof updateData.howToUse !== "string" || updateData.howToUse.length > MAX_HOW_TO_USE_LENGTH) {
                 return apiError(ErrorCode.VALIDATION_ERROR, `Invalid howToUse (must be a string, max ${MAX_HOW_TO_USE_LENGTH} chars)`, 400);
+            }
+        }
+
+        if (updateData.origin === null) {
+            updateData.origin = null;
+        } else if (updateData.origin !== undefined) {
+            if (typeof updateData.origin !== "string" || updateData.origin.length > MAX_ORIGIN_LENGTH) {
+                return apiError(ErrorCode.VALIDATION_ERROR, `Invalid origin (must be a string, max ${MAX_ORIGIN_LENGTH} chars)`, 400);
+            }
+        }
+
+        if (updateData.capacity === null) {
+            updateData.capacity = null;
+        } else if (updateData.capacity !== undefined) {
+            if (typeof updateData.capacity !== "string" || updateData.capacity.length > MAX_CAPACITY_LENGTH) {
+                return apiError(ErrorCode.VALIDATION_ERROR, `Invalid capacity (must be a string, max ${MAX_CAPACITY_LENGTH} chars)`, 400);
             }
         }
 
@@ -180,8 +200,8 @@ export const PUT = withAdminAuth(async (
             }
         }
 
-        // Validate affiliateLinks
-        if (updateData.affiliateLinks !== undefined && updateData.affiliateLinks !== null) {
+        // Validate affiliateLinks only when the client is still using the legacy shape.
+        if (updateData.purchaseLinks === undefined && updateData.affiliateLinks !== undefined && updateData.affiliateLinks !== null) {
             if (typeof updateData.affiliateLinks !== "object" || Array.isArray(updateData.affiliateLinks)) {
                 return apiError(ErrorCode.VALIDATION_ERROR, "affiliateLinks must be an object", 400);
             }
@@ -208,6 +228,22 @@ export const PUT = withAdminAuth(async (
             }
         }
 
+        if (updateData.purchaseLinks !== undefined) {
+            const parsedLinks = purchaseLinksSchema.safeParse(updateData.purchaseLinks);
+            if (!parsedLinks.success) {
+                return apiError(
+                    ErrorCode.VALIDATION_ERROR,
+                    parsedLinks.error.issues[0]?.message || "Invalid purchaseLinks",
+                    400
+                );
+            }
+            updateData.purchaseLinks = parsedLinks.data?.length ? parsedLinks.data : null;
+            // 新版以 purchaseLinks 为准，忽略客户端直接提交的旧字段，避免双写不一致。
+            updateData.affiliateLinks = buildAffiliateLinks(
+                normalizeProductPurchaseLinks(updateData.purchaseLinks, null)
+            );
+        }
+
         // Validate boolean fields
         if (updateData.active !== undefined) {
             updateData.active = updateData.active === true;
@@ -222,6 +258,12 @@ export const PUT = withAdminAuth(async (
         if (typeof updateData.description === "string") updateData.description = updateData.description.trim();
         if (typeof updateData.price === "string") updateData.price = updateData.price.trim();
         if (typeof updateData.howToUse === "string") updateData.howToUse = updateData.howToUse.trim();
+        if (typeof updateData.origin === "string") {
+            updateData.origin = updateData.origin.trim() || null;
+        }
+        if (typeof updateData.capacity === "string") {
+            updateData.capacity = updateData.capacity.trim() || null;
+        }
 
         const txResult = await prisma.$transaction(async (tx) => {
             const oldProduct = await tx.product.findUnique({ where: { id } });

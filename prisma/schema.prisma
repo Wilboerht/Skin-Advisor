@@ -275,7 +275,10 @@ model Product {
 
   // ===== 新增字段 =====
   howToUse          String?  // 使用方法说明
-  affiliateLinks    Json?    // 电商链接 { taobao: "", jd: "", xiaohongshu: "", douyin: "" }
+  origin            String?  // 产地
+  capacity          String?  // 规格容量
+  affiliateLinks    Json?    // 旧结构兼容 { taobao: "", xiaohongshu: "", douyin: "" }
+  purchaseLinks     Json?    // 四渠道购买链接（含 H5 与小程序跳转信息）
   negativeFor       Json     // string[] 不适合人群/负面标签，如 ["敏感肌", "痘痘肌", "孕妇"]
   recommendReasons  Json?    // 按肤质的推荐理由 { "oily": "专为油性肌调配...", "dry": "..." }
 

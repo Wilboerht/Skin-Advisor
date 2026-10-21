@@ -9,6 +9,7 @@ import {
     parseStringArray,
     parseAffiliateLinks,
 } from "@/types/product";
+import { normalizeProductPurchaseLinks } from "@/lib/product-links";
 
 export const dynamic = "force-dynamic";
 
@@ -37,11 +38,14 @@ export default async function ProductsPage() {
         images: normalizeImages(p.images),
         description: p.description,
         howToUse: p.howToUse,
+        origin: p.origin,
+        capacity: p.capacity,
         keyIngredients: parseStringArray(p.keyIngredients),
         suitableSkinTypes: parseStringArray(p.suitableSkinTypes),
         benefits: parseStringArray(p.benefits),
         negativeFor: parseStringArray(p.negativeFor),
         affiliateLinks: parseAffiliateLinks(p.affiliateLinks),
+        purchaseLinks: normalizeProductPurchaseLinks(p.purchaseLinks, p.affiliateLinks),
         recommendReasons: (p.recommendReasons as Record<string, string> | null) ?? null,
         active: p.active,
         featured: p.featured,

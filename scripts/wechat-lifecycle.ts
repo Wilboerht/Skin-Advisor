@@ -166,9 +166,24 @@ async function sendDay3Messages() {
 
         const result = session.analysisResult as Record<string, unknown> | null;
         const products = result && typeof result === "object" && "products" in result
-            ? (result as { products: Array<{ name: string; affiliateLinks?: Record<string, string> }> }).products
+            ? (result as {
+                products: Array<{
+                    name: string;
+                    affiliateLinks?: Record<string, string>;
+                    purchaseLinks?: Array<{ platformKey?: string; url?: string }>;
+                }>;
+            }).products
             : [];
         const firstProduct = products?.[0];
+        const purchaseLinks = Array.isArray(firstProduct?.purchaseLinks)
+            ? firstProduct.purchaseLinks
+            : [];
+        const productUrl =
+            purchaseLinks.find(
+                (link) => link.platformKey === "xiaohongshu" && link.url
+            )?.url ||
+            firstProduct?.affiliateLinks?.xiaohongshu ||
+            "";
 
         if (DRY_RUN) {
             console.log(`  [DRY RUN] 发送护肤贴士: userId=${session.userId}, product=${firstProduct?.name || "无"}`);
@@ -179,7 +194,7 @@ async function sendDay3Messages() {
             templateType: "skincare_tip",
             userName: session.user?.name || "用户",
             productName: firstProduct?.name || "推荐产品",
-            productUrl: firstProduct?.affiliateLinks?.xiaohongshu || "",
+            productUrl,
         });
     }
 }

@@ -7,7 +7,7 @@ import { m, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
 import type { ProductCardData } from "./ProductCard";
-import { getProductLinks } from "@/lib/affiliate-links";
+import { normalizeProductPurchaseLinks } from "@/lib/product-links";
 import { PlatformIcon } from "./PlatformIcon";
 import { lookupIngredient } from "@/lib/ingredient-glossary";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -106,7 +106,11 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
     if (!mounted || !product) return null;
 
-    const allLinks = getProductLinks(product.affiliateLinks);
+    // H5 直接打开网页链接；微信小店没有 H5 入口，暂不展示。
+    const allLinks = normalizeProductPurchaseLinks(
+        product.purchaseLinks,
+        product.affiliateLinks
+    ).filter((link) => link.platformKey !== "wechat-shop" && link.url);
 
     return createPortal(
         <AnimatePresence>
@@ -239,6 +243,24 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                             <div className="mb-4 text-lg font-bold text-[#3d2f25]">
                                 {formatPrice(product.price)}
                             </div>
+
+                            {/* Origin / Capacity */}
+                            {(product.origin || product.capacity) && (
+                                <div className="mb-4 grid grid-cols-2 gap-3 text-[13px]">
+                                    {product.origin && (
+                                        <div>
+                                            <span className="text-[#8c7a6b]">产地</span>
+                                            <span className="ml-2 text-[#3d2f25]">{product.origin}</span>
+                                        </div>
+                                    )}
+                                    {product.capacity && (
+                                        <div>
+                                            <span className="text-[#8c7a6b]">规格</span>
+                                            <span className="ml-2 text-[#3d2f25]">{product.capacity}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Reason */}
                             <section className="mb-4">
@@ -392,13 +414,15 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                         {allLinks.length > 0 ? (
                                             allLinks.map((link) => (
                                                 <a
-                                                    key={link.platform}
+                                                    key={link.platformKey}
                                                     href={link.url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="transition-opacity hover:opacity-60"
+                                                    aria-label={`前往${link.platform}购买`}
+                                                    className="flex items-center gap-1.5 transition-opacity hover:opacity-60"
                                                 >
-                                                    <PlatformIcon platform={link.config.name} />
+                                                    <PlatformIcon platform={link.platform} />
+                                                    <span className="text-[12px] text-[#5c4937]">{link.platform}</span>
                                                 </a>
                                             ))
                                         ) : (

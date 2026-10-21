@@ -8,6 +8,8 @@ import {
     MAX_PRICE_LENGTH,
     MAX_DESCRIPTION_LENGTH,
     MAX_HOW_TO_USE_LENGTH,
+    MAX_ORIGIN_LENGTH,
+    MAX_CAPACITY_LENGTH,
     MAX_IMAGE_URL_LENGTH,
     MAX_AFFILIATE_URL_LENGTH,
     MAX_IMAGE_COUNT,
@@ -16,7 +18,9 @@ import {
     AFFILIATE_PLATFORM_KEYS,
     validateImageUrl,
     recommendReasonsSchema,
+    purchaseLinksSchema,
 } from "@/types/product";
+import { buildAffiliateLinks, normalizeProductPurchaseLinks } from "@/lib/product-links";
 import { logger } from "@/lib/logger";
 
 // GET /api/admin/products - List products with pagination
@@ -98,6 +102,17 @@ export const POST = withAdminAuth(async (request, { admin }) => {
             }
         }
 
+        if (body.origin !== undefined && body.origin !== null) {
+            if (typeof body.origin !== "string" || body.origin.length > MAX_ORIGIN_LENGTH) {
+                return NextResponse.json({ error: `Invalid origin (must be a string, max ${MAX_ORIGIN_LENGTH} chars)` }, { status: 400 });
+            }
+        }
+        if (body.capacity !== undefined && body.capacity !== null) {
+            if (typeof body.capacity !== "string" || body.capacity.length > MAX_CAPACITY_LENGTH) {
+                return NextResponse.json({ error: `Invalid capacity (must be a string, max ${MAX_CAPACITY_LENGTH} chars)` }, { status: 400 });
+            }
+        }
+
         // Validate images array
         if (body.images !== undefined && body.images !== null) {
             if (!Array.isArray(body.images) || body.images.length > MAX_IMAGE_COUNT) {
@@ -155,7 +170,8 @@ export const POST = withAdminAuth(async (request, { admin }) => {
         }
 
         // Validate affiliateLinks values are valid URLs and only known keys
-        if (body.affiliateLinks !== undefined && body.affiliateLinks !== null) {
+        // purchaseLinks 存在时旧字段仅作为派生结果，忽略客户端直接提交值。
+        if (body.purchaseLinks === undefined && body.affiliateLinks !== undefined && body.affiliateLinks !== null) {
             if (typeof body.affiliateLinks !== "object" || Array.isArray(body.affiliateLinks)) {
                 return NextResponse.json({ error: "affiliateLinks must be an object" }, { status: 400 });
             }
@@ -182,6 +198,18 @@ export const POST = withAdminAuth(async (request, { admin }) => {
             }
         }
 
+        let purchaseLinks = body.purchaseLinks;
+        if (purchaseLinks !== undefined && purchaseLinks !== null) {
+            const parsedLinks = purchaseLinksSchema.safeParse(purchaseLinks);
+            if (!parsedLinks.success) {
+                return NextResponse.json(
+                    { error: parsedLinks.error.issues[0]?.message || "Invalid purchaseLinks" },
+                    { status: 400 }
+                );
+            }
+            purchaseLinks = parsedLinks.data?.length ? parsedLinks.data : null;
+        }
+
         const [product] = await prisma.$transaction(async (tx) => {
             const product = await tx.product.create({
                 data: {
@@ -197,7 +225,16 @@ export const POST = withAdminAuth(async (request, { admin }) => {
                     negativeFor: body.negativeFor || [],
                     active: body.active === true,
                     howToUse: body.howToUse || null,
-                    affiliateLinks: body.affiliateLinks || null,
+                    origin: typeof body.origin === "string" ? body.origin.trim() || null : null,
+                    capacity: typeof body.capacity === "string" ? body.capacity.trim() || null : null,
+                    purchaseLinks: purchaseLinks ?? null,
+                    // 新版以 purchaseLinks 为准，始终派生旧字段；仅旧客户端未传新结构时保留 affiliateLinks。
+                    affiliateLinks:
+                        body.purchaseLinks !== undefined
+                            ? buildAffiliateLinks(
+                                normalizeProductPurchaseLinks(purchaseLinks, null)
+                            )
+                            : body.affiliateLinks || null,
                     featured: body.featured === true,
                     recommendReasons: body.recommendReasons || null,
                 }

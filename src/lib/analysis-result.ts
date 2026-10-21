@@ -4,6 +4,7 @@
  */
 
 import type { ConsultantReport } from "@/lib/advisor-utils";
+import type { ProductPurchaseLink } from "@/lib/product-links";
 
 /**
  * 上一次测肤摘要（趋势对比板块数据源）。
@@ -47,6 +48,9 @@ export interface ComprehensiveResult {
         keyIngredients?: string[];
         benefits?: string[];
         affiliateLinks?: Record<string, string> | null;
+        purchaseLinks?: ProductPurchaseLink[] | null;
+        origin?: string | null;
+        capacity?: string | null;
         howToUse?: string | null;
         source?: "persona" | "algorithm" | "ai";
     }>;

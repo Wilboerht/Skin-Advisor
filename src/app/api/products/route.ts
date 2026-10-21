@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { normalizeProductPurchaseLinks } from "@/lib/product-links";
 import { logger } from "@/lib/logger";
 
 // GET /api/products - 公开产品列表（无需登录）
@@ -40,11 +41,22 @@ export async function GET(request: NextRequest) {
                 suitableSkinTypes: true,
                 benefits: true,
                 howToUse: true,
+                origin: true,
+                capacity: true,
                 affiliateLinks: true,
+                purchaseLinks: true,
             }
         });
 
-        return NextResponse.json(products);
+        return NextResponse.json(
+            products.map((product) => ({
+                ...product,
+                purchaseLinks: normalizeProductPurchaseLinks(
+                    product.purchaseLinks,
+                    product.affiliateLinks
+                ),
+            }))
+        );
     } catch (error) {
         logger.error("Failed to fetch products:", error);
         return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });

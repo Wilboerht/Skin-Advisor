@@ -130,7 +130,7 @@ export function appendTrackingParams(url: string, params: {
 export function openAffiliateLink(
     url: string,
     productId: string,
-    platform: EcommercePlatform
+    platform: string
 ): void {
     const trackedUrl = appendTrackingParams(url, {
         source: 'myskin_today',

@@ -18,9 +18,21 @@ import {
     MAX_PRICE_LENGTH,
     MAX_DESCRIPTION_LENGTH,
     MAX_HOW_TO_USE_LENGTH,
+    MAX_ORIGIN_LENGTH,
+    MAX_CAPACITY_LENGTH,
+    MAX_PURCHASE_URL_LENGTH,
+    MAX_MINI_PROGRAM_SHORT_LINK_LENGTH,
+    MAX_STORE_PRODUCT_ID_LENGTH,
     MAX_IMAGE_COUNT,
     MAX_TAG_ITEM_LENGTH,
+    PURCHASE_PLATFORM_OPTIONS,
+    type PurchasePlatformKey,
 } from "@/types/product";
+import {
+    buildAffiliateLinks,
+    normalizeProductPurchaseLinks,
+    type ProductPurchaseLink,
+} from "@/lib/product-links";
 
 // ==================== 子组件 ====================
 
@@ -138,6 +150,13 @@ export type { ProductFormData };
 
 type FormErrors = Record<string, string>;
 
+interface PurchaseLinkFormItem extends ProductPurchaseLink {
+    url: string;
+    miniProgramShortLink: string;
+    miniProgramPath: string;
+    storeProductId: string;
+}
+
 function validate(formData: Record<string, unknown>, keyIngredients: string[], benefits: string[], images: string[]) {
     const errors: FormErrors = {};
     const getString = (v: unknown): string => typeof v === "string" ? v : "";
@@ -176,6 +195,8 @@ export default function ProductForm({
         name: initialData?.name || "",
         category: initialData?.category || "",
         price: initialData?.price || "",
+        origin: initialData?.origin || "",
+        capacity: initialData?.capacity || "",
         description: initialData?.description || "",
         howToUse: initialData?.howToUse || "",
         active: initialData?.active ?? true,
@@ -198,11 +219,40 @@ export default function ProductForm({
         });
     };
 
-    const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({
-        taobao: initialData?.affiliateLinks?.taobao || "",
-        xiaohongshu: initialData?.affiliateLinks?.xiaohongshu || "",
-        douyin: initialData?.affiliateLinks?.douyin || "",
+    const [purchaseLinks, setPurchaseLinks] = useState<PurchaseLinkFormItem[]>(() => {
+        const existing = normalizeProductPurchaseLinks(
+            initialData?.purchaseLinks,
+            initialData?.affiliateLinks
+        );
+        return PURCHASE_PLATFORM_OPTIONS.map((option) => {
+            const found = existing.find((link) => link.platformKey === option.value);
+            return {
+                platformKey: option.value,
+                platform: option.label,
+                url: found?.url || "",
+                miniProgramShortLink: found?.miniProgramShortLink || "",
+                miniProgramPath: found?.miniProgramPath || "",
+                storeProductId: found?.storeProductId || "",
+            };
+        });
     });
+
+    const updatePurchaseLink = (
+        platformKey: PurchasePlatformKey,
+        field: "url" | "miniProgramShortLink" | "miniProgramPath" | "storeProductId",
+        value: string
+    ) => {
+        setPurchaseLinks((prev) =>
+            prev.map((link) =>
+                link.platformKey === platformKey ? { ...link, [field]: value } : link
+            )
+        );
+        setErrors((prev) => {
+            const next = { ...prev };
+            delete next[`purchaseLinks_${platformKey}_${field}`];
+            return next;
+        });
+    };
 
     const [keyIngredients, setKeyIngredients] = useState<string[]>(initialData?.keyIngredients || []);
     const [benefits, setBenefits] = useState<string[]>(initialData?.benefits || []);
@@ -288,21 +338,62 @@ export default function ProductForm({
             return;
         }
         // 先完成全部本地校验，再进入 submitting 状态，避免失败分支卡住关闭按钮
-        const filteredLinks: Record<string, string> = {};
-        Object.entries(affiliateLinks).forEach(([k, v]) => {
-            if (v.trim()) filteredLinks[k] = v.trim();
-        });
-        for (const [k, v] of Object.entries(filteredLinks)) {
-            try {
-                const url = new URL(v);
-                if (url.protocol !== "http:" && url.protocol !== "https:") {
-                    throw new Error("Invalid protocol");
-                }
-            } catch {
-                setErrors((errs) => ({ ...errs, [`affiliateLinks_${k}`]: "请输入有效链接" }));
-                toast.error("请填写有效的电商链接");
-                return;
+        // 当前仅启用 H5 URL + 小程序短链；miniProgramPath/storeProductId 为后续能力，暂不写入。
+        type ActivePurchaseLink = {
+            platformKey: PurchasePlatformKey;
+            platform: string;
+            url?: string;
+            miniProgramShortLink?: string;
+        };
+        const activePurchaseLinks: ActivePurchaseLink[] = [];
+        for (const link of purchaseLinks) {
+            const miniProgramShortLink = link.miniProgramShortLink.trim();
+            if (link.platformKey === "wechat-shop") {
+                if (!miniProgramShortLink) continue;
+                activePurchaseLinks.push({
+                    platformKey: link.platformKey,
+                    platform: link.platform,
+                    miniProgramShortLink,
+                });
+                continue;
             }
+            const url = link.url.trim();
+            if (!url && !miniProgramShortLink) continue;
+            activePurchaseLinks.push({
+                platformKey: link.platformKey,
+                platform: link.platform,
+                ...(url ? { url } : {}),
+                ...(miniProgramShortLink ? { miniProgramShortLink } : {}),
+            });
+        }
+
+        const linkErrors: FormErrors = {};
+        for (const link of activePurchaseLinks) {
+            const prefix = `purchaseLinks_${link.platformKey}`;
+            if (link.platformKey === "wechat-shop" && !link.miniProgramShortLink) {
+                linkErrors[`${prefix}_miniProgramShortLink`] = "微信小店当前需填写小程序短链";
+            }
+            if (link.platformKey !== "wechat-shop" && !link.url && !link.miniProgramShortLink) {
+                linkErrors[`${prefix}_url`] = "H5 链接或小程序短链至少填写一个";
+            }
+            if (link.url) {
+                try {
+                    const url = new URL(link.url);
+                    if (url.protocol !== "http:" && url.protocol !== "https:") {
+                        throw new Error("Invalid protocol");
+                    }
+                } catch {
+                    linkErrors[`${prefix}_url`] = "请输入有效的 http(s) 链接";
+                }
+            }
+            if (link.miniProgramShortLink && /[\u0000-\u001f\u007f]/.test(link.miniProgramShortLink)) {
+                linkErrors[`${prefix}_miniProgramShortLink`] = "小程序短链包含非法字符";
+            }
+        }
+        if (Object.keys(linkErrors).length > 0) {
+            setErrors((prev) => ({ ...prev, ...linkErrors }));
+            toast.error("请检查购买渠道配置");
+            return;
         }
 
         setSaving(true);
@@ -310,13 +401,16 @@ export default function ProductForm({
 
         const payload = {
             ...formData,
+            origin: formData.origin.trim() || null,
+            capacity: formData.capacity.trim() || null,
             image: images[0] || "",
             images,
             keyIngredients,
             benefits,
             negativeFor,
             suitableSkinTypes,
-            affiliateLinks: Object.keys(filteredLinks).length > 0 ? filteredLinks : null,
+            purchaseLinks: activePurchaseLinks.length > 0 ? activePurchaseLinks : null,
+            affiliateLinks: buildAffiliateLinks(activePurchaseLinks),
             recommendReasons: Object.keys(recommendReasons).length > 0
                 ? recommendReasons
                 : null,
@@ -362,7 +456,7 @@ export default function ProductForm({
     const initialSnapshot = useRef({
         formData: { ...formData },
         images: [...images],
-        affiliateLinks: { ...affiliateLinks },
+        purchaseLinks: purchaseLinks.map((link) => ({ ...link })),
         keyIngredients: [...keyIngredients],
         benefits: [...benefits],
         negativeFor: [...negativeFor],
@@ -380,14 +474,14 @@ export default function ProductForm({
         const dirty =
             JSON.stringify(formData) !== JSON.stringify(initialSnapshot.current.formData) ||
             JSON.stringify(images) !== JSON.stringify(initialSnapshot.current.images) ||
-            JSON.stringify(affiliateLinks) !== JSON.stringify(initialSnapshot.current.affiliateLinks) ||
+            JSON.stringify(purchaseLinks) !== JSON.stringify(initialSnapshot.current.purchaseLinks) ||
             JSON.stringify(keyIngredients) !== JSON.stringify(initialSnapshot.current.keyIngredients) ||
             JSON.stringify(benefits) !== JSON.stringify(initialSnapshot.current.benefits) ||
             JSON.stringify(negativeFor) !== JSON.stringify(initialSnapshot.current.negativeFor) ||
             JSON.stringify(suitableSkinTypes) !== JSON.stringify(initialSnapshot.current.suitableSkinTypes) ||
             JSON.stringify(recommendReasons) !== JSON.stringify(initialSnapshot.current.recommendReasons);
         onDirtyChange?.(dirty);
-    }, [formData, images, affiliateLinks, keyIngredients, benefits, negativeFor, suitableSkinTypes, recommendReasons, onDirtyChange]);
+    }, [formData, images, purchaseLinks, keyIngredients, benefits, negativeFor, suitableSkinTypes, recommendReasons, onDirtyChange]);
 
     return (
         <form onSubmit={handleSubmit} className={cn("space-y-10", !onCancel && "max-w-4xl mx-auto")}>
@@ -462,6 +556,33 @@ export default function ProductForm({
                                 />
                             </div>
                             {errors.price && <p className="text-xs text-red-500 mt-1" role="alert">{errors.price}</p>}
+                        </div>
+
+                        {/* 产地 */}
+                        <div>
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">产地</label>
+                            <input
+                                type="text"
+                                value={formData.origin}
+                                maxLength={MAX_ORIGIN_LENGTH}
+                                onChange={(e) => updateField("origin", e.target.value)}
+                                className="block w-full rounded-xl border border-[#E8E2D9] shadow-sm text-sm p-3 outline-none transition-all bg-white focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20"
+                                placeholder="如：法国"
+                            />
+                        </div>
+
+                        {/* 规格 */}
+                        <div>
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">规格容量</label>
+                            <input
+                                type="text"
+                                value={formData.capacity}
+                                maxLength={MAX_CAPACITY_LENGTH}
+                                onChange={(e) => updateField("capacity", e.target.value)}
+                                className="block w-full rounded-xl border border-[#E8E2D9] shadow-sm text-sm p-3 outline-none transition-all bg-white focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20"
+                                placeholder="如：50 ml"
+                            />
+                            <p className="text-xs text-[#B0A89A] mt-1">历史产品可后续手工补录</p>
                         </div>
 
                         {/* 开关组 */}
@@ -612,68 +733,175 @@ export default function ProductForm({
                     </div>
                 </section>
 
-                {/* ===== 肤质与电商 ===== */}
+                {/* ===== 肤质与购买渠道 ===== */}
                 <section>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-3">适用肤质</label>
-                            <div className="flex flex-wrap gap-2">
-                                {SKIN_TYPE_OPTIONS.map((opt) => {
-                                    const selected = suitableSkinTypes.includes(opt.value);
-                                    return (
-                                        <button
-                                            key={opt.value}
-                                            type="button"
-                                            onClick={() => {
-                                                setSuitableSkinTypes((prev) =>
-                                                    prev.includes(opt.value) ? prev.filter((v) => v !== opt.value) : [...prev, opt.value]
-                                                );
-                                            }}
-                                            className={cn(
-                                                "px-3.5 py-2 rounded-xl text-sm font-medium border transition-all",
-                                                selected
-                                                    ? "bg-[#C9A86C] text-white border-[#C9A86C] shadow-sm"
-                                                    : "bg-white text-[#5E5E5E] border-[#E8E2D9] hover:border-[#C9A86C]/60"
-                                            )}
-                                        >
-                                            <span className="flex items-center gap-1.5">
-                                                {selected && <Check className="w-3.5 h-3.5" />}
-                                                {opt.label}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-3">电商购买链接</label>
-                            <div className="space-y-3">
-                                {[
-                                    { key: "taobao", label: "天猫", icon: "🛒" },
-                                    { key: "xiaohongshu", label: "小红书", icon: "📕" },
-                                    { key: "douyin", label: "抖音", icon: "🎵" },
-                                ].map(({ key, label, icon }) => (
-                                    <div key={key} className="flex items-center gap-3">
-                                        <span className="w-20 text-sm text-[#5E5E5E] flex items-center gap-1.5 shrink-0">
-                                            <span>{icon}</span>
-                                            {label}
+                    <div>
+                        <label className="block text-sm font-medium text-[#5E5E5E] mb-3">适用肤质</label>
+                        <div className="flex flex-wrap gap-2">
+                            {SKIN_TYPE_OPTIONS.map((opt) => {
+                                const selected = suitableSkinTypes.includes(opt.value);
+                                return (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => {
+                                            setSuitableSkinTypes((prev) =>
+                                                prev.includes(opt.value) ? prev.filter((v) => v !== opt.value) : [...prev, opt.value]
+                                            );
+                                        }}
+                                        className={cn(
+                                            "px-3.5 py-2 rounded-xl text-sm font-medium border transition-all",
+                                            selected
+                                                ? "bg-[#C9A86C] text-white border-[#C9A86C] shadow-sm"
+                                                : "bg-white text-[#5E5E5E] border-[#E8E2D9] hover:border-[#C9A86C]/60"
+                                        )}
+                                    >
+                                        <span className="flex items-center gap-1.5">
+                                            {selected && <Check className="w-3.5 h-3.5" />}
+                                            {opt.label}
                                         </span>
-                                        <input
-                                            type="url"
-                                            value={affiliateLinks[key]}
-                                            maxLength={500}
-                                            onChange={(e) => setAffiliateLinks((prev) => ({ ...prev, [key]: e.target.value }))}
-                                            placeholder="https://..."
-                                            className={cn(
-                                                "flex-1 rounded-xl border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
-                                                "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
-                                                errors[`affiliateLinks_${key}`] ? "border-red-400" : "border-[#E8E2D9]"
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="mt-6">
+                        <div className="mb-3">
+                            <label className="block text-sm font-medium text-[#5E5E5E]">购买渠道</label>
+                            <p className="text-xs text-[#B0A89A] mt-1">
+                                当前启用 H5 链接与小程序短链；小程序路径、小店商品 ID 待后续接入后开放。
+                            </p>
+                        </div>
+                        <div className="space-y-3">
+                            {PURCHASE_PLATFORM_OPTIONS.map((option) => {
+                                const link = purchaseLinks.find(
+                                    (item) => item.platformKey === option.value
+                                );
+                                if (!link) return null;
+                                const prefix = `purchaseLinks_${option.value}`;
+                                const isWechatShop = option.value === "wechat-shop";
+                                return (
+                                    <div
+                                        key={option.value}
+                                        className="rounded-xl border border-[#E8E2D9] bg-white p-3"
+                                    >
+                                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                                            <span className="text-sm font-medium text-[#2C2C2C]">
+                                                {option.label}
+                                            </span>
+                                            {isWechatShop && (
+                                                <span className="rounded-full bg-[#FAF8F5] px-2 py-0.5 text-[10px] font-medium text-[#8B7355]">
+                                                    短链可用 / store-product 待接入
+                                                </span>
                                             )}
-                                        />
+                                        </div>
+                                        <div className={cn("grid gap-2", isWechatShop ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2")}>
+                                            <input
+                                                type="url"
+                                                value={link.url}
+                                                maxLength={MAX_PURCHASE_URL_LENGTH}
+                                                onChange={(e) =>
+                                                    updatePurchaseLink(option.value, "url", e.target.value)
+                                                }
+                                                placeholder={
+                                                    isWechatShop
+                                                        ? "H5 链接（可选；当前 H5 不展示微信小店）"
+                                                        : "H5 链接，https://..."
+                                                }
+                                                aria-label={`${option.label} H5 链接`}
+                                                aria-invalid={!!errors[`${prefix}_url`]}
+                                                className={cn(
+                                                    "w-full rounded-xl border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
+                                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
+                                                    errors[`${prefix}_url`] ? "border-red-400" : "border-[#E8E2D9]",
+                                                    isWechatShop && "hidden"
+                                                )}
+                                            />
+                                            <input
+                                                type="text"
+                                                value={link.miniProgramShortLink}
+                                                maxLength={MAX_MINI_PROGRAM_SHORT_LINK_LENGTH}
+                                                onChange={(e) =>
+                                                    updatePurchaseLink(
+                                                        option.value,
+                                                        "miniProgramShortLink",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder={
+                                                    isWechatShop
+                                                        ? "#微信小店://...（可直接跳转）"
+                                                        : "#小程序://...（可选，后续补充）"
+                                                }
+                                                aria-label={`${option.label} 小程序短链`}
+                                                aria-invalid={!!errors[`${prefix}_miniProgramShortLink`]}
+                                                className={cn(
+                                                    "w-full rounded-xl border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
+                                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
+                                                    errors[`${prefix}_miniProgramShortLink`]
+                                                        ? "border-red-400"
+                                                        : "border-[#E8E2D9]"
+                                                )}
+                                            />
+                                            <input
+                                                type="text"
+                                                value={link.miniProgramPath}
+                                                maxLength={MAX_MINI_PROGRAM_SHORT_LINK_LENGTH}
+                                                onChange={(e) =>
+                                                    updatePurchaseLink(
+                                                        option.value,
+                                                        "miniProgramPath",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="pages/...（可选）"
+                                                className={cn(
+                                                    "hidden",
+                                                    "w-full rounded-xl border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
+                                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
+                                                    errors[`${prefix}_miniProgramPath`]
+                                                        ? "border-red-400"
+                                                        : "border-[#E8E2D9]"
+                                                )}
+                                            />
+                                        </div>
+                                        {isWechatShop && (
+                                            <input
+                                                type="text"
+                                                value={link.storeProductId}
+                                                maxLength={MAX_STORE_PRODUCT_ID_LENGTH}
+                                                onChange={(e) =>
+                                                    updatePurchaseLink(
+                                                        option.value,
+                                                        "storeProductId",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="小店商品 ID（后续 store-product 用）"
+                                                className="hidden"
+                                            />
+                                        )}
+                                        <p className="mt-2 text-xs text-[#B0A89A]">
+                                            {isWechatShop
+                                                ? "当前仅使用小程序短链跳转；H5 端不展示微信小店。store-product 待接入。"
+                                                : "H5 直接打开；可选小程序短链用于微信内跳转，暂无短链时小程序端复制 H5 链接。"}
+                                        </p>
+                                        {(["url", "miniProgramShortLink"] as const).map(
+                                            (field) =>
+                                                errors[`${prefix}_${field}`] ? (
+                                                    <p
+                                                        key={field}
+                                                        className="mt-1 text-xs text-red-500"
+                                                        role="alert"
+                                                    >
+                                                        {errors[`${prefix}_${field}`]}
+                                                    </p>
+                                                ) : null
+                                        )}
                                     </div>
-                                ))}
-                            </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </section>

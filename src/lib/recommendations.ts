@@ -5,6 +5,10 @@ import type { Product } from "@prisma/client";
 import type { EnvContext } from "@/lib/weather-context";
 import { getSeasonLabel } from "@/lib/weather-context";
 import { PREGNANCY_FORBIDDEN_TERMS } from "@/lib/ingredient-guard";
+import {
+    normalizeProductPurchaseLinks,
+    type ProductPurchaseLink,
+} from "@/lib/product-links";
 /** 带算法评分的商品（由 getCandidateProducts 生成） */
 type ScoredProduct = Product & {
     _score: number;
@@ -25,6 +29,9 @@ export interface ProductRecommendation {
     score?: number;
     matchedBenefits?: string[];
     affiliateLinks?: Record<string, string> | null;
+    purchaseLinks?: ProductPurchaseLink[];
+    origin?: string | null;
+    capacity?: string | null;
     howToUse?: string | null;
     /** 推荐来源：persona（IP 池内）| algorithm（池外补充） */
     source?: "persona" | "algorithm";
@@ -951,6 +958,9 @@ export async function recommendProducts(
             score: p.rawScore,
             matchedBenefits: p.matchedBenefits,
             affiliateLinks: (p.affiliateLinks as Record<string, string> | null) || null,
+            purchaseLinks: normalizeProductPurchaseLinks(p.purchaseLinks, p.affiliateLinks),
+            origin: p.origin || null,
+            capacity: p.capacity || null,
             howToUse: p.howToUse || null,
             benefits: Array.isArray(p.benefits) ? p.benefits : [],
             keyIngredients: Array.isArray(p.keyIngredients) ? p.keyIngredients : [],

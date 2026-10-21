@@ -4,12 +4,12 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
 import { m } from "framer-motion";
 import { ChevronRight, ExternalLink, ShoppingCart, ImageOff } from "lucide-react";
+import { AffiliateLinks, openAffiliateLink } from "@/lib/affiliate-links";
 import {
-    AffiliateLinks,
-    getProductLinks,
-    getPrimaryLink,
-    openAffiliateLink,
-} from "@/lib/affiliate-links";
+    normalizeProductPurchaseLinks,
+    type ProductPurchaseLink,
+} from "@/lib/product-links";
+import { PlatformIcon } from "./PlatformIcon";
 import { cn, formatPrice } from "@/lib/utils";
 
 export interface ProductCardData {
@@ -26,7 +26,10 @@ export interface ProductCardData {
     keyIngredients?: string[];
     benefits?: string[];
     howToUse?: string | null;
+    origin?: string | null;
+    capacity?: string | null;
     affiliateLinks?: AffiliateLinks | null;
+    purchaseLinks?: ProductPurchaseLink[] | null;
     dimensionLink?: {
         dimension: string;
         score: number;
@@ -227,8 +230,12 @@ function DefaultProductCard({
         return () => document.removeEventListener('mousedown', handleClick);
     }, [showPlatforms]);
 
-    const allLinks = getProductLinks(product.affiliateLinks);
-    const primaryLink = getPrimaryLink(product.affiliateLinks);
+    // H5 卡片只展示可直接打开的网页链接；微信小店无 H5 入口，隐藏。
+    const allLinks = normalizeProductPurchaseLinks(
+        product.purchaseLinks,
+        product.affiliateLinks
+    ).filter((link) => link.platformKey !== "wechat-shop" && link.url);
+    const primaryLink = allLinks[0];
 
     const handleCardClick = useCallback(() => {
         onProductClick?.(product.id);
@@ -240,13 +247,14 @@ function DefaultProductCard({
 
         if (allLinks.length > 1) {
             setShowPlatforms(prev => !prev);
-        } else if (primaryLink) {
+        } else if (primaryLink?.url) {
             openAffiliateLink(primaryLink.url, product.id, primaryLink.platform);
         }
     }, [allLinks, primaryLink, product.id, onProductClick]);
 
-    const handlePlatformClick = useCallback((platform: typeof allLinks[0]) => {
-        openAffiliateLink(platform.url, product.id, platform.platform);
+    const handlePlatformClick = useCallback((link: ProductPurchaseLink) => {
+        if (!link.url) return;
+        openAffiliateLink(link.url, product.id, link.platform);
         setShowPlatforms(false);
     }, [product.id]);
 
@@ -275,6 +283,15 @@ function DefaultProductCard({
                     {product.name}
                 </h4>
 
+                {/* 产地 / 规格 */}
+                {(product.origin || product.capacity) && (
+                    <p className="mb-2 text-[11px] text-white/55">
+                        {product.origin && <span>产地：{product.origin}</span>}
+                        {product.origin && product.capacity && <span className="mx-1.5">·</span>}
+                        {product.capacity && <span>规格：{product.capacity}</span>}
+                    </p>
+                )}
+
                 {/* 推荐理由 */}
                 <p className="mb-3 text-xs text-white/70 line-clamp-2">
                     {product.reason}
@@ -302,16 +319,15 @@ function DefaultProductCard({
                             <div className="absolute bottom-full right-0 z-20 mb-1 min-w-[120px] rounded-lg border border-white/10 bg-white/10 py-1 shadow-xl backdrop-blur-sm">
                                 {allLinks.map(link => (
                                     <button
-                                        key={link.platform}
+                                        key={link.platformKey}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handlePlatformClick(link);
                                         }}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-white/10"
-                                        style={{ color: link.config.color }}
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium text-white transition-colors hover:bg-white/10"
                                     >
-                                        <span>{link.config.icon}</span>
-                                        {link.config.name}
+                                        <PlatformIcon platform={link.platform} />
+                                        {link.platform}
                                     </button>
                                 ))}
                             </div>
