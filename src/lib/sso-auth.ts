@@ -429,6 +429,47 @@ export async function getSsoUser(req?: NextRequest): Promise<SsoAuthUser | null>
     };
 }
 
+/**
+ * 判断当前请求是否携带“有效登录凭证但子站本地账号被禁用”。
+ *
+ * getSessionUser 对未登录和禁用都返回 null；路由据此只能回 401，客户端会误以为是
+ * 登录过期并反复刷新/登录。需要区分时（小程序/官网账号被子站管理员禁用）调用本函数。
+ *
+ * 仅检查访问令牌本身，不主动刷新 Cookie 会话：令牌过期时返回 false，交给原 401 +
+ * 客户端刷新流程；刷新后的下一次请求即可识别禁用状态。
+ */
+export async function isSubsiteAccountDisabled(req?: NextRequest): Promise<boolean> {
+    if (!req) return false;
+
+    let sub: string | null = null;
+    if (req.headers.get("authorization")) {
+        const payload = await verifyMpBearerToken(req);
+        sub = typeof payload?.sub === "string" ? payload.sub : null;
+    } else {
+        const payload = await verifySsoToken(req);
+        sub = typeof payload?.sub === "string" ? payload.sub : null;
+    }
+    if (!sub) return false;
+    return isLocalUserDisabled(sub);
+}
+
+/**
+ * 按子站本地 userId 判断账号是否被禁用。
+ * 供内部接口（主站用户中心/商城按 userId 查询）复用，避免按手机号/会话两套口径。
+ */
+export async function isLocalUserDisabled(userId: string): Promise<boolean> {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { role: true },
+        });
+        return !!user && isDisabledUser(user.role);
+    } catch {
+        // 状态查询失败不升级为 403，保持原接口的错误语义
+        return false;
+    }
+}
+
 export async function upsertLocalUser(
     payload: VerifiedTokenPayload,
     profile?: SsoProfileClaims,

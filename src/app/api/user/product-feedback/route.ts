@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getSessionUser } from "@/lib/sso-auth";
+import { getSessionUser, isSubsiteAccountDisabled } from "@/lib/sso-auth";
+import { accountDisabledResponse } from "@/lib/api-response";
 
 // POST: 提交产品使用反馈
 export async function POST(request: NextRequest) {
     try {
         const user = await getSessionUser(request);
         if (!user) {
+            if (await isSubsiteAccountDisabled(request)) return accountDisabledResponse();
             return NextResponse.json({ error: "请先登录" }, { status: 401 });
         }
 
@@ -91,6 +93,7 @@ export async function GET(request: NextRequest) {
             // 查询个人反馈历史需登录且仅限本人
             const user = await getSessionUser(request);
             if (!user) {
+                if (await isSubsiteAccountDisabled(request)) return accountDisabledResponse();
                 return NextResponse.json({ error: "请先登录" }, { status: 401 });
             }
             if (user.id !== userId) {

@@ -193,16 +193,22 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#1A1A1A]/60">每日测试次数上限</p>
-                <p className="text-xs text-[#1A1A1A]/40 mt-1">系统默认 10 次；自定义值会覆盖会员默认配额</p>
+                <p className="text-xs text-[#1A1A1A]/40 mt-1">
+                  系统默认 10 次；自定义值会覆盖会员默认配额，0 表示禁止测肤
+                </p>
               </div>
               {editingLimit ? (
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
-                    min="1"
-                    max="100"
+                    min="0"
+                    max="9999"
                     value={newLimit}
-                    onChange={(e) => { setNewLimit(Math.max(1, parseInt(e.target.value) || 1)); setLimitDirty(true); }}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      setNewLimit(Number.isFinite(next) ? Math.max(0, Math.min(9999, Math.trunc(next))) : 0);
+                      setLimitDirty(true);
+                    }}
                     className="w-20 px-3 py-1.5 border border-[#E9E9E7] rounded-lg text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                   />
                   <button

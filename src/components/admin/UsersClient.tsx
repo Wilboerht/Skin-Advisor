@@ -33,7 +33,13 @@ interface Pagination {
   totalPages: number;
 }
 
-export function UsersClient({ role }: { role: string }) {
+export function UsersClient({
+  role,
+  initialUserId = null,
+}: {
+  role: string;
+  initialUserId?: string | null;
+}) {
   const toast = useToast();
   const canManageDeletion = isSuperAdmin(role);
   const [users, setUsers] = useState<User[]>([]);
@@ -49,7 +55,8 @@ export function UsersClient({ role }: { role: string }) {
   // 用 state 而非 ref 存储触发按钮 DOM，避免 render 期间读取 ref（React Compiler 不支持）
   const [dropdownTriggerEls, setDropdownTriggerEls] = useState<Map<string, HTMLButtonElement>>(() => new Map());
   const [confirmToggle, setConfirmToggle] = useState<{ user: User; isDisabling: boolean } | null>(null);
-  const [detailUser, setDetailUser] = useState<string | null>(null);
+  // 支持主站控制中台深链直接打开用户详情
+  const [detailUser, setDetailUser] = useState<string | null>(initialUserId);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);

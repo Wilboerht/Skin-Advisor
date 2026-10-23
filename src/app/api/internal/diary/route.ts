@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardInternalUserRequest } from "@/lib/internal-guard";
+import { isLocalUserDisabled } from "@/lib/sso-auth";
+import { accountDisabledResponse } from "@/lib/api-response";
 import {
     DiaryValidationError,
     deleteDiaryEntry,
@@ -27,6 +29,7 @@ export const maxDuration = 15;
 export async function GET(request: NextRequest) {
     const guard = await guardInternalUserRequest(request, { scope: "diary-read" });
     if (guard.error) return guard.error;
+    if (await isLocalUserDisabled(guard.userId)) return accountDisabledResponse();
 
     try {
         const { searchParams } = new URL(request.url);
@@ -56,6 +59,7 @@ export async function POST(request: NextRequest) {
         rawBody,
     });
     if (guard.error) return guard.error;
+    if (await isLocalUserDisabled(guard.userId)) return accountDisabledResponse();
 
     try {
         let body: unknown = null;
@@ -84,6 +88,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
     const guard = await guardInternalUserRequest(request, { scope: "diary-write", maxRequests: 10 });
     if (guard.error) return guard.error;
+    if (await isLocalUserDisabled(guard.userId)) return accountDisabledResponse();
 
     try {
         const { searchParams } = new URL(request.url);

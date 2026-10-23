@@ -10,11 +10,21 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function UsersPage() {
+export default async function UsersPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ userId?: string | string[] }>;
+}) {
     const admin = await verifyAdminSession();
     if (!admin) {
         redirect("/admin/login");
     }
+
+    // 主站控制中台深链：/admin/users?userId=<主站用户 id> 打开对应用户详情
+    const params = await searchParams;
+    const rawUserId = params.userId;
+    const initialUserId = Array.isArray(rawUserId) ? rawUserId[0] : rawUserId;
+
     // User management available to super_admin and admin
-    return <UsersClient role={admin.role} />;
+    return <UsersClient role={admin.role} initialUserId={initialUserId || null} />;
 }

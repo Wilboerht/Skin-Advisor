@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { authorizeInternalRequest } from "@/lib/internal-api";
+import { isDisabledUser } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 
 /**
@@ -44,11 +45,15 @@ export async function GET(request: NextRequest) {
     try {
         const user = await prisma.user.findUnique({
             where: { phoneNumber: phone },
-            select: { id: true },
+            select: { id: true, role: true },
         });
 
         if (!user) {
             return NextResponse.json({ owned: false });
+        }
+        // 子站账号被禁用：商城侧会话归属校验按未归属处理
+        if (isDisabledUser(user.role)) {
+            return NextResponse.json({ owned: false, disabled: true });
         }
 
         const count = await prisma.advisorSession.count({

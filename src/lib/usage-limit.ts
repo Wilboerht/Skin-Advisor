@@ -1,7 +1,8 @@
 
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSessionUser } from '@/lib/sso-auth';
+import { getSessionUser, isSubsiteAccountDisabled } from '@/lib/sso-auth';
+import { ACCOUNT_DISABLED_MESSAGE } from '@/lib/api-response';
 import { isAutoDiaryEntry, parseClientDate } from './diary-utils';
 import { withDbRetry } from './utils';
 import { startOfTodayShanghai, todayKeyShanghai } from './time';
@@ -20,6 +21,8 @@ export interface UsageLimitResult {
     role: 'guest' | 'member';
     /** 游客拒绝时置 true：测肤功能需登录，调用方应返回 401 并引导登录 */
     requireLogin?: boolean;
+    /** 子站本地账号被管理员禁用（与未登录区分，避免客户端反复登录） */
+    accountDisabled?: boolean;
     /** 归一化后的会员档位（仅登录用户） */
     level?: MemberLevel;
     /** 用量与配额明细（仅登录用户，供 test-limit / 前端展示） */
@@ -175,8 +178,23 @@ export async function checkUsageLimit(request: NextRequest): Promise<UsageLimitR
 
     const user = await getSessionUser(request);
 
-    // 1. 游客：测肤功能需登录，不再查 GuestUsage 计次/封禁
+    // 1. 未登录 / 子站账号被禁用：不再查 GuestUsage 计次
     if (!user) {
+        // 关键区分：有效凭证但本地 role=disabled 时返回 accountDisabled，
+        // 客户端据此提示“功能被限制”，而不是反复刷新/登录。
+        if (await isSubsiteAccountDisabled(request)) {
+            return {
+                canTest: false,
+                remaining: 0,
+                dailyLimit: 0,
+                quotaPeriod: 'lifetime',
+                // 有效登录但被禁用：不是游客，避免前端触发“游客→刷新用户”重试路径
+                role: 'member',
+                requireLogin: false,
+                accountDisabled: true,
+                error: ACCOUNT_DISABLED_MESSAGE,
+            };
+        }
         return {
             canTest: false,
             remaining: 0,

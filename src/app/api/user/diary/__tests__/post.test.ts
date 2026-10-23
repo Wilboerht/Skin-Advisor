@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
     getSessionUser: vi.fn(),
+    isSubsiteAccountDisabled: vi.fn(),
     rateLimit: vi.fn(),
     getClientIP: vi.fn(),
     findUnique: vi.fn(),
@@ -15,7 +16,10 @@ const mocks = vi.hoisted(() => ({
     info: vi.fn(),
 }));
 
-vi.mock("@/lib/sso-auth", () => ({ getSessionUser: mocks.getSessionUser }));
+vi.mock("@/lib/sso-auth", () => ({
+    getSessionUser: mocks.getSessionUser,
+    isSubsiteAccountDisabled: mocks.isSubsiteAccountDisabled,
+}));
 vi.mock("@/lib/ratelimit", () => ({ rateLimit: mocks.rateLimit, getClientIP: mocks.getClientIP }));
 vi.mock("@/lib/logger", () => ({
     logger: { warn: mocks.warn, error: mocks.error, info: mocks.info },
@@ -55,6 +59,7 @@ const validBody = { date: dateStr, skinState: "good", tags: ["熬夜"], note: "�
 beforeEach(() => {
     vi.clearAllMocks();
     mocks.getSessionUser.mockResolvedValue({ id: "u1", role: "user", tokenVersion: 0 });
+    mocks.isSubsiteAccountDisabled.mockResolvedValue(false);
     mocks.rateLimit.mockResolvedValue({ success: true, limit: 10, remaining: 9, reset: Date.now() + 60_000 });
     mocks.getClientIP.mockReturnValue("1.2.3.4");
     mocks.findUnique.mockResolvedValue(null);
@@ -71,6 +76,16 @@ describe("POST /api/user/diary（打卡积分判定）", () => {
         expect(res.status).toBe(401);
         expect(mocks.upsert).not.toHaveBeenCalled();
         expect(mocks.grantCheckinPoints).not.toHaveBeenCalled();
+    });
+
+    it("子站账号被禁用：返回 403 ACCOUNT_DISABLED，不写库", async () => {
+        mocks.getSessionUser.mockResolvedValue(null);
+        mocks.isSubsiteAccountDisabled.mockResolvedValue(true);
+        const res = await POST(fakePostReq(validBody));
+        expect(res.status).toBe(403);
+        const json = (await res.json()) as { error?: { code?: string } };
+        expect(json.error?.code).toBe("ACCOUNT_DISABLED");
+        expect(mocks.upsert).not.toHaveBeenCalled();
     });
 
     it("首次手动打卡：按连续天数发放并随响应返回 points，同时触发自愈补发", async () => {

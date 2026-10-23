@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSkinTestUsageSummary } from "@/lib/usage-limit";
+import { isLocalUserDisabled } from "@/lib/sso-auth";
+import { accountDisabledResponse } from "@/lib/api-response";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { authorizeInternalRequest } from "@/lib/internal-api";
 import { logger } from "@/lib/logger";
@@ -43,6 +45,8 @@ export async function GET(request: NextRequest) {
     if (!userId || userId.length > 128) {
         return NextResponse.json({ error: "Invalid userId" }, { status: 400 });
     }
+    // 子站账号被禁用：主站会员面板/积分商城的测肤用量降级为 null（不展示）
+    if (await isLocalUserDisabled(userId)) return accountDisabledResponse();
 
     // 主站会员等级/累计消费作为配额覆盖（子站本地用户可能从未创建或尚未同步）。
     // 非法值一律忽略，回落到子站本地 User 或 REGULAR 档。

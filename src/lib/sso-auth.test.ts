@@ -55,6 +55,7 @@ vi.mock("@/lib/logger", () => ({
 
 import {
     getSessionUser,
+    isSubsiteAccountDisabled,
     verifyMpBearerToken,
     markAccessTokenRevoked,
     resetProfileSyncBackoffForTests,
@@ -140,6 +141,32 @@ describe("verifyMpBearerToken", () => {
         markAccessTokenRevoked("revoked-mp-token");
         expect(await verifyMpBearerToken(bearerReq("revoked-mp-token"))).toBeNull();
         expect(mocks.mpVerify).not.toHaveBeenCalled();
+    });
+});
+
+describe("isSubsiteAccountDisabled", () => {
+    it("有效 Bearer + 本地角色禁用 → true", async () => {
+        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1" });
+        mocks.userFindUnique.mockResolvedValue({ role: "disabled" });
+        mocks.isDisabledUser.mockImplementation((role: string) => role === "disabled");
+
+        expect(await isSubsiteAccountDisabled(bearerReq("disabled-token"))).toBe(true);
+        expect(mocks.userFindUnique).toHaveBeenCalledWith({
+            where: { id: "user_mp_1" },
+            select: { role: true },
+        });
+    });
+
+    it("有效 Bearer + 本地角色正常 → false", async () => {
+        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1" });
+        mocks.userFindUnique.mockResolvedValue({ role: "user" });
+
+        expect(await isSubsiteAccountDisabled(bearerReq("active-token"))).toBe(false);
+    });
+
+    it("无凭证 → false，不查本地用户", async () => {
+        expect(await isSubsiteAccountDisabled(reqWith({}))).toBe(false);
+        expect(mocks.userFindUnique).not.toHaveBeenCalled();
     });
 });
 

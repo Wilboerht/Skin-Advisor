@@ -11,6 +11,7 @@
  * 只保留在公共路由——服务器间调用（内部接口）无法代表真实客户端 IP。
  */
 import prisma from "@/lib/prisma";
+import { extractSessionLite } from "@/lib/session-lite";
 
 export interface TestHistoryQuery {
     page: number;
@@ -64,16 +65,7 @@ export async function getTestHistory(
 
     const payload = lite
         ? history.map((s) => {
-            const result = s.analysisResult as Record<string, unknown> | null | undefined;
-            const face = (result?.faceAnalysis ?? null) as { overallScore?: unknown } | null | undefined;
-            const skinProfile = (result?.skinProfile ?? null) as { typeLabel?: unknown } | null | undefined;
-            const skinAnalysis = (result?.skinAnalysis ?? null) as { typeLabel?: unknown } | null | undefined;
-            const score = typeof face?.overallScore === "number" ? face.overallScore : undefined;
-            const typeLabel =
-                typeof skinProfile?.typeLabel === "string" ? skinProfile.typeLabel
-                : typeof skinAnalysis?.typeLabel === "string" ? skinAnalysis.typeLabel
-                : undefined;
-            const persona = typeof result?.persona === "string" ? result.persona : undefined;
+            const { score, typeLabel, persona } = extractSessionLite(s.analysisResult);
             return {
                 sessionId: s.sessionId,
                 completedAt: s.completedAt,

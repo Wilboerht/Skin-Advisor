@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
             message: limit.error,
             // 游客：需登录后才能测肤
             ...(limit.requireLogin ? { requireLogin: true } : {}),
+            // 有效凭证但子站账号被禁用：前端提示功能受限，不展示登录按钮
+            ...(limit.accountDisabled ? { accountDisabled: true } : {}),
             // 登录用户：会员档位与用量明细
             ...(limit.level ? { level: limit.level } : {}),
             ...(limit.usage ? { usage: limit.usage } : {}),

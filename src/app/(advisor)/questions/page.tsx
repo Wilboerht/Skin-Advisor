@@ -122,6 +122,8 @@ export default function QuestionsPage() {
     const [limitRequireLogin, setLimitRequireLogin] = useState(false);
     // 限额口径：lifetime（终身次数耗尽）/ day（今日次数耗尽），用于提示卡标题
     const [limitQuotaPeriod, setLimitQuotaPeriod] = useState<string | null>(null);
+    // 子站账号被管理员禁用：提示功能受限，不展示登录按钮
+    const [limitAccountDisabled, setLimitAccountDisabled] = useState(false);
     const { openAuthModal } = useAuthModal();
 
     // 预检测试次数：在用户开始问卷前确认是否还有剩余次数（后端按登录态判额，无需指纹参数）
@@ -133,7 +135,8 @@ export default function QuestionsPage() {
                     const data = await res.json();
                     if (!data.canTest) {
                         setLimitExceeded(true);
-                        setLimitRequireLogin(!!data.requireLogin);
+                        setLimitAccountDisabled(!!data.accountDisabled);
+                        setLimitRequireLogin(!!data.requireLogin && !data.accountDisabled);
                         setLimitQuotaPeriod(data.quotaPeriod || null);
                         setLimitMessage(data.error || "今日测试次数已用完，请明天再试。");
                     }
@@ -805,7 +808,13 @@ export default function QuestionsPage() {
                                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
                                     <div className="text-4xl mb-4">⏳</div>
                                     <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
-                                        {limitRequireLogin ? "测肤需登录后使用" : limitQuotaPeriod === "lifetime" ? "测肤次数已用完" : "今日次数已用完"}
+                                        {limitAccountDisabled
+                                            ? "测肤功能已被限制"
+                                            : limitRequireLogin
+                                              ? "测肤需登录后使用"
+                                              : limitQuotaPeriod === "lifetime"
+                                                ? "测肤次数已用完"
+                                                : "今日次数已用完"}
                                     </h3>
                                     <p className="text-sm text-brand-charcoal/60 font-light mb-6">{limitMessage}</p>
                                     <div className="flex flex-col sm:flex-row gap-3 justify-center">

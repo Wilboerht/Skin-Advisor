@@ -9,7 +9,10 @@ const prismaMock = vi.hoisted(() => ({
     $transaction: vi.fn(),
 }));
 
-vi.mock("@/lib/sso-auth", () => ({ getSessionUser: vi.fn() }));
+vi.mock("@/lib/sso-auth", () => ({
+    getSessionUser: vi.fn(),
+    isSubsiteAccountDisabled: vi.fn().mockResolvedValue(false),
+}));
 vi.mock("@/lib/prisma", () => ({ default: prismaMock }));
 
 import { getMemberQuota, getSkinTestUsageSummary, rollbackUsage } from "./usage-limit";

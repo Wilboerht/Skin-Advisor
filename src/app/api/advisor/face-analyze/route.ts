@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiError } from "@/lib/api-response";
+import { accountDisabledResponse, apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import crypto from "crypto";
 
@@ -15,7 +15,7 @@ import {
     QWEN_VISION_PROMPT,
     REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION,
 } from "@/config/ai-prompts";
-import { getSessionUser } from "@/lib/sso-auth";
+import { getSessionUser, isSubsiteAccountDisabled } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { recordAIUsage } from "@/lib/ai-budget";
@@ -205,6 +205,7 @@ export async function POST(request: NextRequest) {
         faceSessionId = result.data.sessionId || crypto.randomUUID();
         const authUser = await getSessionUser(request);
         if (!authUser) {
+            if (await isSubsiteAccountDisabled(request)) return accountDisabledResponse();
             return NextResponse.json(
                 { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: "请先登录后再进行面部分析" }, requireLogin: true },
                 { status: 401 }

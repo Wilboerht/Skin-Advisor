@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getSessionUser } from "@/lib/sso-auth";
+import { getSessionUser, isSubsiteAccountDisabled } from "@/lib/sso-auth";
+import { accountDisabledResponse } from "@/lib/api-response";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
 import { isCompletedAnalysisResult, normalizeAnalysisResult } from "@/lib/analysis-result";
@@ -85,6 +86,9 @@ export async function GET(request: NextRequest) {
 
         // 5. 所有权校验：对所有状态统一检查，防止 session 枚举攻击
         const currentUser = await getSessionUser(request);
+        if (!currentUser && (await isSubsiteAccountDisabled(request))) {
+            return accountDisabledResponse();
+        }
         const currentIpHash = hashIP(ip);
         let forbidden = false;
 

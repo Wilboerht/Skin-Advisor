@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/sso-auth";
+import { getSessionUser, isSubsiteAccountDisabled } from "@/lib/sso-auth";
+import { accountDisabledResponse } from "@/lib/api-response";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { lazyClaimGuestSessions } from "@/lib/guest-session-claim";
 import { getTestHistory } from "@/lib/test-history";
@@ -8,6 +9,7 @@ import { logger } from "@/lib/logger";
 export async function GET(req: NextRequest) {
     const user = await getSessionUser(req);
     if (!user) {
+        if (await isSubsiteAccountDisabled(req)) return accountDisabledResponse();
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

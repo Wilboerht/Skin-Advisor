@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { apiError } from "@/lib/api-response";
+import { accountDisabledResponse, apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import { generateText, getAISettings, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
@@ -20,7 +20,7 @@ import { upsertAutoDiaryEntry } from "@/lib/diary";
 import { recommendProducts, getCandidateProducts, type ProductRecommendation } from "@/lib/recommendations";
 import { normalizeImagePath } from "@/types/product";
 import { resolveIPLocation } from "@/lib/geoip";
-import { getSessionUser } from "@/lib/sso-auth";
+import { getSessionUser, isSubsiteAccountDisabled } from "@/lib/sso-auth";
 import { hashIP } from "@/lib/privacy";
 import { matchCharacterIP } from "@/lib/result-utils";
 import { isCompletedAnalysisResult } from "@/lib/analysis-result";
@@ -397,6 +397,9 @@ export async function POST(request: NextRequest) {
         // 4. 检查使用限制 (Guest/Member)
         // 提前获取用户会话，避免 freeRetry 路径中重复调用 getSessionUser()
         const user = await getSessionUser(request);
+        if (!user && (await isSubsiteAccountDisabled(request))) {
+            return accountDisabledResponse();
+        }
         reservationUserId = user?.id;
 
         // freeRetry 有效性标记：外部仅做快速预筛（session 存在 + 已完成），

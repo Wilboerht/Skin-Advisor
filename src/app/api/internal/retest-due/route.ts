@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { authorizeInternalRequest } from "@/lib/internal-api";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { UserRole } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 
 /** 复测提醒锚点：距最后一次测肤完成满 N 天（30 ≈ 皮肤代谢周期） */
@@ -65,14 +66,28 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        if (matched.length > MAX_DUE_USERS) {
+        // 子站账号被禁用的用户不发复测提醒（主站 cron 会直接给小程序推送）
+        let activeMatched = matched;
+        if (matched.length > 0) {
+            const activeUsers = await prisma.user.findMany({
+                where: {
+                    id: { in: matched.map((g) => g.userId) },
+                    role: { not: UserRole.DISABLED },
+                },
+                select: { id: true },
+            });
+            const activeIds = new Set(activeUsers.map((u) => u.id));
+            activeMatched = matched.filter((g) => activeIds.has(g.userId));
+        }
+
+        if (activeMatched.length > MAX_DUE_USERS) {
             logger.warn("[internal/retest-due] 命中上限，超出部分本周期不再提醒", {
-                matched: matched.length,
+                matched: activeMatched.length,
                 max: MAX_DUE_USERS,
             });
         }
 
-        const users = matched.slice(0, MAX_DUE_USERS).map((g) => ({
+        const users = activeMatched.slice(0, MAX_DUE_USERS).map((g) => ({
             userId: g.userId,
             lastTestAt: g.lastTestAt.toISOString(),
         }));

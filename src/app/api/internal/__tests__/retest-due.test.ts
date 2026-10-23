@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   rateLimit: vi.fn(),
   getClientIP: vi.fn(),
   groupBy: vi.fn(),
+  userFindMany: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
 }));
@@ -23,7 +24,10 @@ vi.mock("@/lib/ratelimit", () => ({
   getClientIP: mocks.getClientIP,
 }));
 vi.mock("@/lib/prisma", () => ({
-  default: { advisorSession: { groupBy: mocks.groupBy } },
+  default: {
+    advisorSession: { groupBy: mocks.groupBy },
+    user: { findMany: mocks.userFindMany },
+  },
 }));
 vi.mock("@/lib/logger", () => ({
   logger: { error: mocks.error, warn: mocks.warn },
@@ -58,6 +62,9 @@ describe("GET /api/internal/retest-due", () => {
     mocks.rateLimit.mockResolvedValue({ success: true, limit: 30, remaining: 29, reset: Date.now() + 60_000 });
     mocks.getClientIP.mockReturnValue("1.2.3.4");
     mocks.groupBy.mockResolvedValue([]);
+    mocks.userFindMany.mockImplementation(async ({ where }: { where: { id: { in: string[] } } }) =>
+      where.id.in.map((id) => ({ id }))
+    );
   });
 
   it("鉴权失败返回 401，且不做限流", async () => {
@@ -100,6 +107,14 @@ describe("GET /api/internal/retest-due", () => {
 
   it("无命中返回空名单", async () => {
     mocks.groupBy.mockResolvedValue([{ userId: "u1", _max: { completedAt: cstNoon(-10) } }]);
+    const res = await GET(fakeReq(URL_));
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({ users: [] });
+  });
+
+  it("子站账号已禁用的用户不进入提醒名单", async () => {
+    mocks.groupBy.mockResolvedValue([{ userId: "u1", _max: { completedAt: cstNoon(-30) } }]);
+    mocks.userFindMany.mockResolvedValue([]);
     const res = await GET(fakeReq(URL_));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ users: [] });

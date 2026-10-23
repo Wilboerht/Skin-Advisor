@@ -1,7 +1,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getSessionUser } from "@/lib/sso-auth";
+import { getSessionUser, isSubsiteAccountDisabled } from "@/lib/sso-auth";
+import { accountDisabledResponse } from "@/lib/api-response";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
 import { logger } from "@/lib/logger";
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
     try {
         const user = await getSessionUser(request);
         if (!user) {
+            if (await isSubsiteAccountDisabled(request)) return accountDisabledResponse();
             return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: rateLimitHeaders });
         }
 

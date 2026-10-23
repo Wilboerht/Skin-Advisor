@@ -6,6 +6,7 @@ import { getScoreDistribution } from "@/lib/score-percentile-db";
 import { percentileFromDistribution } from "@/lib/score-percentile";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { authorizeInternalRequest } from "@/lib/internal-api";
+import { isDisabledUser } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 
 /**
@@ -67,11 +68,15 @@ export async function GET(request: NextRequest) {
     try {
         const user = await prisma.user.findUnique({
             where: { phoneNumber: phone },
-            select: { id: true },
+            select: { id: true, role: true },
         });
 
         if (!user) {
             return NextResponse.json({ linked: false });
+        }
+        // 子站账号被禁用：商城肌肤档案卡片不展示该用户数据
+        if (isDisabledUser(user.role)) {
+            return NextResponse.json({ linked: false, disabled: true });
         }
 
         const historyWhere = {

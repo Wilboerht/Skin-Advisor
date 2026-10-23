@@ -20,6 +20,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/internal-api", () => ({
   authorizeInternalRequest: mocks.authorizeInternalRequest,
 }));
+// 内部路由新增禁用账号检查；mock 掉 sso-auth，避免测试加载 SSO SDK
+vi.mock("@/lib/sso-auth", () => ({
+  isLocalUserDisabled: vi.fn().mockResolvedValue(false),
+}));
 vi.mock("@/lib/ratelimit", () => ({
   rateLimit: mocks.rateLimit,
   getClientIP: mocks.getClientIP,
