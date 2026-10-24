@@ -1,63 +1,13 @@
-import prisma from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import ProductsClient from "@/components/admin/ProductsClient";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { redirect } from "next/navigation";
-import {
-    SerializedProduct,
-    normalizeImagePath,
-    normalizeImages,
-    parseStringArray,
-    parseAffiliateLinks,
-} from "@/types/product";
-import { normalizeProductPurchaseLinks } from "@/lib/product-links";
 
 export const dynamic = "force-dynamic";
-
-const PRODUCT_FETCH_LIMIT = 1000;
 
 export default async function ProductsPage() {
     const admin = await verifyAdminSession();
     if (!admin) {
         redirect("/admin/login");
     }
-
-    // 当前业务产品数量较少，使用 1000 的 limit 避免 SSR 时无限制加载。
-    // 若未来产品数量显著增长，应改为服务端分页（skip/take）+ 前端分页 UI。
-    const products = await prisma.product.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: PRODUCT_FETCH_LIMIT
-    });
-
-    // Serialize for client component — normalize image paths and safely parse JSON fields
-    const serializedProducts: SerializedProduct[] = products.map(p => ({
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        price: p.price,
-        image: normalizeImagePath(p.image),
-        images: normalizeImages(p.images),
-        description: p.description,
-        howToUse: p.howToUse,
-        origin: p.origin,
-        capacity: p.capacity,
-        keyIngredients: parseStringArray(p.keyIngredients),
-        suitableSkinTypes: parseStringArray(p.suitableSkinTypes),
-        benefits: parseStringArray(p.benefits),
-        negativeFor: parseStringArray(p.negativeFor),
-        affiliateLinks: parseAffiliateLinks(p.affiliateLinks),
-        purchaseLinks: normalizeProductPurchaseLinks(p.purchaseLinks, p.affiliateLinks),
-        recommendReasons: (p.recommendReasons as Record<string, string> | null) ?? null,
-        active: p.active,
-        featured: p.featured,
-        createdAt: p.createdAt.toISOString(),
-        updatedAt: p.updatedAt.toISOString(),
-    }));
-
-    return (
-        <ProductsClient
-            initialProducts={serializedProducts}
-            role={admin.role}
-            truncated={products.length >= PRODUCT_FETCH_LIMIT}
-        />
-    );
+    return <ProductsClient role={admin.role} />;
 }

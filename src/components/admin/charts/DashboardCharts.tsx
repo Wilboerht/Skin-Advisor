@@ -1,11 +1,22 @@
 "use client";
 
-import { adminFetch } from "@/lib/admin-fetch";
 import { useEffect, useState } from "react";
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Legend,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip as ChartTooltip,
+    XAxis,
+    YAxis,
+} from "recharts";
 import { useMounted } from "@/hooks/use-mounted";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { m } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { PanelCard } from "@/components/admin/PanelCard";
+import { adminFetch } from "@/lib/admin-fetch";
 
 interface StatsData {
     overview: {
@@ -13,7 +24,6 @@ interface StatsData {
         totalProducts: number;
         totalSessions: number;
         completedSessions: number;
-
         todaySessions: number;
         todayCompletions: number;
         completionRate: number;
@@ -22,35 +32,42 @@ interface StatsData {
     weeklyGrowth: Array<{ day: string; started: number; completed: number }>;
 }
 
+const CHART_COLORS = [
+    "#00263E",
+    "#4A6272",
+    "#B8A47B",
+    "#3D8055",
+    "#D9730D",
+    "#7A9A5B",
+];
+
 export function useDashboardStats() {
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const refresh = () => setRefreshKey(k => k + 1);
+    const refresh = () => setRefreshKey((value) => value + 1);
 
     useEffect(() => {
         const controller = new AbortController();
         setLoading(true);
         setError(null);
-        adminFetch('/api/admin/stats', { signal: controller.signal })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}`);
-                }
+        adminFetch("/api/admin/stats", { signal: controller.signal })
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return res.json();
             })
-            .then(data => {
+            .then((data) => {
                 if (data.success) {
                     setStats(data.data);
                 } else {
-                    setError(data.error || "未知错误");
+                    setError(data.error || "统计数据加载失败");
                 }
             })
-            .catch(err => {
-                if (err.name === 'AbortError') return;
-                setError(err.message || "网络错误");
+            .catch((err) => {
+                if (err.name === "AbortError") return;
+                setError(err.message || "统计数据加载失败");
             })
             .finally(() => setLoading(false));
         return () => controller.abort();
@@ -59,194 +76,203 @@ export function useDashboardStats() {
     return { stats, loading, error, refresh };
 }
 
-export function SkinTypeDistribution({ data }: { data?: StatsData['skinTypeDistribution'] }) {
-    const mounted = useMounted();
-    const chartData = data && data.length > 0 ? data : [
-        { name: 'No Data', value: 1, fill: '#E5E5E5' }
-    ];
-
-    const hasData = data && data.some(d => d.value > 0);
-
-    if (!mounted) {
-        return (
-            <m.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="rounded-2xl bg-white p-6 border border-[#1A1A1A]/5 h-[340px] flex flex-col"
-            >
-                <h3 className="text-lg font-serif text-[#1A1A1A] mb-1">肤质分布</h3>
-                <p className="text-xs text-[#1A1A1A]/40 mb-6 uppercase tracking-wider">User Skin Type Analysis</p>
-                <div className="flex-1 w-full min-h-0" />
-            </m.div>
-        );
-    }
-
+function ChartSkeleton() {
     return (
-        <m.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-2xl bg-white p-6 border border-[#1A1A1A]/5 h-[340px] flex flex-col"
-        >
-            <h3 className="text-lg font-serif text-[#1A1A1A] mb-1">肤质分布</h3>
-            <p className="text-xs text-[#1A1A1A]/40 mb-6 uppercase tracking-wider">User Skin Type Analysis</p>
-
-            <div className="flex-1 w-full min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={chartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={hasData ? 5 : 0}
-                            dataKey="value"
-                        >
-                            {chartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} stroke="none" />
-                            ))}
-                        </Pie>
-                        {hasData && (
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: '#fff',
-                                    border: '1px solid rgba(26,26,26,0.1)',
-                                    borderRadius: '8px',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                                    fontSize: '12px',
-                                }}
-                                formatter={(value, name) => [`${value} 人`, name]}
-                            />
-                        )}
-                    </PieChart>
-                </ResponsiveContainer>
-            </div>
-
-            {hasData ? (
-                <div className="flex flex-wrap gap-4 justify-center mt-4">
-                    {chartData.filter(d => d.value > 0).map((d) => (
-                        <div key={d.name} className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.fill }}></span>
-                            <span className="text-xs text-[#1A1A1A]/60 font-medium">{d.name} ({d.value})</span>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <p className="text-center text-xs text-[#1A1A1A]/30 mt-4">暂无数据</p>
-            )}
-        </m.div>
+        <div className="flex h-72 items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-charcoal/20 border-t-brand-primary" />
+        </div>
     );
 }
 
-export function WeeklyGrowth({ data }: { data?: StatsData['weeklyGrowth'] }) {
+export function DashboardCharts({
+    stats,
+    loading,
+}: {
+    stats: StatsData | null;
+    loading?: boolean;
+}) {
     const mounted = useMounted();
-    const chartData = data || [];
-    const hasData = chartData.some(d => d.started > 0 || d.completed > 0);
-
-    if (!mounted) {
-        return (
-            <m.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="rounded-2xl bg-white p-6 border border-[#1A1A1A]/5 h-[340px] flex flex-col"
-            >
-                <h3 className="text-lg font-serif text-[#1A1A1A] mb-1">周测肤趋势</h3>
-                <p className="text-xs text-[#1A1A1A]/40 mb-6 uppercase tracking-wider">Latest 7 Days</p>
-                <div className="flex-1 w-full min-h-0" />
-            </m.div>
-        );
-    }
+    const distribution = stats?.skinTypeDistribution ?? [];
+    const growth = stats?.weeklyGrowth ?? [];
+    const distributionTotal = distribution.reduce(
+        (sum, item) => sum + item.value,
+        0,
+    );
+    const hasDistribution = distribution.some((item) => item.value > 0);
+    const hasGrowth = growth.some(
+        (item) => item.started > 0 || item.completed > 0,
+    );
 
     return (
-        <m.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-2xl bg-white p-6 border border-[#1A1A1A]/5 h-[340px] flex flex-col"
-        >
-            <h3 className="text-lg font-serif text-[#1A1A1A] mb-1">周测肤趋势</h3>
-            <p className="text-xs text-[#1A1A1A]/40 mb-6 uppercase tracking-wider">Latest 7 Days</p>
-
-            <div className="flex-1 w-full min-h-0 text-xs">
-                {hasData ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E5E5" />
-                            <XAxis
-                                dataKey="day"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: '#9CA3AF', fontSize: 10 }}
-                                dy={10}
-                            />
-                            <YAxis
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: '#9CA3AF', fontSize: 10 }}
-                            />
-                            <Tooltip
-                                cursor={{ fill: 'rgba(26, 26, 26, 0.02)' }}
-                                contentStyle={{
-                                    backgroundColor: '#1A1A1A',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontSize: '12px',
-                                    color: '#fff'
-                                }}
-                            />
-                            <Legend
-                                wrapperStyle={{ fontSize: '10px' }}
-                                formatter={(value) => value === 'started' ? '开始测试' : '完成测试'}
-                            />
-                            <Bar
-                                dataKey="started"
-                                name="started"
-                                fill="#C19F70"
-                                radius={[4, 4, 0, 0]}
-                                barSize={16}
-                            />
-                            <Bar
-                                dataKey="completed"
-                                name="completed"
-                                fill="#3D4430"
-                                radius={[4, 4, 0, 0]}
-                                barSize={16}
-                            />
-                        </BarChart>
-                    </ResponsiveContainer>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <PanelCard
+                title="肤质分布"
+                action={
+                    <span className="text-xs tabular-nums text-brand-charcoal/65">
+                        共 {distributionTotal} 条
+                    </span>
+                }
+            >
+                {loading ? (
+                    <ChartSkeleton />
+                ) : !mounted ? (
+                    <ChartSkeleton />
+                ) : !hasDistribution ? (
+                    <p className="py-10 text-center text-sm text-brand-charcoal/65">
+                        暂无肤质数据
+                    </p>
                 ) : (
-                    <div className="h-full flex items-center justify-center text-[#1A1A1A]/30">
-                        暂无数据
+                    <div className="flex h-72 flex-col">
+                        <div className="min-h-0 flex-1">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={distribution}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={55}
+                                        outerRadius={78}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                    >
+                                        {distribution.map((entry, index) => (
+                                            <Cell
+                                                key={entry.name}
+                                                fill={
+                                                    CHART_COLORS[
+                                                        index %
+                                                            CHART_COLORS.length
+                                                    ] ??
+                                                    entry.fill ??
+                                                    CHART_COLORS[0]
+                                                }
+                                                stroke="none"
+                                            />
+                                        ))}
+                                    </Pie>
+                                    <ChartTooltip
+                                        contentStyle={{
+                                            backgroundColor: "#fff",
+                                            border: "1px solid rgba(0,38,62,0.1)",
+                                            borderRadius: 8,
+                                            boxShadow:
+                                                "0 4px 12px rgba(0,0,0,0.06)",
+                                            fontSize: 12,
+                                        }}
+                                        formatter={(value, name) => [
+                                            `${value} 条`,
+                                            name,
+                                        ]}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1.5">
+                            {distribution.map((entry, index) => (
+                                <span
+                                    key={entry.name}
+                                    className="inline-flex items-center gap-1.5 text-xs text-brand-charcoal/70"
+                                >
+                                    <span
+                                        className="h-2 w-2 rounded-full"
+                                        style={{
+                                            backgroundColor:
+                                                CHART_COLORS[
+                                                    index % CHART_COLORS.length
+                                                ] ??
+                                                entry.fill ??
+                                                CHART_COLORS[0],
+                                        }}
+                                    />
+                                    {entry.name}（{entry.value}）
+                                </span>
+                            ))}
+                        </div>
                     </div>
                 )}
-            </div>
-        </m.div>
-    );
-}
+            </PanelCard>
 
-// Wrapper that receives data from parent
-export function DashboardCharts({ stats, loading }: { stats: StatsData | null; loading?: boolean }) {
-
-    if (loading) {
-        return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="rounded-2xl bg-white p-6 border border-[#1A1A1A]/5 h-[340px] flex items-center justify-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-[#1A1A1A]/30" />
-                </div>
-                <div className="rounded-2xl bg-white p-6 border border-[#1A1A1A]/5 h-[340px] flex items-center justify-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-[#1A1A1A]/30" />
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <SkinTypeDistribution data={stats?.skinTypeDistribution} />
-            <WeeklyGrowth data={stats?.weeklyGrowth} />
+            <PanelCard
+                title="近 7 日趋势"
+                action={
+                    <span className="text-xs text-brand-charcoal/65">
+                        开始 / 完成
+                    </span>
+                }
+            >
+                {loading ? (
+                    <ChartSkeleton />
+                ) : !mounted ? (
+                    <ChartSkeleton />
+                ) : !hasGrowth ? (
+                    <p className="py-10 text-center text-sm text-brand-charcoal/65">
+                        暂无趋势数据
+                    </p>
+                ) : (
+                    <div className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                                data={growth}
+                                margin={{
+                                    top: 8,
+                                    right: 8,
+                                    left: -20,
+                                    bottom: 0,
+                                }}
+                            >
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    vertical={false}
+                                    stroke="#E5E5E5"
+                                />
+                                <XAxis
+                                    dataKey="day"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: "#6b7280", fontSize: 11 }}
+                                    dy={8}
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: "#6b7280", fontSize: 11 }}
+                                />
+                                <ChartTooltip
+                                    cursor={{ fill: "rgba(0,38,62,0.04)" }}
+                                    contentStyle={{
+                                        backgroundColor: "#fff",
+                                        border: "1px solid rgba(0,38,62,0.1)",
+                                        borderRadius: 8,
+                                        boxShadow:
+                                            "0 4px 12px rgba(0,0,0,0.06)",
+                                        fontSize: 12,
+                                    }}
+                                />
+                                <Legend
+                                    wrapperStyle={{ fontSize: 11 }}
+                                    formatter={(value) =>
+                                        value === "started" ? "开始" : "完成"
+                                    }
+                                />
+                                <Bar
+                                    dataKey="started"
+                                    name="started"
+                                    fill={CHART_COLORS[0]}
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={16}
+                                />
+                                <Bar
+                                    dataKey="completed"
+                                    name="completed"
+                                    fill={CHART_COLORS[3]}
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={16}
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
+            </PanelCard>
         </div>
     );
 }

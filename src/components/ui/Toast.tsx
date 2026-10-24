@@ -24,11 +24,15 @@ interface ToastContextType {
     removeToast: (id: string) => void;
 }
 
-const ToastContext = React.createContext<ToastContextType | undefined>(undefined);
+const ToastContext = React.createContext<ToastContextType | undefined>(
+    undefined,
+);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = React.useState<Toast[]>([]);
-    const timeoutRefs = React.useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+    const timeoutRefs = React.useRef<Set<ReturnType<typeof setTimeout>>>(
+        new Set(),
+    );
 
     React.useEffect(() => {
         const timers = timeoutRefs.current;
@@ -48,10 +52,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const addToast = React.useCallback(
         (message: string, type: ToastType, duration?: number) => {
             // 错误类 toast 默认展示更久，给用户留足阅读时间
-            const effectiveDuration = duration ?? (type === "error" ? 5000 : 3000);
+            const effectiveDuration =
+                duration ?? (type === "error" ? 5000 : 3000);
             const id = `${++toastIdCounter.current}-${Date.now()}`;
             setToasts((prev) => {
-                const next = [...prev, { id, message, type, duration: effectiveDuration }];
+                const next = [
+                    ...prev,
+                    { id, message, type, duration: effectiveDuration },
+                ];
                 // 超过上限时移除最早的 toast
                 if (next.length > MAX_TOASTS) {
                     const removed = next.shift();
@@ -71,17 +79,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 timeoutRefs.current.add(timer);
             }
         },
-        [removeToast]
+        [removeToast],
     );
 
     const toast = React.useMemo(
         () => ({
-            success: (message: string, duration?: number) => addToast(message, "success", duration),
-            error: (message: string, duration?: number) => addToast(message, "error", duration),
-            info: (message: string, duration?: number) => addToast(message, "info", duration),
-            warning: (message: string, duration?: number) => addToast(message, "warning", duration),
+            success: (message: string, duration?: number) =>
+                addToast(message, "success", duration),
+            error: (message: string, duration?: number) =>
+                addToast(message, "error", duration),
+            info: (message: string, duration?: number) =>
+                addToast(message, "info", duration),
+            warning: (message: string, duration?: number) =>
+                addToast(message, "warning", duration),
         }),
-        [addToast]
+        [addToast],
     );
 
     return (
@@ -128,25 +140,46 @@ function ToastContainer({
             className="fixed right-0 left-0 bottom-[calc(1rem+env(safe-area-inset-bottom,16px))] md:right-6 md:left-auto md:top-6 md:bottom-auto z-[100100] flex flex-col items-center md:items-end gap-2 px-4 md:px-0"
         >
             <LazyMotion features={domAnimation}>
-            <AnimatePresence>
-                {toasts.map((t) => {
-                    const Icon = IconComponent[t.type];
-                    return (
-                    <m.div
-                        key={t.id}
-                        role={t.type === "error" ? "alert" : undefined}
-                        initial={reducedMotion ? false : { opacity: 0, y: 8, x: 0 }}
-                        animate={reducedMotion ? {} : { opacity: 1, y: 0, x: 0 }}
-                        exit={reducedMotion ? {} : { opacity: 0, y: 8, transition: { duration: 0.15 } }}
-                        onClick={() => removeToast(t.id)}
-                        className="flex items-center gap-2.5 rounded-2xl bg-white/90 backdrop-blur-xl px-4 py-2.5 text-[13px] leading-snug text-[#1A1A1A] cursor-pointer select-none shadow-[0_2px_16px_-2px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] w-full md:w-auto"
-                    >
-                        <Icon className={`h-4 w-4 shrink-0 ${iconColor[t.type]}`} strokeWidth={2} />
-                        <span className="font-normal tracking-wide">{t.message}</span>
-                    </m.div>
-                    );
-                })}
-            </AnimatePresence>
+                <AnimatePresence>
+                    {toasts.map((t) => {
+                        const Icon = IconComponent[t.type];
+                        return (
+                            <m.div
+                                key={t.id}
+                                role={t.type === "error" ? "alert" : undefined}
+                                initial={
+                                    reducedMotion
+                                        ? false
+                                        : { opacity: 0, y: 8, x: 0 }
+                                }
+                                animate={
+                                    reducedMotion
+                                        ? {}
+                                        : { opacity: 1, y: 0, x: 0 }
+                                }
+                                exit={
+                                    reducedMotion
+                                        ? {}
+                                        : {
+                                              opacity: 0,
+                                              y: 8,
+                                              transition: { duration: 0.15 },
+                                          }
+                                }
+                                onClick={() => removeToast(t.id)}
+                                className="flex w-full cursor-pointer select-none items-center gap-2.5 rounded-xl border border-brand-charcoal/10 bg-white px-4 py-3 text-sm leading-snug text-brand-charcoal shadow-xl md:w-auto"
+                            >
+                                <Icon
+                                    className={`h-4 w-4 shrink-0 ${iconColor[t.type]}`}
+                                    strokeWidth={2}
+                                />
+                                <span className="font-normal tracking-wide">
+                                    {t.message}
+                                </span>
+                            </m.div>
+                        );
+                    })}
+                </AnimatePresence>
             </LazyMotion>
         </div>
     );

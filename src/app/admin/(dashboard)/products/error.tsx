@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, RefreshCcw, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { PanelCard } from "@/components/admin/PanelCard";
 
 export default function ProductsErrorBoundary({
     error,
@@ -18,39 +20,40 @@ export default function ProductsErrorBoundary({
     }, [error]);
 
     return (
-        <div className="min-h-[60vh] flex items-center justify-center">
-            <div className="max-w-md w-full mx-4 p-8 bg-white/60 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/70 shadow-[0_40px_100px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,0.4)] text-center">
-                <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-6">
-                    <AlertTriangle className="w-8 h-8" />
+        <div className="flex min-h-[60vh] items-center justify-center">
+            <PanelCard className="w-full max-w-md text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-500">
+                    <AlertTriangle className="h-7 w-7" />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 mb-3 tracking-tight">
+                <h2 className="text-base font-medium text-brand-charcoal">
                     产品列表加载失败
                 </h2>
-                <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">
-                    加载产品数据时发生错误。您可以重试，或返回产品列表首页。
+                <p className="mt-1 text-sm text-brand-charcoal/65">
+                    加载产品数据时出现异常，请重试或返回产品列表。
                 </p>
                 {error.digest && (
-                    <p className="text-xs text-slate-400 mb-6 font-mono">
+                    <p className="mt-3 font-mono text-xs text-brand-charcoal/55">
                         Error ID: {error.digest}
                     </p>
                 )}
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <button
+                <div className="mt-5 flex flex-wrap justify-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => router.push("/admin/products")}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+                        leftIcon={<ArrowLeft className="h-4 w-4" />}
                     >
-                        <ArrowLeft className="w-4 h-4" />
                         返回列表
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        size="sm"
                         onClick={reset}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-colors"
+                        leftIcon={<RefreshCcw className="h-4 w-4" />}
                     >
-                        <RefreshCcw className="w-4 h-4" />
                         重试
-                    </button>
+                    </Button>
                 </div>
-            </div>
+            </PanelCard>
         </div>
     );
 }

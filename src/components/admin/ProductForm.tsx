@@ -5,10 +5,15 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-    X, Loader2, Check, ChevronLeft,
-    ImageIcon, GripVertical,
+    X,
+    Loader2,
+    Check,
+    ChevronLeft,
+    ImageIcon,
+    GripVertical,
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import {
     ProductFormData,
@@ -37,9 +42,20 @@ import {
 // ==================== 子组件 ====================
 
 /** Tag 输入组件 */
-function TagInput({ label, values, onChange, required = false, error, placeholder = "添加..." }: {
-    label: string; values: string[]; onChange: (vals: string[]) => void;
-    required?: boolean; error?: string; placeholder?: string;
+function TagInput({
+    label,
+    values,
+    onChange,
+    required = false,
+    error,
+    placeholder = "添加...",
+}: {
+    label: string;
+    values: string[];
+    onChange: (vals: string[]) => void;
+    required?: boolean;
+    error?: string;
+    placeholder?: string;
 }) {
     const [input, setInput] = useState("");
     const addTag = () => {
@@ -53,18 +69,28 @@ function TagInput({ label, values, onChange, required = false, error, placeholde
         }
         setInput("");
     };
-    const removeTag = (i: number) => onChange(values.filter((_, idx) => idx !== i));
+    const removeTag = (i: number) =>
+        onChange(values.filter((_, idx) => idx !== i));
 
     return (
         <div>
-            <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
-                {label}{required && <span className="text-red-500 ml-1">*</span>}
+            <label className="block text-sm font-medium text-brand-charcoal/70 mb-2">
+                {label}
+                {required && <span className="text-red-500 ml-1">*</span>}
             </label>
-            <div className="flex flex-wrap gap-2 min-h-[42px] p-2 rounded-xl border border-[#E8E2D9] bg-white focus-within:border-[#C9A86C] focus-within:ring-1 focus-within:ring-[#C9A86C]/20 transition-all">
+            <div className="flex flex-wrap gap-2 min-h-[42px] p-2 rounded-lg border border-brand-charcoal/10 bg-white focus-within:border-brand-primary focus-within:ring-1 focus-within:ring-brand-primary/20 transition-all">
                 {values.map((tag, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF8F5] text-sm font-medium text-[#2C2C2C]">
+                    <span
+                        key={i}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-charcoal/[0.03] text-sm font-medium text-brand-charcoal"
+                    >
                         {tag}
-                        <button type="button" onClick={() => removeTag(i)} className="min-w-[28px] min-h-[28px] flex items-center justify-center text-[#9E9E9E] hover:text-red-500 transition-colors" aria-label={`删除 ${tag}`}>
+                        <button
+                            type="button"
+                            onClick={() => removeTag(i)}
+                            className="min-w-[28px] min-h-[28px] flex items-center justify-center text-brand-charcoal/55 hover:text-red-500 transition-colors"
+                            aria-label={`删除 ${tag}`}
+                        >
                             <X className="h-3 w-3" />
                         </button>
                     </span>
@@ -84,14 +110,14 @@ function TagInput({ label, values, onChange, required = false, error, placeholde
                                 addTag();
                             }
                         }}
-                        className="w-full text-sm text-[#2C2C2C] placeholder:text-[#8B8B8B] outline-none bg-transparent py-1"
+                        className="w-full text-sm text-brand-charcoal placeholder:text-brand-charcoal/55 outline-none bg-transparent py-1"
                         placeholder={values.length === 0 ? placeholder : ""}
                     />
                     {input.trim() && (
                         <button
                             type="button"
                             onClick={addTag}
-                            className="text-xs px-2 py-1 rounded-md bg-[#FAF8F5] text-[#8B7355] hover:bg-[#F0EBE3] transition-colors"
+                            className="text-xs px-2 py-1 rounded-md bg-brand-charcoal/[0.03] text-brand-charcoal/65 hover:bg-brand-charcoal/[0.06] transition-colors"
                         >
                             添加
                         </button>
@@ -104,7 +130,17 @@ function TagInput({ label, values, onChange, required = false, error, placeholde
 }
 
 /** Toggle 开关 */
-function Toggle({ label, checked, onChange, tooltip }: { label: string; checked: boolean; onChange: (v: boolean) => void; tooltip?: string }) {
+function Toggle({
+    label,
+    checked,
+    onChange,
+    tooltip,
+}: {
+    label: string;
+    checked: boolean;
+    onChange: (v: boolean) => void;
+    tooltip?: string;
+}) {
     return (
         <div className="flex items-center gap-3 group">
             <button
@@ -120,23 +156,31 @@ function Toggle({ label, checked, onChange, tooltip }: { label: string; checked:
                 }}
                 className="flex items-center gap-3"
             >
-                <div className={cn(
-                    "relative w-11 h-6 rounded-full transition-colors duration-200",
-                    checked ? "bg-[#C9A86C]" : "bg-[#D9D0C3]"
-                )}>
-                    <div className={cn(
-                        "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200",
-                        checked ? "translate-x-5" : "translate-x-0"
-                    )} />
+                <div
+                    className={cn(
+                        "relative w-11 h-6 rounded-full transition-colors duration-200",
+                        checked ? "bg-brand-primary" : "bg-brand-charcoal/20",
+                    )}
+                >
+                    <div
+                        className={cn(
+                            "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200",
+                            checked ? "translate-x-5" : "translate-x-0",
+                        )}
+                    />
                 </div>
-                <span className="text-sm font-medium text-[#5E5E5E]">{label}</span>
+                <span className="text-sm font-medium text-brand-charcoal/70">
+                    {label}
+                </span>
             </button>
             {tooltip && (
                 <div className="relative">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#E8E2D9] text-[10px] font-bold text-[#8B7355] cursor-help">?</span>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 bg-[#2C2C2C] text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-brand-charcoal/10 text-[10px] font-bold text-brand-charcoal/65 cursor-help">
+                        ?
+                    </span>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 bg-brand-charcoal text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
                         {tooltip}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#2C2C2C]" />
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-brand-charcoal" />
                     </div>
                 </div>
             )}
@@ -157,13 +201,19 @@ interface PurchaseLinkFormItem extends ProductPurchaseLink {
     storeProductId: string;
 }
 
-function validate(formData: Record<string, unknown>, keyIngredients: string[], benefits: string[], images: string[]) {
+function validate(
+    formData: Record<string, unknown>,
+    keyIngredients: string[],
+    benefits: string[],
+    images: string[],
+) {
     const errors: FormErrors = {};
-    const getString = (v: unknown): string => typeof v === "string" ? v : "";
+    const getString = (v: unknown): string => (typeof v === "string" ? v : "");
     if (!getString(formData.name).trim()) errors.name = "产品名称为必填";
     if (!getString(formData.category).trim()) errors.category = "分类为必填";
     if (!getString(formData.price).trim()) errors.price = "价格为必填";
-    if (!getString(formData.description).trim()) errors.description = "描述为必填";
+    if (!getString(formData.description).trim())
+        errors.description = "描述为必填";
     if (images.length === 0) errors.image = "请上传产品图片";
 
     if (!keyIngredients.length) errors.keyIngredients = "请填写核心成分";
@@ -204,7 +254,7 @@ export default function ProductForm({
     });
 
     const [images, setImages] = useState<string[]>(
-        initialData?.images || (initialData?.image ? [initialData.image] : [])
+        initialData?.images || (initialData?.image ? [initialData.image] : []),
     );
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -219,33 +269,43 @@ export default function ProductForm({
         });
     };
 
-    const [purchaseLinks, setPurchaseLinks] = useState<PurchaseLinkFormItem[]>(() => {
-        const existing = normalizeProductPurchaseLinks(
-            initialData?.purchaseLinks,
-            initialData?.affiliateLinks
-        );
-        return PURCHASE_PLATFORM_OPTIONS.map((option) => {
-            const found = existing.find((link) => link.platformKey === option.value);
-            return {
-                platformKey: option.value,
-                platform: option.label,
-                url: found?.url || "",
-                miniProgramShortLink: found?.miniProgramShortLink || "",
-                miniProgramPath: found?.miniProgramPath || "",
-                storeProductId: found?.storeProductId || "",
-            };
-        });
-    });
+    const [purchaseLinks, setPurchaseLinks] = useState<PurchaseLinkFormItem[]>(
+        () => {
+            const existing = normalizeProductPurchaseLinks(
+                initialData?.purchaseLinks,
+                initialData?.affiliateLinks,
+            );
+            return PURCHASE_PLATFORM_OPTIONS.map((option) => {
+                const found = existing.find(
+                    (link) => link.platformKey === option.value,
+                );
+                return {
+                    platformKey: option.value,
+                    platform: option.label,
+                    url: found?.url || "",
+                    miniProgramShortLink: found?.miniProgramShortLink || "",
+                    miniProgramPath: found?.miniProgramPath || "",
+                    storeProductId: found?.storeProductId || "",
+                };
+            });
+        },
+    );
 
     const updatePurchaseLink = (
         platformKey: PurchasePlatformKey,
-        field: "url" | "miniProgramShortLink" | "miniProgramPath" | "storeProductId",
-        value: string
+        field:
+            | "url"
+            | "miniProgramShortLink"
+            | "miniProgramPath"
+            | "storeProductId",
+        value: string,
     ) => {
         setPurchaseLinks((prev) =>
             prev.map((link) =>
-                link.platformKey === platformKey ? { ...link, [field]: value } : link
-            )
+                link.platformKey === platformKey
+                    ? { ...link, [field]: value }
+                    : link,
+            ),
         );
         setErrors((prev) => {
             const next = { ...prev };
@@ -254,13 +314,26 @@ export default function ProductForm({
         });
     };
 
-    const [keyIngredients, setKeyIngredients] = useState<string[]>(initialData?.keyIngredients || []);
-    const [benefits, setBenefits] = useState<string[]>(initialData?.benefits || []);
-    const [negativeFor, setNegativeFor] = useState<string[]>(initialData?.negativeFor || []);
-    const [suitableSkinTypes, setSuitableSkinTypes] = useState<string[]>(initialData?.suitableSkinTypes || []);
+    const [keyIngredients, setKeyIngredients] = useState<string[]>(
+        initialData?.keyIngredients || [],
+    );
+    const [benefits, setBenefits] = useState<string[]>(
+        initialData?.benefits || [],
+    );
+    const [negativeFor, setNegativeFor] = useState<string[]>(
+        initialData?.negativeFor || [],
+    );
+    const [suitableSkinTypes, setSuitableSkinTypes] = useState<string[]>(
+        initialData?.suitableSkinTypes || [],
+    );
 
-    const [recommendReasons, setRecommendReasons] = useState<Record<string, string | Record<string, string>>>(
-        (initialData?.recommendReasons as Record<string, string | Record<string, string>>) || {}
+    const [recommendReasons, setRecommendReasons] = useState<
+        Record<string, string | Record<string, string>>
+    >(
+        (initialData?.recommendReasons as Record<
+            string,
+            string | Record<string, string>
+        >) || {},
     );
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -370,10 +443,18 @@ export default function ProductForm({
         const linkErrors: FormErrors = {};
         for (const link of activePurchaseLinks) {
             const prefix = `purchaseLinks_${link.platformKey}`;
-            if (link.platformKey === "wechat-shop" && !link.miniProgramShortLink) {
-                linkErrors[`${prefix}_miniProgramShortLink`] = "微信小店当前需填写小程序短链";
+            if (
+                link.platformKey === "wechat-shop" &&
+                !link.miniProgramShortLink
+            ) {
+                linkErrors[`${prefix}_miniProgramShortLink`] =
+                    "微信小店当前需填写小程序短链";
             }
-            if (link.platformKey !== "wechat-shop" && !link.url && !link.miniProgramShortLink) {
+            if (
+                link.platformKey !== "wechat-shop" &&
+                !link.url &&
+                !link.miniProgramShortLink
+            ) {
                 linkErrors[`${prefix}_url`] = "H5 链接或小程序短链至少填写一个";
             }
             if (link.url) {
@@ -386,8 +467,12 @@ export default function ProductForm({
                     linkErrors[`${prefix}_url`] = "请输入有效的 http(s) 链接";
                 }
             }
-            if (link.miniProgramShortLink && /[\u0000-\u001f\u007f]/.test(link.miniProgramShortLink)) {
-                linkErrors[`${prefix}_miniProgramShortLink`] = "小程序短链包含非法字符";
+            if (
+                link.miniProgramShortLink &&
+                /[\u0000-\u001f\u007f]/.test(link.miniProgramShortLink)
+            ) {
+                linkErrors[`${prefix}_miniProgramShortLink`] =
+                    "小程序短链包含非法字符";
             }
         }
         if (Object.keys(linkErrors).length > 0) {
@@ -409,11 +494,13 @@ export default function ProductForm({
             benefits,
             negativeFor,
             suitableSkinTypes,
-            purchaseLinks: activePurchaseLinks.length > 0 ? activePurchaseLinks : null,
+            purchaseLinks:
+                activePurchaseLinks.length > 0 ? activePurchaseLinks : null,
             affiliateLinks: buildAffiliateLinks(activePurchaseLinks),
-            recommendReasons: Object.keys(recommendReasons).length > 0
-                ? recommendReasons
-                : null,
+            recommendReasons:
+                Object.keys(recommendReasons).length > 0
+                    ? recommendReasons
+                    : null,
         };
 
         try {
@@ -421,7 +508,11 @@ export default function ProductForm({
                 ? `/api/admin/products/${initialData.id}`
                 : `/api/admin/products`;
             const method = initialData?.id ? "PUT" : "POST";
-            const res = await adminFetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            const res = await adminFetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
             if (!res.ok) {
                 let message = "保存失败";
                 try {
@@ -447,10 +538,21 @@ export default function ProductForm({
         }
     };
 
-    const updateField = useCallback(<K extends keyof typeof formData>(key: K, value: (typeof formData)[K]) => {
-        setFormData((prev) => ({ ...prev, [key]: value }));
-        if (errors[key]) setErrors((prev) => { const next = { ...prev }; delete next[key]; return next; });
-    }, [errors]);
+    const updateField = useCallback(
+        <K extends keyof typeof formData>(
+            key: K,
+            value: (typeof formData)[K],
+        ) => {
+            setFormData((prev) => ({ ...prev, [key]: value }));
+            if (errors[key])
+                setErrors((prev) => {
+                    const next = { ...prev };
+                    delete next[key];
+                    return next;
+                });
+        },
+        [errors],
+    );
 
     // ===== 未保存更改检测 =====
     const initialSnapshot = useRef({
@@ -472,124 +574,205 @@ export default function ProductForm({
 
     useEffect(() => {
         const dirty =
-            JSON.stringify(formData) !== JSON.stringify(initialSnapshot.current.formData) ||
-            JSON.stringify(images) !== JSON.stringify(initialSnapshot.current.images) ||
-            JSON.stringify(purchaseLinks) !== JSON.stringify(initialSnapshot.current.purchaseLinks) ||
-            JSON.stringify(keyIngredients) !== JSON.stringify(initialSnapshot.current.keyIngredients) ||
-            JSON.stringify(benefits) !== JSON.stringify(initialSnapshot.current.benefits) ||
-            JSON.stringify(negativeFor) !== JSON.stringify(initialSnapshot.current.negativeFor) ||
-            JSON.stringify(suitableSkinTypes) !== JSON.stringify(initialSnapshot.current.suitableSkinTypes) ||
-            JSON.stringify(recommendReasons) !== JSON.stringify(initialSnapshot.current.recommendReasons);
+            JSON.stringify(formData) !==
+                JSON.stringify(initialSnapshot.current.formData) ||
+            JSON.stringify(images) !==
+                JSON.stringify(initialSnapshot.current.images) ||
+            JSON.stringify(purchaseLinks) !==
+                JSON.stringify(initialSnapshot.current.purchaseLinks) ||
+            JSON.stringify(keyIngredients) !==
+                JSON.stringify(initialSnapshot.current.keyIngredients) ||
+            JSON.stringify(benefits) !==
+                JSON.stringify(initialSnapshot.current.benefits) ||
+            JSON.stringify(negativeFor) !==
+                JSON.stringify(initialSnapshot.current.negativeFor) ||
+            JSON.stringify(suitableSkinTypes) !==
+                JSON.stringify(initialSnapshot.current.suitableSkinTypes) ||
+            JSON.stringify(recommendReasons) !==
+                JSON.stringify(initialSnapshot.current.recommendReasons);
         onDirtyChange?.(dirty);
-    }, [formData, images, purchaseLinks, keyIngredients, benefits, negativeFor, suitableSkinTypes, recommendReasons, onDirtyChange]);
+    }, [
+        formData,
+        images,
+        purchaseLinks,
+        keyIngredients,
+        benefits,
+        negativeFor,
+        suitableSkinTypes,
+        recommendReasons,
+        onDirtyChange,
+    ]);
 
     return (
-        <form onSubmit={handleSubmit} className={cn("space-y-10", !onCancel && "max-w-4xl mx-auto")}>
-            <div className="flex-1 min-w-0 space-y-10">
-
+        <form
+            onSubmit={handleSubmit}
+            className={cn("space-y-5", !onCancel && "max-w-4xl mx-auto")}
+        >
+            <div className="flex-1 min-w-0 space-y-5">
                 {/* ===== 基本信息 ===== */}
-                <section>
+                <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
+                    <div className="mb-4">
+                        <h2 className="text-base font-medium text-brand-charcoal">
+                            基本信息
+                        </h2>
+                        <p className="mt-1 text-sm text-brand-charcoal/65">
+                            产品名称、分类、价格与上架状态
+                        </p>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* 产品名称 */}
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
+                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
                                 产品名称 <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={formData.name}
                                 maxLength={MAX_NAME_LENGTH}
-                                onChange={(e) => updateField("name", e.target.value)}
+                                onChange={(e) =>
+                                    updateField("name", e.target.value)
+                                }
                                 className={cn(
-                                    "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none transition-all bg-white",
-                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
-                                    errors.name ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
+                                    "block w-full rounded-lg border shadow-sm text-sm p-3 outline-none transition-all bg-white",
+                                    "focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20",
+                                    errors.name
+                                        ? "border-red-400 bg-red-50/30"
+                                        : "border-brand-charcoal/10",
                                 )}
                                 placeholder="如：NIHPLOD 玻色因面霜"
                                 aria-invalid={!!errors.name}
                             />
-                            {errors.name && <p className="text-xs text-red-500 mt-1" role="alert">{errors.name}</p>}
+                            {errors.name && (
+                                <p
+                                    className="text-xs text-red-500 mt-1"
+                                    role="alert"
+                                >
+                                    {errors.name}
+                                </p>
+                            )}
                         </div>
 
                         {/* 分类 */}
                         <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
+                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
                                 分类 <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={formData.category}
-                                onChange={(e) => updateField("category", e.target.value)}
+                                onChange={(e) =>
+                                    updateField("category", e.target.value)
+                                }
                                 className={cn(
-                                    "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none transition-all appearance-none bg-white",
-                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
-                                    errors.category ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
+                                    "block w-full rounded-lg border shadow-sm text-sm p-3 outline-none transition-all appearance-none bg-white",
+                                    "focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20",
+                                    errors.category
+                                        ? "border-red-400 bg-red-50/30"
+                                        : "border-brand-charcoal/10",
                                 )}
                                 aria-invalid={!!errors.category}
                             >
                                 <option value="">选择分类...</option>
                                 {CATEGORY_OPTIONS.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
                                 ))}
                             </select>
-                            {errors.category && <p className="text-xs text-red-500 mt-1" role="alert">{errors.category}</p>}
+                            {errors.category && (
+                                <p
+                                    className="text-xs text-red-500 mt-1"
+                                    role="alert"
+                                >
+                                    {errors.category}
+                                </p>
+                            )}
                         </div>
 
                         {/* 价格 */}
                         <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
+                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
                                 价格 <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B0A89A] text-sm">¥</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-charcoal/55 text-sm">
+                                    ¥
+                                </span>
                                 <input
                                     type="text"
                                     value={formData.price}
                                     maxLength={MAX_PRICE_LENGTH}
-                                    onChange={(e) => updateField("price", e.target.value)}
+                                    onChange={(e) =>
+                                        updateField("price", e.target.value)
+                                    }
                                     className={cn(
-                                        "block w-full rounded-xl border shadow-sm text-sm p-3 pl-7 outline-none transition-all bg-white",
-                                        "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
-                                        errors.price ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
+                                        "block w-full rounded-lg border shadow-sm text-sm p-3 pl-7 outline-none transition-all bg-white",
+                                        "focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20",
+                                        errors.price
+                                            ? "border-red-400 bg-red-50/30"
+                                            : "border-brand-charcoal/10",
                                     )}
                                     placeholder="890"
                                     aria-invalid={!!errors.price}
                                 />
                             </div>
-                            {errors.price && <p className="text-xs text-red-500 mt-1" role="alert">{errors.price}</p>}
+                            {errors.price && (
+                                <p
+                                    className="text-xs text-red-500 mt-1"
+                                    role="alert"
+                                >
+                                    {errors.price}
+                                </p>
+                            )}
                         </div>
 
                         {/* 产地 */}
                         <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">产地</label>
+                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                                产地
+                            </label>
                             <input
                                 type="text"
                                 value={formData.origin}
                                 maxLength={MAX_ORIGIN_LENGTH}
-                                onChange={(e) => updateField("origin", e.target.value)}
-                                className="block w-full rounded-xl border border-[#E8E2D9] shadow-sm text-sm p-3 outline-none transition-all bg-white focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20"
+                                onChange={(e) =>
+                                    updateField("origin", e.target.value)
+                                }
+                                className="block w-full rounded-lg border border-brand-charcoal/10 shadow-sm text-sm p-3 outline-none transition-all bg-white focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20"
                                 placeholder="如：法国"
                             />
                         </div>
 
                         {/* 规格 */}
                         <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">规格容量</label>
+                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                                规格容量
+                            </label>
                             <input
                                 type="text"
                                 value={formData.capacity}
                                 maxLength={MAX_CAPACITY_LENGTH}
-                                onChange={(e) => updateField("capacity", e.target.value)}
-                                className="block w-full rounded-xl border border-[#E8E2D9] shadow-sm text-sm p-3 outline-none transition-all bg-white focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20"
+                                onChange={(e) =>
+                                    updateField("capacity", e.target.value)
+                                }
+                                className="block w-full rounded-lg border border-brand-charcoal/10 shadow-sm text-sm p-3 outline-none transition-all bg-white focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20"
                                 placeholder="如：50 ml"
                             />
-                            <p className="text-xs text-[#B0A89A] mt-1">历史产品可后续手工补录</p>
+                            <p className="text-xs text-brand-charcoal/55 mt-1">
+                                历史产品可后续手工补录
+                            </p>
                         </div>
 
                         {/* 开关组 */}
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">产品状态</label>
+                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                                产品状态
+                            </label>
                             <div className="flex items-center gap-6 h-[46px]">
-                                <Toggle label="上架状态" checked={formData.active} onChange={(v) => updateField("active", v)} />
+                                <Toggle
+                                    label="上架状态"
+                                    checked={formData.active}
+                                    onChange={(v) => updateField("active", v)}
+                                />
                                 <Toggle
                                     label="精选置顶"
                                     checked={formData.featured}
@@ -602,44 +785,69 @@ export default function ProductForm({
 
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
+                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
                                 产品描述 <span className="text-red-500">*</span>
                             </label>
                             <textarea
                                 rows={3}
                                 value={formData.description}
                                 maxLength={MAX_DESCRIPTION_LENGTH}
-                                onChange={(e) => updateField("description", e.target.value)}
+                                onChange={(e) =>
+                                    updateField("description", e.target.value)
+                                }
                                 placeholder="产品的核心卖点、适合人群..."
                                 className={cn(
-                                    "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none resize-none transition-all bg-white",
-                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
-                                    errors.description ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
+                                    "block w-full rounded-lg border shadow-sm text-sm p-3 outline-none resize-none transition-all bg-white",
+                                    "focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20",
+                                    errors.description
+                                        ? "border-red-400 bg-red-50/30"
+                                        : "border-brand-charcoal/10",
                                 )}
                                 aria-invalid={!!errors.description}
                             />
-                            {errors.description && <p className="text-xs text-red-500 mt-1" role="alert">{errors.description}</p>}
+                            {errors.description && (
+                                <p
+                                    className="text-xs text-red-500 mt-1"
+                                    role="alert"
+                                >
+                                    {errors.description}
+                                </p>
+                            )}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">使用方法</label>
+                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                                使用方法
+                            </label>
                             <textarea
                                 rows={3}
                                 value={formData.howToUse}
                                 maxLength={MAX_HOW_TO_USE_LENGTH}
-                                onChange={(e) => updateField("howToUse", e.target.value)}
+                                onChange={(e) =>
+                                    updateField("howToUse", e.target.value)
+                                }
                                 placeholder="例：取适量于掌心，轻拍于面部..."
-                                className="block w-full rounded-xl border border-[#E8E2D9] shadow-sm text-sm p-3 outline-none resize-none focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20 transition-all bg-white"
+                                className="block w-full rounded-lg border border-brand-charcoal/10 shadow-sm text-sm p-3 outline-none resize-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all bg-white"
                             />
                         </div>
                     </div>
                 </section>
 
                 {/* ===== 产品图片 ===== */}
-                <section>
+                <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
+                    <div className="mb-4">
+                        <h2 className="text-base font-medium text-brand-charcoal">
+                            产品图片
+                        </h2>
+                        <p className="mt-1 text-sm text-brand-charcoal/65">
+                            上传产品图并拖拽调整展示顺序
+                        </p>
+                    </div>
                     <div>
-                        <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
+                        <label className="block text-sm font-medium text-brand-charcoal/70 mb-2">
                             上传图片 <span className="text-red-500">*</span>
-                            <span className="text-xs text-[#B0A89A] font-normal ml-2">最多5张，第1张为封面，拖拽可调整顺序</span>
+                            <span className="text-xs text-brand-charcoal/55 font-normal ml-2">
+                                最多5张，第1张为封面，拖拽可调整顺序
+                            </span>
                         </label>
 
                         {/* 已上传图片缩略图 */}
@@ -649,10 +857,18 @@ export default function ProductForm({
                                     <div
                                         key={url}
                                         draggable
-                                        onDragStart={() => setDraggingIndex(index)}
-                                        onDragEnter={() => setDragOverIndex(index)}
-                                        onDragOver={(e) => { e.preventDefault(); }}
-                                        onDragLeave={() => setDragOverIndex(null)}
+                                        onDragStart={() =>
+                                            setDraggingIndex(index)
+                                        }
+                                        onDragEnter={() =>
+                                            setDragOverIndex(index)
+                                        }
+                                        onDragOver={(e) => {
+                                            e.preventDefault();
+                                        }}
+                                        onDragLeave={() =>
+                                            setDragOverIndex(null)
+                                        }
                                         onDrop={(e) => {
                                             e.preventDefault();
                                             if (draggingIndex !== null) {
@@ -666,25 +882,42 @@ export default function ProductForm({
                                             setDragOverIndex(null);
                                         }}
                                         className={cn(
-                                            "relative aspect-square rounded-xl overflow-hidden border-2 cursor-grab active:cursor-grabbing transition-all",
-                                            index === 0 ? "border-[#C9A86C]" : "border-[#E8E2D9]",
-                                            draggingIndex === index ? "opacity-40" : "",
-                                            dragOverIndex === index && draggingIndex !== index ? "ring-2 ring-[#C9A86C] scale-105" : ""
+                                            "relative aspect-square rounded-lg overflow-hidden border-2 cursor-grab active:cursor-grabbing transition-all",
+                                            index === 0
+                                                ? "border-brand-primary"
+                                                : "border-brand-charcoal/10",
+                                            draggingIndex === index
+                                                ? "opacity-40"
+                                                : "",
+                                            dragOverIndex === index &&
+                                                draggingIndex !== index
+                                                ? "ring-2 ring-brand-primary scale-105"
+                                                : "",
                                         )}
                                     >
-                                        <img src={url} className="w-full h-full object-cover pointer-events-none" alt="" />
-                                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-[#2C2C2C]/40 text-white flex items-center justify-center">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={url}
+                                            className="w-full h-full object-cover pointer-events-none"
+                                            alt=""
+                                        />
+                                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-brand-charcoal/40 text-white flex items-center justify-center">
                                             <GripVertical className="w-3 h-3" />
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={(e) => { e.stopPropagation(); removeImage(index); }}
-                                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#2C2C2C]/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                removeImage(index);
+                                            }}
+                                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-brand-charcoal/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
                                         >
                                             <X className="w-3 h-3" />
                                         </button>
                                         {index === 0 && (
-                                            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#C9A86C] text-white">封面</span>
+                                            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-primary text-white">
+                                                封面
+                                            </span>
                                         )}
                                     </div>
                                 ))}
@@ -695,69 +928,142 @@ export default function ProductForm({
                         {images.length < 5 && (
                             <div
                                 onClick={() => fileInputRef.current?.click()}
-                                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    setDragOver(true);
+                                }}
                                 onDragLeave={() => setDragOver(false)}
                                 onDrop={onDrop}
                                 className={cn(
                                     "relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-8 cursor-pointer transition-all",
-                                    dragOver ? "border-[#C9A86C] bg-[#FAF8F5]" : "border-[#E8E2D9] hover:border-[#C9A86C]/60 hover:bg-[#FAF8F5]/50",
-                                    errors.image ? "border-red-400 bg-red-50/20" : ""
+                                    dragOver
+                                        ? "border-brand-primary bg-brand-charcoal/[0.03]"
+                                        : "border-brand-charcoal/10 hover:border-brand-primary/60 hover:bg-brand-charcoal/[0.03]/50",
+                                    errors.image
+                                        ? "border-red-400 bg-red-50/20"
+                                        : "",
                                 )}
                             >
-                                <input ref={fileInputRef} type="file" className="sr-only" onChange={onFileChange} accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    className="sr-only"
+                                    onChange={onFileChange}
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    multiple
+                                />
                                 <div className="text-center">
                                     {uploading ? (
-                                        <Loader2 className="mx-auto h-8 w-8 text-[#D9D0C3] animate-spin" />
+                                        <Loader2 className="mx-auto h-8 w-8 text-brand-charcoal/30 animate-spin" />
                                     ) : (
-                                        <ImageIcon className="mx-auto h-8 w-8 text-[#D9D0C3]" />
+                                        <ImageIcon className="mx-auto h-8 w-8 text-brand-charcoal/30" />
                                     )}
-                                    <p className="mt-2 text-sm font-medium text-[#5E5E5E]">
-                                        {uploading ? "上传中..." : dragOver ? "松开以上传" : "点击或拖拽上传图片"}
+                                    <p className="mt-2 text-sm font-medium text-brand-charcoal/70">
+                                        {uploading
+                                            ? "上传中..."
+                                            : dragOver
+                                              ? "松开以上传"
+                                              : "点击或拖拽上传图片"}
                                     </p>
-                                    <p className="mt-1 text-xs text-[#B0A89A]">
-                                        支持 JPG、PNG、WebP、GIF，最大 10MB · 还可上传 {MAX_IMAGE_COUNT - images.length} 张
+                                    <p className="mt-1 text-xs text-brand-charcoal/55">
+                                        支持 JPG、PNG、WebP、GIF，最大 10MB ·
+                                        还可上传{" "}
+                                        {MAX_IMAGE_COUNT - images.length} 张
                                     </p>
                                 </div>
                             </div>
                         )}
-                        {errors.image && <p className="text-xs text-red-500 mt-1" role="alert">{errors.image}</p>}
+                        {errors.image && (
+                            <p
+                                className="text-xs text-red-500 mt-1"
+                                role="alert"
+                            >
+                                {errors.image}
+                            </p>
+                        )}
                     </div>
                 </section>
 
                 {/* ===== 成分与功效 ===== */}
-                <section>
+                <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
+                    <div className="mb-4">
+                        <h2 className="text-base font-medium text-brand-charcoal">
+                            成分与功效
+                        </h2>
+                        <p className="mt-1 text-sm text-brand-charcoal/65">
+                            填写核心成分、功效与不适用人群
+                        </p>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <TagInput label="核心成分" values={keyIngredients} onChange={setKeyIngredients} required error={errors.keyIngredients} placeholder="输入成分名称，按回车添加" />
-                        <TagInput label="主要功效" values={benefits} onChange={setBenefits} required error={errors.benefits} placeholder="如：保湿、抗老、提亮..." />
-                        <TagInput label="不适合人群" values={negativeFor} onChange={setNegativeFor} placeholder="如：敏感肌、孕妇..." />
+                        <TagInput
+                            label="核心成分"
+                            values={keyIngredients}
+                            onChange={setKeyIngredients}
+                            required
+                            error={errors.keyIngredients}
+                            placeholder="输入成分名称，按回车添加"
+                        />
+                        <TagInput
+                            label="主要功效"
+                            values={benefits}
+                            onChange={setBenefits}
+                            required
+                            error={errors.benefits}
+                            placeholder="如：保湿、抗老、提亮..."
+                        />
+                        <TagInput
+                            label="不适合人群"
+                            values={negativeFor}
+                            onChange={setNegativeFor}
+                            placeholder="如：敏感肌、孕妇..."
+                        />
                     </div>
                 </section>
 
                 {/* ===== 肤质与购买渠道 ===== */}
-                <section>
+                <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
+                    <div className="mb-4">
+                        <h2 className="text-base font-medium text-brand-charcoal">
+                            适用肤质与购买方式
+                        </h2>
+                        <p className="mt-1 text-sm text-brand-charcoal/65">
+                            配置适用肤质和各渠道购买链接
+                        </p>
+                    </div>
                     <div>
-                        <label className="block text-sm font-medium text-[#5E5E5E] mb-3">适用肤质</label>
+                        <label className="block text-sm font-medium text-brand-charcoal/70 mb-3">
+                            适用肤质
+                        </label>
                         <div className="flex flex-wrap gap-2">
                             {SKIN_TYPE_OPTIONS.map((opt) => {
-                                const selected = suitableSkinTypes.includes(opt.value);
+                                const selected = suitableSkinTypes.includes(
+                                    opt.value,
+                                );
                                 return (
                                     <button
                                         key={opt.value}
                                         type="button"
                                         onClick={() => {
                                             setSuitableSkinTypes((prev) =>
-                                                prev.includes(opt.value) ? prev.filter((v) => v !== opt.value) : [...prev, opt.value]
+                                                prev.includes(opt.value)
+                                                    ? prev.filter(
+                                                          (v) =>
+                                                              v !== opt.value,
+                                                      )
+                                                    : [...prev, opt.value],
                                             );
                                         }}
                                         className={cn(
-                                            "px-3.5 py-2 rounded-xl text-sm font-medium border transition-all",
+                                            "px-3.5 py-2 rounded-lg text-sm font-medium border transition-all",
                                             selected
-                                                ? "bg-[#C9A86C] text-white border-[#C9A86C] shadow-sm"
-                                                : "bg-white text-[#5E5E5E] border-[#E8E2D9] hover:border-[#C9A86C]/60"
+                                                ? "bg-brand-primary text-white border-brand-primary shadow-sm"
+                                                : "bg-white text-brand-charcoal/70 border-brand-charcoal/10 hover:border-brand-primary/60",
                                         )}
                                     >
                                         <span className="flex items-center gap-1.5">
-                                            {selected && <Check className="w-3.5 h-3.5" />}
+                                            {selected && (
+                                                <Check className="w-3.5 h-3.5" />
+                                            )}
                                             {opt.label}
                                         </span>
                                     </button>
@@ -768,41 +1074,60 @@ export default function ProductForm({
 
                     <div className="mt-6">
                         <div className="mb-3">
-                            <label className="block text-sm font-medium text-[#5E5E5E]">购买渠道</label>
-                            <p className="text-xs text-[#B0A89A] mt-1">
-                                当前启用 H5 链接与小程序短链；小程序路径、小店商品 ID 待后续接入后开放。
+                            <label className="block text-sm font-medium text-brand-charcoal/70">
+                                购买渠道
+                            </label>
+                            <p className="text-xs text-brand-charcoal/55 mt-1">
+                                当前启用 H5
+                                链接与小程序短链；小程序路径、小店商品 ID
+                                待后续接入后开放。
                             </p>
                         </div>
                         <div className="space-y-3">
                             {PURCHASE_PLATFORM_OPTIONS.map((option) => {
                                 const link = purchaseLinks.find(
-                                    (item) => item.platformKey === option.value
+                                    (item) => item.platformKey === option.value,
                                 );
                                 if (!link) return null;
                                 const prefix = `purchaseLinks_${option.value}`;
-                                const isWechatShop = option.value === "wechat-shop";
+                                const isWechatShop =
+                                    option.value === "wechat-shop";
                                 return (
                                     <div
                                         key={option.value}
-                                        className="rounded-xl border border-[#E8E2D9] bg-white p-3"
+                                        className="rounded-lg border border-brand-charcoal/10 bg-white p-3"
                                     >
                                         <div className="mb-2 flex flex-wrap items-center gap-2">
-                                            <span className="text-sm font-medium text-[#2C2C2C]">
+                                            <span className="text-sm font-medium text-brand-charcoal">
                                                 {option.label}
                                             </span>
                                             {isWechatShop && (
-                                                <span className="rounded-full bg-[#FAF8F5] px-2 py-0.5 text-[10px] font-medium text-[#8B7355]">
-                                                    短链可用 / store-product 待接入
+                                                <span className="rounded-full bg-brand-charcoal/[0.03] px-2 py-0.5 text-[10px] font-medium text-brand-charcoal/65">
+                                                    短链可用 / store-product
+                                                    待接入
                                                 </span>
                                             )}
                                         </div>
-                                        <div className={cn("grid gap-2", isWechatShop ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2")}>
+                                        <div
+                                            className={cn(
+                                                "grid gap-2",
+                                                isWechatShop
+                                                    ? "grid-cols-1"
+                                                    : "grid-cols-1 md:grid-cols-2",
+                                            )}
+                                        >
                                             <input
                                                 type="url"
                                                 value={link.url}
-                                                maxLength={MAX_PURCHASE_URL_LENGTH}
+                                                maxLength={
+                                                    MAX_PURCHASE_URL_LENGTH
+                                                }
                                                 onChange={(e) =>
-                                                    updatePurchaseLink(option.value, "url", e.target.value)
+                                                    updatePurchaseLink(
+                                                        option.value,
+                                                        "url",
+                                                        e.target.value,
+                                                    )
                                                 }
                                                 placeholder={
                                                     isWechatShop
@@ -810,23 +1135,31 @@ export default function ProductForm({
                                                         : "H5 链接，https://..."
                                                 }
                                                 aria-label={`${option.label} H5 链接`}
-                                                aria-invalid={!!errors[`${prefix}_url`]}
+                                                aria-invalid={
+                                                    !!errors[`${prefix}_url`]
+                                                }
                                                 className={cn(
-                                                    "w-full rounded-xl border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
-                                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
-                                                    errors[`${prefix}_url`] ? "border-red-400" : "border-[#E8E2D9]",
-                                                    isWechatShop && "hidden"
+                                                    "w-full rounded-lg border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
+                                                    "focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20",
+                                                    errors[`${prefix}_url`]
+                                                        ? "border-red-400"
+                                                        : "border-brand-charcoal/10",
+                                                    isWechatShop && "hidden",
                                                 )}
                                             />
                                             <input
                                                 type="text"
-                                                value={link.miniProgramShortLink}
-                                                maxLength={MAX_MINI_PROGRAM_SHORT_LINK_LENGTH}
+                                                value={
+                                                    link.miniProgramShortLink
+                                                }
+                                                maxLength={
+                                                    MAX_MINI_PROGRAM_SHORT_LINK_LENGTH
+                                                }
                                                 onChange={(e) =>
                                                     updatePurchaseLink(
                                                         option.value,
                                                         "miniProgramShortLink",
-                                                        e.target.value
+                                                        e.target.value,
                                                     )
                                                 }
                                                 placeholder={
@@ -835,34 +1168,44 @@ export default function ProductForm({
                                                         : "#小程序://...（可选，后续补充）"
                                                 }
                                                 aria-label={`${option.label} 小程序短链`}
-                                                aria-invalid={!!errors[`${prefix}_miniProgramShortLink`]}
+                                                aria-invalid={
+                                                    !!errors[
+                                                        `${prefix}_miniProgramShortLink`
+                                                    ]
+                                                }
                                                 className={cn(
-                                                    "w-full rounded-xl border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
-                                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
-                                                    errors[`${prefix}_miniProgramShortLink`]
+                                                    "w-full rounded-lg border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
+                                                    "focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20",
+                                                    errors[
+                                                        `${prefix}_miniProgramShortLink`
+                                                    ]
                                                         ? "border-red-400"
-                                                        : "border-[#E8E2D9]"
+                                                        : "border-brand-charcoal/10",
                                                 )}
                                             />
                                             <input
                                                 type="text"
                                                 value={link.miniProgramPath}
-                                                maxLength={MAX_MINI_PROGRAM_SHORT_LINK_LENGTH}
+                                                maxLength={
+                                                    MAX_MINI_PROGRAM_SHORT_LINK_LENGTH
+                                                }
                                                 onChange={(e) =>
                                                     updatePurchaseLink(
                                                         option.value,
                                                         "miniProgramPath",
-                                                        e.target.value
+                                                        e.target.value,
                                                     )
                                                 }
                                                 placeholder="pages/...（可选）"
                                                 className={cn(
                                                     "hidden",
-                                                    "w-full rounded-xl border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
-                                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
-                                                    errors[`${prefix}_miniProgramPath`]
+                                                    "w-full rounded-lg border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
+                                                    "focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20",
+                                                    errors[
+                                                        `${prefix}_miniProgramPath`
+                                                    ]
                                                         ? "border-red-400"
-                                                        : "border-[#E8E2D9]"
+                                                        : "border-brand-charcoal/10",
                                                 )}
                                             />
                                         </div>
@@ -870,34 +1213,44 @@ export default function ProductForm({
                                             <input
                                                 type="text"
                                                 value={link.storeProductId}
-                                                maxLength={MAX_STORE_PRODUCT_ID_LENGTH}
+                                                maxLength={
+                                                    MAX_STORE_PRODUCT_ID_LENGTH
+                                                }
                                                 onChange={(e) =>
                                                     updatePurchaseLink(
                                                         option.value,
                                                         "storeProductId",
-                                                        e.target.value
+                                                        e.target.value,
                                                     )
                                                 }
                                                 placeholder="小店商品 ID（后续 store-product 用）"
                                                 className="hidden"
                                             />
                                         )}
-                                        <p className="mt-2 text-xs text-[#B0A89A]">
+                                        <p className="mt-2 text-xs text-brand-charcoal/55">
                                             {isWechatShop
                                                 ? "当前仅使用小程序短链跳转；H5 端不展示微信小店。store-product 待接入。"
                                                 : "H5 直接打开；可选小程序短链用于微信内跳转，暂无短链时小程序端复制 H5 链接。"}
                                         </p>
-                                        {(["url", "miniProgramShortLink"] as const).map(
-                                            (field) =>
-                                                errors[`${prefix}_${field}`] ? (
-                                                    <p
-                                                        key={field}
-                                                        className="mt-1 text-xs text-red-500"
-                                                        role="alert"
-                                                    >
-                                                        {errors[`${prefix}_${field}`]}
-                                                    </p>
-                                                ) : null
+                                        {(
+                                            [
+                                                "url",
+                                                "miniProgramShortLink",
+                                            ] as const
+                                        ).map((field) =>
+                                            errors[`${prefix}_${field}`] ? (
+                                                <p
+                                                    key={field}
+                                                    className="mt-1 text-xs text-red-500"
+                                                    role="alert"
+                                                >
+                                                    {
+                                                        errors[
+                                                            `${prefix}_${field}`
+                                                        ]
+                                                    }
+                                                </p>
+                                            ) : null,
                                         )}
                                     </div>
                                 );
@@ -907,24 +1260,45 @@ export default function ProductForm({
                 </section>
 
                 {/* ===== 肤质推荐理由 ===== */}
-                <section>
-                    <label className="block text-sm font-medium text-[#5E5E5E] mb-3">
+                <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
+                    <div className="mb-4">
+                        <h2 className="text-base font-medium text-brand-charcoal">
+                            推荐理由
+                        </h2>
+                        <p className="mt-1 text-sm text-brand-charcoal/65">
+                            为不同肤质配置推荐文案
+                        </p>
+                    </div>
+                    <label className="block text-sm font-medium text-brand-charcoal/70 mb-3">
                         肤质推荐理由
-                        <span className="text-xs text-[#B0A89A] font-normal ml-2">
+                        <span className="text-xs text-brand-charcoal/55 font-normal ml-2">
                             为不同肤质配置推荐文案，支持按季节精细化配置
                         </span>
                     </label>
                     <div className="space-y-3">
                         {SKIN_TYPE_OPTIONS.map((opt) => {
                             const entry = recommendReasons[opt.value];
-                            const isExpanded = typeof entry === "object" && entry !== null;
-                            const defaultText = typeof entry === "string" ? entry : (entry as Record<string, string>)?.default || "";
-                            const seasonObj = (typeof entry === "object" && entry !== null) ? entry as Record<string, string> : {};
+                            const isExpanded =
+                                typeof entry === "object" && entry !== null;
+                            const defaultText =
+                                typeof entry === "string"
+                                    ? entry
+                                    : (entry as Record<string, string>)
+                                          ?.default || "";
+                            const seasonObj =
+                                typeof entry === "object" && entry !== null
+                                    ? (entry as Record<string, string>)
+                                    : {};
 
-                            const updateEntry = (newVal: string | Record<string, string>) => {
+                            const updateEntry = (
+                                newVal: string | Record<string, string>,
+                            ) => {
                                 setRecommendReasons((prev) => {
                                     const next = { ...prev };
-                                    if (typeof newVal === "string" && !newVal.trim()) {
+                                    if (
+                                        typeof newVal === "string" &&
+                                        !newVal.trim()
+                                    ) {
                                         delete next[opt.value];
                                     } else {
                                         next[opt.value] = newVal;
@@ -934,7 +1308,14 @@ export default function ProductForm({
                             };
 
                             const expandToSeasons = () => {
-                                updateEntry({ default: defaultText, spring: "", early_summer: "", midsummer: "", autumn: "", winter: "" });
+                                updateEntry({
+                                    default: defaultText,
+                                    spring: "",
+                                    early_summer: "",
+                                    midsummer: "",
+                                    autumn: "",
+                                    winter: "",
+                                });
                             };
 
                             const collapseToString = () => {
@@ -942,12 +1323,17 @@ export default function ProductForm({
                             };
 
                             return (
-                                <div key={opt.value} className="rounded-xl border border-[#E8E2D9] bg-white p-3">
+                                <div
+                                    key={opt.value}
+                                    className="rounded-lg border border-brand-charcoal/10 bg-white p-3"
+                                >
                                     <div className="flex items-start gap-3">
-                                        <span className={cn(
-                                            "shrink-0 mt-1 px-2 py-0.5 rounded-md text-xs font-medium border",
-                                            opt.color
-                                        )}>
+                                        <span
+                                            className={cn(
+                                                "shrink-0 mt-1 px-2 py-0.5 rounded-md text-xs font-medium border",
+                                                opt.color,
+                                            )}
+                                        >
                                             {opt.label}
                                         </span>
                                         <div className="flex-1 space-y-2">
@@ -958,13 +1344,16 @@ export default function ProductForm({
                                                 onChange={(e) => {
                                                     const val = e.target.value;
                                                     if (isExpanded) {
-                                                        updateEntry({ ...seasonObj, default: val });
+                                                        updateEntry({
+                                                            ...seasonObj,
+                                                            default: val,
+                                                        });
                                                     } else {
                                                         updateEntry(val);
                                                     }
                                                 }}
                                                 placeholder={`为${opt.label}撰写推荐理由...`}
-                                                className="w-full rounded-lg border border-[#E8E2D9] text-sm p-2 outline-none resize-none focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20 transition-all bg-white placeholder:text-[#B0A89A]"
+                                                className="w-full rounded-lg border border-brand-charcoal/10 text-sm p-2 outline-none resize-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all bg-white placeholder:text-brand-charcoal/55"
                                             />
 
                                             {/* 季节展开/收起切换 */}
@@ -972,8 +1361,10 @@ export default function ProductForm({
                                                 {!isExpanded ? (
                                                     <button
                                                         type="button"
-                                                        onClick={expandToSeasons}
-                                                        className="text-xs text-[#C9A86C] hover:text-[#B8975B] underline underline-offset-2"
+                                                        onClick={
+                                                            expandToSeasons
+                                                        }
+                                                        className="text-xs text-brand-primary hover:text-brand-primary underline underline-offset-2"
                                                     >
                                                         + 按季节精细化配置
                                                     </button>
@@ -981,12 +1372,16 @@ export default function ProductForm({
                                                     <>
                                                         <button
                                                             type="button"
-                                                            onClick={collapseToString}
-                                                            className="text-xs text-[#8B7355]/60 hover:text-[#8B7355] underline underline-offset-2"
+                                                            onClick={
+                                                                collapseToString
+                                                            }
+                                                            className="text-xs text-brand-charcoal/65/60 hover:text-brand-charcoal/65 underline underline-offset-2"
                                                         >
                                                             - 收起季节配置
                                                         </button>
-                                                        <span className="text-[10px] text-[#B0A89A]">留空则使用默认文案</span>
+                                                        <span className="text-[10px] text-brand-charcoal/55">
+                                                            留空则使用默认文案
+                                                        </span>
                                                     </>
                                                 )}
                                             </div>
@@ -995,23 +1390,56 @@ export default function ProductForm({
                                             {isExpanded && (
                                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-1">
                                                     {[
-                                                        { key: "spring", label: "春季" },
-                                                        { key: "early_summer", label: "初夏" },
-                                                        { key: "midsummer", label: "盛夏" },
-                                                        { key: "autumn", label: "秋季" },
-                                                        { key: "winter", label: "冬季" },
+                                                        {
+                                                            key: "spring",
+                                                            label: "春季",
+                                                        },
+                                                        {
+                                                            key: "early_summer",
+                                                            label: "初夏",
+                                                        },
+                                                        {
+                                                            key: "midsummer",
+                                                            label: "盛夏",
+                                                        },
+                                                        {
+                                                            key: "autumn",
+                                                            label: "秋季",
+                                                        },
+                                                        {
+                                                            key: "winter",
+                                                            label: "冬季",
+                                                        },
                                                     ].map(({ key, label }) => (
-                                                        <div key={key} className="flex flex-col gap-1">
-                                                            <span className="text-[10px] text-[#B0A89A]">{label}</span>
+                                                        <div
+                                                            key={key}
+                                                            className="flex flex-col gap-1"
+                                                        >
+                                                            <span className="text-[10px] text-brand-charcoal/55">
+                                                                {label}
+                                                            </span>
                                                             <input
                                                                 type="text"
-                                                                value={seasonObj[key] || ""}
+                                                                value={
+                                                                    seasonObj[
+                                                                        key
+                                                                    ] || ""
+                                                                }
                                                                 maxLength={500}
-                                                                onChange={(e) => {
-                                                                    updateEntry({ ...seasonObj, [key]: e.target.value });
+                                                                onChange={(
+                                                                    e,
+                                                                ) => {
+                                                                    updateEntry(
+                                                                        {
+                                                                            ...seasonObj,
+                                                                            [key]: e
+                                                                                .target
+                                                                                .value,
+                                                                        },
+                                                                    );
                                                                 }}
                                                                 placeholder="可选"
-                                                                className="w-full rounded-md border border-[#E8E2D9] text-xs p-1.5 outline-none focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20 transition-all bg-white placeholder:text-[#B0A89A]"
+                                                                className="w-full rounded-md border border-brand-charcoal/10 text-xs p-1.5 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all bg-white placeholder:text-brand-charcoal/55"
                                                             />
                                                         </div>
                                                     ))}
@@ -1030,28 +1458,30 @@ export default function ProductForm({
                     {!onCancel && (
                         <Link
                             href="/admin/products"
-                            className="flex items-center gap-1.5 text-sm font-medium text-[#8B7355] hover:text-[#C9A86C] transition-colors"
+                            className="flex items-center gap-1.5 text-sm font-medium text-brand-charcoal/65 hover:text-brand-primary transition-colors"
                         >
                             <ChevronLeft className="w-4 h-4" />
                             返回产品列表
                         </Link>
                     )}
-                    <div className={cn("flex items-center gap-3", onCancel && "ml-auto")}>
-                        <button
+                    <div
+                        className={cn(
+                            "flex items-center gap-3",
+                            onCancel && "ml-auto",
+                        )}
+                    >
+                        <Button
                             type="button"
-                            onClick={() => (onCancel ? onCancel() : router.back())}
-                            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[#5E5E5E] bg-white border border-[#E8E2D9] hover:bg-[#FAF8F5] transition-colors"
+                            variant="outline"
+                            onClick={() =>
+                                onCancel ? onCancel() : router.back()
+                            }
                         >
                             取消
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={saving}
-                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#C9A86C] hover:bg-[#B8975B] disabled:opacity-60 transition-colors shadow-sm"
-                        >
-                            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                        </Button>
+                        <Button type="submit" loading={saving}>
                             {initialData?.id ? "保存修改" : "创建产品"}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

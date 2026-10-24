@@ -1,415 +1,590 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+    Download,
+    Eye,
+    Info,
+    Search,
+    Shield,
+    ShieldOff,
+    Trash2,
+    User as UserIcon,
+} from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, Download, ChevronDown, Info } from "lucide-react";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { UserDetailModal } from "./UserDetailModal";
-import { DropdownMenu, DropdownMenuItem } from "@/components/ui/DropdownMenu";
-import { PaginationBar } from "@/components/ui/PaginationBar";
+import { isDisabledUser, isSuperAdmin } from "@/lib/permissions";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Empty } from "@/components/ui/Empty";
+import { Input } from "@/components/ui/Input";
+import { Pagination } from "@/components/ui/Pagination";
+import { Select } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/Toast";
-import { isDisabledUser, isSuperAdmin, UserRole } from "@/lib/permissions";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import {
+    DataTable,
+    IconButton,
+    PageHeader,
+    PanelCard,
+    type Column,
+} from "@/components/admin";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { UserDetailModal } from "./UserDetailModal";
 
 interface User {
-  id: string;
-  email: string;
-  name: string | null;
-  role: string;
-  previousRole?: string | null;
-  createdAt: string;
-  _count: {
-    advisorSessions: number;
-  };
-  advisorSessions: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: string;
+    previousRole?: string | null;
     createdAt: string;
-    completedAt: string | null;
-  }[];
+    _count: {
+        advisorSessions: number;
+    };
+    advisorSessions: {
+        createdAt: string;
+        completedAt: string | null;
+    }[];
 }
 
-interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
+interface PaginationData {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
+const STATUS_OPTIONS = [
+    { value: "all", label: "所有用户状态" },
+    { value: "active", label: "活跃用户" },
+    { value: "inactive", label: "已禁用" },
+];
+
+function formatDate(value: string) {
+    return new Date(value).toLocaleDateString("zh-CN");
 }
 
 export function UsersClient({
-  role,
-  initialUserId = null,
+    role,
+    initialUserId = null,
 }: {
-  role: string;
-  initialUserId?: string | null;
+    role: string;
+    initialUserId?: string | null;
 }) {
-  const toast = useToast();
-  const canManageDeletion = isSuperAdmin(role);
-  const [users, setUsers] = useState<User[]>([]);
-  const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [page, setPage] = useState(1);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [showDropdown, setShowDropdown] = useState<string | null>(null);
-  // 用 state 而非 ref 存储触发按钮 DOM，避免 render 期间读取 ref（React Compiler 不支持）
-  const [dropdownTriggerEls, setDropdownTriggerEls] = useState<Map<string, HTMLButtonElement>>(() => new Map());
-  const [confirmToggle, setConfirmToggle] = useState<{ user: User; isDisabling: boolean } | null>(null);
-  // 支持主站控制中台深链直接打开用户详情
-  const [detailUser, setDetailUser] = useState<string | null>(initialUserId);
+    const toast = useToast();
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const canManageDeletion = isSuperAdmin(role);
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: "20",
-        search,
-        status,
-      });
-      const res = await adminFetch(`/api/admin/users?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data.users);
-        setPagination(data.pagination);
-      } else {
-        toast.error("加载用户列表失败");
-      }
-    } catch {
-      toast.error("网络异常，请稍后重试");
-    } finally {
-      setLoading(false);
+    const page = Math.max(1, Number(searchParams.get("page") || 1) || 1);
+    const pageSize = Number(searchParams.get("pageSize") || 20) || 20;
+    const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") || "all";
+    const [searchInput, setSearchInput] = useState(search);
+    const [prevSearch, setPrevSearch] = useState(search);
+    if (prevSearch !== search) {
+        setPrevSearch(search);
+        setSearchInput(search);
     }
-  }, [page, search, status, toast]);
 
-  const fetchUsersRef = useRef(fetchUsers);
-  const pageRef = useRef(page);
-  useEffect(() => { fetchUsersRef.current = fetchUsers; }, [fetchUsers]);
-  useEffect(() => { pageRef.current = page; }, [page]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [pagination, setPagination] = useState<PaginationData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState("");
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
+    const [confirmToggle, setConfirmToggle] = useState<{
+        user: User;
+        isDisabling: boolean;
+    } | null>(null);
+    const [detailUser, setDetailUser] = useState<string | null>(initialUserId);
+    const abortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    fetchUsersRef.current();
-  }, [page, status]);
+    const updateParams = useCallback(
+        (updates: Record<string, string | null>) => {
+            const params = new URLSearchParams(searchParams.toString());
+            Object.entries(updates).forEach(([key, value]) => {
+                if (value === null || value === "" || value === "all")
+                    params.delete(key);
+                else params.set(key, value);
+            });
+            if (!("page" in updates)) params.delete("page");
+            router.push(`${pathname}${params.toString() ? `?${params}` : ""}`);
+        },
+        [pathname, router, searchParams],
+    );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (pageRef.current !== 1) {
-        setPage(1);
-      } else {
-        fetchUsersRef.current();
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  const handleToggleStatus = (user: User) => {
-    const isDisabling = user.role !== "disabled";
-    setShowDropdown(null);
-    if (isDisabling) {
-      setConfirmToggle({ user, isDisabling: true });
-      return;
-    } else if (user.previousRole) {
-      setConfirmToggle({ user, isDisabling: false });
-      return;
-    }
-    performToggleStatus(user, false);
-  };
-
-  const performToggleStatus = async (user: User, isDisabling: boolean) => {
-    setActionLoading(true);
-    try {
-      const body = isDisabling ? { role: "disabled" } : { role: "user" };
-      const res = await adminFetch(`/api/admin/users/${user.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) {
-        fetchUsers();
-      } else {
-        const errData = await res.json().catch(() => null);
-        toast.error((errData as { error?: string })?.error || "操作失败");
-      }
-    } catch {
-      toast.error("网络异常，请稍后重试");
-    } finally {
-      setActionLoading(false);
-      setShowDropdown(null);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!selectedUser) return;
-    setActionLoading(true);
-    try {
-      const res = await adminFetch(`/api/admin/users/${selectedUser.id}`, { method: "DELETE" });
-      if (res.ok) {
-        setShowDeleteModal(false);
-        setSelectedUser(null);
-        fetchUsers();
-      } else {
-        toast.error("删除失败");
-      }
-    } catch {
-      toast.error("网络异常，请稍后重试");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const anchorEl = showDropdown ? dropdownTriggerEls.get(showDropdown) ?? null : null;
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">用户管理</h1>
-          <p className="text-[#1A1A1A]/50 text-sm mt-1">
-            管理注册用户 &middot; 共 {pagination?.total || 0} 人
-          </p>
-        </div>
-        {canManageDeletion && (
-          <div className="flex items-center gap-3">
-            <button
-              className="flex items-center rounded-lg border border-[#E9E9E7] bg-white px-4 py-2 text-sm font-medium text-[#5E5E5E] shadow-sm hover:bg-[#1A1A1A]/[0.02] transition-colors"
-              onClick={() => window.open("/api/admin/export?type=users", "_blank")}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              导出用户
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/60 p-3 text-sm text-amber-800">
-        <Info className="w-4 h-4 mt-0.5 shrink-0" />
-        <p>
-          此处的「禁用」和「删除」<strong>仅作用于子站（smart.nihplod.cn）</strong>，不会同步到 nihplod.cn 官网。
-          被禁用的用户仍可登录官网，但无法在子站使用测肤、查看历史记录等功能；删除仅清除子站本地数据，用户下次登录子站时会重新同步官网账户信息。
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-sm">
-        <Search className="w-4 h-4 text-[#1A1A1A]/40" />
-        <div className="relative flex-1 sm:flex-none">
-          <input
-            type="text"
-            placeholder="搜索用户姓名或邮箱..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="block w-full sm:w-64 rounded-lg border-[#E9E9E7] bg-[#1A1A1A]/[0.03] py-1.5 px-3 text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/40 focus:bg-white focus:border-[#3D4430]/40 focus:ring-0 transition-all"
-          />
-        </div>
-
-        <div className="h-4 w-px bg-[#E9E9E7] mx-1 hidden sm:block" />
-
-        <div className="relative min-w-[140px]">
-          <select
-            value={status}
-            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-            className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-white hover:bg-[#1A1A1A]/[0.02] hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
-          >
-            <option value="all">所有用户状态</option>
-            <option value="active">活跃用户</option>
-            <option value="inactive">已禁用</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
-        </div>
-
-        <span className="ml-auto text-xs text-[#1A1A1A]/40">
-          显示 {users.length} 条数据
-        </span>
-      </div>
-
-      <div className="overflow-hidden rounded-2xl border border-[#1A1A1A]/10 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-[#E9E9E7]">
-            <thead className="bg-[#1A1A1A]/[0.02] border-b border-[#1A1A1A]/5">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">用户</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">状态</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">注册日期</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">最后活跃</th>
-                <th className="px-6 py-4 text-right text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">测试次数</th>
-                <th className="px-6 py-4 text-right text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E9E9E7]">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#1A1A1A]/40" />
-                  </td>
-                </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-[#1A1A1A]/40">
-                    未找到符合条件的用户。
-                  </td>
-                </tr>
-              ) : (
-                users.map((user) => (
-                  <tr key={user.id} className="group hover:bg-white transition-colors">
-                    <td className="px-6 py-4 align-middle">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#1A1A1A]/5 flex items-center justify-center text-[#1A1A1A]/50 shrink-0">
-                          <UserIcon className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-medium text-[#1A1A1A] truncate">{user.name || "匿名用户"}</div>
-                          <div className="text-xs text-[#1A1A1A]/50 truncate">{user.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-middle">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                          isDisabledUser(user.role) ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"
-                        }`}
-                      >
-                        {isDisabledUser(user.role) ? "已禁用" : "处于活跃状态"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-[#1A1A1A]/60 align-middle">
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-[#1A1A1A]/60 align-middle">
-                      {user.advisorSessions[0]
-                        ? new Date(user.advisorSessions[0].createdAt).toLocaleDateString()
-                        : "-"}
-                    </td>
-                    <td className="px-6 py-4 text-right tabular-nums text-[#1A1A1A] align-middle">
-                      {user._count.advisorSessions}
-                    </td>
-                    <td className="px-6 py-4 text-right relative align-middle">
-                      <div className="flex justify-end items-center h-full">
-                        <button
-                          data-dropdown-trigger
-                          ref={(el) => {
-                            if (el) {
-                              setDropdownTriggerEls((prev) => {
-                                if (prev.get(user.id) === el) return prev;
-                                const next = new Map(prev);
-                                next.set(user.id, el);
-                                return next;
-                              });
-                            }
-                          }}
-                          onClick={() => {
-                            setShowDropdown(showDropdown === user.id ? null : user.id);
-                          }}
-                          className="p-2 text-[#1A1A1A]/40 hover:text-[#1A1A1A]/60 transition-colors rounded-full hover:bg-[#1A1A1A]/5"
-                          aria-label={`操作菜单 - ${user.name || user.email}`}
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {pagination && (
-        <PaginationBar
-          page={page}
-          totalPages={pagination.totalPages}
-          onPageChange={setPage}
-          total={pagination.total}
-          limit={pagination.limit}
-          disabled={loading}
-        />
-      )}
-
-      <DropdownMenu isOpen={!!showDropdown} onClose={() => setShowDropdown(null)} anchorEl={anchorEl}>
-        {users.find((u) => u.id === showDropdown) && (
-          <>
-            <DropdownMenuItem
-              onClick={() => {
-                const user = users.find((u) => u.id === showDropdown);
-                if (user) {
-                  setDetailUser(user.id);
-                  setShowDropdown(null);
-                }
-              }}
-              icon={<Eye className="w-4 h-4 text-[#1A1A1A]/50" />}
-            >
-              查看详情
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                const user = users.find((u) => u.id === showDropdown);
-                if (user) handleToggleStatus(user);
-              }}
-              icon={
-                users.find((u) => u.id === showDropdown)?.role === UserRole.DISABLED ? (
-                  <Shield className="w-4 h-4 text-green-600" />
-                ) : (
-                  <ShieldOff className="w-4 h-4 text-amber-600" />
-                )
-              }
-            >
-              {users.find((u) => u.id === showDropdown)?.role === UserRole.DISABLED ? "启用用户" : "禁用用户"}
-            </DropdownMenuItem>
-            {canManageDeletion && (
-              <DropdownMenuItem
-                onClick={() => {
-                  const user = users.find((u) => u.id === showDropdown);
-                  if (user) {
-                    setSelectedUser(user);
-                    setShowDeleteModal(true);
-                    setShowDropdown(null);
-                  }
-                }}
-                icon={<Trash2 className="w-4 h-4" />}
-                danger
-              >
-                删除用户
-              </DropdownMenuItem>
-            )}
-          </>
-        )}
-      </DropdownMenu>
-
-      <ConfirmModal
-        isOpen={showDeleteModal}
-        onClose={() => { setShowDeleteModal(false); setSelectedUser(null); }}
-        onConfirm={handleDelete}
-        title="删除用户"
-        message={`确定要删除用户 "${selectedUser?.email}" 吗？这将同时删除该用户在子站的所有测试历史记录，且操作不可撤销。注意：该操作仅清除子站本地数据，不会删除 nihplod.cn 官网账户；用户下次登录子站时会重新同步官网账户信息。`}
-        confirmText="删除"
-        variant="danger"
-        loading={actionLoading}
-      />
-
-      <ConfirmModal
-        isOpen={!!confirmToggle}
-        title={confirmToggle?.isDisabling ? "禁用用户" : "启用用户"}
-        message={
-          confirmToggle?.isDisabling
-            ? `确定要禁用用户 "${confirmToggle?.user.name || confirmToggle?.user.email}" 吗？\n\n禁用后该用户将无法在子站（smart.nihplod.cn）使用测肤、查看历史等功能，但 nihplod.cn 官网账户不受影响。`
-            : `确定要启用用户 "${confirmToggle?.user.name || confirmToggle?.user.email}" 吗？\n\n该用户将被恢复为之前的角色：${confirmToggle?.user.previousRole?.toUpperCase()}`
+    const fetchUsers = useCallback(async () => {
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+        setLoading(true);
+        try {
+            const params = new URLSearchParams({
+                page: String(page),
+                limit: String(pageSize),
+                search,
+                status,
+            });
+            const res = await adminFetch(`/api/admin/users?${params}`, {
+                signal: controller.signal,
+            });
+            if (!res.ok) throw new Error("加载用户列表失败");
+            const data = await res.json();
+            setUsers(data.users);
+            setPagination(data.pagination);
+            setLoadError("");
+        } catch (error) {
+            if (error instanceof Error && error.name === "AbortError") return;
+            setLoadError(
+                error instanceof Error ? error.message : "加载用户列表失败",
+            );
+        } finally {
+            if (abortRef.current === controller) abortRef.current = null;
+            setLoading(false);
         }
-        confirmText={confirmToggle?.isDisabling ? "禁用" : "启用"}
-        variant={confirmToggle?.isDisabling ? "danger" : "default"}
-        loading={actionLoading}
-        onConfirm={() => {
-          if (confirmToggle) {
-            performToggleStatus(confirmToggle.user, confirmToggle.isDisabling);
-            setConfirmToggle(null);
-          }
-        }}
-        onClose={() => setConfirmToggle(null)}
-      />
+    }, [page, pageSize, search, status]);
 
-      <UserDetailModal
-        isOpen={!!detailUser}
-        onClose={() => setDetailUser(null)}
-        userId={detailUser}
-      />
-    </div>
-  );
+    useEffect(() => {
+        fetchUsers();
+        return () => abortRef.current?.abort();
+    }, [fetchUsers]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchInput === search) return;
+            updateParams({ search: searchInput || null });
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchInput, search, updateParams]);
+
+    useEffect(() => {
+        if (
+            pagination &&
+            pagination.totalPages > 0 &&
+            page > pagination.totalPages
+        ) {
+            updateParams({ page: String(pagination.totalPages) });
+        }
+    }, [page, pagination, updateParams]);
+
+    const performToggleStatus = async (user: User, isDisabling: boolean) => {
+        setActionLoading(true);
+        try {
+            const res = await adminFetch(`/api/admin/users/${user.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(
+                    isDisabling ? { role: "disabled" } : { role: "user" },
+                ),
+            });
+            if (!res.ok) {
+                const payload = await res.json().catch(() => null);
+                throw new Error(payload?.error || "操作失败");
+            }
+            await fetchUsers();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "操作失败");
+        } finally {
+            setActionLoading(false);
+            setConfirmToggle(null);
+        }
+    };
+
+    const handleToggleStatus = (user: User) => {
+        const isDisabling = !isDisabledUser(user.role);
+        if (isDisabling || user.previousRole) {
+            setConfirmToggle({ user, isDisabling });
+            return;
+        }
+        void performToggleStatus(user, false);
+    };
+
+    const handleDelete = async () => {
+        if (!selectedUser) return;
+        setActionLoading(true);
+        try {
+            const res = await adminFetch(
+                `/api/admin/users/${selectedUser.id}`,
+                {
+                    method: "DELETE",
+                },
+            );
+            if (!res.ok) throw new Error("删除失败");
+            setShowDeleteModal(false);
+            setSelectedUser(null);
+            await fetchUsers();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "删除失败");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const columns: Column<User>[] = [
+        {
+            key: "name",
+            title: "用户",
+            render: (_, user) => (
+                <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-charcoal/[0.04] text-brand-charcoal/65">
+                        <UserIcon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                        <p
+                            className="truncate font-medium text-brand-charcoal"
+                            title={user.name || "未命名用户"}
+                        >
+                            {user.name || "未命名用户"}
+                        </p>
+                        <p
+                            className="truncate text-xs text-brand-charcoal/65"
+                            title={user.email}
+                        >
+                            {user.email}
+                        </p>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: "role",
+            title: "状态",
+            width: "120px",
+            render: (_, user) => (
+                <Badge
+                    variant={isDisabledUser(user.role) ? "danger" : "success"}
+                >
+                    {isDisabledUser(user.role) ? "已禁用" : "活跃"}
+                </Badge>
+            ),
+        },
+        {
+            key: "createdAt",
+            title: "注册时间",
+            width: "120px",
+            render: (_, user) => (
+                <span className="whitespace-nowrap text-sm text-brand-charcoal/70">
+                    {formatDate(user.createdAt)}
+                </span>
+            ),
+        },
+        {
+            key: "lastActive",
+            title: "最近活跃",
+            width: "120px",
+            render: (_, user) => (
+                <span className="whitespace-nowrap text-sm text-brand-charcoal/70">
+                    {user.advisorSessions[0]
+                        ? formatDate(user.advisorSessions[0].createdAt)
+                        : "—"}
+                </span>
+            ),
+        },
+        {
+            key: "sessions",
+            title: "测试次数",
+            width: "96px",
+            align: "right",
+            render: (_, user) => (
+                <span className="font-mono text-sm tabular-nums text-brand-charcoal">
+                    {user._count.advisorSessions}
+                </span>
+            ),
+        },
+        {
+            key: "actions",
+            title: "操作",
+            width: "132px",
+            align: "right",
+            render: (_, user) => (
+                <div className="flex items-center justify-end gap-0.5">
+                    <Tooltip content="查看详情" side="top">
+                        <IconButton
+                            label={`查看 ${user.name || user.email} 详情`}
+                            onClick={() => setDetailUser(user.id)}
+                        >
+                            <Eye className="h-4 w-4" />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip
+                        content={
+                            isDisabledUser(user.role) ? "启用用户" : "禁用用户"
+                        }
+                        side="top"
+                    >
+                        <IconButton
+                            label={`${isDisabledUser(user.role) ? "启用" : "禁用"} ${user.name || user.email}`}
+                            onClick={() => handleToggleStatus(user)}
+                            disabled={actionLoading}
+                        >
+                            {isDisabledUser(user.role) ? (
+                                <Shield className="h-4 w-4" />
+                            ) : (
+                                <ShieldOff className="h-4 w-4" />
+                            )}
+                        </IconButton>
+                    </Tooltip>
+                    {canManageDeletion && (
+                        <Tooltip content="删除用户" side="top">
+                            <IconButton
+                                label={`删除 ${user.name || user.email}`}
+                                variant="danger"
+                                onClick={() => {
+                                    setSelectedUser(user);
+                                    setShowDeleteModal(true);
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </div>
+            ),
+        },
+    ];
+
+    return (
+        <div className="flex flex-col gap-5">
+            <PageHeader
+                title="用户管理"
+                description={`管理测肤子站注册用户${pagination ? ` · 共 ${pagination.total} 人` : ""}`}
+                actions={
+                    canManageDeletion ? (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            leftIcon={<Download className="h-4 w-4" />}
+                            onClick={() =>
+                                window.open(
+                                    "/api/admin/export?type=users",
+                                    "_blank",
+                                )
+                            }
+                        >
+                            导出用户
+                        </Button>
+                    ) : undefined
+                }
+            />
+
+            <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-800">
+                <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>
+                    此处的「禁用」和「删除」仅作用于测肤子站，不会同步到 NIHPLOD
+                    主站。被禁用的用户仍可登录主站，但无法在子站使用测肤、查看历史记录等功能。
+                </p>
+            </div>
+
+            <PanelCard>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                    <form
+                        className="relative w-full md:max-w-sm md:flex-1"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            updateParams({ search: searchInput || null });
+                        }}
+                    >
+                        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-brand-charcoal/65" />
+                        <Input
+                            aria-label="搜索用户姓名、邮箱或手机号"
+                            placeholder="搜索姓名 / 邮箱 / 手机号"
+                            value={searchInput}
+                            onChange={(event) =>
+                                setSearchInput(event.target.value)
+                            }
+                            className="pl-10"
+                        />
+                    </form>
+
+                    <div className="w-full sm:w-44">
+                        <Select
+                            aria-label="按用户状态筛选"
+                            options={STATUS_OPTIONS}
+                            value={status}
+                            onChange={(event) =>
+                                updateParams({ status: event.target.value })
+                            }
+                        />
+                    </div>
+
+                    <span className="text-sm text-brand-charcoal/65 md:ml-auto">
+                        {loading
+                            ? "加载中..."
+                            : `共 ${pagination?.total ?? 0} 位用户`}
+                    </span>
+                </div>
+            </PanelCard>
+
+            {loadError ? (
+                <PanelCard>
+                    <Empty
+                        title="加载用户列表失败"
+                        description={loadError}
+                        action={
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={fetchUsers}
+                            >
+                                重试
+                            </Button>
+                        }
+                    />
+                </PanelCard>
+            ) : (
+                <>
+                    <DataTable
+                        columns={columns}
+                        tableLayout="fixed"
+                        minWidth="860px"
+                        data={users}
+                        loading={loading}
+                        rowKey="id"
+                        emptyText={
+                            search ? `没有匹配「${search}」的用户` : "暂无用户"
+                        }
+                        mobileCard={(user) => (
+                            <div className="space-y-3">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="truncate font-medium text-brand-charcoal">
+                                            {user.name || "未命名用户"}
+                                        </p>
+                                        <p className="mt-0.5 truncate text-xs text-brand-charcoal/65">
+                                            {user.email}
+                                        </p>
+                                    </div>
+                                    <Badge
+                                        variant={
+                                            isDisabledUser(user.role)
+                                                ? "danger"
+                                                : "success"
+                                        }
+                                    >
+                                        {isDisabledUser(user.role)
+                                            ? "已禁用"
+                                            : "活跃"}
+                                    </Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-brand-charcoal/65">
+                                    <span>
+                                        注册：{formatDate(user.createdAt)}
+                                    </span>
+                                    <span>
+                                        测试 {user._count.advisorSessions} 次
+                                    </span>
+                                    <span>
+                                        最近活跃：
+                                        {user.advisorSessions[0]
+                                            ? formatDate(
+                                                  user.advisorSessions[0]
+                                                      .createdAt,
+                                              )
+                                            : "—"}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-end gap-1 border-t border-brand-charcoal/10 pt-2">
+                                    <IconButton
+                                        label={`查看 ${user.name || user.email} 详情`}
+                                        onClick={() => setDetailUser(user.id)}
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                    </IconButton>
+                                    <IconButton
+                                        label={`${isDisabledUser(user.role) ? "启用" : "禁用"} ${user.name || user.email}`}
+                                        onClick={() => handleToggleStatus(user)}
+                                        disabled={actionLoading}
+                                    >
+                                        {isDisabledUser(user.role) ? (
+                                            <Shield className="h-4 w-4" />
+                                        ) : (
+                                            <ShieldOff className="h-4 w-4" />
+                                        )}
+                                    </IconButton>
+                                    {canManageDeletion && (
+                                        <IconButton
+                                            label={`删除 ${user.name || user.email}`}
+                                            variant="danger"
+                                            onClick={() => {
+                                                setSelectedUser(user);
+                                                setShowDeleteModal(true);
+                                            }}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </IconButton>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    />
+
+                    {pagination && pagination.totalPages > 1 && (
+                        <Pagination
+                            page={pagination.page}
+                            pageSize={pagination.limit}
+                            total={pagination.total}
+                            onChange={(nextPage) =>
+                                updateParams({ page: String(nextPage) })
+                            }
+                            onPageSizeChange={(size) =>
+                                updateParams({
+                                    pageSize: String(size),
+                                    page: "1",
+                                })
+                            }
+                        />
+                    )}
+                </>
+            )}
+
+            <UserDetailModal
+                isOpen={!!detailUser}
+                onClose={() => setDetailUser(null)}
+                userId={detailUser}
+                onUpdate={fetchUsers}
+            />
+
+            <ConfirmModal
+                isOpen={!!confirmToggle}
+                onClose={() => setConfirmToggle(null)}
+                onConfirm={() =>
+                    confirmToggle
+                        ? performToggleStatus(
+                              confirmToggle.user,
+                              confirmToggle.isDisabling,
+                          )
+                        : Promise.resolve()
+                }
+                title={confirmToggle?.isDisabling ? "禁用用户" : "启用用户"}
+                message={
+                    confirmToggle?.isDisabling
+                        ? `确定要禁用「${confirmToggle.user.name || confirmToggle.user.email}」吗？禁用后该用户无法继续使用测肤子站功能，但不影响主站账号。`
+                        : `确定要启用「${confirmToggle?.user.name || confirmToggle?.user.email}」吗？`
+                }
+                confirmText={
+                    confirmToggle?.isDisabling ? "确认禁用" : "确认启用"
+                }
+                variant={confirmToggle?.isDisabling ? "danger" : "default"}
+                loading={actionLoading}
+            />
+
+            <ConfirmModal
+                isOpen={showDeleteModal}
+                onClose={() => {
+                    setShowDeleteModal(false);
+                    setSelectedUser(null);
+                }}
+                onConfirm={handleDelete}
+                title="删除用户"
+                message={`确定要删除「${selectedUser?.name || selectedUser?.email || ""}」吗？此操作仅清除子站本地数据，不会删除主站账号。`}
+                confirmText="确认删除"
+                variant="danger"
+                loading={actionLoading}
+            />
+        </div>
+    );
 }

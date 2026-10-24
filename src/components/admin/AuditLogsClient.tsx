@@ -1,28 +1,24 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Download, Eye, RefreshCw } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
-import { useState, useEffect } from "react";
-import {
-    Shield,
-    RefreshCw,
-    Loader2,
-    User,
-    LogIn,
-    LogOut,
-    Edit,
-    Trash2,
-    Package,
-    Settings,
-    FileQuestion,
-    Filter,
-    ChevronDown,
-    Download
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { LogDetailModal } from "./LogDetailModal";
-import { useToast } from "@/components/ui/Toast";
 import { isSuperAdmin } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/Toast";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { Pagination } from "@/components/ui/Pagination";
+import { Select } from "@/components/ui/Select";
+import {
+    DataTable,
+    IconButton,
+    PageHeader,
+    PanelCard,
+    type Column,
+} from "@/components/admin";
+import { LogDetailModal } from "./LogDetailModal";
 
 interface AuditLog {
     id: string;
@@ -49,512 +45,489 @@ interface FilterOptions {
     resources: string[];
 }
 
-const ACTION_ICONS: Record<string, LucideIcon> = {
-    login: LogIn,
-    logout: LogOut,
-    login_failed: LogIn,
-    create: Package,
-    update: Edit,
-    delete: Trash2,
-    batch_delete: Trash2,
-    batch_activate: Package,
-    batch_deactivate: Package,
-};
-
-const RESOURCE_ICONS: Record<string, LucideIcon> = {
-    Product: Package,
-    AdminUser: User,
-    Setting: Settings,
-    Question: FileQuestion,
-};
-
-const ACTION_COLORS: Record<string, string> = {
-    login: "bg-emerald-100 text-emerald-700",
-    logout: "bg-[#1A1A1A]/5 text-[#5E5E5E]",
-    login_failed: "bg-red-100 text-red-700",
-    login_sso_blocked_totp: "bg-red-100 text-red-700",
-    create: "bg-blue-100 text-blue-700",
-    update: "bg-amber-100 text-amber-700",
-    delete: "bg-red-100 text-red-700",
-    batch_delete: "bg-red-100 text-red-700",
-    batch_activate: "bg-emerald-100 text-emerald-700",
-    batch_deactivate: "bg-[#1A1A1A]/5 text-[#5E5E5E]",
-    ship: "bg-blue-100 text-blue-700",
-    reward_approved: "bg-emerald-100 text-emerald-700",
-    reward_rejected: "bg-red-100 text-red-700",
+const ACTION_LABELS: Record<string, string> = {
+    login: "登录",
+    logout: "登出",
+    login_failed: "登录失败",
+    login_sso: "子站 SSO 登录",
+    login_sso_blocked_totp: "SSO 登录被 TOTP 拦截",
+    login_break_glass: "应急账号登录",
+    login_break_glass_failed: "应急登录失败",
+    admin_sso_sync_revoke: "同步主站会话",
+    admin_sso_sync_update: "同步主站账号",
+    create: "创建",
+    update: "更新",
+    delete: "删除",
+    batch_delete: "批量删除",
+    batch_activate: "批量上架",
+    batch_deactivate: "批量下架",
+    batch_feature: "批量推荐",
+    ship: "发货",
+    reward_approved: "奖励通过",
+    reward_rejected: "奖励拒绝",
 };
 
 const TIME_PRESETS = [
-    { label: "全部", value: "all" },
-    { label: "今天", value: "today" },
-    { label: "过去7天", value: "7days" },
-    { label: "过去30天", value: "30days" },
-    { label: "自定义", value: "custom" },
+    { value: "all", label: "全部时间" },
+    { value: "today", label: "今天" },
+    { value: "7days", label: "最近 7 天" },
+    { value: "30days", label: "最近 30 天" },
+    { value: "custom", label: "自定义" },
 ];
 
-function getDateRangeFromPreset(preset: string) {
+function getDateRange(preset: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const toLocalDate = (d: Date) => d.toLocaleDateString('en-CA');
-
-    switch (preset) {
-        case "today":
-            return { start: toLocalDate(today), end: toLocalDate(today) };
-        case "7days": {
-            const start = new Date(today);
-            start.setDate(start.getDate() - 6);
-            return { start: toLocalDate(start), end: toLocalDate(today) };
-        }
-        case "30days": {
-            const start = new Date(today);
-            start.setDate(start.getDate() - 29);
-            return { start: toLocalDate(start), end: toLocalDate(today) };
-        }
-        default:
-            return { start: "", end: "" };
+    const toDate = (date: Date) => date.toLocaleDateString("en-CA");
+    if (preset === "today") return { start: toDate(today), end: toDate(today) };
+    if (preset === "7days") {
+        const start = new Date(today);
+        start.setDate(start.getDate() - 6);
+        return { start: toDate(start), end: toDate(today) };
     }
+    if (preset === "30days") {
+        const start = new Date(today);
+        start.setDate(start.getDate() - 29);
+        return { start: toDate(start), end: toDate(today) };
+    }
+    return { start: "", end: "" };
 }
 
-interface AuditLogsClientProps {
-    role: string;
+function formatTime(value: string) {
+    return new Date(value).toLocaleString("zh-CN", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+    });
 }
 
-export default function AuditLogsClient({ role }: AuditLogsClientProps) {
+function actionVariant(
+    action: string,
+): "default" | "success" | "warning" | "danger" | "primary" {
+    if (
+        action.includes("failed") ||
+        action === "delete" ||
+        action === "batch_delete"
+    )
+        return "danger";
+    if (action === "login" || action === "create" || action === "ship")
+        return "success";
+    if (action === "update" || action === "batch_activate") return "primary";
+    if (action === "login_sso_blocked_totp" || action === "reward_rejected")
+        return "warning";
+    return "default";
+}
+
+export default function AuditLogsClient({ role }: { role: string }) {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const toast = useToast();
+
+    const page = Math.max(1, Number(searchParams.get("page") || 1) || 1);
+    const selectedAdmin = searchParams.get("adminId") || "all";
+    const selectedAction = searchParams.get("action") || "all";
+    const selectedResource = searchParams.get("resource") || "all";
+    const timePreset = searchParams.get("timePreset") || "all";
+    const startDate = searchParams.get("startDate") || "";
+    const endDate = searchParams.get("endDate") || "";
+
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
-    const [total, setTotal] = useState(0);
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 30,
+        total: 0,
+        totalPages: 1,
+    });
     const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+    const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+        admins: [],
+        actions: [],
+        resources: [],
+    });
 
-    // Filters
-    const [filterOptions, setFilterOptions] = useState<FilterOptions>({ admins: [], actions: [], resources: [] });
-    const [selectedAdmin, setSelectedAdmin] = useState<string>("all");
-    const [selectedAction, setSelectedAction] = useState<string>("all");
-    const [selectedResource, setSelectedResource] = useState<string>("all");
-    const [timePreset, setTimePreset] = useState<string>("all");
-    const [startDate, setStartDate] = useState<string>("");
-    const [endDate, setEndDate] = useState<string>("");
+    const updateParams = useCallback(
+        (updates: Record<string, string | null>) => {
+            const params = new URLSearchParams(searchParams.toString());
+            Object.entries(updates).forEach(([key, value]) => {
+                if (value === null || value === "" || value === "all")
+                    params.delete(key);
+                else params.set(key, value);
+            });
+            if (!("page" in updates)) params.delete("page");
+            router.push(`${pathname}${params.toString() ? `?${params}` : ""}`);
+        },
+        [pathname, router, searchParams],
+    );
 
-    const fetchLogs = async () => {
+    const fetchLogs = useCallback(async () => {
         setLoading(true);
         try {
             const params = new URLSearchParams({
-                page: page.toString(),
+                page: String(page),
                 limit: "30",
             });
-
-            if (selectedAdmin !== "all") params.append("adminId", selectedAdmin);
-            if (selectedAction !== "all") params.append("action", selectedAction);
-            if (selectedResource !== "all") params.append("resource", selectedResource);
-
-            // Handle date range
+            if (selectedAdmin !== "all") params.set("adminId", selectedAdmin);
+            if (selectedAction !== "all") params.set("action", selectedAction);
+            if (selectedResource !== "all")
+                params.set("resource", selectedResource);
             if (timePreset === "custom") {
-                if (startDate) params.append("startDate", startDate);
-                if (endDate) params.append("endDate", endDate);
+                if (startDate) params.set("startDate", startDate);
+                if (endDate) params.set("endDate", endDate);
             } else if (timePreset !== "all") {
-                const dateRange = getDateRangeFromPreset(timePreset);
-                if (dateRange.start) params.append("startDate", dateRange.start);
-                if (dateRange.end) params.append("endDate", dateRange.end);
+                const range = getDateRange(timePreset);
+                if (range.start) params.set("startDate", range.start);
+                if (range.end) params.set("endDate", range.end);
             }
 
-            const res = await adminFetch(`/api/admin/audit-logs?${params.toString()}`);
-            const data = await res.json();
-            if (data.success) {
-                setLogs(data.data);
-                setTotalPages(data.pagination.totalPages);
-                setTotal(data.pagination.total);
-                if (data.filters) {
-                    setFilterOptions(data.filters);
-                }
-            }
-        } catch (e) {
-            console.error("加载日志失败:", e);
-            toast.error("加载日志失败");
+            const response = await adminFetch(
+                `/api/admin/audit-logs?${params}`,
+            );
+            const data = await response.json();
+            if (!response.ok || !data.success)
+                throw new Error(data.error || "加载审计日志失败");
+            setLogs(data.data);
+            setPagination(data.pagination);
+            if (data.filters) setFilterOptions(data.filters);
+        } catch (error) {
+            toast.error(
+                error instanceof Error ? error.message : "加载审计日志失败",
+            );
         } finally {
             setLoading(false);
         }
-    };
+    }, [
+        page,
+        selectedAdmin,
+        selectedAction,
+        selectedResource,
+        timePreset,
+        startDate,
+        endDate,
+        toast,
+    ]);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchLogs();
-        }, 300);
-        return () => clearTimeout(timer);
-        // fetchLogs 未 memo 化，依赖列表已覆盖其全部输入
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, selectedAdmin, selectedAction, selectedResource, timePreset, startDate, endDate]);
-
-    const clearFilters = () => {
-        setSelectedAdmin("all");
-        setSelectedAction("all");
-        setSelectedResource("all");
-        setTimePreset("all");
-        setStartDate("");
-        setEndDate("");
-        setPage(1);
-    };
-
-    const hasActiveFilters = selectedAdmin !== "all" || selectedAction !== "all" || selectedResource !== "all" || timePreset !== "all";
-
-    const formatTime = (dateStr: string) => {
-        const date = new Date(dateStr);
-        return date.toLocaleString('zh-CN', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-    };
-    const getActionLabel = (action: string) => {
-        const labels: Record<string, string> = {
-            login: '登录',
-            logout: '登出',
-            login_failed: '登录失败',
-            login_sso: '主站 SSO 登录',
-            login_sso_blocked_totp: 'SSO 登录被 TOTP 策略拦截',
-            login_break_glass: '应急账号登录',
-            login_break_glass_failed: '应急登录失败',
-            admin_sso_sync_revoke: '同步撤销会话',
-            admin_sso_sync_update: '同步更新账号',
-            create: '创建',
-            update: '更新',
-            delete: '删除',
-            batch_delete: '批量删除',
-            batch_activate: '批量上架',
-            batch_deactivate: '批量下架',
-            batch_feature: '批量推荐',
-            ship: '发货',
-            reward_approved: '审核通过',
-            reward_rejected: '审核拒绝',
-        };
-        return labels[action] || action;
-    };
+        fetchLogs();
+    }, [fetchLogs]);
 
     const handleExport = async () => {
         setExporting(true);
         try {
-            let exportStartDate = startDate;
-            let exportEndDate = endDate;
-            if (timePreset !== "custom" && timePreset !== "all") {
-                const range = getDateRangeFromPreset(timePreset);
-                exportStartDate = range.start;
-                exportEndDate = range.end;
+            const params = new URLSearchParams({ type: "audit-logs" });
+            if (selectedAdmin !== "all") params.set("adminId", selectedAdmin);
+            if (selectedAction !== "all") params.set("action", selectedAction);
+            if (selectedResource !== "all")
+                params.set("resource", selectedResource);
+            if (timePreset === "custom") {
+                if (startDate) params.set("startDate", startDate);
+                if (endDate) params.set("endDate", endDate);
+            } else if (timePreset !== "all") {
+                const range = getDateRange(timePreset);
+                if (range.start) params.set("startDate", range.start);
+                if (range.end) params.set("endDate", range.end);
             }
-
-            const params = new URLSearchParams({
-                type: "audit-logs",
-            });
-            if (exportStartDate) params.append("startDate", exportStartDate);
-            if (exportEndDate) params.append("endDate", exportEndDate);
-            if (selectedAdmin !== "all") params.append("adminId", selectedAdmin);
-            if (selectedAction !== "all") params.append("action", selectedAction);
-            if (selectedResource !== "all") params.append("resource", selectedResource);
-
-            // Use backend export API
-            const res = await adminFetch(`/api/admin/export?${params.toString()}`);
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || "导出失败");
-            }
-
-            const truncated = res.headers.get("X-Export-Truncated") === "true";
-            const disposition = res.headers.get("Content-Disposition") || "";
-            const filenameMatch = disposition.match(/filename="([^"]+)"/i);
-            const blob = await res.blob();
+            const response = await adminFetch(`/api/admin/export?${params}`);
+            if (!response.ok) throw new Error("导出失败");
+            const truncated =
+                response.headers.get("X-Export-Truncated") === "true";
+            const exportLimit =
+                response.headers.get("X-Export-Row-Limit") || "上限";
+            const blob = await response.blob();
+            const disposition =
+                response.headers.get("Content-Disposition") || "";
+            const filename =
+                disposition.match(/filename="([^"]+)"/i)?.[1] ||
+                `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute(
-                "download",
-                filenameMatch?.[1] ||
-                    `audit_logs_export_${new Date().toISOString().split("T")[0]}.csv`
-            );
+            link.download = filename;
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
             if (truncated) {
-                const limit = res.headers.get("X-Export-Row-Limit") || "上限";
-                toast.error(`导出已达到 ${limit} 条上限，数据可能不完整，请缩小筛选范围后重试`);
+                toast.error(
+                    `导出已达到 ${exportLimit} 条上限，请缩小筛选范围后重试`,
+                );
             } else {
                 toast.success("导出完成");
             }
-        } catch {
-            toast.error("导出失败，请稍后重试");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "导出失败");
         } finally {
             setExporting(false);
         }
     };
 
-    return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">审计日志</h1>
-                    <p className="text-[#1A1A1A]/50 text-sm mt-1">
-                        查看管理员操作记录
-                        {total > 0 && <span className="ml-2 text-[#1A1A1A]/40">· 共 {total} 条记录</span>}
+    const hasFilters =
+        selectedAdmin !== "all" ||
+        selectedAction !== "all" ||
+        selectedResource !== "all" ||
+        timePreset !== "all";
+
+    const columns: Column<AuditLog>[] = [
+        {
+            key: "createdAt",
+            title: "时间",
+            width: "136px",
+            render: (_, log) => (
+                <span className="whitespace-nowrap text-sm tabular-nums text-brand-charcoal/70">
+                    {formatTime(log.createdAt)}
+                </span>
+            ),
+        },
+        {
+            key: "admin",
+            title: "操作人",
+            width: "140px",
+            render: (_, log) => (
+                <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-brand-charcoal">
+                        {log.admin?.name || log.admin?.username || "系统"}
                     </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    {isSuperAdmin(role) && (
-                        <button
-                            onClick={handleExport}
-                            disabled={exporting || logs.length === 0}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#5E5E5E] bg-white border border-[#E9E9E7] rounded-lg hover:bg-[#1A1A1A]/[0.02] transition-colors shadow-sm disabled:opacity-50"
-                        >
-                            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                            导出记录
-                        </button>
+                    {log.ip && (
+                        <p className="truncate font-mono text-xs text-brand-charcoal/55">
+                            {log.ip}
+                        </p>
                     )}
-                    <button
-                        onClick={() => fetchLogs()}
-                        disabled={loading}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#5E5E5E] bg-white border border-[#E9E9E7] rounded-lg hover:bg-[#1A1A1A]/[0.02] transition-colors shadow-sm"
+                </div>
+            ),
+        },
+        {
+            key: "action",
+            title: "操作",
+            width: "150px",
+            render: (_, log) => (
+                <Badge variant={actionVariant(log.action)}>
+                    {ACTION_LABELS[log.action] || log.action}
+                </Badge>
+            ),
+        },
+        {
+            key: "resource",
+            title: "资源",
+            render: (_, log) => (
+                <div className="min-w-0">
+                    <p className="truncate text-sm text-brand-charcoal">
+                        {log.resource}
+                    </p>
+                    {log.resourceId && (
+                        <p className="truncate font-mono text-xs text-brand-charcoal/55">
+                            {log.resourceId.slice(0, 12)}
+                        </p>
+                    )}
+                </div>
+            ),
+        },
+        {
+            key: "actions",
+            title: "详情",
+            width: "72px",
+            align: "right",
+            render: (_, log) =>
+                log.details ? (
+                    <IconButton
+                        label="查看日志详情"
+                        onClick={() => setSelectedLog(log)}
                     >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        刷新
-                    </button>
-                </div>
-            </div>
+                        <Eye className="h-4 w-4" />
+                    </IconButton>
+                ) : null,
+        },
+    ];
 
-            {/* Filter Bar - Users Management Style */}
-            <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-4 p-4 bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-sm">
-                    <div className="flex items-center gap-3 px-2 text-[#1A1A1A]/40">
-                        <Filter className="w-4 h-4" />
+    return (
+        <div className="flex flex-col gap-5">
+            <PageHeader
+                title="安全审计"
+                description={`查看管理员操作记录${pagination.total > 0 ? ` · 共 ${pagination.total} 条` : ""}`}
+                actions={
+                    <>
+                        {isSuperAdmin(role) && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                leftIcon={<Download className="h-4 w-4" />}
+                                onClick={handleExport}
+                                loading={exporting}
+                                disabled={logs.length === 0}
+                            >
+                                导出记录
+                            </Button>
+                        )}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            leftIcon={<RefreshCw className="h-4 w-4" />}
+                            onClick={fetchLogs}
+                            loading={loading}
+                        >
+                            刷新
+                        </Button>
+                    </>
+                }
+            />
+
+            <PanelCard>
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+                    <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <Select
+                            aria-label="按时间范围筛选"
+                            options={TIME_PRESETS}
+                            value={timePreset}
+                            onChange={(event) => {
+                                const value = event.target.value;
+                                updateParams({
+                                    timePreset: value === "all" ? null : value,
+                                    startDate: null,
+                                    endDate: null,
+                                });
+                            }}
+                        />
+                        <Select
+                            aria-label="按管理员筛选"
+                            options={[
+                                { value: "all", label: "全部管理员" },
+                                ...filterOptions.admins.map((admin) => ({
+                                    value: admin.id,
+                                    label: admin.name || admin.username,
+                                })),
+                            ]}
+                            value={selectedAdmin}
+                            onChange={(event) =>
+                                updateParams({ adminId: event.target.value })
+                            }
+                        />
+                        <Select
+                            aria-label="按操作类型筛选"
+                            options={[
+                                { value: "all", label: "全部操作" },
+                                ...filterOptions.actions.map((action) => ({
+                                    value: action,
+                                    label: ACTION_LABELS[action] || action,
+                                })),
+                            ]}
+                            value={selectedAction}
+                            onChange={(event) =>
+                                updateParams({ action: event.target.value })
+                            }
+                        />
+                        <Select
+                            aria-label="按资源类型筛选"
+                            options={[
+                                { value: "all", label: "全部资源" },
+                                ...filterOptions.resources.map((resource) => ({
+                                    value: resource,
+                                    label: resource,
+                                })),
+                            ]}
+                            value={selectedResource}
+                            onChange={(event) =>
+                                updateParams({ resource: event.target.value })
+                            }
+                        />
                     </div>
-
-                    <div className="flex-1 flex flex-wrap items-center gap-4">
-                        {/* Time Range */}
-                        <div className="relative min-w-[150px]">
-                            <select
-                                value={timePreset}
-                                onChange={(e) => {
-                                    setTimePreset(e.target.value);
-                                    if (e.target.value !== "custom") {
-                                        setStartDate("");
-                                        setEndDate("");
-                                    }
-                                    setPage(1);
-                                }}
-                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-[#1A1A1A]/[0.02] hover:bg-white hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
-                            >
-                                {TIME_PRESETS.map((preset) => (
-                                    <option key={preset.value} value={preset.value}>
-                                        {preset.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
-                        </div>
-
-                        <div className="h-4 w-px bg-[#E9E9E7] mx-2 hidden sm:block"></div>
-
-                        {/* Admin Filter */}
-                        <div className="relative min-w-[150px]">
-                            <select
-                                value={selectedAdmin}
-                                onChange={(e) => { setSelectedAdmin(e.target.value); setPage(1); }}
-                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-[#1A1A1A]/[0.02] hover:bg-white hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
-                            >
-                                <option value="all">所有操作人员</option>
-                                {filterOptions.admins.map((admin) => (
-                                    <option key={admin.id} value={admin.id}>
-                                        {admin.name || admin.username}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
-                        </div>
-
-                        {/* Action Filter */}
-                        <div className="relative min-w-[150px]">
-                            <select
-                                value={selectedAction}
-                                onChange={(e) => { setSelectedAction(e.target.value); setPage(1); }}
-                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-[#1A1A1A]/[0.02] hover:bg-white hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
-                            >
-                                <option value="all">所有操作行为</option>
-                                {filterOptions.actions.map((action) => (
-                                    <option key={action} value={action}>
-                                        {getActionLabel(action)}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
-                        </div>
-
-                        {/* Resource Filter */}
-                        <div className="relative min-w-[150px]">
-                            <select
-                                value={selectedResource}
-                                onChange={(e) => { setSelectedResource(e.target.value); setPage(1); }}
-                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-[#1A1A1A]/[0.02] hover:bg-white hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
-                            >
-                                <option value="all">所有资源模块</option>
-                                {filterOptions.resources.map((resource) => (
-                                    <option key={resource} value={resource}>
-                                        {resource}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
-                        </div>
-                    </div>
-
-                    {hasActiveFilters && (
-                        <>
-                            <div className="h-4 w-px bg-[#E9E9E7] mx-1 hidden lg:block"></div>
-                            <button
-                                onClick={clearFilters}
-                                className="px-3 py-1.5 text-xs font-bold text-[#1A1A1A]/40 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all uppercase tracking-widest border border-transparent hover:border-rose-100"
-                            >
-                                清除所有
-                            </button>
-                        </>
+                    {hasFilters && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                                updateParams({
+                                    timePreset: null,
+                                    startDate: null,
+                                    endDate: null,
+                                    adminId: null,
+                                    action: null,
+                                    resource: null,
+                                })
+                            }
+                        >
+                            清除筛选
+                        </Button>
                     )}
-
-                    <span className="ml-auto text-xs text-[#1A1A1A]/40 hidden xl:block">
-                        找到 {total} 条记录
-                    </span>
                 </div>
 
-                {/* Custom Date Range Row */}
                 {timePreset === "custom" && (
-                    <div className="flex items-center gap-3 p-3 bg-[#1A1A1A]/[0.02] rounded-xl border border-[#E9E9E7] border-dashed animate-in slide-in-from-top-1 duration-200">
-                        <span className="text-[11px] font-bold text-[#1A1A1A]/40 uppercase tracking-widest ml-2 whitespace-nowrap">自定义时段:</span>
-                        <input
-                            type="date"
+                    <div className="mt-3 grid gap-3 border-t border-brand-charcoal/10 pt-3 sm:grid-cols-2">
+                        <DatePicker
+                            label="开始日期"
                             value={startDate}
-                            onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
-                            className="rounded-lg border-[#E9E9E7] text-sm bg-white px-3 py-1 focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all"
+                            onChange={(value) =>
+                                updateParams({ startDate: value || null })
+                            }
                         />
-                        <span className="text-[#1A1A1A]/30">至</span>
-                        <input
-                            type="date"
+                        <DatePicker
+                            label="结束日期"
                             value={endDate}
-                            onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
-                            className="rounded-lg border-[#E9E9E7] text-sm bg-white px-3 py-1 focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all"
+                            onChange={(value) =>
+                                updateParams({ endDate: value || null })
+                            }
                         />
                     </div>
                 )}
-            </div>
+            </PanelCard>
 
-            <div className="bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-sm overflow-hidden">
-                {loading && logs.length === 0 ? (
-                    <div className="flex items-center justify-center h-64">
-                        <Loader2 className="w-6 h-6 animate-spin text-[#1A1A1A]/40" />
-                    </div>
-                ) : logs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-64 text-[#1A1A1A]/40">
-                        <Shield className="w-12 h-12 mb-4 opacity-50" />
-                        <p>暂无审计日志</p>
-                    </div>
-                ) : (
-                    <div className="divide-y divide-[#E9E9E7]">
-                        {logs.map((log) => {
-                            const ActionIcon = ACTION_ICONS[log.action] || Edit;
-                            const ResourceIcon = RESOURCE_ICONS[log.resource] || Package;
-                            const colorClass = ACTION_COLORS[log.action] || "bg-[#1A1A1A]/5 text-[#5E5E5E]";
-
-                            return (
-                                <div
-                                    key={log.id}
-                                    onClick={() => log.details && setSelectedLog(log)}
-                                    onKeyDown={(e) => {
-                                        if (log.details && (e.key === "Enter" || e.key === " ")) {
-                                            e.preventDefault();
-                                            setSelectedLog(log);
-                                        }
-                                    }}
-                                    role={log.details ? "button" : undefined}
-                                    tabIndex={log.details ? 0 : undefined}
-                                    className={cn(
-                                        "px-6 py-3 transition-colors group",
-                                        log.details ? "cursor-pointer hover:bg-[#1A1A1A]/[0.02]" : "cursor-default"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm ${colorClass}`}>
-                                            <ActionIcon className="w-4 h-4" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap text-sm">
-                                                <span className="font-semibold text-[#1A1A1A]">
-                                                    {log.admin?.name || log.admin?.username || '系统'}
-                                                </span>
-                                                <span className="text-[#1A1A1A]/40 text-xs">执行了</span>
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${colorClass}`}>
-                                                    {getActionLabel(log.action)}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-3 mt-0.5 text-[11px] text-[#1A1A1A]/50">
-                                                <div className="flex items-center gap-1.5">
-                                                    <ResourceIcon className="w-3.5 h-3.5 text-[#1A1A1A]/40" />
-                                                    <span className="font-medium">{log.resource}</span>
-                                                </div>
-                                                {log.resourceId && (
-                                                    <span className="font-mono bg-[#1A1A1A]/5 px-1.5 py-0.5 rounded text-[#1A1A1A]/40 border border-[#E9E9E7]">
-                                                        ID: {log.resourceId.slice(0, 8)}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-6">
-                                            <div className="text-right shrink-0 min-w-[100px]">
-                                                <div className="text-[11px] font-medium text-[#1A1A1A]/50">
-                                                    {formatTime(log.createdAt)}
-                                                </div>
-                                                {log.ip && (
-                                                    <div className="text-[10px] text-[#1A1A1A]/40 font-mono mt-0.5">
-                                                        {log.ip}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-[#E9E9E7] flex items-center justify-between bg-[#1A1A1A]/[0.02]">
-                        <div className="text-sm text-[#1A1A1A]/50">
-                            共 {total} 条记录
+            <DataTable
+                columns={columns}
+                tableLayout="fixed"
+                minWidth="900px"
+                data={logs}
+                loading={loading}
+                rowKey="id"
+                emptyText="暂无审计日志"
+                mobileCard={(log) => (
+                    <button
+                        type="button"
+                        className="w-full text-left"
+                        onClick={() => log.details && setSelectedLog(log)}
+                        disabled={!log.details}
+                    >
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-brand-charcoal">
+                                    {log.admin?.name ||
+                                        log.admin?.username ||
+                                        "系统"}
+                                </p>
+                                <p className="mt-0.5 truncate text-xs text-brand-charcoal/65">
+                                    {log.resource}
+                                    {log.resourceId
+                                        ? ` · ${log.resourceId.slice(0, 8)}`
+                                        : ""}
+                                </p>
+                            </div>
+                            <Badge variant={actionVariant(log.action)}>
+                                {ACTION_LABELS[log.action] || log.action}
+                            </Badge>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setPage(p => Math.max(1, p - 1))}
-                                disabled={page === 1}
-                                className="p-2 rounded-lg border border-[#E9E9E7] bg-white hover:bg-[#1A1A1A]/[0.02] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <ChevronDown className="w-4 h-4 rotate-90" />
-                            </button>
-                            <span className="text-sm font-medium text-[#1A1A1A]/60 px-3">
-                                {page} / {totalPages}
-                            </span>
-                            <button
-                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                disabled={page === totalPages}
-                                className="p-2 rounded-lg border border-[#E9E9E7] bg-white hover:bg-[#1A1A1A]/[0.02] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <ChevronDown className="w-4 h-4 -rotate-90" />
-                            </button>
+                        <div className="mt-2 flex items-center justify-between gap-2 text-xs text-brand-charcoal/65">
+                            <span>{formatTime(log.createdAt)}</span>
+                            {log.ip && (
+                                <span className="font-mono">{log.ip}</span>
+                            )}
                         </div>
-                    </div>
+                    </button>
                 )}
-            </div>
-            {/* Log Detail Modal */}
+            />
+
+            {pagination.totalPages > 1 && (
+                <Pagination
+                    page={pagination.page}
+                    pageSize={pagination.limit}
+                    total={pagination.total}
+                    onChange={(nextPage) =>
+                        updateParams({ page: String(nextPage) })
+                    }
+                />
+            )}
+
             <LogDetailModal
                 isOpen={!!selectedLog}
                 onClose={() => setSelectedLog(null)}

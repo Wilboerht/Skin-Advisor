@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSuperAdmin } from "@/lib/permissions";
-import { motion, AnimatePresence } from "framer-motion";
 
 const BASE_MENU_ITEMS = [
     { href: "/admin", label: "仪表盘", icon: LayoutDashboard },
@@ -58,7 +57,7 @@ export default function AdminSidebar() {
     useEffect(() => {
         // adminFetch 统一拦截 401：会话过期时自动跳转 /admin/login
         adminFetch("/api/admin/auth/me")
-            .then(res => res.ok ? res.json() : null)
+            .then((res) => (res.ok ? res.json() : null))
             .then((data: { user?: AdminMe } | null) => {
                 if (data?.user) setAdmin(data.user);
             })
@@ -70,7 +69,10 @@ export default function AdminSidebar() {
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+            if (
+                exportMenuRef.current &&
+                !exportMenuRef.current.contains(event.target as Node)
+            ) {
                 setShowExportMenu(false);
             }
         }
@@ -89,7 +91,9 @@ export default function AdminSidebar() {
 
     const handleLogout = async () => {
         try {
-            const res = await fetch("/api/admin/auth/logout", { method: "POST" });
+            const res = await fetch("/api/admin/auth/logout", {
+                method: "POST",
+            });
             if (!res.ok) throw new Error("Logout failed");
             router.push("/admin/login");
         } catch {
@@ -98,173 +102,245 @@ export default function AdminSidebar() {
     };
 
     const roleLabel = admin?.role === "super_admin" ? "超级管理员" : "管理员";
+    const pageTitle =
+        menuItems.find((item) =>
+            item.href === "/admin"
+                ? pathname === "/admin"
+                : pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`),
+        )?.label || "管理后台";
 
     return (
         <>
-            <button
-                className="md:hidden fixed top-4 left-4 z-[60] p-2 rounded-lg bg-white shadow-md border border-[#1A1A1A]/10"
-                onClick={() => setMobileOpen(!mobileOpen)}
-                aria-label={mobileOpen ? "关闭菜单" : "打开菜单"}
-            >
-                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            <header className="fixed inset-x-0 top-0 z-[60] flex h-14 items-center gap-3 border-b border-brand-charcoal/10 bg-white/95 px-4 backdrop-blur md:hidden">
+                <button
+                    className="-ml-2 flex h-11 w-11 items-center justify-center rounded-lg text-brand-charcoal/70 transition-colors hover:bg-brand-charcoal/[0.05] hover:text-brand-charcoal"
+                    onClick={() => setMobileOpen(!mobileOpen)}
+                    aria-label={mobileOpen ? "关闭菜单" : "打开菜单"}
+                    aria-expanded={mobileOpen}
+                >
+                    {mobileOpen ? (
+                        <X className="h-5 w-5" />
+                    ) : (
+                        <Menu className="h-5 w-5" />
+                    )}
+                </button>
+                <span className="text-sm font-semibold text-brand-charcoal">
+                    {pageTitle}
+                </span>
+            </header>
 
             {mobileOpen && (
                 <div
-                    className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+                    className="fixed inset-0 z-40 bg-black/50 md:hidden"
                     onClick={() => setMobileOpen(false)}
                 />
             )}
 
             <div
                 className={cn(
-                    "flex h-full flex-col bg-[#FDFBF7] text-[#1A1A1A] z-20 transition-all duration-300 ease-in-out border-r border-[#1A1A1A]/5",
-                    collapsed ? "w-20" : "w-64",
-                    "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:w-64",
-                    mobileOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full"
+                    "z-20 flex h-full flex-col border-r border-brand-charcoal/10 bg-white text-brand-charcoal transition-all duration-300 ease-in-out",
+                    collapsed ? "w-16" : "w-60",
+                    "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:w-60",
+                    mobileOpen
+                        ? "max-md:translate-x-0"
+                        : "max-md:-translate-x-full",
                 )}
             >
-                <div className={cn("flex h-20 items-center justify-center border-b border-[#1A1A1A]/5 px-2")}>
+                <div
+                    className={cn(
+                        "flex h-16 items-center justify-center border-b border-brand-charcoal/10 px-3",
+                    )}
+                >
                     <div className="flex items-center gap-2.5 overflow-hidden">
-                        <div className="flex items-center justify-center shrink-0 relative">
-                            <Image
-                                src="/NIHPLOD-logo.svg"
-                                alt="NIHPLOD"
-                                width={collapsed ? 64 : 84}
-                                height={collapsed ? 16 : 21}
-                                className={cn(
-                                    "w-auto transition-all duration-300",
-                                    collapsed ? "h-4" : "h-[21px]"
-                                )}
-                                priority
-                            />
+                        <div className="relative flex shrink-0 items-center justify-center">
+                            {collapsed ? (
+                                <span className="font-serif text-xl font-bold text-brand-primary">
+                                    N
+                                </span>
+                            ) : (
+                                <Image
+                                    src="/NIHPLOD-logo.svg"
+                                    alt="NIHPLOD"
+                                    width={84}
+                                    height={21}
+                                    className="h-[21px] w-auto transition-all duration-300"
+                                    priority
+                                />
+                            )}
                         </div>
                         {!collapsed && (
-                            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300 shrink-0">
-                                <div className="w-px h-3.5 bg-slate-300" />
-                                <span className="text-[13px] font-medium tracking-tight text-[#1A1A1A] whitespace-nowrap">
-                                    护肤顾问管理系统
+                            <div className="flex items-center gap-2 shrink-0">
+                                <div className="w-px h-3.5 bg-brand-charcoal/15" />
+                                <span className="whitespace-nowrap text-sm font-medium tracking-tight text-brand-charcoal">
+                                    管理后台
                                 </span>
                             </div>
                         )}
                     </div>
                 </div>
 
-                <nav className="flex-1 space-y-1 px-3 py-6 overflow-y-auto" aria-label="管理导航">
+                <nav
+                    className="flex-1 space-y-1 overflow-y-auto px-3 py-2"
+                    aria-label="管理导航"
+                >
                     {!collapsed && (
-                        <div className="px-3 mb-3 text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]/40 animate-in fade-in duration-300">
+                        <div className="px-3 mb-3 text-xs font-medium uppercase tracking-wider text-brand-charcoal/65">
                             功能导航
                         </div>
                     )}
                     {menuItems.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isActive =
+                            item.href === "/admin"
+                                ? pathname === "/admin"
+                                : pathname === item.href ||
+                                  pathname.startsWith(`${item.href}/`);
                         return (
                             <Link
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                                    "group flex items-center rounded-lg px-3 py-2 text-sm transition-colors",
                                     isActive
-                                        ? "bg-[#1A1A1A]/5 text-[#1A1A1A]"
-                                        : "text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A]",
-                                    collapsed ? "justify-center" : ""
+                                        ? "bg-brand-primary/10 font-medium text-brand-primary"
+                                        : "text-brand-charcoal/70 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal",
+                                    collapsed ? "justify-center" : "",
                                 )}
                                 title={collapsed ? item.label : undefined}
                             >
-                                <item.icon className={cn("h-4 w-4 flex-shrink-0 transition-colors", isActive ? "text-[#1A1A1A]" : "text-[#1A1A1A]/60 group-hover:text-[#1A1A1A]", collapsed ? "mr-0" : "mr-3")} />
-                                {!collapsed && (
-                                    <span className="animate-in fade-in duration-200">{item.label}</span>
-                                )}
+                                <item.icon
+                                    className={cn(
+                                        "h-4 w-4 flex-shrink-0 transition-colors",
+                                        isActive
+                                            ? "text-brand-primary"
+                                            : "text-brand-charcoal/70 group-hover:text-brand-charcoal",
+                                        collapsed ? "mr-0" : "mr-3",
+                                    )}
+                                />
+                                {!collapsed && <span>{item.label}</span>}
                             </Link>
                         );
                     })}
 
-                    <div className="mt-4 pt-4 border-t border-[#1A1A1A]/5">
+                    <div className="mt-4 border-t border-brand-charcoal/10 pt-4">
                         {!collapsed && (
-                            <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]/40 animate-in fade-in duration-300">
+                            <div className="px-3 mb-2 text-xs font-medium uppercase tracking-wider text-brand-charcoal/65">
                                 数据导出
                             </div>
                         )}
                         <div className="relative px-3" ref={exportMenuRef}>
                             <button
-                                onClick={() => setShowExportMenu(!showExportMenu)}
+                                onClick={() =>
+                                    setShowExportMenu(!showExportMenu)
+                                }
                                 aria-expanded={showExportMenu}
                                 aria-haspopup="true"
                                 className={cn(
                                     "group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 w-full",
                                     showExportMenu
-                                        ? "bg-slate-900/10 text-slate-900 ring-1 ring-slate-950/5 shadow-sm"
-                                        : "text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A]",
-                                    collapsed ? "justify-center" : ""
+                                        ? "bg-brand-charcoal/[0.06] font-medium text-brand-charcoal"
+                                        : "text-brand-charcoal/70 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal",
+                                    collapsed ? "justify-center" : "",
                                 )}
                                 title={collapsed ? "数据导出" : undefined}
                             >
-                                <Download className={cn("h-4 w-4 transition-transform duration-300", showExportMenu ? "scale-110" : "", collapsed ? "" : "mr-3")} />
+                                <Download
+                                    className={cn(
+                                        "h-4 w-4 transition-transform duration-300",
+                                        showExportMenu ? "scale-110" : "",
+                                        collapsed ? "" : "mr-3",
+                                    )}
+                                />
                                 {!collapsed && <span>数据报表</span>}
                             </button>
 
-                            <AnimatePresence>
-                                {showExportMenu && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className={cn(
-                                            "absolute z-50 bg-white/60 backdrop-blur-3xl border border-white/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] py-1.5 w-44 overflow-hidden",
-                                            collapsed ? "left-16 bottom-0" : "left-0 bottom-full mb-2"
-                                        )}
-                                    >
-                                        {[
-                                            { id: 'products', label: '产品数据报表', icon: Package },
-                                            { id: 'whitepaper', label: '白皮书统计数据', icon: FileSpreadsheet },
-                                            ...(isSuperAdmin(admin?.role ?? null) ? [
-                                                { id: 'users', label: '用户增长数据', icon: Users },
-                                                { id: 'sessions', label: '诊断请求记录', icon: Activity },
-                                            ] : []),
-                                        ].map((item) => (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => handleExport(item.id)}
-                                                className="group w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition-all active:scale-[0.98]"
-                                            >
-                                                <item.icon className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:text-indigo-500 transition-colors" />
-                                                {item.label}
-                                            </button>
-                                        ))}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                            {showExportMenu && (
+                                <div
+                                    className={cn(
+                                        "absolute z-50 w-44 overflow-hidden rounded-lg border border-brand-charcoal/10 bg-white py-1 shadow-xl",
+                                        collapsed
+                                            ? "left-16 bottom-0"
+                                            : "left-0 bottom-full mb-2",
+                                    )}
+                                >
+                                    {[
+                                        {
+                                            id: "products",
+                                            label: "产品数据报表",
+                                            icon: Package,
+                                        },
+                                        {
+                                            id: "whitepaper",
+                                            label: "白皮书统计数据",
+                                            icon: FileSpreadsheet,
+                                        },
+                                        ...(isSuperAdmin(admin?.role ?? null)
+                                            ? [
+                                                  {
+                                                      id: "users",
+                                                      label: "用户增长数据",
+                                                      icon: Users,
+                                                  },
+                                                  {
+                                                      id: "sessions",
+                                                      label: "诊断请求记录",
+                                                      icon: Activity,
+                                                  },
+                                              ]
+                                            : []),
+                                    ].map((item) => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() =>
+                                                handleExport(item.id)
+                                            }
+                                            className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-brand-charcoal/80 transition-colors hover:bg-brand-charcoal/[0.06] hover:text-brand-charcoal"
+                                        >
+                                            <item.icon className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:text-brand-primary transition-colors" />
+                                            {item.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </nav>
 
-                <div className="px-3 pb-2 pt-2 border-t border-[#1A1A1A]/5">
+                <div className="px-3 pb-2 pt-2 border-t border-brand-charcoal/10">
                     <button
                         onClick={() => setCollapsed(!collapsed)}
                         className={cn(
-                            "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A] transition-colors",
-                            collapsed ? "justify-center" : ""
+                            "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-brand-charcoal/70 hover:bg-brand-charcoal/[0.05] hover:text-brand-charcoal transition-colors",
+                            collapsed ? "justify-center" : "",
                         )}
                         title={collapsed ? "展开" : "收起"}
                     >
-                        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4 mr-3" />}
+                        {collapsed ? (
+                            <ChevronRight className="h-4 w-4" />
+                        ) : (
+                            <ChevronLeft className="h-4 w-4 mr-3" />
+                        )}
                         {!collapsed && <span>收起侧边栏</span>}
                     </button>
                 </div>
 
                 {admin && !collapsed && (
-                    <div className="px-3 pb-3 border-t border-[#1A1A1A]/5">
+                    <div className="px-3 pb-3 border-t border-brand-charcoal/10">
                         <div className="flex items-center gap-3 px-3 pt-3">
-                            <div className="w-8 h-8 rounded-full bg-[#1A1A1A]/10 flex items-center justify-center shrink-0">
-                                <span className="text-xs font-bold text-[#1A1A1A]/60">
-                                    {(admin.name || admin.username).charAt(0).toUpperCase()}
+                            <div className="w-8 h-8 rounded-full bg-brand-charcoal/10 flex items-center justify-center shrink-0">
+                                <span className="text-xs font-bold text-brand-charcoal/70">
+                                    {(admin.name || admin.username)
+                                        .charAt(0)
+                                        .toUpperCase()}
                                 </span>
                             </div>
                             <div className="min-w-0">
-                                <div className="text-sm font-medium text-[#1A1A1A] truncate">
+                                <div className="text-sm font-medium text-brand-charcoal truncate">
                                     {admin.name || admin.username}
                                 </div>
-                                <div className="text-[10px] text-[#1A1A1A]/40 uppercase tracking-wider">{roleLabel}</div>
+                                <div className="text-xs text-brand-charcoal/65">
+                                    {roleLabel}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -274,12 +350,17 @@ export default function AdminSidebar() {
                     <button
                         onClick={handleLogout}
                         className={cn(
-                            "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-red-600 transition-colors",
-                            collapsed ? "justify-center" : ""
+                            "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-brand-charcoal/70 hover:bg-brand-charcoal/[0.05] hover:text-red-600 transition-colors",
+                            collapsed ? "justify-center" : "",
                         )}
                         title={collapsed ? "退出登录" : undefined}
                     >
-                        <LogOut className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-3")} />
+                        <LogOut
+                            className={cn(
+                                "h-4 w-4",
+                                collapsed ? "mr-0" : "mr-3",
+                            )}
+                        />
                         {!collapsed && <span>退出登录</span>}
                     </button>
                 </div>

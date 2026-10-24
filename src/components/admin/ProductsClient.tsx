@@ -1,86 +1,257 @@
 "use client";
 
-import { adminFetch } from "@/lib/admin-fetch";
-import { useState, memo, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/Toast";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
-import {
-    Edit,
-    Trash2,
-    Plus,
-    Eye,
-    EyeOff,
-    Star,
-    Loader2,
-    CheckSquare,
-    Square,
-    Filter,
-    ChevronDown,
-    ImageOff,
-    Search,
-} from "lucide-react";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { ProductFormModal } from "./ProductFormModal";
-import { PaginationBar } from "@/components/ui/PaginationBar";
-import { SerializedProduct } from "@/types/product";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Edit, ImageOff, Plus, Search, Star, Trash2 } from "lucide-react";
+import { adminFetch } from "@/lib/admin-fetch";
 import { isSuperAdmin } from "@/lib/permissions";
+import { useToast } from "@/components/ui/Toast";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Empty } from "@/components/ui/Empty";
+import { Input } from "@/components/ui/Input";
+import { Pagination } from "@/components/ui/Pagination";
+import { Select } from "@/components/ui/Select";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import {
+    DataTable,
+    IconButton,
+    PageHeader,
+    PanelCard,
+    type Column,
+} from "@/components/admin";
+import { Tooltip } from "@/components/ui/Tooltip";
 
-interface ProductsClientProps {
-    initialProducts: SerializedProduct[];
-    role: string;
-    truncated?: boolean;
+interface Product {
+    id: string;
+    name: string;
+    category: string;
+    price: string;
+    image: string | null;
+    active: boolean;
+    featured: boolean;
+    createdAt: string;
 }
 
-const PAGE_SIZE_OPTIONS = [10, 20, 50];
-const BATCH_SIZE = 100;
+interface PaginationData {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
 
-function chunkIds(ids: string[], size: number): string[][] {
-    const chunks: string[][] = [];
-    for (let i = 0; i < ids.length; i += size) {
-        chunks.push(ids.slice(i, i + size));
+const STATUS_OPTIONS = [
+    { value: "all", label: "全部状态" },
+    { value: "active", label: "已上架" },
+    { value: "inactive", label: "已下架" },
+];
+
+const SORT_OPTIONS = [
+    { value: "createdAt", label: "按创建时间" },
+    { value: "name", label: "按名称" },
+];
+
+export default function ProductsClient({ role }: { role: string }) {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const toast = useToast();
+    const canDelete = isSuperAdmin(role);
+
+    const page = Math.max(1, Number(searchParams.get("page") || 1) || 1);
+    const pageSize = Number(searchParams.get("pageSize") || 10) || 10;
+    const search = searchParams.get("search") || "";
+    const category = searchParams.get("category") || "";
+    const status = searchParams.get("status") || "all";
+    const sort = searchParams.get("sort") || "createdAt";
+    const order = searchParams.get("order") || "desc";
+
+    const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<string[]>([]);
+    const [pagination, setPagination] = useState<PaginationData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState("");
+    const [searchInput, setSearchInput] = useState(search);
+    const [prevSearch, setPrevSearch] = useState(search);
+    if (prevSearch !== search) {
+        setPrevSearch(search);
+        setSearchInput(search);
     }
-    return chunks;
-}
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+    const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+    const abortRef = useRef<AbortController | null>(null);
 
-const ProductRow = memo(function ProductRow({
-    product,
-    isSelected,
-    onSelect,
-    onDelete,
-    onEdit,
-    canDelete
-}: {
-    product: SerializedProduct;
-    isSelected: boolean;
-    onSelect: (id: string) => void;
-    onDelete: (id: string) => void;
-    onEdit: (product: SerializedProduct) => void;
-    canDelete: boolean;
-}) {
-    return (
-        <tr
-            className={`hover:bg-white transition-colors ${isSelected ? 'bg-[#1A1A1A]/[0.02]' : ''}`}
-        >
-            <td className="px-2 py-4 w-10 align-middle">
-                <div className="flex items-center justify-center">
-                    <button
-                        type="button"
-                        onClick={() => onSelect(product.id)}
-                        className="text-[#1A1A1A]/40 hover:text-[#1A1A1A]/60"
-                        aria-label={isSelected ? "取消选择" : "选择"}
-                    >
-                        {isSelected ? (
-                            <CheckSquare className="w-5 h-5 text-[#1A1A1A]" />
-                        ) : (
-                            <Square className="w-5 h-5" />
-                        )}
-                    </button>
-                </div>
-            </td>
-            <td className="px-4 py-4 whitespace-nowrap align-middle">
-                <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-[#E9E9E7] bg-[#1A1A1A]/[0.02] mx-auto sm:mx-0">
-                    {product.image && (product.image.startsWith("/") || product.image.startsWith("http")) ? (
+    const updateParams = useCallback(
+        (updates: Record<string, string | null>) => {
+            const params = new URLSearchParams(searchParams.toString());
+            Object.entries(updates).forEach(([key, value]) => {
+                if (value === null || value === "" || value === "all")
+                    params.delete(key);
+                else params.set(key, value);
+            });
+            if (!("page" in updates)) params.delete("page");
+            router.push(`${pathname}${params.toString() ? `?${params}` : ""}`);
+        },
+        [pathname, router, searchParams],
+    );
+
+    const fetchProducts = useCallback(async () => {
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+        setLoading(true);
+        try {
+            const params = new URLSearchParams({
+                page: String(page),
+                limit: String(pageSize),
+                search,
+                status,
+            });
+            if (category) params.set("category", category);
+            if (sort) params.set("sort", sort);
+            if (order) params.set("order", order);
+            const res = await adminFetch(`/api/admin/products?${params}`, {
+                signal: controller.signal,
+            });
+            if (!res.ok) throw new Error("加载产品列表失败");
+            const data = await res.json();
+            setProducts(data.products || []);
+            setCategories(data.categories || []);
+            setPagination(data.pagination);
+            setSelectedIds([]);
+            setLoadError("");
+        } catch (error) {
+            if (error instanceof Error && error.name === "AbortError") return;
+            setLoadError(
+                error instanceof Error ? error.message : "加载产品列表失败",
+            );
+        } finally {
+            if (abortRef.current === controller) abortRef.current = null;
+            setLoading(false);
+        }
+    }, [page, pageSize, search, category, status, sort, order]);
+
+    useEffect(() => {
+        fetchProducts();
+        return () => abortRef.current?.abort();
+    }, [fetchProducts]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchInput !== search)
+                updateParams({ search: searchInput || null });
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchInput, search, updateParams]);
+
+    useEffect(() => {
+        if (
+            pagination &&
+            pagination.totalPages > 0 &&
+            page > pagination.totalPages
+        ) {
+            updateParams({ page: String(pagination.totalPages) });
+        }
+    }, [page, pagination, updateParams]);
+
+    const runBatchAction = async (action: string, successMessage: string) => {
+        if (selectedIds.length === 0) return;
+        setActionLoading(action);
+        try {
+            const res = await adminFetch("/api/admin/products/batch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ids: selectedIds, action }),
+            });
+            if (!res.ok) {
+                const payload = await res.json().catch(() => null);
+                throw new Error(payload?.error || "操作失败");
+            }
+            toast.success(successMessage);
+            await fetchProducts();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "操作失败");
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        setActionLoading("delete");
+        try {
+            const res = await adminFetch(
+                `/api/admin/products/${deleteTarget.id}`,
+                {
+                    method: "DELETE",
+                },
+            );
+            if (!res.ok) throw new Error("删除失败");
+            toast.success("产品已删除");
+            setDeleteTarget(null);
+            await fetchProducts();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "删除失败");
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const allSelected =
+        products.length > 0 && selectedIds.length === products.length;
+    const someSelected = selectedIds.length > 0 && !allSelected;
+
+    const columns: Column<Product>[] = [
+        {
+            key: "select",
+            title: (
+                <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => {
+                        if (el) el.indeterminate = someSelected;
+                    }}
+                    onChange={() =>
+                        setSelectedIds(
+                            allSelected
+                                ? []
+                                : products.map((product) => product.id),
+                        )
+                    }
+                    aria-label="全选本页产品"
+                    className="h-4 w-4 rounded border-brand-charcoal/20 text-brand-primary focus:ring-brand-primary"
+                />
+            ),
+            width: "48px",
+            align: "center",
+            render: (_, product) => (
+                <input
+                    type="checkbox"
+                    checked={selectedIds.includes(product.id)}
+                    onChange={() =>
+                        setSelectedIds((current) =>
+                            current.includes(product.id)
+                                ? current.filter((id) => id !== product.id)
+                                : [...current, product.id],
+                        )
+                    }
+                    aria-label={`选择 ${product.name}`}
+                    className="h-4 w-4 rounded border-brand-charcoal/20 text-brand-primary focus:ring-brand-primary"
+                />
+            ),
+        },
+        {
+            key: "image",
+            title: "图片",
+            width: "80px",
+            align: "center",
+            render: (_, product) => (
+                <div className="mx-auto h-12 w-12 overflow-hidden rounded-lg bg-brand-charcoal/[0.04]">
+                    {product.image ? (
                         <Image
                             src={product.image}
                             alt={product.name}
@@ -88,482 +259,412 @@ const ProductRow = memo(function ProductRow({
                             height={48}
                             className="h-full w-full object-cover"
                             unoptimized={product.image.startsWith("/")}
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                                const fallback = (e.target as HTMLImageElement).parentElement?.querySelector('.img-fallback');
-                                if (fallback) (fallback as HTMLElement).style.display = 'flex';
-                            }}
                         />
-                    ) : null}
-                    <div
-                        className={`img-fallback h-full w-full bg-[#1A1A1A]/5 flex flex-col items-center justify-center text-[#1A1A1A]/30 ${product.image && (product.image.startsWith("/") || product.image.startsWith("http")) ? 'hidden' : 'flex'}`}
-                        aria-label="无图片"
-                    >
-                        <ImageOff className="w-5 h-5" />
-                        <span className="sr-only">无图片</span>
-                    </div>
+                    ) : (
+                        <div className="flex h-full w-full items-center justify-center text-brand-charcoal/55">
+                            <ImageOff className="h-5 w-5" />
+                        </div>
+                    )}
                 </div>
-            </td>
-            <td className="px-4 py-4 align-middle">
-                <div className="flex items-center gap-2">
-                    <div>
-                        <div className="text-sm font-medium text-[#1A1A1A]">{product.name}</div>
-                    </div>
+            ),
+        },
+        {
+            key: "name",
+            title: "产品名称",
+            width: "260px",
+            render: (_, product) => (
+                <div className="flex min-w-0 items-center gap-1.5">
+                    <Link
+                        href={`/admin/products/${product.id}/edit?returnTo=${encodeURIComponent(
+                            `${pathname}${searchParams.toString() ? `?${searchParams}` : ""}`,
+                        )}`}
+                        className="min-w-0 truncate font-medium text-brand-charcoal transition-colors hover:text-brand-primary"
+                        title={product.name}
+                    >
+                        {product.name}
+                    </Link>
                     {product.featured && (
-                        <Star className="w-4 h-4 text-amber-500 fill-amber-500" aria-label="精选置顶" />
+                        <Star
+                            className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400"
+                            aria-label="精选置顶"
+                        />
                     )}
                 </div>
-            </td>
-            <td className="px-4 py-4 whitespace-nowrap align-middle">
-                <span className="inline-flex rounded-full bg-[#1A1A1A]/5 px-2.5 py-0.5 text-xs font-medium text-[#5E5E5E]">
-                    {product.category}
+            ),
+        },
+        {
+            key: "category",
+            title: "分类",
+            width: "130px",
+            render: (_, product) => (
+                <Badge variant="secondary">{product.category}</Badge>
+            ),
+        },
+        {
+            key: "price",
+            title: "价格",
+            width: "100px",
+            render: (_, product) => (
+                <span className="text-sm tabular-nums text-brand-charcoal/70">
+                    {product.price}
                 </span>
-            </td>
-            <td className="px-4 py-4 whitespace-nowrap text-sm text-[#1A1A1A]/60 align-middle">
-                {product.price}
-            </td>
-            <td className="px-4 py-4 whitespace-nowrap align-middle">
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${product.active
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'bg-[#1A1A1A]/5 text-[#1A1A1A]/50'
-                    }`}>
-                    {product.active ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                    {product.active ? '上架' : '下架'}
+            ),
+        },
+        {
+            key: "active",
+            title: "状态",
+            width: "90px",
+            render: (_, product) => (
+                <Badge variant={product.active ? "success" : "secondary"}>
+                    {product.active ? "已上架" : "已下架"}
+                </Badge>
+            ),
+        },
+        {
+            key: "createdAt",
+            title: "创建时间",
+            width: "120px",
+            render: (_, product) => (
+                <span className="whitespace-nowrap text-sm text-brand-charcoal/65">
+                    {new Date(product.createdAt).toLocaleDateString("zh-CN")}
                 </span>
-            </td>
-            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium align-middle">
-                <div className="flex items-center gap-1">
-                    <button
-                        type="button"
-                        onClick={() => onEdit(product)}
-                        className="rounded p-2 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 transition-colors"
-                        aria-label={`编辑 ${product.name}`}
-                    >
-                        <Edit className="h-4 w-4" />
-                    </button>
-                    {canDelete && (
-                        <button
-                            type="button"
-                            onClick={() => onDelete(product.id)}
-                            className="rounded p-2 text-red-600 hover:bg-red-50 transition-colors"
-                            aria-label={`删除 ${product.name}`}
+            ),
+        },
+        {
+            key: "actions",
+            title: "操作",
+            width: "104px",
+            align: "right",
+            render: (_, product) => (
+                <div className="flex items-center justify-end gap-0.5">
+                    <Tooltip content="编辑" side="top">
+                        <IconButton
+                            label={`编辑 ${product.name}`}
+                            href={`/admin/products/${product.id}/edit?returnTo=${encodeURIComponent(
+                                `${pathname}${searchParams.toString() ? `?${searchParams}` : ""}`,
+                            )}`}
                         >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
+                            <Edit className="h-4 w-4" />
+                        </IconButton>
+                    </Tooltip>
+                    {canDelete && (
+                        <Tooltip content="删除" side="top">
+                            <IconButton
+                                label={`删除 ${product.name}`}
+                                variant="danger"
+                                onClick={() => setDeleteTarget(product)}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </IconButton>
+                        </Tooltip>
                     )}
                 </div>
-            </td>
-        </tr>
-    );
-});
+            ),
+        },
+    ];
 
-async function parseErrorMessage(res: Response, fallback: string): Promise<string> {
-    try {
-        const data = await res.json();
-        return data.error || fallback;
-    } catch {
-        return fallback;
-    }
-}
-
-export default function ProductsClient({ initialProducts, role, truncated = false }: ProductsClientProps) {
-    const router = useRouter();
-    const toast = useToast();
-    const canDelete = isSuperAdmin(role);
-    const [products, setProducts] = useState(initialProducts);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [batchLoading, setBatchLoading] = useState<string | null>(null);
-    const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null; batch: boolean }>({
-        show: false,
-        id: null,
-        batch: false
-    });
-
-    const [modalOpen, setModalOpen] = useState(false);
-    const [editingProduct, setEditingProduct] = useState<SerializedProduct | null>(null);
-
-    // Filters
-    const [categoryFilter, setCategoryFilter] = useState<string>("all");
-    const [statusFilter, setStatusFilter] = useState<string>("all");
-
-    // Pagination
-    const [pageSize, setPageSize] = useState<number>(10);
-    const [currentPage, setCurrentPage] = useState<number>(1);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isRefreshing, setIsRefreshing] = useState(false);
-
-    useEffect(() => {
-        setSelectedIds([]);
-        setCurrentPage(1);
-    }, [categoryFilter, statusFilter, pageSize, searchQuery]);
-
-    // Sync products state when initialProducts prop changes (e.g., after router.refresh())
-    useEffect(() => {
-        setProducts(initialProducts);
-        setIsRefreshing(false);
-    }, [initialProducts]);
-
-    // Get unique categories from current products state (not stale initialProducts prop)
-    const categories = [...new Set(products.map(p => p.category))];
-
-    // Filter products
-    const filteredProducts = products.filter(p => {
-        if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
-        if (statusFilter === "active" && !p.active) return false;
-        if (statusFilter === "inactive" && p.active) return false;
-        if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-        return true;
-    });
-
-    // Paginate
-    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
-    const safePage = Math.min(currentPage, totalPages);
-    const paginatedProducts = filteredProducts.slice((safePage - 1) * pageSize, safePage * pageSize);
-
-    const handleToggleSelect = (id: string) => {
-        setSelectedIds(prev =>
-            prev.includes(id)
-                ? prev.filter(i => i !== id)
-                : [...prev, id]
-        );
-    };
-
-    const handleSelectAll = () => {
-        if (selectedIds.length === filteredProducts.length) {
-            setSelectedIds([]);
-        } else {
-            setSelectedIds(filteredProducts.map(p => p.id));
-        }
-    };
-
-    const runBatchAction = async (action: string, fallbackError: string): Promise<boolean> => {
-        if (selectedIds.length === 0) return true;
-
-        let processed = 0;
-        try {
-            for (const ids of chunkIds(selectedIds, BATCH_SIZE)) {
-                const res = await adminFetch('/api/admin/products/batch', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ids, action }),
-                });
-
-                if (!res.ok) {
-                    const message = await parseErrorMessage(res, fallbackError);
-                    toast.error(
-                        processed > 0
-                            ? `已处理 ${processed} 个，后续失败：${message}`
-                            : message
-                    );
-                    return false;
-                }
-                processed += ids.length;
-            }
-            return true;
-        } catch {
-            toast.error(
-                processed > 0
-                    ? `已处理 ${processed} 个，后续发生网络异常`
-                    : "网络异常，请稍后重试"
-            );
-            return false;
-        }
-    };
-
-    const handleBatchAction = async (action: string) => {
-        if (selectedIds.length === 0) {
-            return;
-        }
-
-        setBatchLoading(action);
-        try {
-            const success = await runBatchAction(action, "批量操作失败");
-            setIsRefreshing(true);
-            router.refresh();
-            if (success) {
-                setSelectedIds([]);
-                toast.success(`批量操作完成（${selectedIds.length} 个产品）`);
-            }
-        } finally {
-            setBatchLoading(null);
-        }
-    };
-
-    const handleDelete = async () => {
-        if (deleteConfirm.batch) {
-            if (selectedIds.length === 0) return;
-            const success = await runBatchAction('delete', "批量删除失败");
-            setIsRefreshing(true);
-            router.refresh();
-            if (success) {
-                setSelectedIds([]);
-                toast.success(`批量删除完成（${selectedIds.length} 个产品）`);
-            }
-        } else if (deleteConfirm.id) {
-            try {
-                const res = await adminFetch(`/api/admin/products/${deleteConfirm.id}`, {
-                    method: 'DELETE',
-                });
-
-                if (res.ok) {
-                    setIsRefreshing(true);
-                    router.refresh();
-                } else {
-                    const message = await parseErrorMessage(res, "删除失败");
-                    toast.error(message);
-                }
-            } catch {
-                toast.error("网络异常，请稍后重试");
-            }
-        }
-        setDeleteConfirm({ show: false, id: null, batch: false });
-    };
+    const listReturnTo = `${pathname}${searchParams.toString() ? `?${searchParams}` : ""}`;
 
     return (
-        <div className="relative space-y-6 animate-in fade-in duration-500">
-            {/* Loading Overlay */}
-            {isRefreshing && (
-                <div className="absolute inset-0 z-50 bg-[#FDFBF7]/60 flex items-center justify-center rounded-2xl">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#1A1A1A]/40" />
-                </div>
-            )}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">产品管理</h1>
-                    <p className="text-[#1A1A1A]/50 text-sm mt-1">
-                        共 {products.length} 个产品
-                    </p>
-                </div>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setEditingProduct(null);
-                        setModalOpen(true);
-                    }}
-                    className="flex items-center rounded-lg bg-[#3D4430] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#3D4430]/90 transition-colors"
-                >
-                    <Plus className="mr-2 h-4 w-4" />
-                    添加产品
-                </button>
-            </div>
-
-            {truncated && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    产品数量已达到 1000 条展示上限，仅显示最近创建的产品；更早的产品请通过数据库或后续分页功能查看。
-                </div>
-            )}
-
-            {/* Filter Controls */}
-            <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-sm">
-                <Filter className="w-4 h-4 text-[#1A1A1A]/40" />
-                {/* Category Filter */}
-                <div className="relative min-w-[140px]">
-                    <select
-                        value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
-                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-white hover:bg-[#1A1A1A]/[0.02] hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
+        <div className="flex flex-col gap-5">
+            <PageHeader
+                title="产品管理"
+                description={`管理推荐产品与上架状态${pagination ? ` · 共 ${pagination.total} 个产品` : ""}`}
+                actions={
+                    <Link
+                        href={`/admin/products/new?returnTo=${encodeURIComponent(listReturnTo)}`}
                     >
-                        <option value="all">所有分类</option>
-                        {categories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
-                </div>
+                        <Button
+                            size="sm"
+                            leftIcon={<Plus className="h-4 w-4" />}
+                        >
+                            新增产品
+                        </Button>
+                    </Link>
+                }
+            />
 
-                {/* Status Filter */}
-                <div className="relative min-w-[120px]">
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-white hover:bg-[#1A1A1A]/[0.02] hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
+            <PanelCard>
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+                    <form
+                        className="relative min-w-[200px] flex-1"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            updateParams({ search: searchInput || null });
+                        }}
                     >
-                        <option value="all">所有状态</option>
-                        <option value="active">已上架</option>
-                        <option value="inactive">已下架</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
-                </div>
-
-                {/* Search Input */}
-                <div className="relative flex-1 min-w-[180px] max-w-xs">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40" />
-                    <input
-                        type="text"
-                        placeholder="搜索产品名称..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-3 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-white hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all"
-                    />
-                </div>
-
-                {(categoryFilter !== "all" || statusFilter !== "all") && (
-                    <button
-                        type="button"
-                        onClick={() => { setCategoryFilter("all"); setStatusFilter("all"); }}
-                        className="px-3 py-1.5 text-xs font-medium text-[#1A1A1A]/50 hover:text-[#5E5E5E]"
-                    >
-                        清除筛选
-                    </button>
-                )}
-                <span className="ml-auto text-xs text-[#1A1A1A]/40">
-                    显示 {filteredProducts.length} / {products.length}
-                </span>
-            </div>
-
-            {/* Batch Actions Bar - Floating Liquid Glass */}
-            {selectedIds.length > 0 && (
-                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 p-3 bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-lg animate-in fade-in slide-in-from-bottom-10 duration-500 w-full max-w-3xl ring-1 ring-[#1A1A1A]/5">
-                    <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-3xl -z-10 opacity-70" />
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1A1A1A]/5 rounded-full border border-[#1A1A1A]/10">
-                        <span className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">
-                            已选择 {selectedIds.length} 个产品
-                        </span>
+                        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-brand-charcoal/65" />
+                        <Input
+                            aria-label="搜索产品名称"
+                            placeholder="搜索产品名称"
+                            value={searchInput}
+                            onChange={(event) =>
+                                setSearchInput(event.target.value)
+                            }
+                            className="pl-10"
+                        />
+                    </form>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <Select
+                            aria-label="按分类筛选"
+                            options={[
+                                { value: "", label: "全部分类" },
+                                ...categories.map((item) => ({
+                                    value: item,
+                                    label: item,
+                                })),
+                            ]}
+                            value={category}
+                            onChange={(event) =>
+                                updateParams({
+                                    category: event.target.value || null,
+                                })
+                            }
+                        />
+                        <Select
+                            aria-label="按状态筛选"
+                            options={STATUS_OPTIONS}
+                            value={status}
+                            onChange={(event) =>
+                                updateParams({ status: event.target.value })
+                            }
+                        />
+                        <Select
+                            aria-label="排序字段"
+                            options={SORT_OPTIONS}
+                            value={sort}
+                            onChange={(event) =>
+                                updateParams({ sort: event.target.value })
+                            }
+                        />
+                        <Select
+                            aria-label="排序方向"
+                            options={[
+                                { value: "desc", label: "降序" },
+                                { value: "asc", label: "升序" },
+                            ]}
+                            value={order}
+                            onChange={(event) =>
+                                updateParams({ order: event.target.value })
+                            }
+                        />
                     </div>
-                    <div className="flex-1" />
-                    <button
-                        type="button"
-                        onClick={() => handleBatchAction('activate')}
-                        disabled={batchLoading !== null}
-                        className="px-4 py-2 text-xs font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 hover:bg-emerald-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
+                </div>
+            </PanelCard>
+
+            {selectedIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-brand-primary/15 bg-brand-primary/[0.03] px-4 py-3">
+                    <span className="mr-1 text-sm font-medium text-brand-charcoal">
+                        已选 {selectedIds.length} 项
+                    </span>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                            runBatchAction("activate", "产品已批量上架")
+                        }
+                        loading={actionLoading === "activate"}
                     >
-                        {batchLoading === 'activate' ? <Loader2 className="w-4 h-4 animate-spin" /> : '批量上架'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => handleBatchAction('deactivate')}
-                        disabled={batchLoading !== null}
-                        className="px-4 py-2 text-xs font-bold bg-[#1A1A1A]/5 text-[#5E5E5E] border border-[#1A1A1A]/10 hover:bg-[#1A1A1A]/10 rounded-2xl transition-all shadow-sm active:scale-95"
+                        批量上架
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                            runBatchAction("deactivate", "产品已批量下架")
+                        }
+                        loading={actionLoading === "deactivate"}
                     >
-                        {batchLoading === 'deactivate' ? <Loader2 className="w-4 h-4 animate-spin" /> : '批量下架'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => handleBatchAction('feature')}
-                        disabled={batchLoading !== null}
-                        className="px-4 py-2 text-xs font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 hover:bg-amber-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
+                        批量下架
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                            runBatchAction("feature", "产品已设为精选")
+                        }
+                        loading={actionLoading === "feature"}
                     >
-                        {batchLoading === 'feature' ? <Loader2 className="w-4 h-4 animate-spin" /> : '设为精选置顶'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => handleBatchAction('unfeature')}
-                        disabled={batchLoading !== null}
-                        className="px-4 py-2 text-xs font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 hover:bg-amber-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
+                        设为精选
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                            runBatchAction("unfeature", "产品已取消精选")
+                        }
+                        loading={actionLoading === "unfeature"}
                     >
-                        {batchLoading === 'unfeature' ? <Loader2 className="w-4 h-4 animate-spin" /> : '取消精选置顶'}
-                    </button>
+                        取消精选
+                    </Button>
                     {canDelete && (
-                        <button
-                            type="button"
-                            onClick={() => setDeleteConfirm({ show: true, id: null, batch: true })}
-                            disabled={batchLoading !== null}
-                            className="px-4 py-2 text-xs font-bold bg-rose-500/10 text-rose-700 border border-rose-500/20 hover:bg-rose-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
+                        <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => setBatchDeleteOpen(true)}
+                            disabled={!!actionLoading}
                         >
                             批量删除
-                        </button>
+                        </Button>
                     )}
                     <button
                         type="button"
                         onClick={() => setSelectedIds([])}
-                        className="px-4 py-2 text-xs font-bold text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
+                        className="ml-auto text-sm text-brand-charcoal/65 hover:text-brand-charcoal"
                     >
-                        取消
+                        取消选择
                     </button>
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-2xl border border-[#1A1A1A]/10 bg-white shadow-sm">
-                <table className="min-w-full divide-y divide-[#E9E9E7]" aria-label="产品列表">
-                    <thead className="bg-[#1A1A1A]/[0.02] border-b border-[#1A1A1A]/5">
-                        <tr>
-                            <th scope="col" className="px-2 py-4 w-10 align-middle">
-                                <div className="flex items-center justify-center">
-                                    <button
-                                        type="button"
-                                        onClick={handleSelectAll}
-                                        className="text-[#1A1A1A]/40 hover:text-[#1A1A1A]/60"
-                                        aria-label={selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? "取消全选" : "全选"}
-                                    >
-                                        {selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
-                                            <CheckSquare className="w-5 h-5 text-[#1A1A1A]" />
+            {loadError ? (
+                <PanelCard>
+                    <Empty
+                        title="加载产品失败"
+                        description={loadError}
+                        action={
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={fetchProducts}
+                            >
+                                重试
+                            </Button>
+                        }
+                    />
+                </PanelCard>
+            ) : (
+                <>
+                    <DataTable
+                        columns={columns}
+                        tableLayout="fixed"
+                        minWidth="1080px"
+                        data={products}
+                        loading={loading}
+                        rowKey="id"
+                        emptyText={
+                            search ? `没有匹配「${search}」的产品` : "暂无产品"
+                        }
+                        mobileCard={(product) => (
+                            <div className="space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-brand-charcoal/[0.04]">
+                                        {product.image ? (
+                                            <Image
+                                                src={product.image}
+                                                alt={product.name}
+                                                width={48}
+                                                height={48}
+                                                className="h-full w-full object-cover"
+                                                unoptimized={product.image.startsWith(
+                                                    "/",
+                                                )}
+                                            />
                                         ) : (
-                                            <Square className="w-5 h-5" />
+                                            <div className="flex h-full w-full items-center justify-center text-brand-charcoal/55">
+                                                <ImageOff className="h-5 w-5" />
+                                            </div>
                                         )}
-                                    </button>
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate font-medium text-brand-charcoal">
+                                            {product.name}
+                                        </p>
+                                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                            <Badge variant="secondary">
+                                                {product.category}
+                                            </Badge>
+                                            <Badge
+                                                variant={
+                                                    product.active
+                                                        ? "success"
+                                                        : "secondary"
+                                                }
+                                            >
+                                                {product.active
+                                                    ? "已上架"
+                                                    : "已下架"}
+                                            </Badge>
+                                            {product.featured && (
+                                                <Badge variant="warning">
+                                                    精选
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">图片</th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">名称</th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">分类</th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">价格</th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">状态</th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-[#E9E9E7]">
-                        {paginatedProducts.map((product) => (
-                            <ProductRow
-                                key={product.id}
-                                product={product}
-                                isSelected={selectedIds.includes(product.id)}
-                                onSelect={handleToggleSelect}
-                                onDelete={(id) => setDeleteConfirm({ show: true, id, batch: false })}
-                                onEdit={(p) => {
-                                    setEditingProduct(p);
-                                    setModalOpen(true);
-                                }}
-                                canDelete={canDelete}
-                            />
-                        ))}
-                        {paginatedProducts.length === 0 && (
-                            <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-[#1A1A1A]/50">
-                                    暂无产品，点击&quot;添加产品&quot;开始。
-                                </td>
-                            </tr>
+                                <div className="flex items-center justify-between border-t border-brand-charcoal/10 pt-2">
+                                    <span className="text-sm tabular-nums text-brand-charcoal/70">
+                                        {product.price}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <IconButton
+                                            label={`编辑 ${product.name}`}
+                                            href={`/admin/products/${product.id}/edit?returnTo=${encodeURIComponent(
+                                                `${pathname}${searchParams.toString() ? `?${searchParams}` : ""}`,
+                                            )}`}
+                                        >
+                                            <Edit className="h-4 w-4" />
+                                        </IconButton>
+                                        {canDelete && (
+                                            <IconButton
+                                                label={`删除 ${product.name}`}
+                                                variant="danger"
+                                                onClick={() =>
+                                                    setDeleteTarget(product)
+                                                }
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </IconButton>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         )}
-                    </tbody>
-                </table>
-            </div>
+                    />
 
-            <PaginationBar
-                page={safePage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                total={filteredProducts.length}
-                limit={pageSize}
-                pageSizeOptions={PAGE_SIZE_OPTIONS}
-                pageSize={pageSize}
-                onPageSizeChange={setPageSize}
-                disabled={isRefreshing}
-            />
+                    {pagination && pagination.totalPages > 1 && (
+                        <Pagination
+                            page={pagination.page}
+                            pageSize={pagination.limit ?? pageSize}
+                            total={pagination.total}
+                            onChange={(nextPage) =>
+                                updateParams({ page: String(nextPage) })
+                            }
+                            onPageSizeChange={(size) =>
+                                updateParams({
+                                    pageSize: String(size),
+                                    page: "1",
+                                })
+                            }
+                        />
+                    )}
+                </>
+            )}
 
-            {/* Delete Confirm Modal */}
             <ConfirmModal
-                isOpen={deleteConfirm.show}
-                onClose={() => setDeleteConfirm({ show: false, id: null, batch: false })}
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
                 onConfirm={handleDelete}
-                title="确认删除"
-                message={
-                    deleteConfirm.batch
-                        ? `确定要删除选中的 ${selectedIds.length} 个产品吗？此操作无法撤销。`
-                        : '确定要删除此产品吗？此操作无法撤销。'
-                }
-                confirmText="删除"
+                title="删除产品"
+                message={`确定要删除「${deleteTarget?.name ?? ""}」吗？此操作不可恢复。`}
+                confirmText="确认删除"
                 variant="danger"
+                loading={actionLoading === "delete"}
             />
 
-            {/* Product Form Modal */}
-            <ProductFormModal
-                isOpen={modalOpen}
-                onClose={() => setModalOpen(false)}
-                product={editingProduct}
-                onSuccess={() => {
-                    setIsRefreshing(true);
-                    router.refresh();
-                    setSelectedIds([]);
+            <ConfirmModal
+                isOpen={batchDeleteOpen}
+                onClose={() => setBatchDeleteOpen(false)}
+                onConfirm={async () => {
+                    await runBatchAction("delete", "选中产品已删除");
+                    setBatchDeleteOpen(false);
                 }}
+                title="批量删除产品"
+                message={`确定要删除选中的 ${selectedIds.length} 个产品吗？此操作不可恢复。`}
+                confirmText="确认删除"
+                variant="danger"
+                loading={actionLoading === "delete"}
             />
         </div>
     );

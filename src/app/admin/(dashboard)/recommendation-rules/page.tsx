@@ -1,15 +1,25 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
-import { useState, useEffect, useCallback } from "react";
-import {
-    Loader2, Trash2, Plus, Sparkles, Pencil
-} from "lucide-react";
+import { isSuperAdmin } from "@/lib/permissions";
 import { SKIN_TYPE_OPTIONS } from "@/types/product";
 import { useToast } from "@/components/ui/Toast";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Switch } from "@/components/ui/Switch";
+import { Textarea } from "@/components/ui/Textarea";
 import { AdminModal } from "@/components/ui/AdminModal";
-import { isSuperAdmin } from "@/lib/permissions";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import {
+    DataTable,
+    FormActions,
+    IconButton,
+    PageHeader,
+    type Column,
+} from "@/components/admin";
 
 interface Product {
     id: string;
@@ -28,18 +38,66 @@ interface RecommendationRule {
     createdAt: string;
 }
 
-// 肤质选项统一从 @/types/product 引入，确保与产品表单一致
-const CONCERNS = ["acne", "wrinkles", "dark spots", "redness", "pores", "dullness", "blackheads", "dryness"];
-const PERSONAS = [
-    { value: "sensitive", label: "敏敏派" },
-    { value: "minimalist", label: "极简派" },
-    { value: "luxury", label: "奢华派" },
-    { value: "ageless", label: "冻龄派" },
-    { value: "desert", label: "沙漠派" },
-    { value: "oily", label: "油条派" },
-    { value: "combination", label: "混合派" },
-    { value: "guardian", label: "守护派" },
+const CONCERNS = [
+    "acne",
+    "wrinkles",
+    "dark spots",
+    "redness",
+    "pores",
+    "dullness",
+    "blackheads",
+    "dryness",
 ];
+
+const PERSONAS = [
+    { value: "sensitive", label: "敏感型" },
+    { value: "minimalist", label: "极简型" },
+    { value: "luxury", label: "奢华型" },
+    { value: "ageless", label: "抗老型" },
+    { value: "desert", label: "沙漠型" },
+    { value: "oily", label: "油性型" },
+    { value: "combination", label: "混合型" },
+    { value: "guardian", label: "守护型" },
+];
+
+function conditionBadges(rule: RecommendationRule) {
+    const conditions = rule.conditions as {
+        skinType?: string[];
+        concern?: string[];
+        persona?: string[];
+    };
+    const items: {
+        key: string;
+        label: string;
+        variant: "secondary" | "primary" | "warning";
+    }[] = [];
+    conditions.skinType?.forEach((value) =>
+        items.push({
+            key: `skin-${value}`,
+            label:
+                SKIN_TYPE_OPTIONS.find((option) => option.value === value)
+                    ?.label ?? value,
+            variant: "secondary",
+        }),
+    );
+    conditions.concern?.forEach((value) =>
+        items.push({
+            key: `concern-${value}`,
+            label: value,
+            variant: "primary",
+        }),
+    );
+    conditions.persona?.forEach((value) =>
+        items.push({
+            key: `persona-${value}`,
+            label:
+                PERSONAS.find((option) => option.value === value)?.label ??
+                value,
+            variant: "warning",
+        }),
+    );
+    return items;
+}
 
 export default function RecommendationRulesPage() {
     const toast = useToast();
@@ -47,13 +105,16 @@ export default function RecommendationRulesPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [productsTruncated, setProductsTruncated] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [role, setRole] = useState("");
     const [showModal, setShowModal] = useState(false);
-    const [editingRule, setEditingRule] = useState<RecommendationRule | null>(null);
+    const [editingRule, setEditingRule] = useState<RecommendationRule | null>(
+        null,
+    );
     const [submitting, setSubmitting] = useState(false);
-    const [deleteTarget, setDeleteTarget] = useState<RecommendationRule | null>(null);
-    const [role, setRole] = useState<string>("");
+    const [deleteTarget, setDeleteTarget] = useState<RecommendationRule | null>(
+        null,
+    );
 
-    // Form state
     const [formName, setFormName] = useState("");
     const [formPriority, setFormPriority] = useState(0);
     const [formMessage, setFormMessage] = useState("");
@@ -64,39 +125,35 @@ export default function RecommendationRulesPage() {
     const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
 
     const fetchRules = useCallback(async () => {
-        try {
-            const res = await adminFetch("/api/admin/recommendation-rules");
-            if (!res.ok) throw new Error("Failed to fetch");
-            const data = await res.json();
-            setRules(data);
-        } catch {
-        }
+        const res = await adminFetch("/api/admin/recommendation-rules");
+        if (!res.ok) throw new Error("加载推荐规则失败");
+        setRules(await res.json());
     }, []);
 
     const fetchProducts = useCallback(async () => {
-        try {
-            const res = await adminFetch("/api/admin/products?limit=500");
-            if (!res.ok) throw new Error("Failed to fetch");
-            const data = await res.json();
-            const list = data.products || [];
-            setProducts(list);
-            setProductsTruncated(list.length >= 500);
-        } catch {
-            // Silent fail
-        }
+        const res = await adminFetch("/api/admin/products?limit=500");
+        if (!res.ok) throw new Error("加载产品失败");
+        const data = await res.json();
+        const list = data.products || [];
+        setProducts(list);
+        setProductsTruncated(list.length >= 500);
     }, []);
 
     useEffect(() => {
-        // Intentional mount-only data fetch: setLoading(false) runs in promise finally,
-        // not synchronously during render.
-        Promise.all([fetchRules(), fetchProducts()]).finally(() => setLoading(false));
+        Promise.all([fetchRules(), fetchProducts()])
+            .catch((error) =>
+                toast.error(
+                    error instanceof Error ? error.message : "加载失败",
+                ),
+            )
+            .finally(() => setLoading(false));
         adminFetch("/api/admin/auth/me")
             .then((res) => (res.ok ? res.json() : null))
             .then((data: { user?: { role?: string } } | null) => {
                 if (data?.user?.role) setRole(data.user.role);
             })
             .catch(() => {});
-    }, [fetchRules, fetchProducts]);
+    }, [fetchRules, fetchProducts, toast]);
 
     const resetForm = () => {
         setFormName("");
@@ -116,33 +173,47 @@ export default function RecommendationRulesPage() {
     };
 
     const openEdit = (rule: RecommendationRule) => {
+        const conditions = rule.conditions as {
+            skinType?: string[];
+            concern?: string[];
+            persona?: string[];
+        };
         setEditingRule(rule);
         setFormName(rule.name);
         setFormPriority(rule.priority);
         setFormMessage(rule.message || "");
         setFormActive(rule.active);
-        const cond = rule.conditions as { skinType?: string[]; concern?: string[]; persona?: string[] };
-        setSelectedSkinTypes(cond.skinType || []);
-        setSelectedConcerns(cond.concern || []);
-        setSelectedPersonas(cond.persona || []);
+        setSelectedSkinTypes(conditions.skinType || []);
+        setSelectedConcerns(conditions.concern || []);
+        setSelectedPersonas(conditions.persona || []);
         setSelectedProductIds(rule.productIds || []);
         setShowModal(true);
     };
 
-    const toggleSelection = (value: string, list: string[], setList: (v: string[]) => void) => {
-        if (list.includes(value)) {
-            setList(list.filter(v => v !== value));
-        } else {
-            setList([...list, value]);
-        }
+    const toggleSelection = (
+        value: string,
+        list: string[],
+        setList: (values: string[]) => void,
+    ) => {
+        setList(
+            list.includes(value)
+                ? list.filter((item) => item !== value)
+                : [...list, value],
+        );
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
         if (!formName.trim()) {
+            toast.error("请填写规则名称");
             return;
         }
-        if (selectedSkinTypes.length === 0 && selectedConcerns.length === 0 && selectedPersonas.length === 0) {
+        if (
+            selectedSkinTypes.length === 0 &&
+            selectedConcerns.length === 0 &&
+            selectedPersonas.length === 0
+        ) {
+            toast.error("请至少选择一个适用条件");
             return;
         }
 
@@ -152,397 +223,478 @@ export default function RecommendationRulesPage() {
                 name: formName.trim(),
                 priority: Number(formPriority),
                 conditions: {
-                    ...(selectedSkinTypes.length > 0 && { skinType: selectedSkinTypes }),
-                    ...(selectedConcerns.length > 0 && { concern: selectedConcerns }),
-                    ...(selectedPersonas.length > 0 && { persona: selectedPersonas }),
+                    ...(selectedSkinTypes.length > 0 && {
+                        skinType: selectedSkinTypes,
+                    }),
+                    ...(selectedConcerns.length > 0 && {
+                        concern: selectedConcerns,
+                    }),
+                    ...(selectedPersonas.length > 0 && {
+                        persona: selectedPersonas,
+                    }),
                 },
                 message: formMessage.trim() || undefined,
                 active: formActive,
                 productIds: selectedProductIds,
             };
-
-            if (editingRule) {
-                const res = await adminFetch(`/api/admin/recommendation-rules/${editingRule.id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body),
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error || "更新失败");
-                }
-            } else {
-                const res = await adminFetch("/api/admin/recommendation-rules", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body),
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error || "创建失败");
-                }
+            const url = editingRule
+                ? `/api/admin/recommendation-rules/${editingRule.id}`
+                : "/api/admin/recommendation-rules";
+            const res = await adminFetch(url, {
+                method: editingRule ? "PUT" : "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) {
+                const payload = await res.json().catch(() => null);
+                throw new Error(payload?.error || "保存失败");
             }
             setShowModal(false);
             resetForm();
             toast.success(editingRule ? "规则已更新" : "规则已创建");
-            fetchRules();
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "操作失败";
-            toast.error(message);
+            await fetchRules();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "保存失败");
         } finally {
             setSubmitting(false);
         }
     };
 
-    const toggleActive = async (id: string, active: boolean) => {
-        const previousRules = rules;
-        // 乐观更新
-        setRules(prev => prev.map(r => r.id === id ? { ...r, active: !active } : r));
+    const toggleActive = async (rule: RecommendationRule) => {
+        const previous = rules;
+        setRules((current) =>
+            current.map((item) =>
+                item.id === rule.id ? { ...item, active: !item.active } : item,
+            ),
+        );
         try {
-            const res = await adminFetch(`/api/admin/recommendation-rules/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ active: !active })
-            });
-            if (!res.ok) throw new Error("Failed to update");
+            const res = await adminFetch(
+                `/api/admin/recommendation-rules/${rule.id}`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ active: !rule.active }),
+                },
+            );
+            if (!res.ok) throw new Error("状态更新失败");
         } catch {
-            // API 失败时回滚到之前的状态
-            setRules(previousRules);
-            toast.error("状态更新失败，请重试");
+            setRules(previous);
+            toast.error("状态更新失败，请稍后重试");
         }
     };
 
-    const handleDeleteConfirm = async () => {
+    const handleDelete = async () => {
         if (!deleteTarget) return;
-        const id = deleteTarget.id;
         try {
-            const res = await adminFetch(`/api/admin/recommendation-rules/${id}`, {
-                method: "DELETE"
-            });
-            if (!res.ok) throw new Error("Failed to delete");
-            setRules(prev => prev.filter(r => r.id !== id));
+            const res = await adminFetch(
+                `/api/admin/recommendation-rules/${deleteTarget.id}`,
+                {
+                    method: "DELETE",
+                },
+            );
+            if (!res.ok) throw new Error("删除失败");
+            setRules((current) =>
+                current.filter((item) => item.id !== deleteTarget.id),
+            );
             toast.success("规则已删除");
         } catch {
-            toast.error("删除失败，请重试");
+            toast.error("删除失败，请稍后重试");
         } finally {
             setDeleteTarget(null);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#3D4430]" />
-            </div>
-        );
-    }
+    const columns: Column<RecommendationRule>[] = [
+        {
+            key: "name",
+            title: "规则",
+            render: (_, rule) => (
+                <div className="min-w-0">
+                    <p
+                        className="truncate font-medium text-brand-charcoal"
+                        title={rule.name}
+                    >
+                        {rule.name}
+                    </p>
+                    {rule.message && (
+                        <p
+                            className="mt-0.5 truncate text-xs text-brand-charcoal/65"
+                            title={rule.message}
+                        >
+                            {rule.message}
+                        </p>
+                    )}
+                </div>
+            ),
+        },
+        {
+            key: "priority",
+            title: "优先级",
+            width: "92px",
+            render: (_, rule) => (
+                <span className="font-mono text-sm tabular-nums text-brand-charcoal/70">
+                    {rule.priority}
+                </span>
+            ),
+        },
+        {
+            key: "conditions",
+            title: "适用条件",
+            render: (_, rule) => {
+                const items = conditionBadges(rule);
+                return items.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                        {items.map((item) => (
+                            <Badge key={item.key} variant={item.variant}>
+                                {item.label}
+                            </Badge>
+                        ))}
+                    </div>
+                ) : (
+                    <span className="text-sm text-brand-charcoal/55">—</span>
+                );
+            },
+        },
+        {
+            key: "products",
+            title: "关联产品",
+            width: "100px",
+            render: (_, rule) => (
+                <span className="text-sm text-brand-charcoal/70">
+                    {rule.productIds.length} 个
+                </span>
+            ),
+        },
+        {
+            key: "active",
+            title: "启用",
+            width: "76px",
+            render: (_, rule) => (
+                <Switch
+                    checked={rule.active}
+                    onChange={() => toggleActive(rule)}
+                    aria-label={`启用 ${rule.name}`}
+                />
+            ),
+        },
+        {
+            key: "actions",
+            title: "操作",
+            width: "112px",
+            align: "right",
+            render: (_, rule) => (
+                <div className="flex items-center justify-end gap-0.5">
+                    <IconButton
+                        label={`编辑 ${rule.name}`}
+                        onClick={() => openEdit(rule)}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </IconButton>
+                    {isSuperAdmin(role) && (
+                        <IconButton
+                            label={`删除 ${rule.name}`}
+                            variant="danger"
+                            onClick={() => setDeleteTarget(rule)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </IconButton>
+                    )}
+                </div>
+            ),
+        },
+    ];
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-serif text-[#1A1A1A]">推荐规则</h1>
-                    <p className="text-sm text-[#5E5E5E] mt-1">
-                        管理肤质分析与产品推荐的关联规则
-                    </p>
-                </div>
-                <button
-                    onClick={openCreate}
-                    className="flex items-center gap-2 rounded-full bg-[#1A1A1A] px-5 py-2.5 text-xs font-bold tracking-widest text-white hover:bg-[#3D4430] transition-all uppercase"
-                >
-                    <Plus className="w-4 h-4" />
-                    新建规则
-                </button>
-            </div>
+        <div className="flex flex-col gap-5">
+            <PageHeader
+                title="推荐规则"
+                description="配置肤质、诉求与人群标签对应的产品推荐优先级"
+                actions={
+                    <Button
+                        size="sm"
+                        leftIcon={<Plus className="h-4 w-4" />}
+                        onClick={openCreate}
+                    >
+                        新建规则
+                    </Button>
+                }
+            />
 
             {productsTruncated && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    可选产品已达到 500 条上限，仅显示最近创建的产品；更早的产品暂时无法在规则中关联。
+                    可选产品已达到 500 个上限，更多产品暂时无法在规则中选择。
                 </div>
             )}
 
-            <div className="bg-white rounded-xl border border-[#3D4430]/10 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-[#F8F7F4] text-xs font-bold tracking-wider text-[#5E5E5E] uppercase">
-                        <tr>
-                            <th className="px-6 py-4">规则名称</th>
-                            <th className="px-6 py-4">优先级</th>
-                            <th className="px-6 py-4">条件</th>
-                            <th className="px-6 py-4">关联产品</th>
-                            <th className="px-6 py-4">状态</th>
-                            <th className="px-6 py-4 text-right">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#3D4430]/5">
-                        {rules.length === 0 && (
-                            <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center text-sm text-[#5E5E5E]">
-                                    <Sparkles className="w-8 h-8 mx-auto mb-3 text-[#3D4430]/20" />
-                                    暂无推荐规则
-                                </td>
-                            </tr>
-                        )}
-                        {rules.map(rule => (
-                            <tr key={rule.id} className="hover:bg-[#F8F7F4]/50 transition-colors">
-                                <td className="px-6 py-4">
-                                    <div className="font-medium text-sm text-[#1A1A1A]">{rule.name}</div>
-                                    {rule.message && (
-                                        <div className="text-xs text-[#5E5E5E] mt-0.5">{rule.message}</div>
-                                    )}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className="inline-flex items-center rounded-md bg-[#3D4430]/5 px-2.5 py-0.5 text-xs font-medium text-[#3D4430]">
-                                        {rule.priority}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex flex-wrap gap-1 max-w-xs">
-                                        {(rule.conditions as { skinType?: string[] })?.skinType?.map(s => (
-                                            <span key={s} className="px-1.5 py-0.5 text-[10px] bg-blue-50 text-blue-700 rounded">{s}</span>
-                                        ))}
-                                        {(rule.conditions as { concern?: string[] })?.concern?.map(c => (
-                                            <span key={c} className="px-1.5 py-0.5 text-[10px] bg-purple-50 text-purple-700 rounded">{c}</span>
-                                        ))}
-                                        {(rule.conditions as { persona?: string[] })?.persona?.map(r => (
-                                            <span key={r} className="px-1.5 py-0.5 text-[10px] bg-amber-50 text-amber-700 rounded">
-                                                {PERSONAS.find(p => p.value === r)?.label || r}
-                                            </span>
-                                        ))}
-                                        {!((rule.conditions as { skinType?: string[] })?.skinType?.length || (rule.conditions as { concern?: string[] })?.concern?.length || (rule.conditions as { persona?: string[] })?.persona?.length) && (
-                                            <span className="text-xs text-[#1A1A1A]/40">—</span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-[#5E5E5E]">
-                                    {rule.productIds.length} 个产品
-                                </td>
-                                <td className="px-6 py-4">
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={rule.active}
-                                            onChange={() => toggleActive(rule.id, rule.active)}
-                                            className="sr-only peer"
-                                        />
-                                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#3D4430]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#3D4430]"></div>
-                                    </label>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    <div className="flex items-center justify-end gap-2">
-                                        <button
-                                            onClick={() => openEdit(rule)}
-                                            className="inline-flex items-center gap-1.5 text-xs text-[#5E5E5E] hover:text-[#1A1A1A] transition-colors"
-                                        >
-                                            <Pencil className="w-3.5 h-3.5" />
-                                            编辑
-                                        </button>
-                                        {isSuperAdmin(role) && (
-                                            <button
-                                                onClick={() => setDeleteTarget(rule)}
-                                                className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 transition-colors"
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                                删除
-                                            </button>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Delete Confirmation */}
-            <ConfirmModal
-                isOpen={!!deleteTarget}
-                title="确认删除"
-                message={`确定要删除推荐规则 "${deleteTarget?.name}" 吗？此操作不可撤销。`}
-                confirmText="删除"
-                variant="danger"
-                onConfirm={handleDeleteConfirm}
-                onClose={() => setDeleteTarget(null)}
+            <DataTable
+                columns={columns}
+                tableLayout="fixed"
+                minWidth="860px"
+                data={rules}
+                loading={loading}
+                rowKey="id"
+                emptyText="暂无推荐规则"
+                mobileCard={(rule) => (
+                    <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="truncate font-medium text-brand-charcoal">
+                                    {rule.name}
+                                </p>
+                                {rule.message && (
+                                    <p className="mt-0.5 truncate text-xs text-brand-charcoal/65">
+                                        {rule.message}
+                                    </p>
+                                )}
+                            </div>
+                            <Switch
+                                checked={rule.active}
+                                onChange={() => toggleActive(rule)}
+                                aria-label={`启用 ${rule.name}`}
+                            />
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                            {conditionBadges(rule).map((item) => (
+                                <Badge key={item.key} variant={item.variant}>
+                                    {item.label}
+                                </Badge>
+                            ))}
+                        </div>
+                        <div className="flex items-center justify-between gap-2 border-t border-brand-charcoal/10 pt-2 text-xs text-brand-charcoal/65">
+                            <span>
+                                优先级 {rule.priority} ·{" "}
+                                {rule.productIds.length} 个产品
+                            </span>
+                            <div className="flex items-center gap-1">
+                                <IconButton
+                                    label={`编辑 ${rule.name}`}
+                                    onClick={() => openEdit(rule)}
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                </IconButton>
+                                {isSuperAdmin(role) && (
+                                    <IconButton
+                                        label={`删除 ${rule.name}`}
+                                        variant="danger"
+                                        onClick={() => setDeleteTarget(rule)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </IconButton>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             />
 
-            {/* Create/Edit Modal */}
             <AdminModal
                 isOpen={showModal}
-                onClose={() => { setShowModal(false); resetForm(); }}
-                title={editingRule ? "编辑规则" : "新建推荐规则"}
+                onClose={() => {
+                    setShowModal(false);
+                    resetForm();
+                }}
+                title={editingRule ? "编辑推荐规则" : "新建推荐规则"}
                 titleId="recommendation-rule-modal-title"
-                subtitle={editingRule ? "修改推荐规则信息" : "创建肤质与产品的关联规则"}
+                subtitle="配置规则条件、优先级与推荐产品"
                 maxWidth="lg"
                 disabled={submitting}
             >
-                <form onSubmit={handleSubmit}>
-                    <div className="space-y-5">
-                        <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
-                                规则名称 <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={formName}
-                                onChange={(e) => setFormName(e.target.value)}
-                                placeholder="例如：油性肌肤痘痘护理"
-                                required
-                                className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#3D4430]/40 transition-colors"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
-                                优先级
-                            </label>
-                            <input
-                                type="number"
-                                value={formPriority}
-                                onChange={(e) => setFormPriority(Number(e.target.value))}
-                                className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] focus:outline-none focus:border-[#3D4430]/40 transition-colors bg-white"
-                            />
-                            <p className="text-xs text-[#1A1A1A]/40 mt-1">数字越大优先级越高</p>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
-                                肤质条件
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                                {SKIN_TYPE_OPTIONS.map((opt) => (
-                                    <button
-                                        key={opt.value}
-                                        type="button"
-                                        onClick={() => toggleSelection(opt.value, selectedSkinTypes, setSelectedSkinTypes)}
-                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                                            selectedSkinTypes.includes(opt.value)
-                                                ? "bg-[#3D4430] text-white"
-                                                : "bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10"
-                                        }`}
-                                    >
-                                        {opt.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
-                                肌肤问题
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                                {CONCERNS.map(concern => (
-                                    <button
-                                        key={concern}
-                                        type="button"
-                                        onClick={() => toggleSelection(concern, selectedConcerns, setSelectedConcerns)}
-                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                                            selectedConcerns.includes(concern)
-                                                ? "bg-[#3D4430] text-white"
-                                                : "bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10"
-                                        }`}
-                                    >
-                                        {concern}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
-                                IP 形象（8 派）
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                                {PERSONAS.map(p => (
-                                    <button
-                                        key={p.value}
-                                        type="button"
-                                        onClick={() => toggleSelection(p.value, selectedPersonas, setSelectedPersonas)}
-                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                                            selectedPersonas.includes(p.value)
-                                                ? "bg-[#3D4430] text-white"
-                                                : "bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10"
-                                        }`}
-                                    >
-                                        {p.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
-                                推荐语
-                            </label>
-                            <textarea
-                                value={formMessage}
-                                onChange={(e) => setFormMessage(e.target.value)}
-                                placeholder="输入推荐说明文字"
-                                rows={3}
-                                className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#3D4430]/40 transition-colors resize-none"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
-                                关联产品
-                            </label>
-                            <div className="max-h-48 overflow-y-auto rounded-xl border border-[#E9E9E7] bg-white p-2 space-y-1">
-                                {products.length === 0 ? (
-                                    <p className="text-xs text-[#1A1A1A]/40 px-2 py-1">暂无产品</p>
-                                ) : (
-                                    products.map(product => (
-                                        <label
-                                            key={product.id}
-                                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[#1A1A1A]/5 cursor-pointer transition-colors"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedProductIds.includes(product.id)}
-                                                onChange={() => toggleSelection(product.id, selectedProductIds, setSelectedProductIds)}
-                                                className="rounded border-[#E9E9E7] text-[#3D4430] focus:ring-[#3D4430]"
-                                            />
-                                            <span className="text-sm text-[#5E5E5E]">{product.name}</span>
-                                            <span className="text-xs text-[#1A1A1A]/40 ml-auto">{product.category}</span>
-                                        </label>
-                                    ))
-                                )}
-                            </div>
-                            <p className="text-xs text-[#1A1A1A]/40 mt-1">
-                                已选择 {selectedProductIds.length} 个产品
-                            </p>
-                        </div>
-
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={formActive}
-                                onChange={(e) => setFormActive(e.target.checked)}
-                                className="rounded border-[#E9E9E7] text-[#3D4430] focus:ring-[#3D4430]"
-                            />
-                            <span className="text-sm text-[#5E5E5E]">启用此规则</span>
-                        </label>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]">
+                        <Input
+                            label="规则名称"
+                            value={formName}
+                            onChange={(event) =>
+                                setFormName(event.target.value)
+                            }
+                            placeholder="例如：敏感肌修护推荐"
+                            required
+                        />
+                        <Input
+                            label="优先级"
+                            type="number"
+                            value={formPriority}
+                            onChange={(event) =>
+                                setFormPriority(Number(event.target.value))
+                            }
+                            hint="数值越大越优先"
+                        />
                     </div>
 
-                    <div className="flex gap-3 mt-8">
-                        <button
+                    <div>
+                        <p className="mb-2 text-sm font-medium text-brand-charcoal/80">
+                            肤质
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {SKIN_TYPE_OPTIONS.map((option) => (
+                                <Button
+                                    key={option.value}
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                        selectedSkinTypes.includes(option.value)
+                                            ? "primary"
+                                            : "outline"
+                                    }
+                                    onClick={() =>
+                                        toggleSelection(
+                                            option.value,
+                                            selectedSkinTypes,
+                                            setSelectedSkinTypes,
+                                        )
+                                    }
+                                >
+                                    {option.label}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="mb-2 text-sm font-medium text-brand-charcoal/80">
+                            主要诉求
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {CONCERNS.map((concern) => (
+                                <Button
+                                    key={concern}
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                        selectedConcerns.includes(concern)
+                                            ? "primary"
+                                            : "outline"
+                                    }
+                                    onClick={() =>
+                                        toggleSelection(
+                                            concern,
+                                            selectedConcerns,
+                                            setSelectedConcerns,
+                                        )
+                                    }
+                                >
+                                    {concern}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="mb-2 text-sm font-medium text-brand-charcoal/80">
+                            人群标签
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {PERSONAS.map((persona) => (
+                                <Button
+                                    key={persona.value}
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                        selectedPersonas.includes(persona.value)
+                                            ? "primary"
+                                            : "outline"
+                                    }
+                                    onClick={() =>
+                                        toggleSelection(
+                                            persona.value,
+                                            selectedPersonas,
+                                            setSelectedPersonas,
+                                        )
+                                    }
+                                >
+                                    {persona.label}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <Textarea
+                        label="推荐语"
+                        value={formMessage}
+                        onChange={(event) => setFormMessage(event.target.value)}
+                        placeholder="向用户展示的推荐说明"
+                        rows={3}
+                    />
+
+                    <div>
+                        <p className="mb-2 text-sm font-medium text-brand-charcoal/80">
+                            关联产品
+                        </p>
+                        <div className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-brand-charcoal/10 p-2">
+                            {products.length === 0 ? (
+                                <p className="px-2 py-1 text-xs text-brand-charcoal/55">
+                                    暂无产品
+                                </p>
+                            ) : (
+                                products.map((product) => (
+                                    <label
+                                        key={product.id}
+                                        className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-brand-charcoal/[0.04]"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedProductIds.includes(
+                                                product.id,
+                                            )}
+                                            onChange={() =>
+                                                toggleSelection(
+                                                    product.id,
+                                                    selectedProductIds,
+                                                    setSelectedProductIds,
+                                                )
+                                            }
+                                            className="h-4 w-4 rounded border-brand-charcoal/20 text-brand-primary focus:ring-brand-primary"
+                                        />
+                                        <span className="min-w-0 flex-1 truncate text-brand-charcoal">
+                                            {product.name}
+                                        </span>
+                                        <span className="text-xs text-brand-charcoal/55">
+                                            {product.category}
+                                        </span>
+                                    </label>
+                                ))
+                            )}
+                        </div>
+                        <p className="mt-1 text-xs text-brand-charcoal/65">
+                            已选择 {selectedProductIds.length} 个产品
+                        </p>
+                    </div>
+
+                    <Switch
+                        label="启用此规则"
+                        checked={formActive}
+                        onChange={setFormActive}
+                        description="停用后该规则不会参与推荐"
+                    />
+
+                    <FormActions>
+                        <Button
                             type="button"
-                            onClick={() => { setShowModal(false); resetForm(); }}
+                            variant="outline"
+                            onClick={() => {
+                                setShowModal(false);
+                                resetForm();
+                            }}
                             disabled={submitting}
-                            className="flex-1 px-4 py-3 text-sm font-bold text-[#1A1A1A]/60 bg-[#1A1A1A]/5 hover:bg-[#1A1A1A]/10 border border-[#1A1A1A]/10 rounded-xl transition-colors disabled:opacity-50"
                         >
                             取消
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1A1A1A] hover:bg-[#3D4430] rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-70"
-                        >
-                            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                        </Button>
+                        <Button type="submit" loading={submitting}>
                             {editingRule ? "保存修改" : "创建规则"}
-                        </button>
-                    </div>
+                        </Button>
+                    </FormActions>
                 </form>
             </AdminModal>
+
+            <ConfirmModal
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleDelete}
+                title="删除推荐规则"
+                message={`确定要删除「${deleteTarget?.name ?? ""}」吗？此操作不可撤销。`}
+                confirmText="确认删除"
+                variant="danger"
+            />
         </div>
     );
 }

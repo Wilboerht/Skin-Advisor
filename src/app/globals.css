@@ -54,6 +54,8 @@
   --color-olive-light: rgba(61, 68, 48, 0.15);
   --color-brand-charcoal: #00263E;
   --color-brand-charcoal-light: #4A6272;
+  --color-brand-primary: #00263E;
+  --color-brand-primary-dark: #001525;
   /* 肌智派结果页暖色系 token（result 组件使用） */
   --color-brand-espresso: #3d2f25;
   --color-brand-cocoa: #5c4937;
@@ -141,6 +143,8 @@
     --color-olive-light: rgba(61, 68, 48, 0.15);
     --color-brand-charcoal: #00263E;
     --color-brand-charcoal-light: #4A6272;
+    --color-brand-primary: #00263E;
+    --color-brand-primary-dark: #001525;
     --color-text-primary: #1A1A1A;
     --color-text-secondary: #00263E;
     --color-white: #ffffff;

@@ -2,9 +2,15 @@ import { Loader2 } from "lucide-react";
 
 export default function Loading() {
     return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-            <Loader2 className="w-8 h-8 text-[#C9A86C] animate-spin" />
-            <p className="text-sm font-medium text-[#8B7355]">加载中...</p>
+        <div
+            className="flex min-h-[60vh] flex-col items-center justify-center gap-3"
+            role="status"
+        >
+            <Loader2
+                className="h-7 w-7 animate-spin text-brand-primary"
+                aria-hidden="true"
+            />
+            <p className="text-sm text-brand-charcoal/65">???...</p>
         </div>
     );
 }

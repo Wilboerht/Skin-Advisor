@@ -1,0 +1,78 @@
+"use client";
+
+import { TextareaHTMLAttributes, forwardRef, useId } from "react";
+import { cn } from "@/lib/utils";
+
+interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+    label?: string;
+    error?: string;
+    hint?: string;
+}
+
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+    (
+        { className, label, error, hint, id, disabled, required, ...props },
+        ref,
+    ) => {
+        // 未显式传 id 时自动生成，保证 label 与错误提示可正确关联
+        const generatedId = useId();
+        const textareaId = id ?? generatedId;
+        const errorId = `${textareaId}-error`;
+        const hintId = `${textareaId}-hint`;
+        const describedBy = error ? errorId : hint ? hintId : undefined;
+        return (
+            <div className="w-full">
+                {label && (
+                    <label
+                        htmlFor={textareaId}
+                        className="mb-1 block text-sm font-medium text-brand-charcoal/80"
+                    >
+                        {label}
+                        {required && (
+                            <span
+                                className="ml-0.5 text-red-500"
+                                aria-hidden="true"
+                            >
+                                *
+                            </span>
+                        )}
+                    </label>
+                )}
+                <textarea
+                    ref={ref}
+                    id={textareaId}
+                    disabled={disabled}
+                    required={required}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={describedBy}
+                    className={cn(
+                        "w-full rounded-lg border bg-white px-4 py-2.5 text-brand-charcoal transition-colors",
+                        "placeholder:text-brand-charcoal/65",
+                        "focus:outline-none focus:ring-1",
+                        error
+                            ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                            : "border-brand-charcoal/20 focus:border-brand-primary focus:ring-brand-primary",
+                        disabled &&
+                            "cursor-not-allowed bg-brand-charcoal/[0.03] opacity-50",
+                        className,
+                    )}
+                    {...props}
+                />
+                {error ? (
+                    <p id={errorId} className="mt-1 text-sm text-red-500">
+                        {error}
+                    </p>
+                ) : hint ? (
+                    <p
+                        id={hintId}
+                        className="mt-1 text-xs text-brand-charcoal/65"
+                    >
+                        {hint}
+                    </p>
+                ) : null}
+            </div>
+        );
+    },
+);
+
+Textarea.displayName = "Textarea";
