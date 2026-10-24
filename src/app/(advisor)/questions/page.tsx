@@ -64,12 +64,21 @@ export default function QuestionsPage() {
     const [showQualityWarning, setShowQualityWarning] = useState(false);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, unknown> | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // 同步提交锁：setIsSubmitting 是异步的，双击/自动切题+手动继续仍可能重复提交
+    const submitLockRef = useRef(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const genderScrollRef = useRef<HTMLDivElement>(null);
     // 自动切题定时器（单选/互斥多选 300ms 后自动跳转），用于清理与防重入
     const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // 同步跟踪最新 answers，供自动切题定时器回调校验（闭包捕获的是旧 state）
     const answersRef = useRef(answers);
+    // 清除未触发的自动切题定时器（手动继续/返回/提交/卸载时都要调用）
+    const clearAutoAdvance = () => {
+        if (autoAdvanceTimerRef.current) {
+            clearTimeout(autoAdvanceTimerRef.current);
+            autoAdvanceTimerRef.current = null;
+        }
+    };
     const [restoredStepIndex, setRestoredStepIndex] = useState<number | null>(null);
 
     // 锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll（与首页一致）
@@ -433,10 +442,7 @@ export default function QuestionsPage() {
     useEffect(() => {
         return () => {
             flushRef.current();
-            if (autoAdvanceTimerRef.current) {
-                clearTimeout(autoAdvanceTimerRef.current);
-                autoAdvanceTimerRef.current = null;
-            }
+            clearAutoAdvance();
         };
     }, []);
 
@@ -527,6 +533,7 @@ export default function QuestionsPage() {
     // 调度自动切题：回调里通过 answersRef 校验该题答案未被改动（闭包捕获的是旧 state，必须读 ref），
     // 防止 500ms 内改选/回退后 pending 的定时器把用户推到错误位置
     const scheduleAutoAdvance = (fieldName: string, expected: unknown, newAnswers: Record<string, unknown>) => {
+        clearAutoAdvance();
         autoAdvanceTimerRef.current = setTimeout(() => {
             autoAdvanceTimerRef.current = null;
             const latest = answersRef.current[fieldName];
@@ -539,10 +546,7 @@ export default function QuestionsPage() {
         if (!currentQuestion) return;
 
         // 先清除上一个未触发的自动切题，避免 300ms 内改选另一个选项导致跳两题
-        if (autoAdvanceTimerRef.current) {
-            clearTimeout(autoAdvanceTimerRef.current);
-            autoAdvanceTimerRef.current = null;
-        }
+        clearAutoAdvance();
 
         const newAnswers = { ...answers };
 
@@ -583,10 +587,7 @@ export default function QuestionsPage() {
 
     const handleBack = () => {
         // 清除未触发的自动切题，避免点"上一题"后又被 pending 的定时器推回去
-        if (autoAdvanceTimerRef.current) {
-            clearTimeout(autoAdvanceTimerRef.current);
-            autoAdvanceTimerRef.current = null;
-        }
+        clearAutoAdvance();
         if (currentStepIndex > 0) {
             setDirection(-1);
             setCurrentStepIndex(prev => prev - 1);
@@ -601,6 +602,10 @@ export default function QuestionsPage() {
 
     // 真正执行提交的逻辑
     const processSubmission = (finalAnswers: Record<string, unknown>) => {
+        // 双击 / 自动切题与手动继续竞态：只允许第一次提交生效
+        if (submitLockRef.current) return;
+        submitLockRef.current = true;
+        clearAutoAdvance();
         setIsSubmitting(true);
         safeStorage.set(STORAGE_KEYS.ADVISOR_ANSWERS, JSON.stringify(finalAnswers));
         // 新问卷提交：清掉上一份结果/分析中标记，避免 /result 恢复旧报告劫持新会话。
@@ -619,6 +624,8 @@ export default function QuestionsPage() {
 
     // 辅助函数：处理带特定答案的完成逻辑
     const handleNextWithAnswers = (currentAnswers: Record<string, unknown>) => {
+        // 手动继续时清除 pending 的自动切题；从定时器回调进入时 ref 已为 null
+        clearAutoAdvance();
         const nextQs = getFilteredQuestions(currentAnswers, gender);
         if (currentStepIndex < nextQs.length - 1) {
             setDirection(1);
@@ -648,6 +655,8 @@ export default function QuestionsPage() {
     }
 
     const handleNext = () => { // 仅用于多选或最后一题手动点击
+        // 手动继续前先取消未触发的自动切题，避免连续跳两题
+        clearAutoAdvance();
         // 验证（genderConfirmed：性别页上 Enter 键也会走到这里，预选未确认时不允许跳题/提交）
         if (!gender || !genderConfirmed || !currentQuestion) return;
 

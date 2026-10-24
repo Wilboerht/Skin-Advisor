@@ -245,6 +245,12 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/questions?edit=true"]);
     // 登录态需在入口守卫之前声明：缓存报告归属校验依赖 user?.id
     const { user, isInitialized: authInitialized } = useAuth();
+    // serverUser 是 SSR 已确认的登录态；useAuth() 在客户端异步初始化。
+    // 登录/登出均为整页导航，页面存续期间 serverUser 不会失效；
+    // 优先用它可避免等待 /api/auth/me，也避免其临时 5xx/超时（UserProvider 会保留原状态）
+    // 被误判为未登录而清掉本页已校验通过的报告。
+    const effectiveUser = serverUser ?? user;
+    const effectiveUserId = effectiveUser?.id;
 
     // 入口守卫：必须通过首页引导弹窗后才能查看结果
     // 历史报告页面（/reports/:id）会传入 id 与 initialData，跳过此守卫
@@ -253,6 +259,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const [accessDenied, setAccessDenied] = useState<boolean | null>((id || initialData) ? false : null);
     useEffect(() => {
         if (id || initialData) return;
+        // 登录态未就绪且没有 SSR 用户时保持"判定中"，不要先放行缓存再等 user 到达。
+        if (!effectiveUserId && !authInitialized) {
+            setAccessDenied(null);
+            return;
+        }
         try {
             // 仅当本地存在报告数据或未完成的问卷答案时才放行；
             // 只有隐私授权（hasConsent）不等于有数据——放行后也会被 loadClientData 踢回问卷页，
@@ -260,12 +271,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             const resultRaw = localStorage.getItem(STORAGE_KEYS.ADVISOR_RESULT);
             const hasAnswers = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
 
-            // 共享设备换账号：缓存报告若属于其他 userId，禁止展示并清掉本地报告
-            if (resultRaw && user?.id) {
+            // 共享设备换账号：缓存报告必须属于当前用户；没有 userId 的历史缓存无法证明归属，一律清掉。
+            if (resultRaw && effectiveUserId) {
                 try {
                     const cached = JSON.parse(resultRaw) as { userId?: unknown };
-                    // 没有 userId 的历史缓存无法证明归属，一律清掉，避免共享设备串号。
-                    if (cached.userId !== user.id) {
+                    if (cached.userId !== effectiveUserId) {
                         localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
                         setAccessDenied(true);
                         return;
@@ -277,7 +287,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         } catch {
             setAccessDenied(true);
         }
-    }, [id, initialData, user?.id]);
+    }, [id, initialData, effectiveUserId, authInitialized]);
     const { trackResultView, trackResultShare, trackResultFlip, trackProductClick } = useAdvisorAnalytics();
     const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
@@ -292,10 +302,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const [sessionId, setSessionId] = useState<string | undefined>(id);
 
     // Refs for latest auth state to avoid adding them to effect dependency arrays
-    const userRef = useRef(serverUser ?? user);
+    const userRef = useRef(effectiveUser);
     const authInitializedRef = useRef(!!serverUser || authInitialized);
-    useEffect(() => { userRef.current = user; }, [user]);
-    useEffect(() => { authInitializedRef.current = authInitialized; }, [authInitialized]);
+    useEffect(() => { userRef.current = effectiveUser; }, [effectiveUser]);
+    useEffect(() => { authInitializedRef.current = !!serverUser || authInitialized; }, [serverUser, authInitialized]);
 
     // Data State
     const normalizedResult = useMemo(() => normalizeAnalysisResult(initialData?.result || null), [initialData]);
@@ -332,6 +342,39 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         resultRef.current = result;
     }, [result]);
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
+
+    // 结果归属守卫：客户端缓存的报告必须属于当前用户。
+    // loadClientData 可能已在 auth 就绪前把缓存写入 state；这里在 user/serverUser 变化时兜底清空，
+    // 避免共享设备切换账号后短暂看到上一账号的报告。
+    useEffect(() => {
+        // 历史报告由服务端校验归属；这里只处理 /result 的本地缓存
+        if (id || initialData) return;
+        if (!result) return;
+        // 登录态未就绪时先不判定，避免把刚渲染的有效结果误清掉
+        if (!effectiveUserId && !authInitialized) return;
+        const ownerValue = (result as unknown as { userId?: unknown }).userId;
+        const owner = typeof ownerValue === "string" ? ownerValue : null;
+        if (!owner) {
+            // 无归属信息的旧缓存：已登录时不可信，清掉
+            if (!isMock && effectiveUserId) {
+                setResult(null);
+                setFaceAnalysis(null);
+                setSessionId(undefined);
+                setAccessDenied(true);
+                try { localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT); } catch { /* ignore */ }
+            }
+            return;
+        }
+        if (owner !== effectiveUserId) {
+            setResult(null);
+            setFaceAnalysis(null);
+            setSessionId(undefined);
+            try { localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT); } catch { /* ignore */ }
+            // 已登出（无当前用户）时交给 privacyGate 显示"登录后查看报告"，
+            // 只有已登录但账号不匹配才显示"未授权访问"
+            if (effectiveUserId) setAccessDenied(true);
+        }
+    }, [result, effectiveUserId, authInitialized, id, initialData, isMock]);
 
     const [userNickname, setUserNickname] = useState<string>(user?.name || "您");
 
@@ -850,6 +893,28 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         try {
                             const advisorResult = JSON.parse(advisorResultStr);
 
+                            // 归属校验：缓存报告必须属于当前登录用户。
+                            // auth 尚未就绪（无 SSR 用户且 /api/auth/me 未返回）时先等待，避免误删有效缓存。
+                            const currentUserId = userRef.current?.id;
+                            if (!currentUserId && !authInitializedRef.current) {
+                                return;
+                            }
+                            const cachedUserId = typeof advisorResult.userId === "string"
+                                ? advisorResult.userId
+                                : null;
+                            if (!currentUserId) {
+                                // 登出/游客：不展示本机缓存报告（privacyGate 会提示登录）
+                                localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
+                                setLoading(false);
+                                return;
+                            }
+                            if (cachedUserId !== currentUserId) {
+                                localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
+                                setAccessDenied(true);
+                                setLoading(false);
+                                return;
+                            }
+
                             // Validate if the result is "fresh" (optional, but good for UX)
                             const urlSessionId = searchParams.get('id');
                             if (urlSessionId && advisorResult.sessionId && advisorResult.sessionId !== urlSessionId) {
@@ -1351,7 +1416,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 隐私守卫：游客测肤已下线，登出后不应再展示本机缓存的分析报告。
     // 仅对非历史报告生效（/reports/:id 由中间件保护）；本地 dev mock 预览放行；
     // 未初始化（authInitialized=false）或存在服务端会话（serverUser）时先放行，避免误伤。
-    const privacyGate = !isHistoricalReport && !isMock && authInitialized && !user && !serverUser;
+    const privacyGate = !isHistoricalReport && !isMock && authInitialized && !effectiveUser;
     if (privacyGate) {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

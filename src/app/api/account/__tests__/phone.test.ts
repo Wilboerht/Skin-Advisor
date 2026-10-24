@@ -172,6 +172,16 @@ describe("PUT /api/account/phone", () => {
         });
     });
 
+    it("官网 HTTP 200 但 success:false：不同步本地手机号", async () => {
+        mocks.fetch.mockResolvedValue(
+            jsonResponse(200, { success: false, error: { code: "REJECTED" } })
+        );
+
+        const res = await PUT(fakeReq({ newPhone: "13900139000", currentCode: "123456", newCode: "654321" }));
+        expect(res.status).toBe(200);
+        expect(mocks.userUpdate).not.toHaveBeenCalled();
+    });
+
     it("本地副本同步失败不阻断响应（官网为准）", async () => {
         mocks.fetch.mockResolvedValue(
             jsonResponse(200, { success: true, data: { phone: "13900139000" } })

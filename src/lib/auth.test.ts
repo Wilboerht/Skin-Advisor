@@ -3,6 +3,7 @@ import {
     hashPassword,
     verifyPassword,
     signToken,
+    signRefreshToken,
     verifyToken,
     verifyTokenDetailed,
 } from "./auth";
@@ -28,6 +29,11 @@ describe("auth", () => {
             expect(payload).not.toBeNull();
             expect(payload?.sub).toBe("user_123");
             expect(payload?.role).toBe("user");
+        });
+
+        it("rejects a refresh token used as access token", async () => {
+            const refresh = await signRefreshToken({ sub: "user_123", tokenVersion: 0 });
+            expect(await verifyToken(refresh)).toBeNull();
         });
 
         it("rejects an invalid token", async () => {

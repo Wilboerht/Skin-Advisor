@@ -12,6 +12,8 @@ const MAX_FULL_REPORTS = 10;
 const ARCHIVE_BATCH_LIMIT = 500;
 // 单个用户最多保留报告数（热层 + 冷层摘要合计，滚动续期策略下的安全阀）
 const MAX_USER_REPORTS = 100;
+// 普通会员超量会话单轮删除上限（多轮 cron 收敛，避免单次事务过大）
+const EXCESS_BATCH_LIMIT = 1000;
 // 普通会员（REGULAR）测肤数据留存天数，满期降级为冷层摘要；银卡及以上会员（SILVER/GOLD/DIAMOND，含历史 ADVANCED）永久保留
 const REGULAR_RETENTION_DAYS = 365;
 
@@ -33,6 +35,16 @@ async function cleanupSessions(
         const testRecords = await tx.testRecord.deleteMany({
             where: { sessionId: { in: sessionIds } },
         });
+        // 无外键引用：会话删除后把日记/产品反馈的 sessionId 置空，
+        // 避免前端"查看报告"跳到已删除的 404，或反馈记录无法回联。
+        await tx.diaryEntry.updateMany({
+            where: { sessionId: { in: sessionIds } },
+            data: { sessionId: null },
+        });
+        await tx.productFeedback.updateMany({
+            where: { sessionId: { in: sessionIds } },
+            data: { sessionId: null },
+        });
         const advisorSessions = await tx.advisorSession.deleteMany({
             where: { sessionId: { in: sessionIds } },
         });
@@ -44,6 +56,27 @@ async function cleanupSessions(
 
     stats.sessions += deletedStats.sessions;
     stats.testRecords += deletedStats.testRecords;
+}
+
+/**
+ * 分批删除会话：避免积压后一次性 findMany 全部主键 + 超大 IN 参数（Postgres 绑定参数上限）。
+ * 每批删除后重新查询，直到不足一批为止。
+ */
+async function cleanupInBatches(
+    where: Prisma.AdvisorSessionWhereInput,
+    stats: CleanupStats,
+    batchSize = 500
+): Promise<void> {
+    for (;;) {
+        const batch = await prisma.advisorSession.findMany({
+            where,
+            select: { sessionId: true },
+            take: batchSize,
+        });
+        if (batch.length === 0) return;
+        await cleanupSessions(batch, stats);
+        if (batch.length < batchSize) return;
+    }
 }
 
 export async function GET(request: NextRequest) {
@@ -80,19 +113,16 @@ export async function GET(request: NextRequest) {
 
         // ===== 1. 清理已过期的游客数据（expiresAt 已过 或 expiresAt 为 NULL 且创建超过兜底时限）=====
         // 使用 expiresAt 而非 createdAt，与用户端过期判断同源
-        const guestSessions = await prisma.advisorSession.findMany({
-            where: {
+        await cleanupInBatches(
+            {
                 userId: null,
                 OR: [
                     { expiresAt: { lt: new Date(now) } },
                     { expiresAt: null, createdAt: { lt: nullExpiryFallback } },
                 ],
             },
-            select: {
-                sessionId: true,
-            },
-        });
-        await cleanupSessions(guestSessions, stats);
+            stats
+        );
 
         // ===== 2. 清理注册用户的垃圾会话 =====
         // 「滚动续期的长期资产」策略：已完成的报告是用户的历史肌肤档案，
@@ -100,8 +130,8 @@ export async function GET(request: NextRequest) {
         // "当前档案"的 90 天有效期（报告页据此提示复测）。
         // 此步骤仅清理从未完成分析的中断会话（无档案价值），按 expiresAt 过期或
         // createdAt 满 24 小时兜底清理。
-        const oldUserSessions = await prisma.advisorSession.findMany({
-            where: {
+        await cleanupInBatches(
+            {
                 userId: { not: null },
                 completedAt: null, // 仅清理从未完成分析的中断会话；已完成报告进入冷热分层保留
                 OR: [
@@ -109,21 +139,24 @@ export async function GET(request: NextRequest) {
                     { expiresAt: null, createdAt: { lt: nullExpiryFallback } },
                 ],
             },
-            select: {
-                sessionId: true,
-            },
-        });
-        await cleanupSessions(oldUserSessions, stats);
+            stats
+        );
 
         // ===== 3. 冷热分层：REGULAR 用户最近 10 条之外、或满 365 天的报告脱水为脱敏摘要 =====
         // 热层（最近 10 条）用户可见、数据完整；冷层仅留统计摘要（无敏感问卷字段），
         // 用户不可见，供趋势对比与白皮书群体统计。银卡及以上会员（SILVER/GOLD/DIAMOND，含历史 ADVANCED）档案永久保留、不参与归档。
         // 单次限量，多轮 cron 收敛。
         const retentionCutoff = new Date(now - REGULAR_RETENTION_DAYS * 24 * 60 * 60 * 1000);
-        const archivable = await prisma.$queryRaw<Array<{ sessionId: string }>>`
-            SELECT "sessionId"
+        const archivable = await prisma.$queryRaw<Array<{
+            sessionId: string;
+            analysisResult: Prisma.JsonValue | null;
+            answers: Prisma.JsonValue | null;
+        }>>`
+            SELECT "sessionId", "analysisResult", "answers"
             FROM (
                 SELECT s."sessionId",
+                       s."analysisResult",
+                       s."answers",
                        s."completedAt",
                        u."membershipLevel",
                        ROW_NUMBER() OVER (PARTITION BY s."userId" ORDER BY s."completedAt" DESC) as rn
@@ -138,16 +171,12 @@ export async function GET(request: NextRequest) {
             LIMIT ${ARCHIVE_BATCH_LIMIT}
         `;
 
-        for (const { sessionId } of archivable) {
+        // 归档结果随主查询一次取回，避免逐条 findUnique 的 N+1 查询
+        for (const row of archivable) {
             try {
-                const row = await prisma.advisorSession.findUnique({
-                    where: { sessionId },
-                    select: { analysisResult: true, answers: true },
-                });
-                if (!row) continue;
                 const summary = buildArchivedSummary(row.analysisResult, row.answers);
                 await prisma.advisorSession.update({
-                    where: { sessionId },
+                    where: { sessionId: row.sessionId },
                     data: {
                         analysisResult: summary as unknown as Prisma.InputJsonValue,
                         answers: Prisma.DbNull,      // 敏感问卷字段不进冷层
@@ -158,12 +187,13 @@ export async function GET(request: NextRequest) {
                 stats.archived++;
             } catch (archiveErr) {
                 // 单行失败不阻塞整体任务，下一轮 cron 重试
-                logger.error("[Cleanup] Archive session failed", { sessionId, error: String(archiveErr) });
+                logger.error("[Cleanup] Archive session failed", { sessionId: row.sessionId, error: String(archiveErr) });
             }
         }
 
         // ===== 4. 清理注册用户超量数据（普通会员最多保留 100 条，含冷层摘要；银卡及以上会员永久保留豁免）=====
-        // 使用 window function 一次性获取所有超量记录，避免 N+1 查询
+        // 只统计已完成报告（中断/埋点会话由步骤 2 清理），并按 createdAt 保留最新 100 条；
+        // 单轮最多删除 EXCESS_BATCH_LIMIT 条，积压时由后续 cron 轮次收敛。
         const excessSessions = await prisma.$queryRaw<Array<{ sessionId: string }>>`
             SELECT "sessionId"
             FROM (
@@ -173,10 +203,12 @@ export async function GET(request: NextRequest) {
                 FROM "AdvisorSession" s
                 LEFT JOIN "User" u ON u."id" = s."userId"
                 WHERE s."userId" IS NOT NULL
+                  AND s."completedAt" IS NOT NULL
             ) t
             WHERE (t."membershipLevel" IS NULL OR t."membershipLevel" NOT IN ('SILVER','GOLD','DIAMOND','ADVANCED'))
               AND t.rn > ${MAX_USER_REPORTS}
             ORDER BY t."createdAt" ASC
+            LIMIT ${EXCESS_BATCH_LIMIT}
         `;
 
         await cleanupSessions(excessSessions, stats);

@@ -88,7 +88,15 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                 const sessions = await prisma.advisorSession.findMany({
                     orderBy: { createdAt: "desc" },
                     take: 1000, // Limit to last 1000
-                    include: {
+                    // 显式白名单：不含 analysisResult/answers/interactions 等大 JSON，
+                    // 避免导出时把完整报告/问卷全部读进内存
+                    select: {
+                        id: true,
+                        province: true,
+                        deviceType: true,
+                        startedAt: true,
+                        completedAt: true,
+                        resultShared: true,
                         user: { select: { email: true, name: true } },
                     },
                 });

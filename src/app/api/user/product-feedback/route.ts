@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { getSessionUser, isSubsiteAccountDisabled } from "@/lib/sso-auth";
 import { accountDisabledResponse } from "@/lib/api-response";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
+
+const NOSESSION = "_nosession_";
+
+const feedbackSchema = z.object({
+    productId: z.string().trim().min(1).max(128),
+    sessionId: z.string().trim().max(128).optional().nullable(),
+    rating: z.number().int().min(1).max(5),
+    skinFeel: z.string().trim().max(100).optional().nullable(),
+    effect: z.string().trim().max(100).optional().nullable(),
+    repurchase: z.boolean().optional().nullable(),
+    note: z.string().trim().max(500).optional().nullable(),
+});
 
 // POST: 提交产品使用反馈
 export async function POST(request: NextRequest) {
@@ -12,16 +26,23 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "请先登录" }, { status: 401 });
         }
 
-        const body = await request.json();
-        const { productId, sessionId, rating, skinFeel, effect, repurchase, note } = body;
+        // 按用户限流：此接口此前无任何频控，可被脚本无限刷评分
+        const limit = await rateLimit(`product-feedback-${user.id}`, "form", {
+            maxRequests: 10,
+            windowMs: 60_000,
+        });
+        if (!limit.success) {
+            return NextResponse.json({ error: "提交过于频繁，请稍后再试" }, { status: 429 });
+        }
 
-        // 参数校验
-        if (!productId || typeof productId !== "string") {
-            return NextResponse.json({ error: "productId 必填" }, { status: 400 });
+        const parsed = feedbackSchema.safeParse(await request.json().catch(() => null));
+        if (!parsed.success) {
+            return NextResponse.json(
+                { error: "参数错误", details: parsed.error.flatten().fieldErrors },
+                { status: 400 }
+            );
         }
-        if (typeof rating !== "number" || rating < 1 || rating > 5) {
-            return NextResponse.json({ error: "rating 必须是 1-5 的整数" }, { status: 400 });
-        }
+        const { productId, sessionId, rating, skinFeel, effect, repurchase, note } = parsed.data;
 
         // 验证产品存在
         const product = await prisma.product.findUnique({
@@ -31,11 +52,18 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "产品不存在" }, { status: 404 });
         }
 
-        // 无会话反馈用固定哨兵值（Postgres 下 NULL 在唯一键中互不相等，
-        // 若 create 写 null 会导致同一产品每次提交都新增一行，upsert 形同虚设）
-        const NOSESSION = "_nosession_";
-        const normalizedSessionId =
-            typeof sessionId === "string" && sessionId.trim() ? sessionId.trim() : NOSESSION;
+        // 有 sessionId 时必须属于当前用户且已完成，防止伪造 sessionId 生成无限评价行
+        let normalizedSessionId = NOSESSION;
+        if (sessionId) {
+            const session = await prisma.advisorSession.findFirst({
+                where: { sessionId, userId: user.id, completedAt: { not: null } },
+                select: { sessionId: true },
+            });
+            if (!session) {
+                return NextResponse.json({ error: "会话不存在或无权使用" }, { status: 403 });
+            }
+            normalizedSessionId = sessionId;
+        }
 
         // 使用 upsert 防止重复提交（同一用户对同一产品+session 只能评价一次）
         const feedback = await prisma.productFeedback.upsert({
@@ -85,9 +113,22 @@ export async function POST(request: NextRequest) {
 // GET: 查询产品反馈（productId=公开聚合；userId=需登录且仅限本人）
 export async function GET(request: NextRequest) {
     try {
+        // 公开聚合接口也做基础防刷，避免被用来放大数据库查询
+        const ipLimit = await rateLimit(`product-feedback-get-${getClientIP(request)}`, "default", {
+            maxRequests: 60,
+            windowMs: 60_000,
+        });
+        if (!ipLimit.success) {
+            return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+        }
+
         const { searchParams } = new URL(request.url);
         const productId = searchParams.get("productId");
         const userId = searchParams.get("userId");
+
+        if ((productId && productId.length > 128) || (userId && userId.length > 128)) {
+            return NextResponse.json({ error: "参数过长" }, { status: 400 });
+        }
 
         if (userId) {
             // 查询个人反馈历史需登录且仅限本人

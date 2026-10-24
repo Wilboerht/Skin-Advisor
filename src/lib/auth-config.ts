@@ -72,7 +72,9 @@ export interface VerifyTokenResult {
 
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
     const result = await verifyTokenDetailed(token);
-    return result.payload;
+    if (!result.payload) return null;
+    // 本地 access Cookie 只接受 type=access；refresh token 不能冒充 access token。
+    return result.payload.type === "access" ? result.payload : null;
 }
 
 export async function verifyTokenDetailed(token: string): Promise<VerifyTokenResult> {

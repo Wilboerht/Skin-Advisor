@@ -583,11 +583,14 @@ export function PointsMallPanel() {
   // 打卡到账积分后（POINTS_CHANGED_EVENT）静默刷新余额，商城与账本保持一致
   useEffect(() => {
     const onPointsChanged = () => {
+      // 余额同时出现在积分明细与礼品快照（available/affordable）中，两者都刷新，
+      // 否则打卡到账后大号余额和"可兑换"状态仍是旧值。
       void loadPointsData();
+      void loadGiftsData();
     };
     window.addEventListener(POINTS_CHANGED_EVENT, onPointsChanged);
     return () => window.removeEventListener(POINTS_CHANGED_EVENT, onPointsChanged);
-  }, [loadPointsData]);
+  }, [loadPointsData, loadGiftsData]);
 
   // 视图切换时回到顶部：整版内容淡入淡出后高度变化，避免停留在旧滚动位置
   useEffect(() => {

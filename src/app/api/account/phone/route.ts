@@ -61,13 +61,17 @@ export async function PUT(req: NextRequest) {
     // 官网 OAuth 响应仅回传打码手机号（最小化 PII），本地以请求体新号为准；
     // 本地同步失败不阻断响应——官网为准，下次 SSO 登录/userinfo 回源会纠偏
     if (upstream.ok) {
-        try {
-            await prisma.user.update({
-                where: { id: auth.user.id },
-                data: { phoneNumber: parsed.data.newPhone },
-            });
-        } catch (err) {
-            logger.warn("[account/phone] 本地手机号副本同步失败", { userId: auth.user.id, error: String(err) });
+        // 2xx 不代表业务成功：官网可能返回 { success: false }，此时不能提前改本地手机号
+        const body = (await upstream.clone().json().catch(() => null)) as { success?: boolean } | null;
+        if (body?.success !== false) {
+            try {
+                await prisma.user.update({
+                    where: { id: auth.user.id },
+                    data: { phoneNumber: parsed.data.newPhone },
+                });
+            } catch (err) {
+                logger.warn("[account/phone] 本地手机号副本同步失败", { userId: auth.user.id, error: String(err) });
+            }
         }
     }
 
