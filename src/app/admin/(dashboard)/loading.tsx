@@ -10,7 +10,7 @@ export default function Loading() {
                 className="h-7 w-7 animate-spin text-brand-primary"
                 aria-hidden="true"
             />
-            <p className="text-sm text-brand-charcoal/65">???...</p>
+            <p className="text-sm text-brand-charcoal/65">加载中...</p>
         </div>
     );
 }
