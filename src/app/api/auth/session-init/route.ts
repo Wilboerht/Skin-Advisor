@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, ssoVerifier, upsertLocalUser, isAccessTokenRevoked, refreshSsoTokensSingleFlight, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, type RefreshedTokens } from "@/lib/sso-auth";
+import { decodeJwt } from "jose";
+import { getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, ssoVerifier, upsertLocalUser, isAccessTokenRevoked, refreshSsoTokensSingleFlight, clearSsoSessionCookies, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, type RefreshedTokens } from "@/lib/sso-auth";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
 import { signLocalSession, rotateLocalSession, applyLocalSessionCookies, AUTH_REFRESH_COOKIE_NAME } from "@/lib/auth";
+import {
+    USER_COOKIE_NAME,
+    USER_REFRESH_COOKIE_NAME,
+    USER_ACCESS_COOKIE_OPTIONS,
+    USER_REFRESH_COOKIE_OPTIONS,
+} from "@/lib/wechat-constants";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { isDisabledUser } from "@/lib/permissions";
 import { isSafeInternalPath } from "@/lib/url-utils";
@@ -85,6 +92,30 @@ export async function GET(req: NextRequest) {
                     const response = wantsJson
                         ? NextResponse.json({ ok: true })
                         : NextResponse.redirect(new URL(returnTo, siteOrigin));
+                    // 共享设备/切换登录方式后可能残留上一账号的微信 USER_* Cookie；
+                    // 能解析出 sub 且与当前本地会话用户不一致时清除，避免降级链路串号。
+                    const tokenSub = (token?: string): string | null => {
+                        if (!token) return null;
+                        try {
+                            const sub = decodeJwt(token).sub;
+                            return typeof sub === "string" ? sub : null;
+                        } catch {
+                            return null;
+                        }
+                    };
+                    const mismatched = [
+                        cookieStore.get(USER_COOKIE_NAME)?.value,
+                        cookieStore.get(USER_REFRESH_COOKIE_NAME)?.value,
+                    ].some((t) => {
+                        const sub = tokenSub(t);
+                        return sub !== null && sub !== rotated.user.id;
+                    });
+                    if (mismatched) {
+                        response.cookies.set(USER_COOKIE_NAME, "", { ...USER_ACCESS_COOKIE_OPTIONS, maxAge: 0 });
+                        response.cookies.set(USER_REFRESH_COOKIE_NAME, "", { ...USER_REFRESH_COOKIE_OPTIONS, maxAge: 0 });
+                    }
+                    // 本地 refresh 生效 = 纯本地会话（微信登录）：清掉可能残留的 SSO Cookie
+                    clearSsoSessionCookies(response);
                     applyLocalSessionCookies(response, rotated.issued, !SSO_INSECURE_LOCAL_DEV);
                     return response;
                 }
@@ -150,6 +181,11 @@ export async function GET(req: NextRequest) {
             logger.error("[session-init] signLocalSession failed", { userId: dbUser.id });
             return fail("session_sign_failed", 500);
         }
+
+        // SSO 登录成功：清理上一登录方式（微信）遗留的官网 Cookie。
+        // 否则账号 BFF 在 SSO token 失效时可能回退到上一账号的 USER_* token，造成串号。
+        response.cookies.set(USER_COOKIE_NAME, "", { ...USER_ACCESS_COOKIE_OPTIONS, maxAge: 0 });
+        response.cookies.set(USER_REFRESH_COOKIE_NAME, "", { ...USER_REFRESH_COOKIE_OPTIONS, maxAge: 0 });
 
         return response;
     } catch (err) {

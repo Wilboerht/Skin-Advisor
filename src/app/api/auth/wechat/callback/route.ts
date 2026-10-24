@@ -13,18 +13,22 @@ import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import { parseOfficialResponse } from "@/lib/official-api";
 import { fetchOfficialMembershipLevel } from "@/lib/official-membership";
 import { signLocalSession } from "@/lib/auth";
+import { clearSsoSessionCookies } from "@/lib/sso-auth";
 import {
     USER_COOKIE_NAME,
     USER_REFRESH_COOKIE_NAME,
     USER_ACCESS_COOKIE_OPTIONS,
     USER_REFRESH_COOKIE_OPTIONS,
     WECHAT_BIND_COOKIE_NAME,
+    WECHAT_OAUTH_NONCE_COOKIE_NAME,
+    WECHAT_OAUTH_NONCE_COOKIE_OPTIONS,
 } from "@/lib/wechat-constants";
 import prisma from "@/lib/prisma";
 import { UserRole } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 import { getPublicOrigin, SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import { isSafeInternalPath } from "@/lib/url-utils";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +71,37 @@ export async function GET(req: NextRequest) {
     //（如 http://0.0.0.0:3002），直接用它会把浏览器重定向到不可达地址
     const siteOrigin = getPublicOrigin() || new URL(req.url).origin;
 
+    const buildErrorRedirect = (code: string, message: string) => {
+        const errorUrl = new URL(redirect, siteOrigin);
+        errorUrl.searchParams.set("wechat_auth", "error");
+        errorUrl.searchParams.set("code", code);
+        errorUrl.searchParams.set("message", encodeURIComponent(message));
+        return NextResponse.redirect(errorUrl, 302);
+    };
+
+    // 浏览器绑定 nonce：用于证明回调 URL 与发起登录的是同一浏览器。
+    // 消费后立即清除，避免重放。
+    const oauthNonce = req.cookies.get(WECHAT_OAUTH_NONCE_COOKIE_NAME)?.value;
+    const consumeNonce = (response: NextResponse) => {
+        if (exchangeToken) {
+            response.cookies.set(WECHAT_OAUTH_NONCE_COOKIE_NAME, "", {
+                ...WECHAT_OAUTH_NONCE_COOKIE_OPTIONS,
+                maxAge: 0,
+            });
+        }
+        return response;
+    };
+
+    // 回调会触发官网内部兑换调用，按 IP 限流，防止交换 token 被批量重试
+    const ip = getClientIP(req);
+    const limit = await rateLimit(`wechat-callback-ip-${ip}`, "default", {
+        maxRequests: 30,
+        windowMs: 60 * 1000,
+    });
+    if (!limit.success) {
+        return buildErrorRedirect("RATE_LIMITED", "请求过于频繁，请稍后再试");
+    }
+
     // 处理微信用户取消授权等错误场景，直接透传回前端
     // 注意：有 exchangeToken 时优先兑换，不要把 token 留在 URL 中
     if (wechatAuth && wechatAuth !== "binding_required" && !exchangeToken) {
@@ -85,6 +120,12 @@ export async function GET(req: NextRequest) {
         errorUrl.searchParams.set("code", "MISSING_EXCHANGE_TOKEN");
         errorUrl.searchParams.set("message", encodeURIComponent("缺少微信授权凭证"));
         return NextResponse.redirect(errorUrl, 302);
+    }
+
+    // 浏览器绑定校验：只有 exchange token、没有发起登录时写入的 nonce Cookie，
+    // 说明该回调 URL 可能是他人（攻击者）转发给当前浏览器的，拒绝兑换（登录 CSRF 防护）。
+    if (!oauthNonce) {
+        return buildErrorRedirect("MISSING_OAUTH_STATE", "登录会话已失效，请重新发起微信登录");
     }
 
     try {
@@ -131,7 +172,7 @@ export async function GET(req: NextRequest) {
             errorUrl.searchParams.set("wechat_auth", "error");
             errorUrl.searchParams.set("code", data.error?.code || "EXCHANGE_FAILED");
             errorUrl.searchParams.set("message", encodeURIComponent(data.error?.message || "微信授权兑换失败"));
-            return NextResponse.redirect(errorUrl, 302);
+            return consumeNonce(NextResponse.redirect(errorUrl, 302));
         }
 
         const result = data.data;
@@ -148,7 +189,7 @@ export async function GET(req: NextRequest) {
                 path: "/",
                 maxAge: 5 * 60, // 5 分钟有效
             });
-            return bindResponse;
+            return consumeNonce(bindResponse);
         }
 
         if (!result?.user || !result.accessToken || !result.refreshToken) {
@@ -156,7 +197,7 @@ export async function GET(req: NextRequest) {
             errorUrl.searchParams.set("wechat_auth", "error");
             errorUrl.searchParams.set("code", "INVALID_EXCHANGE_RESPONSE");
             errorUrl.searchParams.set("message", encodeURIComponent("上游响应不完整"));
-            return NextResponse.redirect(errorUrl, 302);
+            return consumeNonce(NextResponse.redirect(errorUrl, 302));
         }
 
         const userPayload = result.user;
@@ -232,10 +273,12 @@ export async function GET(req: NextRequest) {
             errorUrl.searchParams.set("wechat_auth", "error");
             errorUrl.searchParams.set("code", "SESSION_SIGN_FAILED");
             errorUrl.searchParams.set("message", encodeURIComponent("会话创建失败"));
-            return NextResponse.redirect(errorUrl, 302);
+            return consumeNonce(NextResponse.redirect(errorUrl, 302));
         }
 
-        return response;
+        // 切换到微信本地会话：清掉可能残留的 SSO Cookie，避免账号 BFF 误判为 SSO 体系
+        clearSsoSessionCookies(response);
+        return consumeNonce(response);
 
     } catch (error) {
         logger.error("[WechatCallback] 处理微信授权回调失败", { error: String(error) });
@@ -243,6 +286,6 @@ export async function GET(req: NextRequest) {
         errorUrl.searchParams.set("wechat_auth", "error");
         errorUrl.searchParams.set("code", "INTERNAL_ERROR");
         errorUrl.searchParams.set("message", encodeURIComponent("服务器内部错误"));
-        return NextResponse.redirect(errorUrl, 302);
+        return consumeNonce(NextResponse.redirect(errorUrl, 302));
     }
 }

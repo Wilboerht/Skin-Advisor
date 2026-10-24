@@ -25,6 +25,14 @@ export const USER_COOKIE_NAME = cookieName("__Host-user_token");
 export const USER_REFRESH_COOKIE_NAME = cookieName("nihplod_user_refresh");
 /** 微信绑定流程的临时 exchange token Cookie（callback 写入，bind/wechat-bind 页读取） */
 export const WECHAT_BIND_COOKIE_NAME = cookieName("__Host-wechat_bind_token");
+/**
+ * 微信登录流程的浏览器绑定 nonce（子站发起授权时写入，回调消费一次）。
+ *
+ * 官网侧的 wechat_oauth_nonce 只能绑定官网域名，无法证明「回调 URL 与发起登录的
+ * 浏览器是同一个」。子站用本 Cookie 做第二道绑定：攻击者把自己的 exchange token
+ * 回调 URL 发给受害者时，受害者浏览器没有对应 Cookie，回调会被拒绝。
+ */
+export const WECHAT_OAUTH_NONCE_COOKIE_NAME = cookieName("__Host-wechat_oauth_nonce");
 
 export const USER_ACCESS_COOKIE_OPTIONS = {
     httpOnly: true,
@@ -43,4 +51,13 @@ export const USER_REFRESH_COOKIE_OPTIONS = {
     // 与主站一致：收窄到 /api（读写点全部位于 /api 路由下）
     path: "/api",
     maxAge: 30 * 24 * 60 * 60, // 30 天
+};
+
+/** 微信 OAuth 浏览器绑定 nonce：10 分钟有效，仅回调读取一次 */
+export const WECHAT_OAUTH_NONCE_COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure,
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: 10 * 60,
 };

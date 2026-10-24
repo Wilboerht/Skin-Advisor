@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(cached.data);
     }
 
-    const token = await resolveOfficialAccessToken(req);
+    const token = await resolveOfficialAccessToken(req, user.id);
     if (!token) {
         return NextResponse.json({ error: "unauthorized", message: "登录已过期，请重新登录" }, { status: 401 });
     }

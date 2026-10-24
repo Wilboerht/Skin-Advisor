@@ -7,6 +7,7 @@
 
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { createTokenVerifier, type VerifiedTokenPayload } from "@nihplod/sso-verify";
 import { toInsecureCookieName } from "@nihplod/sso-sdk/next";
@@ -384,6 +385,40 @@ export async function getAccessToken(req?: NextRequest): Promise<string | null> 
 
     const cookieStore = await cookies();
     return cookieStore.get(ACCESS_TOKEN_COOKIE)?.value || null;
+}
+
+/**
+ * 当前请求是否携带 SSO 会话 Cookie（access 或 refresh），**不要求令牌仍然有效**。
+ *
+ * 账号 BFF 用它区分登录体系：只要浏览器还处于 SSO 会话（即使 access 已过期、
+ * refresh 已撤销），就不能回退到微信登录的 USER_* Cookie，否则切换账号/登录方式后
+ * 可能拿上一账号残留的官网 token 去读取或消费当前账号的积分、地址等数据。
+ */
+export async function hasSsoSessionCookies(req?: NextRequest): Promise<boolean> {
+    const cookieStore = await cookies();
+    const read = (name: string) =>
+        req?.cookies?.get(name)?.value ?? cookieStore.get(name)?.value;
+    return Boolean(read(ACCESS_TOKEN_COOKIE) || read(REFRESH_TOKEN_COOKIE));
+}
+
+/**
+ * 清除 SSO 会话 Cookie。
+ *
+ * 用于切换到微信本地会话时：若浏览器残留 SSO Cookie，账号 BFF 会认为仍处于
+ * SSO 登录体系并拒绝回退 USER_* Cookie（防串号），导致微信用户账户接口 401。
+ * 属性必须与 SDK / refreshSessionFromCookie 写入侧一致，否则 __Host- 删除会被浏览器拒绝。
+ */
+export function clearSsoSessionCookies(response: NextResponse): void {
+    const cookieOpts = {
+        httpOnly: true,
+        secure: !SSO_INSECURE_LOCAL_DEV,
+        sameSite: "lax" as const,
+        path: "/",
+        maxAge: 0,
+    };
+    response.cookies.set(ACCESS_TOKEN_COOKIE, "", cookieOpts);
+    response.cookies.set(REFRESH_TOKEN_COOKIE, "", cookieOpts);
+    response.cookies.set(ID_TOKEN_COOKIE, "", cookieOpts);
 }
 
 export async function verifySsoToken(req?: NextRequest): Promise<VerifiedTokenPayload | null> {

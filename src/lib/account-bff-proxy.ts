@@ -40,7 +40,7 @@ export async function authorizeAccountBff(
         return { error: bffError("RATE_LIMITED", "请求过于频繁，请稍后再试", 429) };
     }
 
-    const token = await resolveOfficialAccessToken(req);
+    const token = await resolveOfficialAccessToken(req, user.id);
     if (!token) {
         // 诊断用：区分“本地会话有效但官网 token 解析失败”与真正的未登录
         logger.warn("[account-bff] No official access token", {

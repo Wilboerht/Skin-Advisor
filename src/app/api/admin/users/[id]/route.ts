@@ -129,12 +129,14 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
         }
 
         if (dailyTestLimit !== undefined) {
-            const limitNum = Number(dailyTestLimit);
+            // 必须显式 number：JSON null 经 Number(null) 会变成 0，静默把用户额度改为 0。
+            // 字符串数字也不再接受（管理端表单始终提交 number）。
             if (
-                !Number.isFinite(limitNum) ||
-                !Number.isInteger(limitNum) ||
-                limitNum < 0 ||
-                limitNum > 9999
+                typeof dailyTestLimit !== "number" ||
+                !Number.isFinite(dailyTestLimit) ||
+                !Number.isInteger(dailyTestLimit) ||
+                dailyTestLimit < 0 ||
+                dailyTestLimit > 9999
             ) {
                 return apiError(ErrorCode.VALIDATION_ERROR, "Invalid dailyTestLimit (must be an integer 0-9999)", 400);
             }
@@ -143,7 +145,7 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
         // Build update data with previousRole logic for disable/enable
         const updateData: Prisma.UserUpdateInput = {};
         if (name !== undefined) updateData.name = name;
-        if (dailyTestLimit !== undefined) updateData.dailyTestLimit = Number(dailyTestLimit);
+        if (dailyTestLimit !== undefined) updateData.dailyTestLimit = dailyTestLimit;
 
         let actualNewRole: string | undefined;
 

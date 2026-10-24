@@ -4,7 +4,7 @@
  * 规则（产品口径）：手动打卡按连续天数发放积分——第 1 天 +1、第 2 天 +2、
  * 第 3 天起 +3；连续中断后重新从 +1 算起。连续天数的判定口径与护肤档案
  * 里程碑的"连续打卡"一致（测肤自动条目也计入连续天数）。
- * 仅"当天打卡"发积分（窗口下限 UTC 昨天，兼容时区），补打卡（历史日期）不发。
+ * 仅"北京时间当天"打卡发积分；补打卡（历史日期）与提前打卡（未来日期）不发。
  *
  * 官网是积分权威账本：本模块只负责把"谁、哪天、连续第几天、多少分"
  * 上报给官网内部 API；幂等由官网 PointLedger 的 userId+reference 唯一约束
@@ -21,7 +21,7 @@
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import { logger } from "@/lib/logger";
 import prisma from "@/lib/prisma";
-import { checkinPointsForStreak, isAutoDiaryEntry, isCheckinPointsEligibleDate, streakEndingAt } from "@/lib/diary-utils";
+import { checkinPointsForStreak, isAutoDiaryEntry, isCheckinBackfillEligibleDate, streakEndingAt } from "@/lib/diary-utils";
 
 const GRANT_PATH = "/api/v1/internal/points/grant";
 /** 单次尝试超时：打卡请求会 await 本调用，控制在用户可接受范围内 */
@@ -29,8 +29,8 @@ const GRANT_TIMEOUT_MS = 2500;
 /** 总尝试次数（含首次）；瞬时失败自动重试 */
 const GRANT_MAX_ATTEMPTS = 2;
 const GRANT_RETRY_DELAY_MS = 400;
-/** 漏发自愈回看窗口（天）：覆盖"官网瞬断导致当天漏发"的典型场景 */
-const BACKFILL_WINDOW_DAYS = 7;
+/** 漏发自愈回看窗口（天）：只需要覆盖"今天/昨天"两天的漏发（另加 1 天时区容差） */
+const BACKFILL_WINDOW_DAYS = 2;
 
 let warnedMissingKey = false;
 
@@ -141,7 +141,7 @@ export async function grantCheckinPoints(params: {
 
 /**
  * 漏发自愈（尽力而为，调用方 fire-and-forget）：
- * 对最近 BACKFILL_WINDOW_DAYS 天内所有"手动打卡"日按幂等键重发一次积分。
+ * 对"北京时间今天/昨天创建且日期与创建日一致"的手动打卡日按幂等键重发一次积分。
  *
  * 背景：官网瞬断导致某日发放失败后，当天不会自动补；本函数在用户后续任意一次
  * 打卡/编辑时补偿。账本 userId+reference 幂等，重复发放无副作用；
@@ -155,18 +155,18 @@ export async function backfillRecentCheckinPoints(userId: string, skipDateStr: s
   const [recent, all] = await Promise.all([
     prisma.diaryEntry.findMany({
       where: { userId, date: { gte: since } },
-      select: { date: true, note: true },
+      select: { date: true, createdAt: true, note: true },
     }),
     prisma.diaryEntry.findMany({ where: { userId }, select: { date: true } }),
   ]);
 
   const manualDates = recent
     .filter((row) => !isAutoDiaryEntry(row))
-    .map((row) => row.date)
-    .filter((d) => d.toISOString().slice(0, 10) !== skipDateStr)
-    // 补打卡（历史日期）不发积分：自愈只补偿"当天窗口内"的漏发，
-    // 更早的日期按规则本就不该发，不能借自愈通道发出去
-    .filter((d) => isCheckinPointsEligibleDate(d));
+    .filter((row) => row.date.toISOString().slice(0, 10) !== skipDateStr)
+    // 仅补发"当天/昨天创建且日期与创建日一致"的漏发；
+    // 今天补录昨天或提前录入明天（createdAt 与 date 不一致）一律不发。
+    .filter((row) => isCheckinBackfillEligibleDate(row.date, row.createdAt))
+    .map((row) => row.date);
   if (manualDates.length === 0) return;
 
   const allDates = all.map((row) => row.date);

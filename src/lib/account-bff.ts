@@ -7,7 +7,7 @@
 import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { decodeJwt } from "jose";
-import { getAccessToken, refreshSessionFromCookie, ssoVerifier } from "@/lib/sso-auth";
+import { getAccessToken, refreshSessionFromCookie, ssoVerifier, hasSsoSessionCookies } from "@/lib/sso-auth";
 import { SSO_SERVER_BASE_URL } from "@/lib/sso-config";
 import { callOfficialApi } from "@/lib/official-api";
 import { getClientIP } from "@/lib/ratelimit";
@@ -110,18 +110,42 @@ async function refreshOfficialUserToken(
 }
 
 /**
+ * 判断官网 USER token 是否属于当前用户。
+ * 能解析出 sub 时必须一致；不透明 token / 解析失败时交给官网端点最终鉴权。
+ */
+function userTokenMatchesUser(token: string, expectedUserId: string): boolean {
+    try {
+        const payload = decodeJwt(token);
+        return typeof payload.sub !== "string" || payload.sub === expectedUserId;
+    } catch {
+        return true;
+    }
+}
+
+/**
  * 取一个可转发给官网的 access token：
  * 1. 有效 SSO access token；
  * 2. SSO refresh 轮换后的 access token；
- * 3. 微信登录的官网 user_token；临近过期则用 user_refresh 静默轮换。
+ * 3. 微信登录的官网 user_token（仅当浏览器没有 SSO 会话 Cookie 时才允许）。
+ *
+ * @param expectedUserId 当前本地会话用户 id。微信 USER_* Cookie 的 sub 必须与之一致，
+ *   防止共享设备/切换登录方式后串用上一账号的官网凭证。
  *
  * 调用前应先通过 getSessionUser 鉴权；此处返回 null 视为会话失效（401）。
  */
-export async function resolveOfficialAccessToken(req?: NextRequest): Promise<string | null> {
+export async function resolveOfficialAccessToken(
+    req?: NextRequest,
+    expectedUserId?: string
+): Promise<string | null> {
+    const authHeader = req?.headers.get("authorization") || "";
     const token = await getAccessToken(req);
     if (token) {
         const payload = await ssoVerifier.verify(token);
         if (payload?.sub) return token;
+
+        // Bearer 通道（小程序/服务端）：验证失败直接拒绝，禁止回退浏览器 Cookie，
+        // 否则调用方可能借用同浏览器中另一账号的官网登录态。
+        if (authHeader.startsWith("Bearer ")) return null;
     }
 
     const rotated = await refreshSessionFromCookie();
@@ -131,19 +155,29 @@ export async function resolveOfficialAccessToken(req?: NextRequest): Promise<str
         if (newToken) return newToken;
     }
 
-    // 微信登录用户：没有 SSO Cookie，只有官网 USER_* Cookie
+    // 浏览器仍在 SSO 登录体系内（access 过期 / refresh 失效）：不能回退到微信 USER_* Cookie。
+    // 这是跨账号串用的关键防线：SSO 用户 A 的浏览器里可能残留上一微信账号 B 的 USER_* Cookie。
+    if (await hasSsoSessionCookies(req)) {
+        return null;
+    }
+
+    // 微信登录用户：没有 SSO 会话 Cookie，只有官网 USER_* Cookie
     const { USER_COOKIE_NAME, USER_REFRESH_COOKIE_NAME } = await import("@/lib/wechat-constants");
     const cookieStore = await cookies();
-    const userToken = req?.cookies.get(USER_COOKIE_NAME)?.value ?? cookieStore.get(USER_COOKIE_NAME)?.value;
-    const userRefreshToken = req?.cookies.get(USER_REFRESH_COOKIE_NAME)?.value
+    const userToken = req?.cookies?.get(USER_COOKIE_NAME)?.value ?? cookieStore.get(USER_COOKIE_NAME)?.value;
+    const userRefreshToken = req?.cookies?.get(USER_REFRESH_COOKIE_NAME)?.value
         ?? cookieStore.get(USER_REFRESH_COOKIE_NAME)?.value;
 
     if (userToken && !isTokenExpiringSoon(userToken)) {
+        if (expectedUserId && !userTokenMatchesUser(userToken, expectedUserId)) return null;
         return userToken;
     }
 
     if (userRefreshToken) {
-        return refreshOfficialUserToken(userRefreshToken, req);
+        const refreshed = await refreshOfficialUserToken(userRefreshToken, req);
+        if (!refreshed) return null;
+        if (expectedUserId && !userTokenMatchesUser(refreshed, expectedUserId)) return null;
+        return refreshed;
     }
 
     return null;

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
     getAccessToken: vi.fn(),
     refreshSessionFromCookie: vi.fn(),
     verify: vi.fn(),
+    hasSsoSessionCookies: vi.fn(),
     fetch: vi.fn(),
 }));
 
@@ -14,6 +15,7 @@ vi.mock("@/lib/sso-auth", () => ({
     getAccessToken: mocks.getAccessToken,
     refreshSessionFromCookie: mocks.refreshSessionFromCookie,
     ssoVerifier: { verify: mocks.verify },
+    hasSsoSessionCookies: mocks.hasSsoSessionCookies,
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -48,6 +50,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     mocks.getAccessToken.mockResolvedValue("at-1");
     mocks.verify.mockResolvedValue({ sub: "u-m" });
+    mocks.hasSsoSessionCookies.mockResolvedValue(false);
 });
 
 describe("GET /api/account/membership", () => {
@@ -94,5 +97,19 @@ describe("GET /api/account/membership", () => {
         mocks.fetch.mockRejectedValue(new Error("timeout"));
         const res = await GET(fakeReq());
         expect(res.status).toBe(502);
+    });
+
+    it("SSO Cookie 存在但 access/refresh 均失效时，不回退微信 USER_* Cookie", async () => {
+        // 共享设备/切换登录方式场景：浏览器仍带 SSO Cookie（已失效），
+        // 不得回退到上一微信账号残留的 USER_* token。
+        mocks.getSessionUser.mockResolvedValue({ id: "u-m5", role: "user", tokenVersion: 0 });
+        mocks.getAccessToken.mockResolvedValue("expired-at");
+        mocks.verify.mockResolvedValue(null);
+        mocks.refreshSessionFromCookie.mockResolvedValue(null);
+        mocks.hasSsoSessionCookies.mockResolvedValue(true);
+
+        const res = await GET(fakeReq());
+        expect(res.status).toBe(401);
+        expect(mocks.fetch).not.toHaveBeenCalled();
     });
 });

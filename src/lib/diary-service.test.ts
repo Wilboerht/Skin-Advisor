@@ -29,9 +29,13 @@ import {
   normalizeDiaryPageSize,
   upsertDiaryEntry,
 } from "./diary-service";
+import { todayKeyShanghai } from "./time";
+import { isDiaryDateInRange } from "./diary-utils";
 
-const today = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
-const dateStr = today.toISOString().slice(0, 10);
+// 打卡积分按北京时间当天判定，测试基准日必须同样取上海日历日，
+// 否则在 UTC 16:00-24:00 运行测试时会出现跨日漂移。
+const dateStr = todayKeyShanghai();
+const today = new Date(`${dateStr}T00:00:00.000Z`);
 const daysBefore = (n: number) =>
   new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - n));
 
@@ -124,12 +128,31 @@ describe("upsertDiaryEntry 打卡积分口径", () => {
     expect(result.points).toBeGreaterThan(0);
   });
 
-  it("昨天（UTC 落后时区容差）打卡：仍发积分", async () => {
+  it("昨天（补打卡）：不发积分、不查连续天数", async () => {
     const yesterday = daysBefore(1).toISOString().slice(0, 10);
     const result = await upsertDiaryEntry("u1", { ...validBody, date: yesterday });
-    expect(result.isFirstManualCheckin).toBe(true);
-    expect(result.streak).toBe(1);
-    expect(result.points).toBe(1);
+    expect(result.isFirstManualCheckin).toBe(false);
+    expect(result.streak).toBeUndefined();
+    expect(result.points).toBeUndefined();
+    // 条目仍正常写入
+    expect(mocks.upsert).toHaveBeenCalledTimes(1);
+    expect(mocks.findMany).not.toHaveBeenCalled();
+  });
+
+  it("明天（提前打卡）：不发积分、不查连续天数", async () => {
+    const tomorrow = daysBefore(-1);
+    // 北京时间 00:00-08:00 时，"上海明天"会超出按 UTC 计算的写入窗口，
+    // 此时服务端在参数校验阶段就会拒绝，无需再验证积分口径。
+    if (!isDiaryDateInRange(tomorrow)) return;
+    const result = await upsertDiaryEntry("u1", {
+      ...validBody,
+      date: tomorrow.toISOString().slice(0, 10),
+    });
+    expect(result.isFirstManualCheckin).toBe(false);
+    expect(result.streak).toBeUndefined();
+    expect(result.points).toBeUndefined();
+    expect(mocks.upsert).toHaveBeenCalledTimes(1);
+    expect(mocks.findMany).not.toHaveBeenCalled();
   });
 
   it("补打卡（前天及更早）：不发积分、不查连续天数", async () => {

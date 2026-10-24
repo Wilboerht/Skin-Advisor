@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
                 where: { id: user.id },
                 select: { name: true, avatarUrl: true, gender: true, phoneNumber: true, membershipLevel: true },
             }),
-            fetchOfficialProfile(req),
+            fetchOfficialProfile(req, user.id),
         ]);
 
         return NextResponse.json({
@@ -50,9 +50,10 @@ export async function GET(req: NextRequest) {
 
 /** 回源官网 userinfo 取生日与「是否已设置密码」；任何失败都降级为 null（不阻断资料主流程） */
 async function fetchOfficialProfile(
-    req: NextRequest
+    req: NextRequest,
+    userId: string
 ): Promise<{ birthday: string | null; hasPassword: boolean | null }> {
-    const token = await resolveOfficialAccessToken(req);
+    const token = await resolveOfficialAccessToken(req, userId);
     if (!token) return { birthday: null, hasPassword: null };
     try {
         const res = await fetch(`${OFFICIAL_BASE_URL}/api/oauth/userinfo`, {
@@ -128,7 +129,7 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: "validation_error", message }, { status: 400 });
     }
 
-    const token = await resolveOfficialAccessToken(req);
+    const token = await resolveOfficialAccessToken(req, user.id);
     if (!token) {
         return NextResponse.json({ error: "unauthorized", message: "登录已过期，请重新登录" }, { status: 401 });
     }

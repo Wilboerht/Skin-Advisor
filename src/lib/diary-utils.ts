@@ -1,7 +1,12 @@
 /**
  * 护肤日记纯函数工具（无服务端依赖，客户端/服务端均可导入）。
  * date 字段语义：客户端本地日历日（YYYY-MM-DD），按 UTC 零点存储，不依赖服务器时区。
+ *
+ * "今天"的业务口径固定为 Asia/Shanghai（与测肤额度/用量统计一致），
+ * 避免服务器/容器时区变化导致积分资格与连续天数在凌晨漂移。
  */
+
+import { todayKeyShanghai } from "./time";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -49,6 +54,11 @@ function dayIndexOf(date: Date): number {
     return Math.floor(date.getTime() / DAY_MS);
 }
 
+/** 北京时间"今天"对应的 UTC 零点 Date（用于与按 UTC 零点存储的 date 比较日序） */
+function todayShanghaiAsUtcMidnight(now: Date = new Date()): Date {
+    return new Date(`${todayKeyShanghai(now)}T00:00:00.000Z`);
+}
+
 /**
  * 连续打卡天数：连续段必须截至今天或昨天（错过昨天即中断），返回 { current, longest }。
  */
@@ -57,9 +67,7 @@ export function computeStreak(
     now: Date = new Date()
 ): { current: number; longest: number } {
     const daySet = new Set(dates.map(dayIndexOf));
-    const today = dayIndexOf(
-        new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-    );
+    const today = dayIndexOf(todayShanghaiAsUtcMidnight(now));
 
     let current = 0;
     let cursor = daySet.has(today) ? today : today - 1;
@@ -103,13 +111,34 @@ export function checkinPointsForStreak(streak: number): number {
 }
 
 /**
- * 打卡积分资格：仅"当天打卡"发积分，补打卡（历史日期）不发。
- * date 是客户端本地日历日，可能落后/领先服务器 UTC 一天（时区），
- * 故下限放宽到 UTC 昨天；早于 UTC 昨天的一定是补打卡。
+ * 打卡积分资格：仅"北京时间当天"发积分；补打卡（历史日期）/提前打卡（未来日期）都不发。
+ *
+ * 原实现只放宽下限到 UTC 昨天，导致补打卡与"明天"也能领积分。日记日期来自客户端，
+ * 服务端无法可靠获知用户时区；产品主要面向国内用户，统一按 Asia/Shanghai 判定当天，
+ * 与测肤额度/用量统计的业务日口径保持一致。
  */
 export function isCheckinPointsEligibleDate(date: Date, now: Date = new Date()): boolean {
-    const minDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1));
-    return date >= minDate;
+    return dayIndexOf(date) === dayIndexOf(todayShanghaiAsUtcMidnight(now));
+}
+
+/**
+ * 漏发补发资格：条目必须是"在北京时间当天或昨天创建，且日期与创建日相同"。
+ *
+ * 用 createdAt（服务端时间）而不是只看 date，才能区分：
+ * - 昨天真实打卡但官网瞬断导致漏发 → createdAt 也是昨天，应补发；
+ * - 今天补录昨天/提前录入明天 → createdAt 是今天，不应发；
+ * - 更早的历史补打卡 → 超出 1 天补发窗口，不应发。
+ */
+export function isCheckinBackfillEligibleDate(
+    date: Date,
+    createdAt: Date,
+    now: Date = new Date()
+): boolean {
+    const dateKey = date.toISOString().slice(0, 10);
+    if (dateKey !== todayKeyShanghai(createdAt)) return false;
+    const todayKey = todayKeyShanghai(now);
+    const yesterdayKey = todayKeyShanghai(new Date(now.getTime() - DAY_MS));
+    return dateKey === todayKey || dateKey === yesterdayKey;
 }
 
 /**

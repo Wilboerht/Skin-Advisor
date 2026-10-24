@@ -26,6 +26,7 @@ vi.mock("@/lib/prisma", () => ({
 vi.stubGlobal("fetch", mocks.fetch);
 
 import { backfillRecentCheckinPoints, grantCheckinPoints } from "./diary-points";
+import { todayKeyShanghai } from "./time";
 
 function jsonResponse(status: number, data: unknown): Response {
     return new Response(JSON.stringify(data), {
@@ -115,17 +116,19 @@ describe("grantCheckinPoints", () => {
 });
 
 describe("backfillRecentCheckinPoints（漏发自愈）", () => {
-    const now = new Date();
+    // 补发窗口按北京时间判定；测试基准日同样取上海日历日，避免 UTC 跨日漂移
+    const todayDate = new Date(`${todayKeyShanghai()}T00:00:00.000Z`);
     const day = (n: number) =>
-        new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - n));
+        new Date(Date.UTC(todayDate.getUTCFullYear(), todayDate.getUTCMonth(), todayDate.getUTCDate() - n));
     const iso = (d: Date) => d.toISOString().slice(0, 10);
 
-    it("仅对手动打卡日按幂等键补发，跳过自动条目与当前刚处理的日期", async () => {
-        // 近窗手动：昨天（连续：昨天+前天）；自动条目：前天；全量：今天、昨天、前天
+    it("补发昨天真实打卡的漏发，跳过自动条目与当前刚处理的日期", async () => {
+        // 近窗手动：昨天（createdAt 也是昨天，属于真实漏发）；自动条目：前天；
+        // 全量：今天、昨天、前天
         mocks.findMany
             .mockResolvedValueOnce([
-                { date: day(1), note: null },
-                { date: day(2), note: "在线测肤：综合评分 80" },
+                { date: day(1), createdAt: day(1), note: null },
+                { date: day(2), createdAt: day(2), note: "在线测肤：综合评分 80" },
             ])
             .mockResolvedValueOnce([{ date: day(0) }, { date: day(1) }, { date: day(2) }]);
 
@@ -143,17 +146,28 @@ describe("backfillRecentCheckinPoints（漏发自愈）", () => {
 
     it("窗口内无手动打卡时不发任何请求", async () => {
         mocks.findMany
-            .mockResolvedValueOnce([{ date: day(1), note: "在线测肤：综合评分 80" }])
+            .mockResolvedValueOnce([
+                { date: day(1), createdAt: day(1), note: "在线测肤：综合评分 80" },
+            ])
             .mockResolvedValueOnce([{ date: day(1) }]);
 
         await backfillRecentCheckinPoints("u1", iso(day(0)));
         expect(mocks.fetch).not.toHaveBeenCalled();
     });
 
-    it("补打卡日期（前天及更早）即使漏发也不补：与发放口径一致", async () => {
+    it("更早的历史打卡即使漏发也不补：超出 1 天补发窗口", async () => {
         mocks.findMany
-            .mockResolvedValueOnce([{ date: day(3), note: null }])
+            .mockResolvedValueOnce([{ date: day(3), createdAt: day(3), note: null }])
             .mockResolvedValueOnce([{ date: day(3) }]);
+
+        await backfillRecentCheckinPoints("u1", iso(day(0)));
+        expect(mocks.fetch).not.toHaveBeenCalled();
+    });
+
+    it("今天补录昨天的打卡：createdAt 与 date 不一致，不补发", async () => {
+        mocks.findMany
+            .mockResolvedValueOnce([{ date: day(1), createdAt: day(0), note: null }])
+            .mockResolvedValueOnce([{ date: day(1) }]);
 
         await backfillRecentCheckinPoints("u1", iso(day(0)));
         expect(mocks.fetch).not.toHaveBeenCalled();

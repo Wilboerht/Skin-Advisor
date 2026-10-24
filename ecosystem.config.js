@@ -52,6 +52,8 @@ module.exports = {
         exec_mode: 'fork',
         env: {
             NODE_ENV: 'production',
+            // 业务日界统一按北京时间；服务器/容器重建后不依赖系统时区配置
+            TZ: 'Asia/Shanghai',
             PORT: 3002,
             ...securityEnv,
             // QWEN_API_KEY 等敏感配置请从 .env.production 读取

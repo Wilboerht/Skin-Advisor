@@ -135,6 +135,14 @@ describe("computeStreak", () => {
         expect(r.current).toBe(3);
         expect(r.longest).toBe(3);
     });
+
+    it("北京时间凌晨跨日：按上海日历日计算连续天数", () => {
+        // UTC 2026-09-03 17:00 = 北京时间 2026-09-04 01:00
+        const shanghaiNow = new Date("2026-09-03T17:00:00.000Z");
+        const r = computeStreak(days("2026-09-03", "2026-09-04"), shanghaiNow);
+        expect(r.current).toBe(2);
+        expect(r.longest).toBe(2);
+    });
 });
 
 describe("streakEndingAt", () => {
@@ -179,23 +187,33 @@ describe("checkinPointsForStreak", () => {
     });
 });
 
-describe("isCheckinPointsEligibleDate（补打卡不发积分）", () => {
-    // 以 2026-09-03 12:00 UTC 为"现在"
+describe("isCheckinPointsEligibleDate（仅北京时间当天发积分）", () => {
+    // 以 2026-09-03 12:00 UTC 为"现在"（北京时间 2026-09-03 20:00）
     const now = new Date("2026-09-03T12:00:00.000Z");
     const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
-    it("今天与昨天（UTC 落后时区的当天）有资格", () => {
+    it("北京时间当天有资格", () => {
         expect(isCheckinPointsEligibleDate(day("2026-09-03"), now)).toBe(true);
-        expect(isCheckinPointsEligibleDate(day("2026-09-02"), now)).toBe(true);
     });
 
-    it("明天（UTC 领先时区的当天）有资格", () => {
-        expect(isCheckinPointsEligibleDate(day("2026-09-04"), now)).toBe(true);
+    it("昨天（补打卡）无资格", () => {
+        expect(isCheckinPointsEligibleDate(day("2026-09-02"), now)).toBe(false);
     });
 
-    it("前天及更早为补打卡，无资格", () => {
+    it("明天（提前打卡）无资格", () => {
+        expect(isCheckinPointsEligibleDate(day("2026-09-04"), now)).toBe(false);
+    });
+
+    it("更早日期为补打卡，无资格", () => {
         expect(isCheckinPointsEligibleDate(day("2026-09-01"), now)).toBe(false);
         expect(isCheckinPointsEligibleDate(day("2026-06-05"), now)).toBe(false);
+    });
+
+    it("北京时间凌晨跨日：按上海日历日判定", () => {
+        // UTC 2026-09-03 17:00 = 北京时间 2026-09-04 01:00
+        const shanghaiNextDay = new Date("2026-09-03T17:00:00.000Z");
+        expect(isCheckinPointsEligibleDate(day("2026-09-04"), shanghaiNextDay)).toBe(true);
+        expect(isCheckinPointsEligibleDate(day("2026-09-03"), shanghaiNextDay)).toBe(false);
     });
 });
 

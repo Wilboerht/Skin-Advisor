@@ -16,6 +16,7 @@ import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import { parseOfficialResponse } from "@/lib/official-api";
 import { fetchOfficialMembershipLevel } from "@/lib/official-membership";
 import { signLocalSession } from "@/lib/auth";
+import { clearSsoSessionCookies } from "@/lib/sso-auth";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import { isSameOriginRequest } from "@/lib/same-origin";
 import {
@@ -195,6 +196,8 @@ export async function POST(req: NextRequest) {
             return apiError(ErrorCode.INTERNAL_ERROR, "会话创建失败", 500);
         }
 
+        // 微信本地会话生效：清掉可能残留的 SSO Cookie，避免两种登录体系混用
+        clearSsoSessionCookies(response);
         return response;
 
     } catch (e) {

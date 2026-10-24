@@ -241,10 +241,9 @@ export async function upsertDiaryEntry(
         return { entry, isFirstManualCheckin: false };
     }
 
-    // 补打卡（历史日期）不发积分：仅当天窗口内的首次手动打卡发分。
-    // 资格窗口下限为 UTC 昨天（兼容落后时区客户端的"今天"），与
-    // diary-points 的自愈补发共用同一口径。补打卡跳过 streak 查询，
-    // 返回与"编辑已有打卡"相同的无积分结果。
+    // 补打卡（历史日期）/提前打卡（未来日期）不发积分：仅北京时间当天的首次手动打卡发分。
+    // 资格口径见 diary-utils.isCheckinPointsEligibleDate（固定 Asia/Shanghai）。
+    // 补打卡跳过 streak 查询，返回与"编辑已有打卡"相同的无积分结果。
     if (!isCheckinPointsEligibleDate(date)) {
         return { entry, isFirstManualCheckin: false };
     }

@@ -6,10 +6,15 @@
  * 让官网设置 nonce Cookie 后再跳转到微信授权页。
  */
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 import { getPublicOrigin } from "@/lib/sso-config";
 import { isSafeInternalPath } from "@/lib/url-utils";
+import {
+    WECHAT_OAUTH_NONCE_COOKIE_NAME,
+    WECHAT_OAUTH_NONCE_COOKIE_OPTIONS,
+} from "@/lib/wechat-constants";
 
 function getSafeRedirect(req: NextRequest, redirect: string | null): string {
     if (!redirect || redirect === "/") return "/";
@@ -54,7 +59,15 @@ export async function GET(req: NextRequest) {
         officialUrl.searchParams.set("callback", callbackBase);
         officialUrl.searchParams.set("mode", "redirect");
 
-        return NextResponse.redirect(officialUrl.toString(), 302);
+        const response = NextResponse.redirect(officialUrl.toString(), 302);
+        // 浏览器绑定：回调必须携带同一浏览器发起登录时写入的 nonce。
+        // 官网自己的 nonce 只覆盖官网域，无法阻止攻击者把 exchange token 回调 URL 转发给受害者。
+        response.cookies.set(
+            WECHAT_OAUTH_NONCE_COOKIE_NAME,
+            crypto.randomUUID(),
+            WECHAT_OAUTH_NONCE_COOKIE_OPTIONS
+        );
+        return response;
     } catch (e) {
         logger.error("Wechat Login Proxy Error", e);
         return NextResponse.json({ success: false, error: { message: "应用系统异常，请稍后重试" } }, { status: 500 });
