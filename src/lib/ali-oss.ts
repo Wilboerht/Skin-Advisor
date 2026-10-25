@@ -4,6 +4,7 @@
  */
 // @ts-expect-error ali-oss lacks official ESM type declarations
 import OSS from "ali-oss";
+import crypto from "crypto";
 import { logger } from "@/lib/logger";
 
 // OSS 配置检查
@@ -44,13 +45,19 @@ if (isOSSConfigured()) {
 }
 
 /**
- * 生成直传签名 URL
+ * 生成 OSS PostObject 直传策略（含 content-length-range，禁止签小传大）
  * @param filename 文件名（仅用于推断扩展名，当 objectName 传入时忽略其路径部分）
  * @param type 文件类型 (MIME type)
  * @param objectName 可选指定 OSS object key；未提供时按默认规则生成
- * @returns { uploadUrl, publicUrl } 用于前端上传和访问
+ * @param maxSize 本次上传允许的最大字节数
+ * @returns PostObject 表单字段或本地降级地址
  */
-export async function generateUploadSignature(filename: string, type: string, objectName?: string) {
+export async function generateUploadPolicy(
+    filename: string,
+    type: string,
+    objectName: string | undefined,
+    maxSize: number
+) {
     if (!objectName) {
         // 生成随机文件路径: advisor/日期/随机ID.ext
         const date = new Date().toISOString().split("T")[0];
@@ -59,34 +66,47 @@ export async function generateUploadSignature(filename: string, type: string, ob
         objectName = `advisor/${date}/${randomId}.${ext}`;
     }
 
-    if (!ossClient) {
+    const publicDomain = process.env.ALI_OSS_PUBLIC_DOMAIN ||
+        `https://${ossConfig.bucket}.${ossConfig.region}.aliyuncs.com`;
+    const publicUrl = `${publicDomain}/${objectName}`;
+
+    if (!ossClient || !ossConfig.bucket || !ossConfig.region ||
+        !ossConfig.accessKeyId || !ossConfig.accessKeySecret) {
         logger.warn("阿里云 OSS 未配置，使用本地存储降级方案");
         return {
+            storage: "local" as const,
             uploadUrl: `/api/local-upload?path=${encodeURIComponent(objectName)}`,
             publicUrl: `/uploads/${objectName}`,
             objectName: objectName
         };
     }
 
-    // 生成签名 URL，有效期 15 分钟 (900秒)
-    // 允许 PUT 方法上传
-    const url = ossClient.signatureUrl(objectName, {
-        method: "PUT",
-        expires: 900,
-        "Content-Type": type,
-    });
-
-    // 计算公开访问 URL (不带签名参数)
-    // 优先使用自定义域名（如果有）
-    const publicDomain = process.env.ALI_OSS_PUBLIC_DOMAIN ||
-        `https://${ossConfig.bucket}.${ossConfig.region}.aliyuncs.com`;
-
-    const publicUrl = `${publicDomain}/${objectName}`;
+    const policy = {
+        expiration: new Date(Date.now() + 15 * 60 * 1000)
+            .toISOString()
+            .replace(/\.\d{3}Z$/, "Z"),
+        conditions: [
+            ["content-length-range", 1, maxSize],
+            ["eq", "$key", objectName],
+            ["eq", "$Content-Type", type],
+        ],
+    };
+    const policyBase64 = Buffer.from(JSON.stringify(policy), "utf8").toString("base64");
+    const signature = crypto
+        .createHmac("sha1", ossConfig.accessKeySecret)
+        .update(policyBase64)
+        .digest("base64");
 
     return {
-        uploadUrl: url,
-        publicUrl: publicUrl,
-        objectName: objectName
+        storage: "oss" as const,
+        uploadUrl: `https://${ossConfig.bucket}.${ossConfig.region}.aliyuncs.com`,
+        publicUrl,
+        objectName,
+        ossAccessKeyId: ossConfig.accessKeyId,
+        policy: policyBase64,
+        signature,
+        key: objectName,
+        successActionStatus: "201",
     };
 }
 

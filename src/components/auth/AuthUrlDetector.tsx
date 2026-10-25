@@ -45,6 +45,23 @@ export function AuthUrlDetector() {
         openAuthModalRef.current = openAuthModal;
     }, [openAuthModal]);
 
+    // 主站微信回调可能把一次性 exchange token 放在 fragment（不进入主站日志）。
+    // 子站落地页读取 hash 后转交本站服务端回调兑换；token 不留在地址栏。
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const hash = new URLSearchParams(window.location.hash.slice(1));
+        const exchangeToken = hash.get("wechat_exchange_token");
+        if (!exchangeToken) return;
+
+        const callbackUrl = new URL("/api/auth/wechat/callback", window.location.origin);
+        callbackUrl.searchParams.set("wechat_exchange_token", exchangeToken);
+        callbackUrl.searchParams.set(
+            "redirect",
+            `${window.location.pathname}${window.location.search}`
+        );
+        window.location.replace(callbackUrl.toString());
+    }, []);
+
     // 检测 URL 参数：打开弹窗或直接跳转（已登录时）
     useEffect(() => {
         const authView = searchParams.get("auth");

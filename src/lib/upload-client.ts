@@ -71,6 +71,7 @@ export async function uploadImage(
     const signBody: Record<string, unknown> = {
         filename,
         type: compressed.type || "image/jpeg",
+        size: compressed.size,
     };
     if (metadata?.sessionId) signBody.sessionId = metadata.sessionId;
     if (metadata?.guestId) signBody.guestId = metadata.guestId;
@@ -89,21 +90,45 @@ export async function uploadImage(
         throw new Error(signData.error || "获取上传签名未成功");
     }
 
-    const { uploadUrl, publicUrl } = signData.data;
-    const isLocalUpload = typeof uploadUrl === "string" && uploadUrl.startsWith("/api/local-upload");
-    const uploadRes = await (isLocalUpload ? fetchWithCsrf(uploadUrl, {
+    const {
+        storage,
+        uploadUrl,
+        publicUrl,
+        ossAccessKeyId,
+        policy,
+        signature,
+        key,
+        successActionStatus,
+    } = signData.data;
+
+    if (storage === "oss") {
+        const form = new FormData();
+        form.append("key", key);
+        form.append("policy", policy);
+        form.append("OSSAccessKeyId", ossAccessKeyId);
+        form.append("signature", signature);
+        form.append("success_action_status", successActionStatus || "201");
+        form.append("Content-Type", compressed.type || "image/jpeg");
+        form.append("file", compressed, filename);
+
+        const uploadRes = await fetchWithRetry(uploadUrl, {
+            method: "POST",
+            body: form,
+        }, { timeoutMs: 60_000, retries: 2 });
+
+        if (!uploadRes.ok) {
+            throw new Error("上传图片到 OSS 未成功");
+        }
+        return publicUrl;
+    }
+
+    const uploadRes = await fetchWithCsrf(uploadUrl, {
         method: "PUT",
         headers: {
             "Content-Type": compressed.type || "image/jpeg",
         },
         body: compressed,
-    }, { retries: 2, timeoutMs: 60_000 }) : fetchWithRetry(uploadUrl, {
-        method: "PUT",
-        headers: {
-            "Content-Type": compressed.type || "image/jpeg",
-        },
-        body: compressed,
-    }, { timeoutMs: 60_000, retries: 2 }));
+    }, { retries: 2, timeoutMs: 60_000 });
 
     if (!uploadRes.ok) {
         throw new Error("上传图片到本地存储失败");

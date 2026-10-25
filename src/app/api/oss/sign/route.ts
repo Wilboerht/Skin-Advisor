@@ -4,7 +4,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { generateUploadSignature } from "@/lib/ali-oss";
+import { generateUploadPolicy } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { getSessionUser } from "@/lib/sso-auth";
 import { logger } from "@/lib/logger";
@@ -19,13 +19,20 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { filename, type, sessionId, guestId, cookieId, fingerprint, kind } = body;
+        const { filename, type, size, sessionId, guestId, cookieId, fingerprint, kind } = body;
 
         if (!filename || !type) {
             return NextResponse.json({ error: "Missing filename or type" }, { status: 400 });
         }
+        if (!Number.isInteger(size) || size <= 0) {
+            return NextResponse.json({ error: "Missing file size" }, { status: 400 });
+        }
 
         const uploadKind: "face" | "avatar" = kind === "avatar" ? "avatar" : "face";
+        const maxSize = uploadKind === "avatar" ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+        if (size > maxSize) {
+            return NextResponse.json({ error: "文件过大" }, { status: 413 });
+        }
 
         // 头像属于用户永久资料，必须登录后才能签发；面部照片仍允许登录前拍摄。
         const avatarUser = uploadKind === "avatar" ? await getSessionUser(request) : null;
@@ -56,8 +63,8 @@ export async function POST(request: NextRequest) {
         const prefix = uploadKind === "avatar" ? "avatars" : "guest";
         const objectName = `${prefix}/${idHash}/${date}/${randomId}${ext}`;
 
-        // 4. 生成签名
-        const signature = await generateUploadSignature(filename, type, objectName);
+        // 4. 生成 PostObject 策略（content-length-range 由 OSS 强制执行）
+        const signature = await generateUploadPolicy(filename, type, objectName, maxSize);
 
         return NextResponse.json({
             success: true,

@@ -15,7 +15,12 @@ export default function WechatCallbackPage() {
     const [message, setMessage] = useState("正在处理微信授权…");
 
     useEffect(() => {
-        const exchangeToken = searchParams.get("wechat_exchange_token");
+        const hashParams =
+            typeof window !== "undefined"
+                ? new URLSearchParams(window.location.hash.slice(1))
+                : new URLSearchParams();
+        const exchangeToken =
+            searchParams.get("wechat_exchange_token") || hashParams.get("wechat_exchange_token");
         const redirect = searchParams.get("redirect") || "/";
         const wechatAuth = searchParams.get("wechat_auth");
 
@@ -29,6 +34,9 @@ export default function WechatCallbackPage() {
         searchParams.forEach((value, key) => {
             callbackUrl.searchParams.set(key, value);
         });
+        if (exchangeToken) {
+            callbackUrl.searchParams.set("wechat_exchange_token", exchangeToken);
+        }
         callbackUrl.searchParams.set("redirect", redirect);
 
         window.location.href = callbackUrl.toString();

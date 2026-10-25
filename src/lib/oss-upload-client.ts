@@ -40,6 +40,7 @@ export async function uploadImageToOSS(
     const signBody: Record<string, unknown> = {
         filename,
         type: file.type || "image/jpeg",
+        size: file.size,
     };
     if (metadata?.sessionId) signBody.sessionId = metadata.sessionId;
     if (metadata?.guestId) signBody.guestId = metadata.guestId;
@@ -58,26 +59,50 @@ export async function uploadImageToOSS(
         throw new Error(signData.error || "获取上传签名未成功");
     }
 
-    const { uploadUrl, publicUrl } = signData.data;
+    const {
+        storage,
+        uploadUrl,
+        publicUrl,
+        ossAccessKeyId,
+        policy,
+        signature,
+        key,
+        successActionStatus,
+    } = signData.data;
 
-    // 2. 直传 OSS（本地降级接口需要 CSRF）
-    const isLocalUpload = typeof uploadUrl === "string" && uploadUrl.startsWith("/api/local-upload");
-    const uploadRes = await (isLocalUpload ? fetchWithCsrf(uploadUrl, {
+    // OSS 已配置：PostObject 表单直传（policy 内含 content-length-range）
+    if (storage === "oss") {
+        const form = new FormData();
+        form.append("key", key);
+        form.append("policy", policy);
+        form.append("OSSAccessKeyId", ossAccessKeyId);
+        form.append("signature", signature);
+        form.append("success_action_status", successActionStatus || "201");
+        form.append("Content-Type", file.type || "image/jpeg");
+        form.append("file", file, filename);
+
+        const uploadRes = await fetchWithRetry(uploadUrl, {
+            method: "POST",
+            body: form,
+        }, { timeoutMs: 60_000, retries: 2 });
+
+        if (!uploadRes.ok) {
+            throw new Error("上传图片到 OSS 未成功");
+        }
+        return publicUrl;
+    }
+
+    // 本地降级接口需要 CSRF
+    const uploadRes = await fetchWithCsrf(uploadUrl, {
         method: "PUT",
         headers: {
             "Content-Type": file.type || "image/jpeg",
         },
         body: file,
-    }, { retries: 2, timeoutMs: 60_000 }) : fetchWithRetry(uploadUrl, {
-        method: "PUT",
-        headers: {
-            "Content-Type": file.type || "image/jpeg",
-        },
-        body: file,
-    }, { timeoutMs: 60_000, retries: 2 }));
+    }, { retries: 2, timeoutMs: 60_000 });
 
     if (!uploadRes.ok) {
-        throw new Error("上传图片到 OSS 未成功");
+        throw new Error("上传图片到本地存储未成功");
     }
 
     return publicUrl;
