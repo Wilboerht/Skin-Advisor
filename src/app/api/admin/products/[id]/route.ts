@@ -25,6 +25,7 @@ import {
     purchaseLinksSchema,
 } from "@/types/product";
 import { buildAffiliateLinks, normalizeProductPurchaseLinks } from "@/lib/product-links";
+import { deleteUnreferencedProductAssets, productImageRefs } from "@/lib/product-assets";
 import { logger } from "@/lib/logger";
 
 // GET /api/admin/products/[id] - Get product details
@@ -292,12 +293,19 @@ export const PUT = withAdminAuth(async (
                 }
             });
 
-            return { type: "success" as const, product };
+            return { type: "success" as const, product, oldProduct };
         });
 
         if (txResult.type === "not_found") {
             return apiError(ErrorCode.NOT_FOUND, "Product not found", 404);
         }
+
+        const oldRefs = productImageRefs(txResult.oldProduct.image, txResult.oldProduct.images);
+        const newRefs = new Set(productImageRefs(txResult.product.image, txResult.product.images));
+        await deleteUnreferencedProductAssets(
+            oldRefs.filter((ref) => !newRefs.has(ref)),
+            id
+        );
 
         revalidateTag("admin-stats", "max");
         return NextResponse.json(txResult.product);
@@ -324,7 +332,7 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (
         const { id } = await params;
         const clientInfo = getClientInfo(request);
 
-        await prisma.$transaction(async (tx) => {
+        const deletedProduct = await prisma.$transaction(async (tx) => {
             const product = await tx.product.findUnique({ where: { id } });
             if (!product) {
                 throw new Error("NOT_FOUND");
@@ -344,7 +352,13 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (
                     userAgent: clientInfo.userAgent,
                 }
             });
+            return product;
         });
+
+        await deleteUnreferencedProductAssets(
+            productImageRefs(deletedProduct.image, deletedProduct.images),
+            id
+        );
 
         revalidateTag("admin-stats", "max");
         return apiSuccess();

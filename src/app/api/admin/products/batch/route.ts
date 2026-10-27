@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { deleteUnreferencedProductAssets, productImageRefs } from "@/lib/product-assets";
 import { logger } from "@/lib/logger";
 
 // POST - Batch operations on products
@@ -60,6 +61,13 @@ export const POST = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (r
             );
         }
 
+        const productsToDelete = action === 'delete'
+            ? await prisma.product.findMany({
+                where: { id: { in: ids } },
+                select: { id: true, image: true, images: true },
+            })
+            : [];
+
         let result: { count: number } | undefined;
 
         await prisma.$transaction(async (tx) => {
@@ -115,6 +123,15 @@ export const POST = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (r
                 }
             });
         });
+
+        if (action === 'delete') {
+            for (const product of productsToDelete) {
+                await deleteUnreferencedProductAssets(
+                    productImageRefs(product.image, product.images),
+                    product.id
+                );
+            }
+        }
 
         return NextResponse.json({
             success: true,

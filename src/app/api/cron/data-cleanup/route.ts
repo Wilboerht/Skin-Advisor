@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { buildArchivedSummary } from "@/lib/session-archive";
+import { cleanupOrphanProductAssets } from "@/lib/product-assets";
 import { DATA_RETENTION, coldSummaryCutoff } from "@/lib/data-retention";
 
 export const maxDuration = 60;
@@ -307,6 +308,16 @@ export async function GET(request: NextRequest) {
             await cleanDir(uploadDir, true, fileCutoff);
         } catch { /* upload dir may not exist */ }
 
+        // ===== 9.1 清理 products/ 下无产品/无可见报告引用的孤儿图片 =====
+        let deletedProductFiles = 0;
+        try {
+            deletedProductFiles = await cleanupOrphanProductAssets();
+        } catch (productFileErr) {
+            logger.error("[Cleanup] Product asset cleanup failed", {
+                error: productFileErr instanceof Error ? productFileErr.message : String(productFileErr),
+            });
+        }
+
         // ===== 10. 清理孤儿预占：没有会话、没有成功 AI 日志、超过 24 小时 =====
         // 这些通常是 face-analyze 预占后请求中断/回滚失败留下的 TestRecord，
         // 会白扣用户额度；有成功 AI 消费的预占不在这里删（另行补偿）。
@@ -342,6 +353,7 @@ export async function GET(request: NextRequest) {
                 refreshTokens: deletedRefreshTokens.count,
                 files: deletedFiles,
                 guestFiles: deletedGuestFiles,
+                productFiles: deletedProductFiles,
                 orphanReservations: deletedOrphanReservations,
             },
         });

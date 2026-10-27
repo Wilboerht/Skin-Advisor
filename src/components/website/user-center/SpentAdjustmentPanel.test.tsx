@@ -152,13 +152,16 @@ describe("SpentAdjustmentPanel 表单", () => {
         const [url, init] = mocks.fetchWithCsrf.mock.calls[0];
         expect(url).toBe("/api/account/spent-adjustments");
         expect(init.method).toBe("POST");
-        expect(JSON.parse(String(init.body))).toEqual({
+        const body = JSON.parse(String(init.body));
+        expect(body).toEqual({
+            requestId: expect.any(String),
             channel: "TMALL",
             orderNo: "ORDER-3",
             amountClaimed: 1280,
             note: "含两支装",
             images: [],
         });
+        expect(body.requestId.length).toBeGreaterThanOrEqual(8);
         expect(mocks.showSuccess).toHaveBeenCalledWith("申请已提交，等待审核");
         expect(onViewChange).toHaveBeenCalledWith("default");
         expect(orderNo.value).toBe("");
