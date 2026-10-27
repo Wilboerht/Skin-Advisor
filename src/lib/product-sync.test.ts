@@ -334,6 +334,30 @@ describe("syncProductsFromMain", () => {
         expect(outcome.code).toBe("EMPTY_SNAPSHOT");
     });
 
+    it("产品数量骤降超过 50% 时拒绝", async () => {
+        const fake = createFakeDb();
+        fake.settings.set("advisor_product_sync_last_total", 10);
+        mocks.db.current = fake.db;
+        const products = Array.from({ length: 4 }, (_, index) =>
+            mainProduct({ sourceProductId: `main-${index + 1}`, name: `产品${index + 1}` })
+        );
+        const outcome = await syncProductsFromMain(snapshot(products));
+        expect(outcome.ok).toBe(false);
+        if (outcome.ok) return;
+        expect(outcome.code).toBe("SYNC_COUNT_DROP");
+    });
+
+    it("force 可绕过数量骤降保护", async () => {
+        const fake = createFakeDb();
+        fake.settings.set("advisor_product_sync_last_total", 10);
+        mocks.db.current = fake.db;
+        const products = Array.from({ length: 4 }, (_, index) =>
+            mainProduct({ sourceProductId: `main-${index + 1}`, name: `产品${index + 1}` })
+        );
+        const outcome = await syncProductsFromMain(snapshot(products, { force: true }));
+        expect(outcome.ok).toBe(true);
+    });
+
     it("过期快照跳过", async () => {
         const fake = createFakeDb();
         fake.settings.set(

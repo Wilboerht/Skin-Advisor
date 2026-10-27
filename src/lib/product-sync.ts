@@ -454,7 +454,7 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
             if (
                 lastTotal !== null &&
                 lastTotal > 0 &&
-                rawCount < Math.floor(lastTotal * 0.5) &&
+                rawCount < lastTotal / 2 &&
                 options.force !== true
             ) {
                 throw new ProductSyncError(
@@ -647,6 +647,15 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
                         (update as Record<string, unknown>)[field] = value;
                         changedFields.push(field);
                     };
+
+                    if (dryRun && !jsonEqual(existing.benefits, benefits)) {
+                        warn(
+                            warnings,
+                            "BENEFITS_DIFFER",
+                            "主站与子站主要功效不一致（当前保留子站值，确认后可决定是否同步）",
+                            itemRef
+                        );
+                    }
 
                     if (existing.name !== name) set("name", name);
                     if (existing.category !== category) set("category", category);
