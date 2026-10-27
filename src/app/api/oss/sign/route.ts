@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         if (!signedInUser) {
             return NextResponse.json({ error: "请先登录后再上传图片" }, { status: 401 });
         }
-        if (uploadKind === "face" && !(await hasConsent(signedInUser.id))) {
+        if (uploadKind === "face" && process.env.CONSENT_ENFORCEMENT_ENABLED !== "false" && !(await hasConsent(signedInUser.id))) {
             return NextResponse.json({ error: "请先完成隐私授权" }, { status: 403 });
         }
         const avatarUser = uploadKind === "avatar" ? signedInUser : null;
