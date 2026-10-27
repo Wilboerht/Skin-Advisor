@@ -6,13 +6,13 @@ import { generateText, getAISettings, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
 import { parseConsultantReport, sanitizeConsultantReport, type ConsultantReport } from "@/lib/advisor-utils";
-import { enforceConsultantReportIngredients } from "@/lib/ingredient-guard";
-import { buildConsultantPrompt, CONSULTANT_SYSTEM_PROMPT, type PersonaRoutineContext } from "@/config/ai-prompts";
+import { enforceConsultantReportIngredients, enforceZoneAdviceIngredients } from "@/lib/ingredient-guard";
+import { buildConsultantPrompt, CONSULTANT_PROMPT_VERSION, CONSULTANT_SYSTEM_PROMPT, type PersonaRoutineContext } from "@/config/ai-prompts";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import prisma from "@/lib/prisma";
 import { withDbRetry } from "@/lib/utils";
-import { getSkinTypeLabel, getConcernLabel, type FaceAnalysisResult } from "@/lib/advisor-utils";
+import { getSkinTypeLabel, type FaceAnalysisResult } from "@/lib/advisor-utils";
 // import { PRODUCTS_CATALOG } from "@/config/products"; // Deprecated, use DB or matchProducts
 import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
 import { AnalyzeRequestSchema } from "@/lib/schemas";
@@ -21,6 +21,7 @@ import { recommendProducts, getCandidateProducts, type ProductRecommendation } f
 import { normalizeImagePath } from "@/types/product";
 import { resolveIPLocation } from "@/lib/geoip";
 import { getSessionUser, isSubsiteAccountDisabled } from "@/lib/sso-auth";
+import { hasConsent } from "@/lib/consent";
 import { hashIP } from "@/lib/privacy";
 import { matchCharacterIP } from "@/lib/result-utils";
 import { isCompletedAnalysisResult } from "@/lib/analysis-result";
@@ -400,6 +401,9 @@ export async function POST(request: NextRequest) {
         if (!user && (await isSubsiteAccountDisabled(request))) {
             return accountDisabledResponse();
         }
+        if (user && !(await hasConsent(user.id))) {
+            return apiError("CONSENT_REQUIRED", "请先阅读并同意本次测肤所需的授权", 403);
+        }
         reservationUserId = user?.id;
 
         // freeRetry 有效性标记：外部仅做快速预筛（session 存在 + 已完成），
@@ -497,14 +501,14 @@ export async function POST(request: NextRequest) {
         if (!isFreeRetryAllowed && effectiveSessionId) {
             const existingSession = await prisma.advisorSession.findUnique({
                 where: { sessionId: effectiveSessionId },
-                select: { completedAt: true, analysisResult: true, userId: true, ip: true }
+                select: { completedAt: true, analysisResult: true, archivedAt: true, userId: true, ip: true }
             });
             if (existingSession && isReportCompleted(existingSession.analysisResult)) {
                 // 归属校验：仅会话所有者可读取缓存结果（防止 IDOR 读他人完整报告）
                 const owned = user?.id
                     ? existingSession.userId === user.id
                     : existingSession.ip === hashIP(ip);
-                if (!owned) {
+                if (!owned || existingSession.archivedAt) {
                     return apiError(ErrorCode.NOT_FOUND, "报告不存在或无权访问", 404);
                 }
                 const cachedResult = existingSession.analysisResult as Record<string, unknown>;
@@ -729,6 +733,9 @@ export async function POST(request: NextRequest) {
 
         // 只使用 /face-analyze 服务端持久化的结果；客户端 faceAnalysis 已不再读取。
         const faceAnalysis = lockResult.faceAnalysis;
+        if (faceAnalysis) {
+            enforceZoneAdviceIngredients(faceAnalysis.zoneAnalysis, answers.allergies);
+        }
 
         // 5. 构建 AI 提示词与调用
         // Resolve Skin Type (Priority: Face Analysis > User Answer)
@@ -750,8 +757,6 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 6, personaKey, envContext);
 
-        const concernLabels = concerns.map(c => getConcernLabel(c));
-
         // 派系护肤方案骨架（result-content.json 的 m4 早晚节奏 + m7 护肤公式），
         // 注入 prompt 让 AI 在既定方案上做个性化微调，而非从零编写
         const personaContent = ((): PersonaRoutineContext | undefined => {
@@ -761,6 +766,7 @@ export async function POST(request: NextRequest) {
                 typeName: personaData.typeName,
                 morning: personaData.m4?.morning,
                 night: personaData.m4?.night,
+                note: personaData.m4?.note,
                 formulaCore: personaData.m7?.formulaCore,
                 formulaSuggestions: personaData.m7?.suggestions?.map((s) => `${s.title}：${s.content}`),
             };
@@ -769,7 +775,7 @@ export async function POST(request: NextRequest) {
         const userPrompt = buildConsultantPrompt({
             skinTypeLabel,
             ageRange: answers.ageRange,
-            concerns: concernLabels,
+            concerns,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             gender: (answers as any).gender,
             location: geoLocation ? `${geoLocation.region || ''} ${geoLocation.city || ''}（${envContext.description}）`.trim() : undefined,
@@ -839,7 +845,10 @@ export async function POST(request: NextRequest) {
         // 解析 + 字段清洗 + 成分/孕期硬校验（初始输出与修复重试共用）
         const finalizeConsultantReport = (text: string): ConsultantReport => {
             const report = sanitizeConsultantReport(parseConsultantReport(text));
-            const violations = enforceConsultantReportIngredients(report, { pregnancy: pregnancyCautious });
+            const violations = enforceConsultantReportIngredients(report, {
+                pregnancy: pregnancyCautious,
+                allergies: (answers as { allergies?: string | string[] }).allergies,
+            });
             if (violations.length > 0) {
                 aiLogger.warn(
                     `[IngredientGuard] v2 报告成分命中 ${violations.length} 处：` +
@@ -1116,8 +1125,8 @@ export async function POST(request: NextRequest) {
             },
             products: finalProducts,
             faceAnalysis: finalFaceAnalysis, // Ensure faceAnalysis is propagated
-            // v2-only：报告必为真实 AI 产出，dataSource 只区分是否使用扫脸
-            dataSource: faceAnalysis ? "hybrid" : "comprehensive",
+            // v2-only：报告必为真实 AI 产出，dataSource 区分扫脸/纯问卷
+            dataSource: faceAnalysis ? "hybrid" : "questionnaire",
             persona: personaKey,          // IP 形象 key (8-pie)
             userLocation: geoLocation,
             // 昵称优先用客户端填写值；未填时回退到服务端会话里的用户昵称（主站资料），
@@ -1126,6 +1135,7 @@ export async function POST(request: NextRequest) {
             analyzedAt: new Date().toISOString(), // 证书/报告展示用（随结果持久化，游客流程也可用）
             skinState: typeof skinState === "string" ? skinState : undefined, // 拍摄时肌肤状态（引导页确认后随请求上传；扫脸失败也保留用户声明，历史报告可追溯）
             reportVersion: 2,
+            promptVersion: CONSULTANT_PROMPT_VERSION,
             consultantReport,
         };
 

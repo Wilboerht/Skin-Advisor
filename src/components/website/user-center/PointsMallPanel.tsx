@@ -535,6 +535,9 @@ export function PointsMallPanel() {
             // 地址簿为空时后端自动设为默认
           });
           addressId = created.address.id;
+          setSelectedAddressId(created.address.id);
+          setShowNewAddress(false);
+          await loadAddresses();
         } finally {
           setCreatingAddress(false);
         }

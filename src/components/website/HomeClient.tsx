@@ -11,7 +11,9 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
-import { CONSENT_VERSION, hasPrivacyConsent } from "@/components/advisor/PrivacyConsent";
+import { hasPrivacyConsent } from "@/components/advisor/PrivacyConsent";
+import { CONSENT_VERSION } from "@/lib/consent-constants";
+import { recordClientConsent } from "@/lib/consent-client";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -168,6 +170,9 @@ export default function HomeClient() {
   const [privacyConsentPresent, setPrivacyConsentPresent] = useState(false);
   useEffect(() => {
     setPrivacyConsentPresent(hasPrivacyConsent());
+    void import("@/lib/advisor-storage")
+      .then(({ clearExpiredData }) => clearExpiredData())
+      .catch(() => undefined);
   }, []);
 
   // 引导流程弹窗（称呼/位置/隐私三步）打开期间隐藏底部 Dock（卸载时兜底还原）
@@ -349,6 +354,7 @@ export default function HomeClient() {
         version: CONSENT_VERSION,
         consentedAt: new Date().toISOString()
     }));
+    if (user?.id) void recordClientConsent();
     setPrivacyConsentPresent(true);
 
     // 最终提交前确保昵称已保存：用户填写优先，否则已登录用户回退到官网昵称

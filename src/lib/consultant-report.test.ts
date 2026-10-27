@@ -21,15 +21,16 @@ function makeRaw(issues: unknown[], extra: Record<string, unknown> = {}) {
 }
 
 describe("parseConsultantReport - v2 报告解析容错", () => {
-    it("severity 支持中文并归一小写，缺失推理链字段补默认值", () => {
+    it("severity 支持中文归一小写；缺失推理链字段触发修复重试", () => {
         const report = parseConsultantReport(makeRaw([
-            makeIssue({ severity: "中度", directCauses: "", indirectCauses: undefined, medicalBoundary: undefined }),
+            makeIssue({ severity: "中度" }),
         ]));
         expect(report.issues).toHaveLength(1);
         expect(report.issues[0].severity).toBe("moderate");
-        expect(report.issues[0].directCauses).toBe("详见上方观察。");
-        expect(report.issues[0].indirectCauses).toBe("目前没有明显的生活习惯诱因。");
-        expect(report.issues[0].medicalBoundary).toBe("暂不需要就医，坚持护理观察即可。");
+
+        expect(() => parseConsultantReport(makeRaw([
+            makeIssue({ severity: "中度", directCauses: "", indirectCauses: undefined, medicalBoundary: undefined }),
+        ]))).toThrow(/missing directCauses/);
     });
 
     it("轻微问题的就医边界缺省时留空，不补套话", () => {
@@ -49,9 +50,9 @@ describe("parseConsultantReport - v2 报告解析容错", () => {
         expect(report.issues).toHaveLength(1);
     });
 
-    it("超过 4 个问题时截断为 4 个（不因超出上限整报告失败）", () => {
+    it("超过 3 个问题时截断为 3 个（不因超出上限整报告失败）", () => {
         const report = parseConsultantReport(makeRaw(Array.from({ length: 6 }, (_, i) => makeIssue({ title: `问题${i}` }))));
-        expect(report.issues).toHaveLength(4);
+        expect(report.issues).toHaveLength(3);
     });
 
     it("非法 JSON 抛出可捕获错误，供调用方走修复重试", () => {

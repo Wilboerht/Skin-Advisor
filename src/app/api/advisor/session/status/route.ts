@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
                 analysisStartedAt: true,
                 completedAt: true,
                 analysisResult: true,
+                archivedAt: true,
                 ip: true,
                 userId: true
             }
@@ -98,14 +99,20 @@ export async function GET(request: NextRequest) {
                 forbidden = true;
             }
         } else {
-            // 游客会话：IP 哈希必须匹配
-            if (session.ip && session.ip !== currentIpHash) {
+            // 游客会话：必须有 IP 哈希且匹配
+            if (!session.ip || session.ip !== currentIpHash) {
                 forbidden = true;
             }
         }
 
         if (forbidden) {
             // 返回 not_found 而非 forbidden，避免泄露 session 存在性
+            return NextResponse.json(
+                { status: "not_found", sessionId },
+                { status: 404, headers: rateLimitHeaders }
+            );
+        }
+        if (session.archivedAt) {
             return NextResponse.json(
                 { status: "not_found", sessionId },
                 { status: 404, headers: rateLimitHeaders }

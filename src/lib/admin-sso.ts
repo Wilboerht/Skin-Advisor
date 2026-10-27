@@ -528,5 +528,12 @@ export async function fetchMainAdminStatuses(
       response.status >= 400 ? response.status : 502
     );
   }
-  return json.data?.admins ?? [];
+  const admins = json.data?.admins;
+  if (!Array.isArray(admins)) {
+    throw new AdminSsoError("STATUS_ENDPOINT_INVALID", "主站管理员状态响应缺少 admins", 502);
+  }
+  if (admins.length < adminIds.length) {
+    throw new AdminSsoError("STATUS_ENDPOINT_INCOMPLETE", "主站管理员状态响应不完整，跳过本轮同步", 502);
+  }
+  return admins;
 }

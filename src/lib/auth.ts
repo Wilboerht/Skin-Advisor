@@ -57,6 +57,8 @@ export interface SessionUser {
     membershipLevel?: string | null;
     /** 主站累计消费金额（元），用于 SILVER 银卡测肤加赠 */
     totalSpent?: number | null;
+    /** totalSpent 是否来自已同步的主站数据；false 时额度按普通档保守计算 */
+    totalSpentKnown?: boolean;
 }
 
 export async function incrementTokenVersion(userId: string): Promise<number | null> {

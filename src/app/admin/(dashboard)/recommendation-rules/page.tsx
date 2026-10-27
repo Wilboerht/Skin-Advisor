@@ -41,12 +41,16 @@ interface RecommendationRule {
 const CONCERNS = [
     "acne",
     "wrinkles",
-    "dark spots",
-    "redness",
-    "pores",
+    "spots",
+    "sensitivity",
+    "roughness",
     "dullness",
-    "blackheads",
+    "dark_circles",
     "dryness",
+    "oil_control",
+    "anti_aging",
+    "waterOil",
+    "hydration",
 ];
 
 const PERSONAS = [

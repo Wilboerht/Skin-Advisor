@@ -35,6 +35,18 @@ function clampScore(value: unknown): number | undefined {
 }
 
 const ZONE_NUMERIC_KEYS = ["oil", "texture", "wrinkles", "spots", "redness", "darkCircles", "firmness", "contour"] as const;
+const VISION_DIMENSION_KEYS = [
+    "waterOil", "skinTone", "spots", "wrinkles", "uvDamage",
+    "sensitivity", "darkCircles", "firmness", "acne", "radiance",
+] as const;
+
+function gradeFromScore(score: number): "excellent" | "good" | "average" | "fair" | "poor" {
+    if (score >= 85) return "excellent";
+    if (score >= 70) return "good";
+    if (score >= 55) return "average";
+    if (score >= 40) return "fair";
+    return "poor";
+}
 
 /**
  * 视觉结果分数校准（原地修改）：
@@ -43,23 +55,37 @@ const ZONE_NUMERIC_KEYS = ["oil", "texture", "wrinkles", "spots", "redness", "da
  * - 肌龄夹取 10-80 的合理区间。
  */
 function calibrateVisionScores(data: Record<string, unknown>): void {
-    const dims = data.dimensions as Record<string, { score?: unknown; blackheads?: unknown; pimples?: unknown }> | undefined;
+    const dims = data.dimensions as Record<string, { score?: unknown; grade?: unknown; blackheads?: unknown; pimples?: unknown; confidence?: unknown }> | undefined;
 
     if (dims && typeof dims === "object") {
         const scores: number[] = [];
-        for (const dim of Object.values(dims)) {
+        for (const key of VISION_DIMENSION_KEYS) {
+            const dim = dims[key];
             if (!dim || typeof dim !== "object") continue;
             const score = clampScore(dim.score);
             if (score !== undefined) {
                 dim.score = score;
+                dim.grade = gradeFromScore(score);
                 scores.push(score);
+            } else {
+                delete dim.score;
+                delete dim.grade;
             }
             if (dim.blackheads !== undefined) dim.blackheads = clampScore(dim.blackheads);
             if (dim.pimples !== undefined) dim.pimples = clampScore(dim.pimples);
+            if (typeof dim.confidence === "number" && Number.isFinite(dim.confidence)) {
+                dim.confidence = dim.confidence > 1
+                    ? Math.min(1, dim.confidence / 100)
+                    : Math.min(1, Math.max(0, dim.confidence));
+            } else {
+                delete dim.confidence;
+            }
         }
-        if (scores.length > 0) {
-            data.overallScore = Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length);
-        }
+        data.overallScore = scores.length > 0
+            ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length)
+            : undefined;
+    } else {
+        data.overallScore = undefined;
     }
 
     const zones = data.zoneAnalysis as Record<string, Record<string, unknown>> | undefined;
@@ -114,18 +140,78 @@ const VISION_ZONE_KEYS = ["forehead", "tZone", "leftCheek", "rightCheek", "eyeAr
  * - zoneAnalysis 存在时补齐六个分区键（各分区字段本身可空）；
  * - 性别枚举归一。
  */
+const GRADE_LABELS: Record<string, string> = {
+    excellent: "excellent", good: "good", average: "average", fair: "fair", poor: "poor",
+    "优秀": "excellent", "良好": "good", "一般": "average", "需关注": "fair", "较差": "poor", "差": "poor",
+};
+
+const SEVERITY_LABELS: Record<string, string> = {
+    mild: "mild", moderate: "moderate", severe: "severe",
+    "轻度": "mild", "轻微": "mild", "中度": "moderate", "重度": "severe", "严重": "severe",
+};
+
+function coerceNumber(value: unknown): number | undefined {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim()) {
+        const parsed = Number(value.replace("%", "").trim());
+        if (Number.isFinite(parsed)) return parsed;
+    }
+    return undefined;
+}
+
 export function normalizeVisionOutput(data: Record<string, unknown>): Record<string, unknown> {
     const cleaned = stripNulls(data) as Record<string, unknown>;
 
-    const skinType = cleaned.skinType as { type?: unknown } | undefined;
-    if (skinType && typeof skinType === "object" && typeof skinType.type !== "string") {
-        delete cleaned.skinType;
+    const skinType = cleaned.skinType as { type?: unknown; confidence?: unknown } | undefined;
+    if (skinType && typeof skinType === "object") {
+        if (typeof skinType.type !== "string") delete cleaned.skinType;
+        else skinType.confidence = coerceNumber(skinType.confidence);
     }
 
-    const zones = cleaned.zoneAnalysis as Record<string, unknown> | undefined;
+    const skinAge = cleaned.skinAge as { estimated?: unknown } | undefined;
+    if (skinAge && typeof skinAge === "object") {
+        skinAge.estimated = coerceNumber(skinAge.estimated);
+    }
+
+    const dims = cleaned.dimensions as Record<string, Record<string, unknown>> | undefined;
+    if (dims && typeof dims === "object") {
+        for (const dim of Object.values(dims)) {
+            if (!dim || typeof dim !== "object") continue;
+            for (const key of ["score", "blackheads", "pimples", "confidence", "percentile"]) {
+                if (dim[key] !== undefined) dim[key] = coerceNumber(dim[key]);
+            }
+            if (typeof dim.grade === "string") {
+                dim.grade = GRADE_LABELS[dim.grade.trim().toLowerCase()] ?? GRADE_LABELS[dim.grade.trim()];
+            }
+            if (typeof dim.notVisible === "string") dim.notVisible = dim.notVisible === "true";
+        }
+    }
+
+    cleaned.overallScore = coerceNumber(cleaned.overallScore);
+
+    const zones = cleaned.zoneAnalysis as Record<string, Record<string, unknown>> | undefined;
     if (zones && typeof zones === "object") {
         for (const key of VISION_ZONE_KEYS) {
             if (!zones[key] || typeof zones[key] !== "object") zones[key] = {};
+        }
+        for (const zone of Object.values(zones)) {
+            if (!zone || typeof zone !== "object") continue;
+            for (const key of ZONE_NUMERIC_KEYS) {
+                if (zone[key] !== undefined) zone[key] = coerceNumber(zone[key]);
+            }
+            if (typeof zone.confidence === "string") zone.confidence = coerceNumber(zone.confidence);
+            if (typeof zone.notVisible === "string") zone.notVisible = zone.notVisible === "true";
+        }
+    }
+
+    const skinConditions = cleaned.skinConditions;
+    if (Array.isArray(skinConditions)) {
+        for (const condition of skinConditions) {
+            if (!condition || typeof condition !== "object") continue;
+            const item = condition as Record<string, unknown>;
+            if (typeof item.severity === "string") {
+                item.severity = SEVERITY_LABELS[item.severity.trim().toLowerCase()] ?? SEVERITY_LABELS[item.severity.trim()];
+            }
         }
     }
 
@@ -239,7 +325,7 @@ export async function analyzeImages(
                 }
                 // 预算/限额类错误与 provider 无关，换下一个 provider 也必然失败，直接上抛
                 if (typeof error?.message === 'string' &&
-                    (error.message.startsWith('[AIBudget]') || error.message.startsWith('[AIUserLimit]'))) {
+                    (error.message.startsWith('[AIBudget]') || error.message.startsWith('[AIUserLimit]') || error.message.startsWith('[Validation]'))) {
                     throw error;
                 }
                 lastError = error;
@@ -505,6 +591,7 @@ async function callOpenAICompatibleVision(
                 // 5000 上限对冗长输出留 2 倍余量（截断的 JSON 无法解析，表现为提取失败）
                 max_tokens: 5000,
                 temperature: 0.2,
+                ...(process.env.AI_JSON_MODE === "false" ? {} : { response_format: { type: "json_object" as const } }),
                 // deepseek-flash 默认推理强度 high：思考链会吃掉 max_tokens 预算，
                 // 导致正文 JSON 截断（生产实测 Failed to extract valid JSON）。
                 // 结构化抽取任务不需要推理，压到 low

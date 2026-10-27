@@ -54,13 +54,12 @@ export async function POST(request: NextRequest) {
         }
 
         // 归属校验：未被认领的游客会话，仅允许同 IP（哈希比对，与 analyze 写入一致）认领，
-        // 防止知道他人 sessionId 的用户把别人的游客报告绑到自己账号。
-        // 历史遗留的无 ip 记录放行（仍需持有不可猜测的 UUID sessionId）。
+        // 防止知道他人 sessionId 的用户把别人的游客报告绑到自己账号；无 IP 的历史会话默认不可认领。
         const existing = await prisma.advisorSession.findUnique({
             where: { sessionId },
             select: { userId: true, ip: true }
         });
-        if (existing && !existing.userId && existing.ip && existing.ip !== hashIP(ip)) {
+        if (existing && !existing.userId && (!existing.ip || existing.ip !== hashIP(ip))) {
             logger.warn(`Claim rejected for session ${sessionId}: IP hash mismatch, requester ${user.id}`);
             return NextResponse.json(
                 { error: "Session ownership verification failed" },

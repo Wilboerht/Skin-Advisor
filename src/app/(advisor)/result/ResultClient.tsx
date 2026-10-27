@@ -291,7 +291,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const { trackResultView, trackResultShare, trackResultFlip, trackProductClick } = useAdvisorAnalytics();
     const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
-    const { runAnalysis, analysisState, recoverSession, reset, startMock } = useAsyncAnalysis();
+    const { runAnalysis, analysisState, recoverSession, reset, startMock, cancelAnalysis } = useAsyncAnalysis();
 
     // Mock 预览仅本地开发可用（与 face-scan 入口的门控一致），生产环境忽略 mock 参数走正常流程；
     // mock=done 是 mock 数据注入后的 URL 标记，同样按 mock 会话处理（不写趋势快照/不上报埋点/不发起 session claim）
@@ -1180,7 +1180,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const analysisAbortRef = useRef<AbortController | null>(null);
     // 恢复轮询的中止只应发生在组件卸载时；analysis effect 因依赖变化重跑由
     // analysisStartedRef 去重，cleanup 里 abort 会把正在进行的恢复打断（导致回退重复扣费）
-    useEffect(() => () => { analysisAbortRef.current?.abort(); }, []);
+    useEffect(() => () => {
+        analysisAbortRef.current?.abort();
+        cancelAnalysis();
+    }, [cancelAnalysis]);
     const pendingResultRef = useRef<{
         result: ComprehensiveResult;
         faceAnalysis: FaceAnalysisResult | null;

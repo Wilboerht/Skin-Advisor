@@ -3,19 +3,15 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { buildArchivedSummary } from "@/lib/session-archive";
+import { DATA_RETENTION, coldSummaryCutoff } from "@/lib/data-retention";
 
 export const maxDuration = 60;
 
-// 热层：每用户最近 N 条已完成报告保留完整数据、用户可见；更早的脱水为冷层摘要
-const MAX_FULL_REPORTS = 10;
-// 冷层归档单轮处理上限（多轮 cron 收敛，避免超时）
+const MAX_FULL_REPORTS = DATA_RETENTION.fullReportLimit;
 const ARCHIVE_BATCH_LIMIT = 500;
-// 单个用户最多保留报告数（热层 + 冷层摘要合计，滚动续期策略下的安全阀）
-const MAX_USER_REPORTS = 100;
-// 普通会员超量会话单轮删除上限（多轮 cron 收敛，避免单次事务过大）
+const MAX_USER_REPORTS = DATA_RETENTION.maxReportsPerUser;
 const EXCESS_BATCH_LIMIT = 1000;
-// 普通会员（REGULAR）测肤数据留存天数，满期降级为冷层摘要；银卡及以上会员（SILVER/GOLD/DIAMOND，含历史 ADVANCED）永久保留
-const REGULAR_RETENTION_DAYS = 365;
+const REGULAR_RETENTION_DAYS = DATA_RETENTION.fullReportDays;
 
 interface CleanupStats {
     sessions: number;
@@ -24,17 +20,21 @@ interface CleanupStats {
 }
 
 async function cleanupSessions(
-    sessions: Array<{ sessionId: string }>,
+    sessions: Array<{ sessionId: string; userId?: string | null }>,
     stats: CleanupStats
 ): Promise<void> {
     if (sessions.length === 0) return;
 
     const sessionIds = sessions.map((s) => s.sessionId);
+    const guestSessionIds = sessions.filter((s) => !s.userId).map((s) => s.sessionId);
 
     const deletedStats = await prisma.$transaction(async (tx) => {
-        const testRecords = await tx.testRecord.deleteMany({
-            where: { sessionId: { in: sessionIds } },
-        });
+        // 注册用户的 TestRecord 是终身/每日额度计数来源，不能随历史报告删除而释放额度。
+        const testRecords = guestSessionIds.length > 0
+            ? await tx.testRecord.deleteMany({
+                where: { sessionId: { in: guestSessionIds } },
+            })
+            : { count: 0 };
         // 无外键引用：会话删除后把日记/产品反馈的 sessionId 置空，
         // 避免前端"查看报告"跳到已删除的 404，或反馈记录无法回联。
         await tx.diaryEntry.updateMany({
@@ -70,7 +70,7 @@ async function cleanupInBatches(
     for (;;) {
         const batch = await prisma.advisorSession.findMany({
             where,
-            select: { sessionId: true },
+            select: { sessionId: true, userId: true },
             take: batchSize,
         });
         if (batch.length === 0) return;
@@ -142,9 +142,9 @@ export async function GET(request: NextRequest) {
             stats
         );
 
-        // ===== 3. 冷热分层：REGULAR 用户最近 10 条之外、或满 365 天的报告脱水为脱敏摘要 =====
+        // ===== 3. 冷热分层：最近 10 条之外、或满 365 天的报告脱水为脱敏摘要 =====
         // 热层（最近 10 条）用户可见、数据完整；冷层仅留统计摘要（无敏感问卷字段），
-        // 用户不可见，供趋势对比与白皮书群体统计。银卡及以上会员（SILVER/GOLD/DIAMOND，含历史 ADVANCED）档案永久保留、不参与归档。
+        // 用户不可见，供趋势对比与白皮书群体统计。所有会员档位统一适用。
         // 单次限量，多轮 cron 收敛。
         const retentionCutoff = new Date(now - REGULAR_RETENTION_DAYS * 24 * 60 * 60 * 1000);
         const archivable = await prisma.$queryRaw<Array<{
@@ -166,8 +166,7 @@ export async function GET(request: NextRequest) {
                   AND s."completedAt" IS NOT NULL
                   AND s."archivedAt" IS NULL
             ) t
-            WHERE (t."membershipLevel" IS NULL OR t."membershipLevel" NOT IN ('SILVER','GOLD','DIAMOND','ADVANCED'))
-              AND (t.rn > ${MAX_FULL_REPORTS} OR t."completedAt" < ${retentionCutoff})
+            WHERE (t.rn > ${MAX_FULL_REPORTS} OR t."completedAt" < ${retentionCutoff})
             LIMIT ${ARCHIVE_BATCH_LIMIT}
         `;
 
@@ -179,8 +178,22 @@ export async function GET(request: NextRequest) {
                     where: { sessionId: row.sessionId },
                     data: {
                         analysisResult: summary as unknown as Prisma.InputJsonValue,
-                        answers: Prisma.DbNull,      // 敏感问卷字段不进冷层
-                        interactions: Prisma.DbNull, // 行为记录一并清除
+                        answers: Prisma.DbNull,
+                        interactions: Prisma.DbNull,
+                        ip: null,
+                        province: null,
+                        city: null,
+                        userAgent: null,
+                        deviceType: null,
+                        browser: null,
+                        os: null,
+                        referrer: null,
+                        utmSource: null,
+                        utmMedium: null,
+                        utmCampaign: null,
+                        refSource: null,
+                        resultShared: false,
+                        shareMethod: null,
                         archivedAt: new Date(now),
                     },
                 });
@@ -191,13 +204,13 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // ===== 4. 清理注册用户超量数据（普通会员最多保留 100 条，含冷层摘要；银卡及以上会员永久保留豁免）=====
+        // ===== 4. 清理注册用户超量数据（每用户最多保留 100 条，含冷层摘要）=====
         // 只统计已完成报告（中断/埋点会话由步骤 2 清理），并按 createdAt 保留最新 100 条；
         // 单轮最多删除 EXCESS_BATCH_LIMIT 条，积压时由后续 cron 轮次收敛。
-        const excessSessions = await prisma.$queryRaw<Array<{ sessionId: string }>>`
-            SELECT "sessionId"
+        const excessSessions = await prisma.$queryRaw<Array<{ sessionId: string; userId: string }>>`
+            SELECT "sessionId", "userId"
             FROM (
-                SELECT s."sessionId", s."createdAt",
+                SELECT s."sessionId", s."userId", s."createdAt",
                        u."membershipLevel",
                        ROW_NUMBER() OVER (PARTITION BY s."userId" ORDER BY s."createdAt" DESC) as rn
                 FROM "AdvisorSession" s
@@ -205,13 +218,21 @@ export async function GET(request: NextRequest) {
                 WHERE s."userId" IS NOT NULL
                   AND s."completedAt" IS NOT NULL
             ) t
-            WHERE (t."membershipLevel" IS NULL OR t."membershipLevel" NOT IN ('SILVER','GOLD','DIAMOND','ADVANCED'))
-              AND t.rn > ${MAX_USER_REPORTS}
+            WHERE t.rn > ${MAX_USER_REPORTS}
             ORDER BY t."createdAt" ASC
             LIMIT ${EXCESS_BATCH_LIMIT}
         `;
 
         await cleanupSessions(excessSessions, stats);
+
+        // ===== 4b. 清理超过保留期的冷层摘要 =====
+        await cleanupInBatches(
+            {
+                userId: { not: null },
+                archivedAt: { lt: coldSummaryCutoff() },
+            },
+            stats
+        );
 
 
         // ===== 5. 清理过期 AI 用量日志（保留 30 天）=====

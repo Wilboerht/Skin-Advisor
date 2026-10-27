@@ -12,13 +12,19 @@ import type { ConsultantReport } from "./advisor-utils";
 /** 禁用成分关键词（与 ai-prompts.ts 中 🚫 显式禁用清单保持一致，含繁体/别名） */
 const FORBIDDEN_TERMS: string[] = [
     "水杨酸", "水楊酸",
-    "视黄醇", "視黃醇", "A醇", "a醇", "维A酸", "维生素A酸",
+    "视黄醇", "視黃醇", "A醇", "a醇", "A 醇", "a 醇", "维A酸", "维生素A酸",
     "咖啡因",
     "氢醌", "对苯二酚",
     "白泥", "高岭土", "高嶺土",
     "果酸",
     "酒精", "乙醇",
 ];
+
+const ALLERGY_TERMS: Record<string, string[]> = {
+    fragrance: ["香精", "fragrance", "parfum"],
+    alcohol: ["酒精", "乙醇"],
+    acids: ["水杨酸", "水楊酸", "果酸", "乳酸", "壬二酸", "A醇", "a醇", "A 醇", "a 醇", "视黄醇", "杏仁酸", "甘醇酸"],
+};
 
 /** 否定/规避语境：禁用词前 6 字内出现这些词时视为「提醒用户避开」，不算违规推荐 */
 const NEGATION_PATTERN = /(避免|避开|不含|无需|无须|勿|别|远离|禁用|排除|暂停|停止|不用|切忌|切勿)/;
@@ -63,15 +69,31 @@ function isNegatedContext(text: string, matchIndex: number): boolean {
     return NEGATION_PATTERN.test(before);
 }
 
+function isFalsePositive(text: string, matchIndex: number, term: string): boolean {
+    if (term !== "乙醇") return false;
+    const before = text.slice(Math.max(0, matchIndex - 2), matchIndex);
+    const after = text.slice(matchIndex + term.length, matchIndex + term.length + 1);
+    return before === "苯氧" || after === "酸";
+}
+
+export function getAllergyTerms(allergies?: string | string[] | null): string[] {
+    const list = Array.isArray(allergies) ? allergies : allergies ? [allergies] : [];
+    const terms = new Set<string>();
+    for (const allergy of list) {
+        for (const term of ALLERGY_TERMS[allergy] || []) terms.add(term);
+    }
+    return [...terms];
+}
+
 /**
  * 扫描单个区域的 advice，返回命中的违规项（每个禁用词最多记一条）
  */
-function scanAdvice(zone: string, advice: string): IngredientViolation[] {
+function scanAdvice(zone: string, advice: string, extraTerms: string[] = []): IngredientViolation[] {
     const violations: IngredientViolation[] = [];
-    for (const term of FORBIDDEN_TERMS) {
+    for (const term of [...FORBIDDEN_TERMS, ...extraTerms]) {
         let idx = advice.indexOf(term);
         while (idx !== -1) {
-            if (!isNegatedContext(advice, idx)) {
+            if (!isNegatedContext(advice, idx) && !isFalsePositive(advice, idx, term)) {
                 violations.push({
                     zone,
                     keyword: term,
@@ -88,14 +110,15 @@ function scanAdvice(zone: string, advice: string): IngredientViolation[] {
 /**
  * 扫描 zoneAnalysis 全部区域的 advice，返回全部违规项（只读，不修改数据）
  */
-export function scanZoneAdviceViolations(zoneAnalysis: unknown): IngredientViolation[] {
+export function scanZoneAdviceViolations(zoneAnalysis: unknown, allergies?: string | string[] | null): IngredientViolation[] {
     if (!zoneAnalysis || typeof zoneAnalysis !== "object") return [];
+    const extraTerms = getAllergyTerms(allergies);
     const violations: IngredientViolation[] = [];
     for (const [zone, data] of Object.entries(zoneAnalysis as Record<string, unknown>)) {
         if (!data || typeof data !== "object") continue;
         const advice = (data as { advice?: unknown }).advice;
         if (typeof advice !== "string" || !advice) continue;
-        violations.push(...scanAdvice(zone, advice));
+        violations.push(...scanAdvice(zone, advice, extraTerms));
     }
     return violations;
 }
@@ -104,8 +127,11 @@ export function scanZoneAdviceViolations(zoneAnalysis: unknown): IngredientViola
  * 硬保证入口：扫描并对违规区域的 advice 原地降级为安全文案。
  * 返回违规项（空数组 = 未命中），调用方负责告警日志。
  */
-export function enforceZoneAdviceIngredients(zoneAnalysis: unknown): IngredientViolation[] {
-    const violations = scanZoneAdviceViolations(zoneAnalysis);
+export function enforceZoneAdviceIngredients(
+    zoneAnalysis: unknown,
+    allergies?: string | string[] | null
+): IngredientViolation[] {
+    const violations = scanZoneAdviceViolations(zoneAnalysis, allergies);
     if (violations.length === 0) return violations;
 
     const zones = new Set(violations.map((v) => v.zone));
@@ -127,12 +153,14 @@ export interface ConsultantTextViolation {
     field: string;
     /** 命中的关键词 */
     keyword: string;
-    type: "forbidden" | "pregnancy";
+    type: "forbidden" | "pregnancy" | "allergy";
 }
 
 export interface EnforceConsultantOptions {
     /** 孕期/不确定：额外扫描孕期禁忌成分（精油类/香精） */
     pregnancy?: boolean;
+    /** 用户过敏史 key 列表 */
+    allergies?: string | string[] | null;
 }
 
 /**
@@ -143,7 +171,7 @@ function scanTerms(text: string, terms: string[]): string[] {
     for (const term of terms) {
         let idx = text.indexOf(term);
         while (idx !== -1) {
-            if (!isNegatedContext(text, idx)) {
+            if (!isNegatedContext(text, idx) && !isFalsePositive(text, idx, term)) {
                 hits.push(term);
                 break;
             }
@@ -159,7 +187,7 @@ function replaceTerms(text: string, hits: string[], replacement: string): string
     for (const term of hits) {
         let idx = out.indexOf(term);
         while (idx !== -1) {
-            if (!isNegatedContext(out, idx)) {
+            if (!isNegatedContext(out, idx) && !isFalsePositive(out, idx, term)) {
                 out = out.slice(0, idx) + replacement + out.slice(idx + term.length);
                 idx = out.indexOf(term, idx + replacement.length);
             } else {
@@ -183,29 +211,34 @@ export function enforceConsultantReportIngredients(
     const violations: ConsultantTextViolation[] = [];
     const forbidden = FORBIDDEN_TERMS;
     const pregnancyTerms = options.pregnancy ? PREGNANCY_FORBIDDEN_TERMS : [];
+    const allergyTerms = getAllergyTerms(options.allergies);
 
-    const scanBoth = (text: string): { forbiddenHits: string[]; pregnancyHits: string[] } => ({
+    const scanBoth = (text: string): { forbiddenHits: string[]; pregnancyHits: string[]; allergyHits: string[] } => ({
         forbiddenHits: scanTerms(text, forbidden),
         pregnancyHits: scanTerms(text, pregnancyTerms),
+        allergyHits: scanTerms(text, allergyTerms),
     });
 
     /** 叙述语境字段：替换命中词 */
     const sanitizeNarrative = (value: string, field: string): string => {
-        const { forbiddenHits, pregnancyHits } = scanBoth(value);
-        if (forbiddenHits.length === 0 && pregnancyHits.length === 0) return value;
+        const { forbiddenHits, pregnancyHits, allergyHits } = scanBoth(value);
+        if (forbiddenHits.length === 0 && pregnancyHits.length === 0 && allergyHits.length === 0) return value;
         forbiddenHits.forEach((keyword) => violations.push({ field, keyword, type: "forbidden" }));
         pregnancyHits.forEach((keyword) => violations.push({ field, keyword, type: "pregnancy" }));
+        allergyHits.forEach((keyword) => violations.push({ field, keyword, type: "allergy" }));
         let out = replaceTerms(value, forbiddenHits, GENERIC_FORBIDDEN_REPLACEMENT);
         out = replaceTerms(out, pregnancyHits, GENERIC_PREGNANCY_REPLACEMENT);
+        out = replaceTerms(out, allergyHits, "需避开成分");
         return out;
     };
 
     /** 推荐语境字段：命中即整体降级为安全文案 */
     const sanitizeRecommendation = (value: string, field: string, fallback: string): string => {
-        const { forbiddenHits, pregnancyHits } = scanBoth(value);
-        if (forbiddenHits.length === 0 && pregnancyHits.length === 0) return value;
+        const { forbiddenHits, pregnancyHits, allergyHits } = scanBoth(value);
+        if (forbiddenHits.length === 0 && pregnancyHits.length === 0 && allergyHits.length === 0) return value;
         forbiddenHits.forEach((keyword) => violations.push({ field, keyword, type: "forbidden" }));
         pregnancyHits.forEach((keyword) => violations.push({ field, keyword, type: "pregnancy" }));
+        allergyHits.forEach((keyword) => violations.push({ field, keyword, type: "allergy" }));
         return fallback;
     };
 

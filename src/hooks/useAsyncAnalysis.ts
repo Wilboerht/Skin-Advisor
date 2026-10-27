@@ -7,6 +7,7 @@ import { preprocessFaceImage } from '@/lib/image-processing';
 import { useToast } from '@/components/ui/Toast';
 
 import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
+import { ensureClientConsent } from '@/lib/consent-client';
 import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from '@/lib/storage-keys';
 import { localDateStr } from '@/lib/local-date';
 import {
@@ -236,6 +237,12 @@ export function useAsyncAnalysis() {
     const toast = useToast();
 
     const isRunningRef = useRef(false);
+    const activeAnalysisAbortRef = useRef<AbortController | null>(null);
+
+    const cancelAnalysis = useCallback(() => {
+        activeAnalysisAbortRef.current?.abort();
+        activeAnalysisAbortRef.current = null;
+    }, []);
 
     // --- Session recovery helpers ---
 
@@ -351,6 +358,7 @@ export function useAsyncAnalysis() {
 
         // 共享 AbortController：超时或组件卸载时统一取消所有未完成的请求
         const abortController = new AbortController();
+        activeAnalysisAbortRef.current = abortController;
 
         const createTimeoutPromise = () => {
             let timeoutId: ReturnType<typeof setTimeout>;
@@ -477,6 +485,13 @@ export function useAsyncAnalysis() {
                 }
             }
 
+            if (user?.id) {
+                const consentOk = await ensureClientConsent();
+                if (!consentOk) {
+                    throw new Error("测肤授权未完成，请重新阅读并同意隐私政策后再试。");
+                }
+            }
+
             // 1. Face Analysis
             let faceAnalysis = null;
 
@@ -551,41 +566,7 @@ export function useAsyncAnalysis() {
 
                     const validResults = preprocessResults.filter((r): r is NonNullable<typeof r> => r !== null);
 
-                    // 2. 根据网络状况决定上传策略（弱网减少上传数量）
-                    const conn = (navigator as unknown as Record<string, unknown>).connection as Record<string, unknown> | undefined;
-                    const networkType = conn?.effectiveType as string | undefined;
-
-                    const shouldUploadAngle = (key: string): boolean => {
-                        if (key === 'front') return true; // 正脸始终上传
-                        if (!networkType || networkType === '4g') return true; // 好网络或检测不到，全传
-                        if (networkType === '3g') return key === 'left'; // 3g 只传正脸+左侧
-                        return false; // 2g / slow-2g 只传正脸
-                    };
-
-                    const uploadResults = await Promise.all(
-                        validResults.map(async (result) => {
-                            if (!result.needsUpload) return result; // Already a URL
-
-                            // 弱网跳过非必要角度，直接用 base64
-                            if (!shouldUploadAngle(result.key)) {
-                                console.log(`[Network] Skipping upload for ${result.label} (${networkType}), using base64`);
-                                return result;
-                            }
-
-                            try {
-                                const { uploadImage } = await import("@/lib/upload-client");
-                                const blob = await (await fetch(result.finalData)).blob();
-                                const url = await uploadImage(blob, `face-${result.label}.jpg`);
-                                if (url) {
-                                    console.log(`Uploaded ${result.label} to cloud storage:`, url);
-                                    return { ...result, finalData: url };
-                                }
-                            } catch (uploadError) {
-                                console.warn(`Cloud upload failed for ${result.label}, using base64`, uploadError);
-                            }
-                            return result;
-                        })
-                    );
+                    const uploadResults = validResults;
 
                     // 3. Assemble vision images —— 只传正脸给 AI（2026-10 产品决策）：
                     //    侧脸/下巴不参与视觉分析，减少上传体积、视觉编码与生成耗时；
@@ -620,7 +601,9 @@ export function useAsyncAnalysis() {
                                 signal: faceAnalyzeAbort.signal
                             }, { retries: 0 });
 
-                            if (faceRes.ok) {
+                            if (faceRes.status === 202) {
+                                faceAnalysis = null;
+                            } else if (faceRes.ok) {
                                 faceAnalysis = await faceRes.json();
                                 // 读取队列状态（如果系统繁忙，告诉用户）
                                 const qp = faceRes.headers.get("X-Queue-Position");
@@ -820,6 +803,9 @@ export function useAsyncAnalysis() {
             throw error;
         } finally {
             isRunningRef.current = false;
+            if (activeAnalysisAbortRef.current === abortController) {
+                activeAnalysisAbortRef.current = null;
+            }
             // 仅在本次调用持有锁时释放并清理恢复标记，避免误删其他会话持有的锁。
             // 失败时保留 ANALYZING_* 标记（配合失败暂存），供用户点击重试时复用同一会话
             if (lockAcquired) {
@@ -885,11 +871,15 @@ export function useAsyncAnalysis() {
         | { status: 'error'; message: string }
     > => {
         if (isRunningRef.current) {
-            return { status: 'error', message: '上一次分析还在进行中，请稍后重试。' };
+            const message = '上一次分析还在进行中，请稍后重试。';
+            setAnalysisState({ status: 'error', progress: 0, error: message });
+            return { status: 'error', message };
         }
         if (!acquireAnalysisLock(sessionId)) {
             console.warn(`[useAsyncAnalysis] Analysis lock already held for another session, skipping recovery`);
-            return { status: 'error', message: '上一次分析还在进行中，请稍后重试。' };
+            const message = '上一次分析还在进行中，请稍后重试。';
+            setAnalysisState({ status: 'error', progress: 0, error: message });
+            return { status: 'error', message };
         }
         isRunningRef.current = true;
 
@@ -1002,5 +992,5 @@ export function useAsyncAnalysis() {
         }, 100);
     }, []);
 
-    return { runAnalysis, analysisState, reset, recoverSession, startMock };
+    return { runAnalysis, analysisState, reset, recoverSession, startMock, cancelAnalysis };
 }

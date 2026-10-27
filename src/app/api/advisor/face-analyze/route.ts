@@ -12,6 +12,7 @@ import { FaceAnalyzeRequestSchema } from "@/lib/schemas";
 import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
     VISION_ANALYSIS_USER_PROMPT,
+    VISION_PROMPT_VERSION,
     QWEN_VISION_PROMPT,
     REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION,
 } from "@/config/ai-prompts";
@@ -21,6 +22,7 @@ import { reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { recordAIUsage } from "@/lib/ai-budget";
 import { hashIP } from "@/lib/privacy";
 import { isManagedUploadPath } from "@/lib/upload-paths";
+import { hasConsent } from "@/lib/consent";
 import prisma from "@/lib/prisma";
 import { withDbRetry } from "@/lib/utils";
 import { Prisma } from "@prisma/client";
@@ -68,17 +70,14 @@ const faceAnalysisCache = new Map<string, { result: Record<string, unknown>; at:
 const FACE_CACHE_TTL_MS = 10 * 60 * 1000; // 10分钟过期
 const FACE_CACHE_MAX_SIZE = 50; // 最多缓存 50 条
 
-function buildCacheKey(_sessionId: string, images: VisionImage[], skinState?: string): string {
-    // 仅基于图片内容哈希（不含 sessionId），这样刷新页面也能命中缓存
-    // 对单张图片取前 50KB 进行 sha256，避免超大 base64 占用内存；多张图片合并后再哈希
-    // skinState 参与 key：同一组照片在不同拍摄状态下需要不同的条件化分析，不能互串缓存
+function buildCacheKey(owner: string, images: VisionImage[], skinState?: string): string {
     const samples = images.map(img => {
         const data = img.data || "";
         const sample = data.slice(0, 50 * 1024);
         return `${img.angle}:${crypto.createHash("sha256").update(sample).digest("hex")}`;
     }).join("|");
     const stateSuffix = skinState ? `:${skinState}` : "";
-    return `face:${crypto.createHash("sha256").update(samples + stateSuffix).digest("hex")}`;
+    return `face:${crypto.createHash("sha256").update(`${owner}|${samples}${stateSuffix}:${VISION_PROMPT_VERSION}`).digest("hex")}`;
 }
 
 function getCachedResult(key: string): Record<string, unknown> | null {
@@ -211,6 +210,9 @@ export async function POST(request: NextRequest) {
                 { status: 401 }
             );
         }
+        if (!(await hasConsent(authUser.id))) {
+            return apiError("CONSENT_REQUIRED", "请先阅读并同意本次测肤所需的人脸、健康问卷与第三方 AI 处理授权", 403);
+        }
         const ipHash = hashIP(ip);
 
         // 清理僵尸会话：库中 ip 存的是 hashIP 哈希值，必须用哈希后查询才能命中。
@@ -236,7 +238,7 @@ export async function POST(request: NextRequest) {
 
         const existingSession = await prisma.advisorSession.findUnique({
             where: { sessionId: faceSessionId },
-            select: { userId: true, completedAt: true, analysisStartedAt: true, analysisResult: true },
+            select: { userId: true, ip: true, completedAt: true, analysisStartedAt: true, analysisResult: true },
         });
         if (!existingSession) {
             return apiError(ErrorCode.INTERNAL_ERROR, "会话创建失败，请重试", 500);
@@ -249,6 +251,11 @@ export async function POST(request: NextRequest) {
             | Record<string, unknown>
             | undefined;
         if (existingFace) {
+            const owned = existingSession.userId === authUser.id
+                || (!existingSession.userId && existingSession.ip === ipHash);
+            if (!owned) {
+                return apiError(ErrorCode.NOT_FOUND, "报告会话不存在或无权访问", 404);
+            }
             // 服务端已有结果：重复请求 / 免费重试直接复用，不扣次、不调 AI
             return NextResponse.json(existingFace, {
                 headers: { ...rateLimitHeaders, "X-Cache": "SESSION" },
@@ -424,8 +431,8 @@ export async function POST(request: NextRequest) {
                 try {
                     aiLogger.info(`Compressing image...`);
                     buffer = await sharp(buffer)
-                        .resize({ width: 512, fit: 'inside', withoutEnlargement: true })
-                        .jpeg({ quality: 70 })
+                        .resize({ width: 1024, fit: 'inside', withoutEnlargement: true })
+                        .jpeg({ quality: 78 })
                         .toBuffer();
                     mimeType = 'image/jpeg';
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -524,10 +531,25 @@ export async function POST(request: NextRequest) {
         // Initial Load (Compressed Quality to prevent Payload Too Large & reduce latency)
         let validImages = await loadImages(true);
 
-        // 收集所有需要清理的上传照片 URL（包括 OSS 直传 URL 和本地存储路径）
-        const uploadedFaceUrls = validImages
-            .filter(img => !!img.data && (img.data.startsWith('http') || img.data.startsWith('/uploads/') || img.data.startsWith('uploads/')))
-            .map(img => img.data);
+        // 收集原始请求中的上传对象路径（压缩后 data URL 会丢失本地路径，必须从请求体提取）
+        const rawImageValues: string[] = [];
+        const requestImages = result.data.images;
+        if (Array.isArray(requestImages)) {
+            requestImages.forEach((img) => {
+                if (img?.data) rawImageValues.push(img.data);
+            });
+        } else if (requestImages && typeof requestImages === "object") {
+            const imgs = requestImages as { front?: string; left?: string; right?: string; chin?: string };
+            [imgs.front, imgs.left, imgs.right, imgs.chin].forEach((value) => {
+                if (value) rawImageValues.push(value);
+            });
+        }
+        if (result.data.image) rawImageValues.push(result.data.image);
+
+        const uploadedFaceUrls = rawImageValues
+            .filter((value) => typeof value === "string")
+            .filter((value) => value.startsWith("http") || value.startsWith("/uploads/") || value.startsWith("uploads/"))
+            .filter((value) => isManagedUploadPath(value));
 
         if (validImages.length === 0) {
             // 无有效图片属于预占后早退，需回滚额度并释放租约
@@ -567,7 +589,7 @@ export async function POST(request: NextRequest) {
         let acquired = false;
         try {
             // 3.5 缓存检查：相同图片跳过 AI 调用（必须在队列获取之前，避免浪费槽位）
-            const cacheKey = buildCacheKey(faceSessionId || ip, validImages, skinState);
+            const cacheKey = buildCacheKey(authUser.id, validImages, skinState);
             const cachedResult = getCachedResult(cacheKey);
             if (cachedResult) {
                 aiLogger.info(`[FaceAnalyze] Cache hit, returning cached result`);
@@ -638,6 +660,7 @@ export async function POST(request: NextRequest) {
                 if (err.message?.includes("[Validation]")) {
                     const reason = err.message.replace("[Validation] ", "");
                     aiLogger.warn(`Face validation failed: ${reason}`);
+                    await releaseFaceClaim();
                     if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
                     return apiError("VALIDATION_FAILED", "图片验证失败", 400, reason || "未检测到清晰人脸，请重新拍摄");
                 }
@@ -653,6 +676,7 @@ export async function POST(request: NextRequest) {
                     // 如果单张图片平均已经 < 100KB base64，说明不是图片大小导致的问题
                     if (perImageAvgKB < 100) {
                         aiLogger.warn(`[FaceAnalyze] Payload error but images already small (avg ${perImageAvgKB.toFixed(0)}KB), not retrying`);
+                        await releaseFaceClaim();
                         // 回滚预占（非用户原因）
                         if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
                         const response = apiError("AI_PAYLOAD_ERROR", "AI 视觉服务请求异常，请稍后重试", 503);
@@ -696,6 +720,7 @@ export async function POST(request: NextRequest) {
                         if (re.message?.includes("[Validation]")) {
                             const reason = re.message.replace("[Validation] ", "");
                             aiLogger.warn(`Face validation failed on retry: ${reason}`);
+                            await releaseFaceClaim();
                             if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
                             return apiError("VALIDATION_FAILED", "图片验证失败", 400, reason || "未检测到清晰人脸，请重新拍摄");
                         }
@@ -710,11 +735,13 @@ export async function POST(request: NextRequest) {
             const validation = analysisResult.validation as Record<string, unknown> | undefined;
             if (validation && validation.isValid === false) {
                 aiLogger.warn(`Face validation failed: ${validation.message}`);
+                await releaseFaceClaim();
                 // 图片验证失败属于非用户主动消耗额度场景，回滚预占
                 if (reserved) await rollbackUsage(request, faceSessionId, reservationUserId);
                 return apiError("VALIDATION_FAILED", "图片验证失败", 400, validation.message || "未检测到清晰人脸，请重新拍摄");
             }
 
+            analysisResult.promptVersion = VISION_PROMPT_VERSION;
             // 缓存有效结果（不含 validation 字段的纯结果）
             setCachedResult(cacheKey, faceSessionId || ip, analysisResult);
 

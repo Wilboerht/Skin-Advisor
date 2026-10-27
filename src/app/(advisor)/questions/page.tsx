@@ -15,6 +15,7 @@ import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
 import { cn } from "@/lib/utils";
 import { scheduleFaceModelPreload } from "@/lib/face-models";
+import { hasPrivacyConsent } from "@/components/advisor/PrivacyConsent";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useNavPush } from "@/hooks/use-nav-push";
@@ -169,19 +170,12 @@ export default function QuestionsPage() {
     // null = 尚未检查（避免首帧闪出性别选择页；登录态未决时也保持 null，避免误拦登录用户）
     const [accessDenied, setAccessDenied] = useState<boolean | null>(null);
     useEffect(() => {
-        try {
-            const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
-            const hasAnswers = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
-            // 本地有同意记录或答题记录：与登录态无关，立即放行
-            if (hasConsent || hasAnswers) {
-                setAccessDenied(false);
-                return;
-            }
-        } catch {
-            // localStorage 不可用：继续走登录态判定（登录用户仍放行）
+        if (hasPrivacyConsent()) {
+            setAccessDenied(false);
+            return;
         }
         if (!isUserInitialized) return;
-        setAccessDenied(!user);
+        setAccessDenied(true);
     }, [user, isUserInitialized]);
 
     const getFilteredQuestions = (currentAnswers: Record<string, unknown>, currentGender: typeof gender) => {

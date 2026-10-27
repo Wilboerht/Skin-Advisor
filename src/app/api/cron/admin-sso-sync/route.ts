@@ -21,8 +21,13 @@ function authorized(request: NextRequest): boolean {
 }
 
 function localRoleFromStatus(status: MainAdminStatus): "super_admin" | "admin" | null {
-  if (status.advisorRole === "super_admin") return "super_admin";
-  if (status.advisorRole === "admin") return "admin";
+  const permissions = Array.isArray(status.permissions) ? status.permissions : [];
+  if (status.advisorRole === "super_admin" && (status.role === "owner" || permissions.includes("advisor:admin"))) {
+    return "super_admin";
+  }
+  if (status.advisorRole === "admin" && permissions.includes("advisor:access")) {
+    return "admin";
+  }
   return null;
 }
 

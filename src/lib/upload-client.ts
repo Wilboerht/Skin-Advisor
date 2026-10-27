@@ -134,7 +134,9 @@ export async function uploadImage(
         throw new Error("上传图片到本地存储失败");
     }
 
-    return publicUrl;
+    return publicUrl.startsWith("/uploads/")
+        ? new URL(publicUrl, window.location.origin).toString()
+        : publicUrl;
 }
 
 /** 获取当前可用的存储提供商。 */

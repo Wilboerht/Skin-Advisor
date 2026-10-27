@@ -221,10 +221,27 @@ model User {
   refreshTokens     RefreshToken[]
   productFeedbacks  ProductFeedback[]
   diaryEntries      DiaryEntry[]
+  consentRecords    ConsentRecord[]
 
   // 隐私同意
   privacyConsentAt     DateTime?
   privacyConsentVersion String?
+}
+
+// 隐私/敏感信息授权记录（按 scope + 版本留痕）
+model ConsentRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  scope     String   // privacy | face | health | ai
+  version   String
+  grantedAt DateTime @default(now())
+  revokedAt DateTime?
+  ipHash    String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scope, version])
+  @@index([userId, scope])
+  @@index([version])
 }
 
 // Refresh Token 存储 — 支持双 Token 轮转与设备管理

@@ -7,6 +7,7 @@ import crypto from "crypto";
 import { generateUploadPolicy } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { getSessionUser } from "@/lib/sso-auth";
+import { hasConsent } from "@/lib/consent";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
@@ -34,11 +35,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "文件过大" }, { status: 413 });
         }
 
-        // 头像属于用户永久资料，必须登录后才能签发；面部照片仍允许登录前拍摄。
-        const avatarUser = uploadKind === "avatar" ? await getSessionUser(request) : null;
-        if (uploadKind === "avatar" && !avatarUser) {
-            return NextResponse.json({ error: "请先登录后再上传头像" }, { status: 401 });
+        const signedInUser = await getSessionUser(request);
+        if (!signedInUser) {
+            return NextResponse.json({ error: "请先登录后再上传图片" }, { status: 401 });
         }
+        if (uploadKind === "face" && !(await hasConsent(signedInUser.id))) {
+            return NextResponse.json({ error: "请先完成隐私授权" }, { status: 403 });
+        }
+        const avatarUser = uploadKind === "avatar" ? signedInUser : null;
 
         // 2. 白名单校验：仅允许图片 MIME 与扩展名
         const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];

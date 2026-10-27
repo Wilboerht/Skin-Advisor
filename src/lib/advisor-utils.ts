@@ -15,6 +15,10 @@ export interface DimensionScore {
     blackheads?: number;
     /** acne 维度子分：炎性痘痘/红肿（0-100，越高问题越少；旧数据缺失） */
     pimples?: number;
+    /** 视觉判断置信度 0-1；低置信度时前端应弱化结论 */
+    confidence?: number;
+    /** 图片不足以判断该维度 */
+    notVisible?: boolean;
 }
 
 // 区域分析数据结构
@@ -30,6 +34,8 @@ export interface ZoneData {
     darkCircles?: number;
     firmness?: number;
     contour?: number;
+    confidence?: number;
+    notVisible?: boolean;
 }
 
 export interface ZoneAnalysis {
@@ -111,7 +117,7 @@ export {
     type SkinDimensions,
     type SkinDimensionKey,
 } from "./advisor-labels";
-import { DIMENSION_LABELS } from "./advisor-labels";
+import { DIMENSION_LABELS, DIMENSION_ORDER } from "./advisor-labels";
 
 export function getSkinTypeLabel(type: string): string {
     const map: Record<string, string> = {
@@ -445,47 +451,51 @@ export interface SharedAnalysisResult {
 // ============================================================================
 
 const DimensionScoreSchema = z.object({
-    score: z.number().optional(),
-    percentile: z.number().optional(),
+    score: z.coerce.number().optional(),
+    percentile: z.coerce.number().optional(),
     grade: z.enum(["excellent", "good", "average", "fair", "poor"]).optional(),
     details: z.string().optional(),
-    blackheads: z.number().optional(),
-    pimples: z.number().optional(),
+    blackheads: z.coerce.number().optional(),
+    pimples: z.coerce.number().optional(),
+    confidence: z.coerce.number().optional(),
+    notVisible: z.boolean().optional(),
 });
 
 const ZoneDataSchema = z.object({
     condition: z.string().optional(),
     advice: z.string().optional(),
-    oil: z.number().optional(),
-    texture: z.number().optional(),
-    wrinkles: z.number().optional(),
-    spots: z.number().optional(),
-    redness: z.number().optional(),
-    darkCircles: z.number().optional(),
-    firmness: z.number().optional(),
-    contour: z.number().optional(),
+    oil: z.coerce.number().optional(),
+    texture: z.coerce.number().optional(),
+    wrinkles: z.coerce.number().optional(),
+    spots: z.coerce.number().optional(),
+    redness: z.coerce.number().optional(),
+    darkCircles: z.coerce.number().optional(),
+    firmness: z.coerce.number().optional(),
+    contour: z.coerce.number().optional(),
+    confidence: z.coerce.number().optional(),
+    notVisible: z.boolean().optional(),
 }).passthrough();
 
 export const VisionAnalysisOutputSchema = z.object({
     validation: z.object({
         isValid: z.boolean(),
         message: z.string().optional(),
-    }).optional(),
+    }),
     skinType: z.object({
         type: z.string(),
-        confidence: z.number().optional(),
+        confidence: z.coerce.number().optional(),
         description: z.string().optional(),
     }).optional(),
     gender: z.object({
         value: z.enum(["male", "female"]),
-        confidence: z.number().optional(),
+        confidence: z.coerce.number().optional(),
     }).optional(),
     skinAge: z.object({
-        estimated: z.number().optional(),
+        estimated: z.coerce.number().optional(),
         factors: z.array(z.string()).optional(),
     }).optional(),
     dimensions: z.record(z.string(), DimensionScoreSchema).optional(),
-    overallScore: z.number().optional(),
+    overallScore: z.coerce.number().optional(),
     summary: z.string().optional(),
     recommendations: z.array(z.string()).optional(),
     skinConditions: z.array(z.object({
@@ -507,7 +517,16 @@ export const VisionAnalysisOutputSchema = z.object({
         homogeneity: z.object({ value: z.number().optional(), unit: z.string().optional(), range: z.string().optional(), status: z.string() }).optional(),
         wrinkleGrade: z.object({ value: z.string(), status: z.string() }).optional(),
     }).optional(),
-}).passthrough();
+}).passthrough().superRefine((data, ctx) => {
+    if (!data.validation.isValid) return;
+    const dimensionKeys = data.dimensions ? Object.keys(data.dimensions) : [];
+    if (!dimensionKeys.some((key) => DIMENSION_ORDER.includes(key as typeof DIMENSION_ORDER[number]))) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["dimensions"], message: "missing dimensions" });
+    }
+    if (!data.zoneAnalysis) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["zoneAnalysis"], message: "missing zoneAnalysis" });
+    }
+});
 
 /**
  * 顾问叙事报告（Report v2）输出 Schema
@@ -525,18 +544,21 @@ export const ConsultantIssueSchema = z.object({
     lifestylePlan: z.string().min(1),
     // 轻微问题无风险信号时 AI 返回空串，前端不渲染就医边界（重点/中度仍由 parse 兜底补默认值）
     medicalBoundary: z.string().default(""),
-    relatedDimensions: z.array(z.string()).default([]),
+    relatedDimensions: z.array(z.enum([
+        "waterOil", "skinTone", "spots", "wrinkles", "uvDamage",
+        "sensitivity", "darkCircles", "firmness", "acne", "radiance",
+    ])).default([]),
 }).passthrough();
 
 export const ConsultantReportSchema = z.object({
     overview: z.string().min(1),
-    issues: z.array(ConsultantIssueSchema).max(4),
+    issues: z.array(ConsultantIssueSchema).max(3),
     strengths: z.array(z.string()).default([]),
     routineNote: z.string().optional(),
     productReasons: z.array(z.object({
         id: z.union([z.string(), z.number()]),
         reason: z.string().optional(),
-    }).passthrough()).optional(),
+    }).passthrough()).max(3).optional(),
 }).passthrough();
 
 export type ConsultantIssue = z.infer<typeof ConsultantIssueSchema>;
@@ -549,12 +571,16 @@ export type ConsultantReport = z.infer<typeof ConsultantReportSchema>;
  * acne、spots、firmness 等本身是合法英文单词的 key 不收录，避免误伤正常英文文本。
  */
 const RAW_KEY_LABELS: Record<string, string> = {
-    tZone: "T区", leftCheek: "左脸颊", rightCheek: "右脸颊",
+    tZone: "T区", forehead: "额头", leftCheek: "左脸颊", rightCheek: "右脸颊",
     eyeArea: "眼周", jawline: "下颌线",
     waterOil: DIMENSION_LABELS.waterOil,
     skinTone: DIMENSION_LABELS.skinTone,
     uvDamage: DIMENSION_LABELS.uvDamage,
     darkCircles: DIMENSION_LABELS.darkCircles,
+    blackheads: "黑头/闭口",
+    pimples: "炎性痘痘",
+    skinAge: "肌龄",
+    overallScore: "综合评分",
 };
 
 /** 替换文本中出现的英文字段名为中文标签（整词替换，连字符邻接也不算整词，不误伤成分英文名） */
@@ -595,11 +621,10 @@ export function sanitizeConsultantReport(report: ConsultantReport): ConsultantRe
 /**
  * 解析顾问叙事报告（v2）：提取 JSON → 归一化 → schema 校验。
  *
- * 归一化步骤容忍模型的常见输出偏差，避免整份报告因小瑕疵降级为 v1：
  * - severity 中英文/大小写归一（"轻度"/"Mild" → mild），缺省 moderate
- * - 缺失/空字符串的推理链字段补默认值（medicalBoundary 仅重点/中度补"暂不需要就医"，轻微问题留空）
  * - 缺 title/observation 的 issue 整条丢弃（没有观察就没有证据，不符合铁律）
- * - relatedDimensions / strengths 缺省为空数组
+ * - 推理链字段缺失时触发修复重试，不再补占位文案
+ * - relatedDimensions 过滤为合法十维 key
  */
 export function parseConsultantReport(content: string): ConsultantReport {
     const raw = extractJsonFromResponse<Record<string, unknown>>(content);
@@ -608,6 +633,10 @@ export function parseConsultantReport(content: string): ConsultantReport {
         mild: "mild", moderate: "moderate", severe: "severe",
         "轻度": "mild", "轻微": "mild", "中度": "moderate", "重度": "severe", "严重": "severe",
     };
+    const validDimensionKeys = new Set<string>([
+        "waterOil", "skinTone", "spots", "wrinkles", "uvDamage",
+        "sensitivity", "darkCircles", "firmness", "acne", "radiance",
+    ]);
 
     const normalizedIssues = (Array.isArray(raw.issues) ? raw.issues : [])
         .filter((i): i is Record<string, unknown> =>
@@ -618,19 +647,23 @@ export function parseConsultantReport(content: string): ConsultantReport {
             const issue = { ...i };
             const sev = String(issue.severity ?? "").trim().toLowerCase();
             issue.severity = severityMap[sev] ?? severityMap[String(issue.severity ?? "").trim()] ?? "moderate";
-            if (typeof issue.directCauses !== "string" || !issue.directCauses) issue.directCauses = "详见上方观察。";
-            if (typeof issue.indirectCauses !== "string" || !issue.indirectCauses) issue.indirectCauses = "目前没有明显的生活习惯诱因。";
-            if (typeof issue.skincarePlan !== "string" || !issue.skincarePlan) issue.skincarePlan = "详见每日方案。";
-            if (typeof issue.lifestylePlan !== "string" || !issue.lifestylePlan) issue.lifestylePlan = "详见每日方案。";
-            if (typeof issue.medicalBoundary !== "string" || !issue.medicalBoundary) {
-                // 轻微问题无风险信号时留空（前端不渲染），避免每卡挂一句套话；重点/中度必须兜底
-                issue.medicalBoundary = issue.severity === "mild" ? "" : "暂不需要就医，坚持护理观察即可。";
+            const requiredTextFields = ["directCauses", "indirectCauses", "skincarePlan", "lifestylePlan"] as const;
+            for (const field of requiredTextFields) {
+                if (typeof issue[field] !== "string" || !issue[field].trim()) {
+                    throw new Error(`AI response schema validation failed: missing ${field}`);
+                }
             }
-            if (!Array.isArray(issue.relatedDimensions)) issue.relatedDimensions = [];
+            const medicalBoundary = typeof issue.medicalBoundary === "string" ? issue.medicalBoundary : "";
+            issue.medicalBoundary = medicalBoundary;
+            if (issue.severity !== "mild" && !medicalBoundary.trim()) {
+                throw new Error("AI response schema validation failed: medicalBoundary required");
+            }
+            issue.relatedDimensions = Array.isArray(issue.relatedDimensions)
+                ? issue.relatedDimensions.filter((key): key is string => typeof key === "string" && validDimensionKeys.has(key))
+                : [];
             return issue;
         })
-        // prompt 约束 0-4 个问题：模型偶尔多写时截断而不是整报告失败
-        .slice(0, 4);
+        .slice(0, 3);
 
     const normalized = {
         ...raw,

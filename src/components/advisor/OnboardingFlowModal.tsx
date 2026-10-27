@@ -504,7 +504,8 @@ export function OnboardingFlowModal({
                                                     className="text-brand-charcoal/75 mx-1 underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer"
                                                 >
                                                     服务条款
-                                                </button>。
+                                                </button>
+                                                。本次授权包括：人脸照片分析、健康问卷处理、第三方 AI 服务处理。
                                             </span>
                                         </div>
                                     </div>

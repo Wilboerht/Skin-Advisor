@@ -611,6 +611,7 @@ export async function getLocalSessionDbUser() {
                 avatarUrl: true,
                 membershipLevel: true,
                 totalSpent: true,
+                profileSyncedAt: true,
                 gender: true,
                 role: true,
                 dailyTestLimit: true,
@@ -651,6 +652,7 @@ async function getLocalSessionDbUserFromRefreshToken() {
                 avatarUrl: true,
                 membershipLevel: true,
                 totalSpent: true,
+                profileSyncedAt: true,
                 gender: true,
                 role: true,
                 dailyTestLimit: true,
@@ -755,6 +757,7 @@ async function sessionUserFromVerifiedPayload(
         dailyTestLimit: dbUser.dailyTestLimit,
         membershipLevel: dbUser.membershipLevel,
         totalSpent: dbUser.totalSpent,
+        totalSpentKnown: Boolean(dbUser.profileSyncedAt) || dbUser.totalSpent > 0,
     };
 }
 
@@ -794,6 +797,7 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
             dailyTestLimit: localUser.dailyTestLimit,
             membershipLevel: localUser.membershipLevel,
             totalSpent: localUser.totalSpent,
+            totalSpentKnown: Boolean(localUser.profileSyncedAt) || localUser.totalSpent > 0,
         };
     }
 

@@ -116,7 +116,7 @@ export function normalizeMembershipLevel(level?: string | null): MemberLevel {
  *   注意：schema 默认 10，显式设 10 与未设置无法区分（均视为未自定义）
  */
 export function getMemberQuota(
-    user: { membershipLevel?: string | null; dailyTestLimit?: number | null; totalSpent?: number | null } | null | undefined
+    user: { membershipLevel?: string | null; dailyTestLimit?: number | null; totalSpent?: number | null; totalSpentKnown?: boolean } | null | undefined
 ): MemberQuota {
     const level = normalizeMembershipLevel(user?.membershipLevel);
     const adminOverride =
@@ -143,11 +143,15 @@ export function getMemberQuota(
     }
 
     if (level === 'SILVER') {
-        const spent = typeof user?.totalSpent === 'number' && user.totalSpent > 0 ? user.totalSpent : 0;
+        // 微信登录等场景可能拿不到 totalSpent：先按普通档保守计算，避免把未知消费额当成 0 永久少给。
+        const spentKnown = user?.totalSpentKnown !== false;
+        const spent = spentKnown && typeof user?.totalSpent === 'number' && user.totalSpent > 0 ? user.totalSpent : 0;
         return {
             level,
             dailyLimit: SILVER_DAILY_LIMIT,
-            lifetimeLimit: REGULAR_TOTAL_LIMIT + SILVER_BONUS_PER_1000 * Math.floor(spent / 1000),
+            lifetimeLimit: spentKnown
+                ? REGULAR_TOTAL_LIMIT + SILVER_BONUS_PER_1000 * Math.floor(spent / 1000)
+                : REGULAR_TOTAL_LIMIT,
             unlimited: false,
         };
     }
@@ -299,11 +303,14 @@ export async function reserveUsage(
                 // 从数据库读取最新额度与消费金额，避免 JWT 缓存滞后
                 // 与 checkUsageLimit 同口径：仅按 TestRecord 计数（预占即落库），不叠加在途 session
                 const [dbUser, count, lifetimeCount] = await Promise.all([
-                    tx.user.findUnique({ where: { id: userId }, select: { dailyTestLimit: true, membershipLevel: true, totalSpent: true } }),
+                    tx.user.findUnique({ where: { id: userId }, select: { dailyTestLimit: true, membershipLevel: true, totalSpent: true, profileSyncedAt: true } }),
                     tx.testRecord.count({ where: { userId, testDate: { gte: today } } }),
                     tx.testRecord.count({ where: { userId } })
                 ]);
-                const quota = getMemberQuota(dbUser);
+                const quota = getMemberQuota(dbUser ? {
+                    ...dbUser,
+                    totalSpentKnown: Boolean(dbUser.profileSyncedAt) || dbUser.totalSpent > 0,
+                } : null);
                 const usedToday = count;
                 const usedTotal = lifetimeCount;
                 if (quota.dailyLimit != null && usedToday >= quota.dailyLimit) {
@@ -432,7 +439,7 @@ export async function getSkinTestUsageSummary(
     const [user, totalUsed, todayUsed, todayDiary] = await Promise.all([
         prisma.user.findUnique({
             where: { id: userId },
-            select: { membershipLevel: true, totalSpent: true, dailyTestLimit: true },
+            select: { membershipLevel: true, totalSpent: true, dailyTestLimit: true, profileSyncedAt: true },
         }),
         prisma.testRecord.count({ where: { userId } }),
         prisma.testRecord.count({ where: { userId, testDate: { gte: today } } }),
@@ -456,6 +463,9 @@ export async function getSkinTestUsageSummary(
               ...user,
               membershipLevel: membership?.level ?? user.membershipLevel,
               totalSpent: membership?.totalSpent ?? user.totalSpent,
+              totalSpentKnown: membership?.totalSpent != null
+                  || Boolean(user.profileSyncedAt)
+                  || user.totalSpent > 0,
           }
         : membership?.level
           ? {

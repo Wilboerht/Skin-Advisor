@@ -160,9 +160,12 @@ export async function POST(request: NextRequest) {
                 // 绑定归属前先确认会话未被他人占用（原实现无条件改写 userId，可被用来劫持他人会话）
                 const existingOwner = await prisma.advisorSession.findUnique({
                     where: { sessionId },
-                    select: { userId: true },
+                    select: { userId: true, ip: true },
                 });
                 if (existingOwner?.userId && existingOwner.userId !== user.id) {
+                    return NextResponse.json({ success: true });
+                }
+                if (existingOwner && !existingOwner.userId && existingOwner.ip !== clientInfo.ip) {
                     return NextResponse.json({ success: true });
                 }
                 // 创建或更新会话，登录用户的 session 写入 userId
@@ -363,6 +366,20 @@ export async function POST(request: NextRequest) {
                         shareMethod: (data?.method as string) || null,
                     },
                 });
+                break;
+            }
+
+            case "product_click": {
+                const productId = typeof data?.productId === "string" ? data.productId : null;
+                const productName = typeof data?.productName === "string" ? data.productName : null;
+                if (productId) {
+                    await appendInteraction(sessionId, {
+                        type: "product_click",
+                        productId,
+                        productName,
+                        at: now.toISOString(),
+                    });
+                }
                 break;
             }
 

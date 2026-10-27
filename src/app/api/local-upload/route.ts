@@ -3,6 +3,7 @@ import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import { writeFile, mkdir, realpath } from "fs/promises";
 import path from "path";
+import crypto from "crypto";
 import { enforceStorageLimits } from "@/lib/shared-upload-utils";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { getSessionUser } from "@/lib/sso-auth";
@@ -40,10 +41,17 @@ export async function PUT(request: NextRequest) {
         return apiError(ErrorCode.VALIDATION_ERROR, "Missing path", 400);
     }
 
-    // 严格路径白名单（先于文件系统解析，拒绝一切非签名生成规则的路径）
-    // guest/ = 面部临时上传；avatars/ = 用户头像永久上传
-    if (filePath.includes("\\") || (!isManagedUploadPath(filePath) && !isAvatarUploadPath(filePath))) {
+    if (filePath.includes("\\") || !isAvatarUploadPath(filePath)) {
+        if (isManagedUploadPath(filePath)) {
+            return apiError(ErrorCode.FORBIDDEN, "人脸照片请通过分析接口直接提交，不支持写入临时目录", 403);
+        }
         return apiError(ErrorCode.VALIDATION_ERROR, "Invalid upload path", 400);
+    }
+
+    const ownerHash = crypto.createHash("sha256").update(user.id).digest("hex").slice(0, 16);
+    const normalizedPath = filePath.replace(/^\/+/, "").replace(/^uploads\//, "");
+    if (!normalizedPath.startsWith(`avatars/${ownerHash}/`)) {
+        return apiError(ErrorCode.FORBIDDEN, "无权写入该上传路径", 403);
     }
 
     // Security: normalize and whitelist the resolved path

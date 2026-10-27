@@ -15,8 +15,8 @@ import { createHash } from 'crypto';
 export function hashIP(ip: string): string {
     const salt = process.env.IP_HASH_SALT;
     if (!salt) {
-        if (process.env.NODE_ENV !== 'development') {
-            console.error('CRITICAL: IP_HASH_SALT not set in production. Using unsalted hash as fallback.');
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error('IP_HASH_SALT is required in production');
         }
         return createHash('sha256')
             .update(ip)

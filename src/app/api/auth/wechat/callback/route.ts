@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import { parseOfficialResponse } from "@/lib/official-api";
-import { fetchOfficialMembershipLevel } from "@/lib/official-membership";
+import { fetchOfficialMembership } from "@/lib/official-membership";
 import { signLocalSession } from "@/lib/auth";
 import { clearSsoSessionCookies } from "@/lib/sso-auth";
 import {
@@ -202,8 +202,9 @@ export async function GET(req: NextRequest) {
 
         const userPayload = result.user;
 
-        // 会员等级回源（微信用户无 SSO userinfo 通道）：尽力而为，失败不阻断登录
-        const membershipLevel = await fetchOfficialMembershipLevel(userPayload.phone);
+        // 会员数据回源（微信用户无 SSO userinfo 通道）：尽力而为，失败不阻断登录
+        const membership = await fetchOfficialMembership(userPayload.phone);
+        const membershipLevel = membership.level;
 
         // 同步到本地数据库
         const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
@@ -226,6 +227,7 @@ export async function GET(req: NextRequest) {
                     avatarUrl: userPayload.avatar || null,
                     // 会员等级仅在有回源结果时覆盖（无结果不动本地值，避免回源失败洗掉已有等级）
                     ...(membershipLevel ? { membershipLevel } : {}),
+                    ...(membership.totalSpent !== null ? { totalSpent: membership.totalSpent } : {}),
                 },
                 create: {
                     id: userPayload.id,
@@ -234,6 +236,7 @@ export async function GET(req: NextRequest) {
                     name: userPayload.nickname || "",
                     avatarUrl: userPayload.avatar || null,
                     membershipLevel: membershipLevel || null,
+                    totalSpent: membership.totalSpent ?? 0,
                     role: UserRole.USER,
                     tokenVersion: 0
                 }

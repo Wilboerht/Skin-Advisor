@@ -603,6 +603,7 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                         )}
                       </div>
                       <TestHistoryList
+                        key={lastHistoryPage}
                         pageSize={TESTS_PAGE_SIZE}
                         initialPage={lastHistoryPage}
                         initialSessions={lastHistoryPage <= 1 ? tests.slice(0, TESTS_PAGE_SIZE) : undefined}

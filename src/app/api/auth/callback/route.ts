@@ -27,6 +27,15 @@ function sanitizeReturnTo(value: string | null): string {
   return isSafeInternalPath(value) ? value : "/";
 }
 
+function getTransientCookie(req: NextRequest, name: string): string | null {
+  const state = req.nextUrl.searchParams.get("state");
+  if (state) {
+    const suffixed = req.cookies.get(`${name}_${state}`)?.value;
+    if (suffixed) return suffixed;
+  }
+  return req.cookies.get(name)?.value ?? null;
+}
+
 /**
  * SSO OAuth 回调处理器（带本地 Session 引导）。
  *
@@ -46,7 +55,7 @@ export async function GET(req: NextRequest) {
     const returnCookieName = SSO_INSECURE_LOCAL_DEV
       ? toInsecureCookieName(DEFAULT_RETURN_COOKIE_NAME)
       : DEFAULT_RETURN_COOKIE_NAME;
-    const returnTo = sanitizeReturnTo(req.cookies.get(returnCookieName)?.value ?? null);
+    const returnTo = sanitizeReturnTo(getTransientCookie(req, returnCookieName));
     // 死循环防护：return_to 指向需登录页面（如 /reports/[id]）时，回跳会因未登录
     // 被 middleware 再次送去 SSO 授权页，用户点"返回"形成无限循环——改回首页
     const returnPath = new URL(returnTo, siteOrigin).pathname;
@@ -61,7 +70,7 @@ export async function GET(req: NextRequest) {
     const stateCookieName = SSO_INSECURE_LOCAL_DEV
       ? toInsecureCookieName(DEFAULT_STATE_COOKIE_NAME)
       : DEFAULT_STATE_COOKIE_NAME;
-    if (!req.cookies.get(stateCookieName)?.value) {
+    if (!getTransientCookie(req, stateCookieName)) {
       return NextResponse.redirect(new URL("/?error=cookies_disabled", siteOrigin));
     }
   }

@@ -4,7 +4,7 @@ import { QuestionnaireAnswers } from "@/lib/advisor-utils";
 import type { Product } from "@prisma/client";
 import type { EnvContext } from "@/lib/weather-context";
 import { getSeasonLabel } from "@/lib/weather-context";
-import { PREGNANCY_FORBIDDEN_TERMS } from "@/lib/ingredient-guard";
+import { PREGNANCY_FORBIDDEN_TERMS, getAllergyTerms } from "@/lib/ingredient-guard";
 import {
     normalizeProductPurchaseLinks,
     type ProductPurchaseLink,
@@ -187,6 +187,28 @@ export function isProductExcludedForPregnancy(
     return { excluded: false };
 }
 
+export function isProductExcludedForAllergies(
+    product: { name?: unknown; benefits?: unknown; keyIngredients?: unknown },
+    allergies: string | string[] | null | undefined
+): { excluded: boolean; reason?: string } {
+    const terms = getAllergyTerms(allergies);
+    if (terms.length === 0) return { excluded: false };
+
+    const ingredientText = Array.isArray(product.keyIngredients)
+        ? product.keyIngredients.filter((s): s is string => typeof s === "string").join(" ")
+        : typeof product.keyIngredients === "string" ? product.keyIngredients : "";
+    const nameText = typeof product.name === "string" ? product.name : "";
+    const benefitText = Array.isArray(product.benefits)
+        ? product.benefits.filter((s): s is string => typeof s === "string").join(" ")
+        : "";
+    const haystack = `${nameText} ${ingredientText} ${benefitText}`.toLowerCase();
+
+    const hit = terms.find((term) => haystack.includes(term.toLowerCase()));
+    return hit
+        ? { excluded: true, reason: `⚠️ 含您需要避开的成分（${hit}）` }
+        : { excluded: false };
+}
+
 function calculateScore(
     product: ProductBase,
     skinType: string,
@@ -346,6 +368,13 @@ function calculateScore(
         score = 0;
         excluded = true;
         reasons.push(pregnancyCheck.reason || "⚠️ 孕期/哺乳期不适用");
+    }
+
+    const allergyCheck = isProductExcludedForAllergies(product, answers.allergies);
+    if (allergyCheck.excluded) {
+        score = 0;
+        excluded = true;
+        reasons.push(allergyCheck.reason || "⚠️ 含您需要避开的成分");
     }
 
     // Base Score fallback：有负面理由时保持 0 分，不允许被恢复为保底分
@@ -587,13 +616,19 @@ export async function getCandidateProducts(
             include: { products: { select: { productId: true } } }
         });
 
-        // Simple Rule Engine — persona-aware
+        // 命中规则按最高优先级裁决；同优先级规则合并
         const forcedProductIds = new Set<string>();
         const personaProductIds = new Set<string>();
+        let winningPriority = Number.NEGATIVE_INFINITY;
 
         for (const rule of activeRules) {
             if (!ruleMatches(rule.conditions, skinType, concerns, persona)) continue;
-
+            if (rule.priority < winningPriority) continue;
+            if (rule.priority > winningPriority) {
+                winningPriority = rule.priority;
+                forcedProductIds.clear();
+                personaProductIds.clear();
+            }
             rule.products.forEach(p => {
                 forcedProductIds.add(p.productId);
                 if (ruleHasPersonaCondition(rule.conditions)) {
@@ -840,9 +875,15 @@ export async function recommendProducts(
                 });
 
                 const forcedProductIds = new Set<string>();
+                let winningPriority = Number.NEGATIVE_INFINITY;
 
                 for (const rule of activeRules) {
                     if (!ruleMatches(rule.conditions, skinType, concerns, persona)) continue;
+                    if (rule.priority < winningPriority) continue;
+                    if (rule.priority > winningPriority) {
+                        winningPriority = rule.priority;
+                        forcedProductIds.clear();
+                    }
                     rule.products.forEach(p => forcedProductIds.add(p.productId));
                 }
 

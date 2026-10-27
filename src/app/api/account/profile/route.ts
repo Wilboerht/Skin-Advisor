@@ -151,11 +151,13 @@ export async function PATCH(req: NextRequest) {
     }
 
     const data = (await res.json().catch(() => null)) as {
+        success?: boolean;
         nickname?: string;
         avatar?: string;
         gender?: "male" | "female" | null;
         birthday?: string | null;
         error?: string;
+        message?: string;
     } | null;
 
     if (res.status === 401) {
@@ -178,6 +180,12 @@ export async function PATCH(req: NextRequest) {
     if (!res.ok || !data) {
         logger.warn("[account/profile] PATCH 官网响应异常", { status: res.status });
         return NextResponse.json({ error: "upstream_error", message: "官网服务暂时不可用，请稍后再试" }, { status: 502 });
+    }
+    if (data.success === false) {
+        return NextResponse.json(
+            { error: data.error || "profile_update_failed", message: data.message || "资料保存未成功" },
+            { status: 400 }
+        );
     }
 
     // 同步本地副本（birthday 本地无字段，仅回传给前端展示）

@@ -49,11 +49,9 @@ export interface AISettings {
 }
 
 // 默认设置
-// v2 顾问报告需要 3-6K 输出 tokens，默认 6000；AI_MAX_TOKENS 可显式覆盖
-export const TEXT_REPORT_MIN_TOKENS = 6000;
+// v2 顾问报告需要 3-6K 输出 tokens；默认 8000，避免推理链与正文争抢预算
+export const TEXT_REPORT_MIN_TOKENS = 8000;
 
-// max_tokens 硬上限：deepseek-flash 的推理链与正文共享输出预算（实测思考链
-// 可达 3K+ tokens），6000 封顶会在复杂输入下截断正文 JSON；放宽到 8000 留余量
 const TEXT_REPORT_MAX_TOKENS = 8000;
 
 /** 环境变量显式指定的输出上限（唯一可把 maxTokens 调低到 6000 以下的入口） */
@@ -393,7 +391,9 @@ export async function generateText(
     try {
         const settings = await getAISettings();
         const primaryProvider = preferredProvider || settings.provider || "qwen";
-        const primaryModel = settings.model;
+        const primaryModel = primaryProvider === settings.provider
+            ? settings.model
+            : getModelForProvider(primaryProvider);
 
         // 构建尝试队列
         const fallbackList = PROVIDER_FALLBACK_CHAIN[primaryProvider] || [];
@@ -607,10 +607,9 @@ async function callProviderInternal(
                     { role: "system", content: systemPrompt },
                     { role: "user", content: safeUserPrompt }
                 ],
-                temperature: settings.temperature,
-                // 顾问叙事报告（v2）推理链输出约需 3-6K tokens：低于 6000 有截断风险。
-                // 上限 8000：deepseek-flash 推理链与正文共享预算，需额外余量。
-                // 只有显式设置 AI_MAX_TOKENS 才能调低，此时告警提示降级风险
+                temperature: Math.min(settings.temperature, 0.5),
+                ...(process.env.AI_JSON_MODE === "false" ? {} : { response_format: { type: "json_object" as const } }),
+                ...(provider === "deepseek" ? { reasoning_effort: "low" as const } : {}),
                 max_tokens: (() => {
                     if (settings.maxTokens < TEXT_REPORT_MIN_TOKENS) {
                         aiLogger.warn(`[AISettings] maxTokens=${settings.maxTokens} 低于 v2 报告建议值 ${TEXT_REPORT_MIN_TOKENS}，存在 JSON 截断风险`);
@@ -646,6 +645,12 @@ async function callProviderInternal(
         }
         // 记录成功到熔断器
         circuitBreaker.recordSuccess(serviceKey);
+        const finishReason = completion.choices[0]?.finish_reason;
+        if (finishReason === "length") {
+            aiLogger.warn(`Text output truncated by max_tokens (${provider}/${model})`, {
+                completionTokens: completion.usage?.completion_tokens,
+            });
+        }
         return completion.choices[0]?.message?.content || "";
     } catch (err) {
         const e = err as Error & { name?: string };
@@ -690,7 +695,7 @@ function getModelForProvider(provider: string): string {
     // 降级时使用该 provider 最便宜的现役模型（deepseek-chat 已退役，不可用）
     switch (provider) {
         case "deepseek": return "deepseek-flash";
-        case "qwen": return "qwen-turbo"; // qwen-turbo 比 qwen-plus 便宜 8 倍
+        case "qwen": return "qwen-plus";
         default: return "deepseek-flash";
     }
 }

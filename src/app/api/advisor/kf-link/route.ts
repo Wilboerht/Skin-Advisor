@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADVISOR_WECOM_LINK } from "@/lib/advisor-report-text";
+import { getSessionUser } from "@/lib/sso-auth";
+import prisma from "@/lib/prisma";
 
 const SESSION_ID_RE = /^[0-9A-Za-z-]{8,128}$/;
 
@@ -15,6 +17,18 @@ export async function GET(request: NextRequest) {
     const fallback = NextResponse.json({ url: ADVISOR_WECOM_LINK, fallback: true });
 
     if (!SESSION_ID_RE.test(sessionId)) {
+        return fallback;
+    }
+
+    const user = await getSessionUser(request);
+    if (!user) return fallback;
+    try {
+        const session = await prisma.advisorSession.findUnique({
+            where: { sessionId, userId: user.id },
+            select: { sessionId: true },
+        });
+        if (!session) return fallback;
+    } catch {
         return fallback;
     }
 

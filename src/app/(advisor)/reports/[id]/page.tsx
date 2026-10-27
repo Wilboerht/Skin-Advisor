@@ -116,11 +116,19 @@ export default async function ReportDetailPage(props: {
             // 完成时间以 DB 记录为准（历史报告来自旧数据时结果内可能无 analyzedAt）
             result.analyzedAt = session.completedAt?.toISOString() || result.analyzedAt;
             currentCompletedAt = session.completedAt;
+            const rawAnswers = (session.answers as Record<string, unknown> | null) || null;
             initialData = {
                 result,
                 faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null,
-                // 该次测肤的问卷答案，供报告摘要（复制给护肤顾问）使用
-                answers: (session.answers as Record<string, unknown> | null) || null,
+                // 只下发报告摘要需要的字段，避免把过敏史/孕期等敏感问卷带到客户端
+                answers: rawAnswers ? {
+                    ageRange: rawAnswers.ageRange,
+                    primaryConcern: rawAnswers.primaryConcern,
+                    medicalBeauty: rawAnswers.medicalBeauty,
+                    skincareLevel: rawAnswers.skincareLevel,
+                    skincareFrequency: rawAnswers.skincareFrequency,
+                    gender: rawAnswers.gender,
+                } : null,
             };
         }
     }
@@ -157,7 +165,7 @@ function ReportArchived() {
                 <div className="text-5xl mb-4">🗂️</div>
                 <h2 className="text-xl font-bold text-[#5c4937] mb-2">报告已归档</h2>
                 <p className="text-sm text-[#8c7a6b] mb-6">
-                    历史报告仅保留最近 10 份的完整内容，更早的报告已归档为统计数据。您的肤质趋势对比不受影响。
+                    每用户保留最近 10 份、且不超过 365 天的完整报告；更早的报告已归档为脱敏统计数据，最长保留 3 年。您的肤质趋势对比不受影响。
                 </p>
                 <div className="flex flex-col items-center gap-3">
                     <Link

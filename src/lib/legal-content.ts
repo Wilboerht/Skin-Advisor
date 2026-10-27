@@ -3,6 +3,8 @@
  * 仅供站内弹窗展示；完整法律文本以官网版本为准（nihplod.cn/privacy、nihplod.cn/terms）。
  */
 
+import { DATA_RETENTION_TEXT } from "@/lib/data-retention";
+
 export interface LegalDocSection {
   heading: string;
   paragraphs: string[];
@@ -44,8 +46,9 @@ export const PRIVACY_DOC: LegalDoc = {
     {
       heading: "四、存储与删除",
       paragraphs: [
-        "面部照片在您的设备本地完成预处理后加密上传，测肤服务完成后 24 小时内从所有服务器（含备份）删除。",
-        "肌肤状况分析结果（不含原始照片）保留 6 个月，超期自动删除；账户注销后相关信息将在 30 日内删除或匿名化。",
+        DATA_RETENTION_TEXT.photo,
+        `${DATA_RETENTION_TEXT.report}${DATA_RETENTION_TEXT.coldSummary}账户注销后相关信息将在 30 日内删除或匿名化。`,
+        `面部照片不会用于身份识别，也不会进入长期备份；分析结果中的敏感问卷字段在进入冷层摘要前会被清除。`,
         "您的个人信息存储于中华人民共和国境内的服务器。",
       ],
     },

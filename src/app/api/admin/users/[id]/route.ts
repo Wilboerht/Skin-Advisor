@@ -200,9 +200,16 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
             },
         });
 
-        // 禁用/启用/角色变更时撤销该用户现有 JWT
+        // 禁用/启用/角色变更时撤销该用户现有 JWT 与 refresh token
         if (actualNewRole !== undefined) {
-            await incrementTokenVersion(id);
+            const nextVersion = await incrementTokenVersion(id);
+            if (nextVersion === null) {
+                return apiError(ErrorCode.INTERNAL_ERROR, "Failed to revoke user sessions", 500);
+            }
+            await prisma.refreshToken.updateMany({
+                where: { userId: id, revokedAt: null },
+                data: { revokedAt: new Date() },
+            });
         }
 
         // Log admin action

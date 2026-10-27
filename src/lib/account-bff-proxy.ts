@@ -6,7 +6,7 @@
  */
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/sso-auth";
+import { getSessionUser, isSubsiteAccountDisabled } from "@/lib/sso-auth";
 import type { SessionUser } from "@/lib/auth";
 import { resolveOfficialAccessToken, OFFICIAL_BASE_URL } from "@/lib/account-bff";
 import { rateLimit } from "@/lib/ratelimit";
@@ -29,6 +29,9 @@ export async function authorizeAccountBff(
 ): Promise<AccountBffAuthorizeResult> {
     const user = await getSessionUser(req);
     if (!user) {
+        if (await isSubsiteAccountDisabled(req)) {
+            return { error: bffError("ACCOUNT_DISABLED", "账号已被限制使用，请联系客服", 403) };
+        }
         return { error: bffError("UNAUTHORIZED", "请先登录", 401) };
     }
 

@@ -163,4 +163,23 @@ describe("enforceConsultantReportIngredients - v2 报告禁用成分硬校验", 
         const violations = enforceConsultantReportIngredients(report, { pregnancy: true });
         expect(violations).toEqual([]);
     });
+
+    it("过敏史命中护理方案时降级", () => {
+        const report = makeReport();
+        report.issues[0].skincarePlan = "每日使用含水杨酸的洁面。";
+        const violations = enforceConsultantReportIngredients(report, { allergies: ["acids"] });
+        expect(violations.some((v) => v.type === "allergy")).toBe(true);
+        expect(report.issues[0].skincarePlan).toBe(SAFE_SKINCARE_PLAN_FALLBACK);
+    });
+
+    it("A 醇带空格也命中，苯氧乙醇不误杀", () => {
+        const report = makeReport();
+        report.issues[0].observation = "建议使用高浓度 A 醇产品。";
+        const violations = enforceConsultantReportIngredients(report);
+        expect(violations.map((v) => v.keyword)).toContain("A 醇");
+
+        const safeReport = makeReport();
+        safeReport.issues[0].lifestylePlan = "产品含苯氧乙醇防腐剂，正常使用即可。";
+        expect(enforceConsultantReportIngredients(safeReport)).toEqual([]);
+    });
 });

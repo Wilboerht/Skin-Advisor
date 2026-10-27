@@ -6,12 +6,12 @@ import { Shield, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
+import { CONSENT_VERSION } from "@/lib/consent-constants";
+import { recordClientConsent } from "@/lib/consent-client";
 
 interface PrivacyConsentProps {
     onConsent: () => void;
 }
-
-export const CONSENT_VERSION = "2025-06-01";
 
 export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
     const [agreed, setAgreed] = useState(false);
@@ -66,7 +66,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         <div>
                             <h3 className="text-sm font-medium text-[#1A1A1A]">数据存储与安全</h3>
                             <p className="mt-1 text-xs text-[#5E5E5E] leading-relaxed">
-                                您的照片和分析结果会被加密存储，90 天后自动删除。我们不会将您的数据出售给第三方。
+                                面部照片仅用于本次分析，分析完成后立即删除，异常情况下最迟 24 小时内删除；完整测肤报告保留 365 天，脱敏趋势摘要最长保留 3 年。我们不会将您的数据出售给第三方。
                             </p>
                         </div>
                     </div>
@@ -146,7 +146,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                     </label>
 
                     <button
-                        onClick={() => {
+                        onClick={async () => {
                             if (!agreed) return;
                             try {
                                 localStorage.setItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT, JSON.stringify({
@@ -156,6 +156,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                             } catch (e) {
                                 console.warn("Failed to save privacy consent", e);
                             }
+                            await recordClientConsent();
                             onConsent();
                         }}
                         disabled={!agreed}

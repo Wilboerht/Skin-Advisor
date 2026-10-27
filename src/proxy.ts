@@ -271,6 +271,8 @@ export async function proxy(request: NextRequest) {
         "/api/auth/backchannel-logout",
         // 匿名/埋点接口：sendBeacon 无法携带自定义 header
         "/api/advisor/analytics/track",
+        // 微信服务器推送：无浏览器 Cookie，安全性由路由内 SHA1 签名校验保证
+        "/api/wechat/webhook",
         // 测肤 AI 分析接口（游客测肤已下线，路由内强制登录；仍受 AI_ENDPOINTS 的 Origin/Referer/Content-Type 保护）
         "/api/advisor/face-analyze",
         "/api/advisor/analyze",

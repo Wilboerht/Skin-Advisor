@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/sso-auth", () => ({
     getSessionUser: mocks.getSessionUser,
+    isSubsiteAccountDisabled: vi.fn().mockResolvedValue(false),
     getAccessToken: mocks.getAccessToken,
     refreshSessionFromCookie: mocks.refreshSessionFromCookie,
     ssoVerifier: { verify: mocks.verify },
