@@ -240,6 +240,20 @@ export default function ProductForm({
     const [uploading, setUploading] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
     const [dragOver, setDragOver] = useState(false);
+    const isSynced = Boolean(initialData?.sourceProductId);
+    const mainEditUrl = initialData?.sourceProductId
+        ? `https://nihplod.cn/admin/products/${initialData.sourceProductId}/edit`
+        : null;
+    const syncedAtLabel = initialData?.sourceSyncedAt
+        ? new Date(initialData.sourceSyncedAt).toLocaleString("zh-CN", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+          })
+        : null;
 
     const [formData, setFormData] = useState({
         name: initialData?.name || "",
@@ -260,6 +274,7 @@ export default function ProductForm({
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     const moveImage = (fromIndex: number, toIndex: number) => {
+        if (isSynced) return;
         if (fromIndex === toIndex) return;
         setImages((prev) => {
             const next = [...prev];
@@ -339,6 +354,7 @@ export default function ProductForm({
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleImageUpload = async (file: File) => {
+        if (isSynced) return;
         if (!file) return;
         if (images.length >= MAX_IMAGE_COUNT) {
             toast.error(`最多只能上传 ${MAX_IMAGE_COUNT} 张图片`);
@@ -370,6 +386,7 @@ export default function ProductForm({
     };
 
     const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (isSynced) return;
         const files = Array.from(e.target.files || []);
         const remaining = MAX_IMAGE_COUNT - images.length;
         const toUpload = files.slice(0, remaining);
@@ -387,6 +404,7 @@ export default function ProductForm({
     };
 
     const onDrop = (e: React.DragEvent) => {
+        if (isSynced) return;
         e.preventDefault();
         setDragOver(false);
         const files = Array.from(e.dataTransfer.files).filter(isValidImageFile);
@@ -396,6 +414,7 @@ export default function ProductForm({
     };
 
     const removeImage = (index: number) => {
+        if (isSynced) return;
         setImages((prev) => prev.filter((_, i) => i !== index));
     };
 
@@ -608,6 +627,33 @@ export default function ProductForm({
             onSubmit={handleSubmit}
             className={cn("space-y-5", !onCancel && "max-w-4xl mx-auto")}
         >
+            {isSynced && (
+                <div className="rounded-xl border border-brand-primary/15 bg-brand-primary/[0.04] px-4 py-3 text-sm text-brand-charcoal/75">
+                    <div className="font-medium text-brand-charcoal">
+                        {initialData?.sourceMissingAt
+                            ? "主站已删除该产品"
+                            : "基础信息由主站同步"}
+                    </div>
+                    <p className="mt-1 leading-relaxed">
+                        {initialData?.sourceMissingAt
+                            ? "该产品已从主站删除，子站已自动停用。确认不再需要后可删除本地记录。"
+                            : "名称、分类、价格、容量、图片、描述、用法与购买链接由主站维护，子站不可修改；下面的推荐属性（是否参与推荐、适合肤质、禁忌人群、精选、核心成分、主要功效、推荐理由）仍可编辑。"}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-brand-charcoal/55">
+                        {syncedAtLabel && <span>最近同步：{syncedAtLabel}</span>}
+                        {mainEditUrl && !initialData?.sourceMissingAt && (
+                            <a
+                                href={mainEditUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-brand-primary hover:underline"
+                            >
+                                去主站编辑
+                            </a>
+                        )}
+                    </div>
+                </div>
+            )}
             <div className="flex-1 min-w-0 space-y-5">
                 {/* ===== 基本信息 ===== */}
                 <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
@@ -628,6 +674,7 @@ export default function ProductForm({
                             <input
                                 type="text"
                                 value={formData.name}
+                                disabled={isSynced}
                                 maxLength={MAX_NAME_LENGTH}
                                 onChange={(e) =>
                                     updateField("name", e.target.value)
@@ -659,6 +706,7 @@ export default function ProductForm({
                             </label>
                             <select
                                 value={formData.category}
+                                disabled={isSynced}
                                 onChange={(e) =>
                                     updateField("category", e.target.value)
                                 }
@@ -697,10 +745,11 @@ export default function ProductForm({
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-charcoal/55 text-sm">
                                     ¥
                                 </span>
-                                <input
-                                    type="text"
-                                    value={formData.price}
-                                    maxLength={MAX_PRICE_LENGTH}
+                            <input
+                                type="text"
+                                value={formData.price}
+                                disabled={isSynced}
+                                maxLength={MAX_PRICE_LENGTH}
                                     onChange={(e) =>
                                         updateField("price", e.target.value)
                                     }
@@ -733,6 +782,7 @@ export default function ProductForm({
                             <input
                                 type="text"
                                 value={formData.origin}
+                                disabled={isSynced}
                                 maxLength={MAX_ORIGIN_LENGTH}
                                 onChange={(e) =>
                                     updateField("origin", e.target.value)
@@ -750,6 +800,7 @@ export default function ProductForm({
                             <input
                                 type="text"
                                 value={formData.capacity}
+                                disabled={isSynced}
                                 maxLength={MAX_CAPACITY_LENGTH}
                                 onChange={(e) =>
                                     updateField("capacity", e.target.value)
@@ -791,6 +842,7 @@ export default function ProductForm({
                             <textarea
                                 rows={3}
                                 value={formData.description}
+                                disabled={isSynced}
                                 maxLength={MAX_DESCRIPTION_LENGTH}
                                 onChange={(e) =>
                                     updateField("description", e.target.value)
@@ -821,6 +873,7 @@ export default function ProductForm({
                             <textarea
                                 rows={3}
                                 value={formData.howToUse}
+                                disabled={isSynced}
                                 maxLength={MAX_HOW_TO_USE_LENGTH}
                                 onChange={(e) =>
                                     updateField("howToUse", e.target.value)
@@ -901,19 +954,23 @@ export default function ProductForm({
                                             className="w-full h-full object-cover pointer-events-none"
                                             alt=""
                                         />
-                                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-brand-charcoal/40 text-white flex items-center justify-center">
-                                            <GripVertical className="w-3 h-3" />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                removeImage(index);
-                                            }}
-                                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-brand-charcoal/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
+                                        {!isSynced && (
+                                            <>
+                                                <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-brand-charcoal/40 text-white flex items-center justify-center">
+                                                    <GripVertical className="w-3 h-3" />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        removeImage(index);
+                                                    }}
+                                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-brand-charcoal/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </>
+                                        )}
                                         {index === 0 && (
                                             <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-primary text-white">
                                                 封面
@@ -925,7 +982,7 @@ export default function ProductForm({
                         )}
 
                         {/* 上传区域 */}
-                        {images.length < 5 && (
+                        {images.length < 5 && !isSynced && (
                             <div
                                 onClick={() => fileInputRef.current?.click()}
                                 onDragOver={(e) => {
@@ -1119,6 +1176,7 @@ export default function ProductForm({
                                             <input
                                                 type="url"
                                                 value={link.url}
+                                                disabled={isSynced}
                                                 maxLength={
                                                     MAX_PURCHASE_URL_LENGTH
                                                 }
@@ -1152,6 +1210,7 @@ export default function ProductForm({
                                                 value={
                                                     link.miniProgramShortLink
                                                 }
+                                                disabled={isSynced}
                                                 maxLength={
                                                     MAX_MINI_PROGRAM_SHORT_LINK_LENGTH
                                                 }

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Edit, ImageOff, Plus, Search, Star, Trash2 } from "lucide-react";
+import { Edit, ImageOff, Search, Star, Trash2 } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
 import { isSuperAdmin } from "@/lib/permissions";
 import { useToast } from "@/components/ui/Toast";
@@ -33,6 +33,10 @@ interface Product {
     active: boolean;
     featured: boolean;
     createdAt: string;
+    sourceProductId?: string | null;
+    sourceSyncedAt?: string | null;
+    sourceMissingAt?: string | null;
+    suitableSkinTypes?: unknown;
 }
 
 interface PaginationData {
@@ -160,6 +164,18 @@ export default function ProductsClient({ role }: { role: string }) {
 
     const runBatchAction = async (action: string, successMessage: string) => {
         if (selectedIds.length === 0) return;
+        if (action === "delete") {
+            const protectedProducts = products.filter(
+                (product) =>
+                    selectedIds.includes(product.id) &&
+                    product.sourceProductId &&
+                    !product.sourceMissingAt
+            );
+            if (protectedProducts.length > 0) {
+                toast.error("已同步产品请在主站删除或下架");
+                return;
+            }
+        }
         setActionLoading(action);
         try {
             const res = await adminFetch("/api/admin/products/batch", {
@@ -182,6 +198,10 @@ export default function ProductsClient({ role }: { role: string }) {
 
     const handleDelete = async () => {
         if (!deleteTarget) return;
+        if (deleteTarget.sourceProductId && !deleteTarget.sourceMissingAt) {
+            toast.error("该产品由主站同步，请在主站删除或下架");
+            return;
+        }
         setActionLoading("delete");
         try {
             const res = await adminFetch(
@@ -190,7 +210,10 @@ export default function ProductsClient({ role }: { role: string }) {
                     method: "DELETE",
                 },
             );
-            if (!res.ok) throw new Error("删除失败");
+            if (!res.ok) {
+                const payload = await res.json().catch(() => null);
+                throw new Error(payload?.error?.message || payload?.error || "删除失败");
+            }
             toast.success("产品已删除");
             setDeleteTarget(null);
             await fetchProducts();
@@ -283,6 +306,22 @@ export default function ProductsClient({ role }: { role: string }) {
                     >
                         {product.name}
                     </Link>
+                    {product.sourceProductId ? (
+                        product.sourceMissingAt ? (
+                            <Badge variant="danger" size="sm">
+                                主站已删除
+                            </Badge>
+                        ) : Array.isArray(product.suitableSkinTypes) &&
+                          product.suitableSkinTypes.length === 0 ? (
+                            <Badge variant="warning" size="sm">
+                                待配置
+                            </Badge>
+                        ) : (
+                            <Badge variant="secondary" size="sm">
+                                主站同步
+                            </Badge>
+                        )
+                    ) : null}
                     {product.featured && (
                         <Star
                             className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400"
@@ -347,41 +386,28 @@ export default function ProductsClient({ role }: { role: string }) {
                             <Edit className="h-4 w-4" />
                         </IconButton>
                     </Tooltip>
-                    {canDelete && (
-                        <Tooltip content="删除" side="top">
-                            <IconButton
-                                label={`删除 ${product.name}`}
-                                variant="danger"
-                                onClick={() => setDeleteTarget(product)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </IconButton>
-                        </Tooltip>
-                    )}
+                    {canDelete &&
+                        (!product.sourceProductId || product.sourceMissingAt) && (
+                            <Tooltip content="删除" side="top">
+                                <IconButton
+                                    label={`删除 ${product.name}`}
+                                    variant="danger"
+                                    onClick={() => setDeleteTarget(product)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                 </div>
             ),
         },
     ];
 
-    const listReturnTo = `${pathname}${searchParams.toString() ? `?${searchParams}` : ""}`;
-
     return (
         <div className="flex flex-col gap-5">
             <PageHeader
                 title="产品管理"
-                description={`管理推荐产品与上架状态${pagination ? ` · 共 ${pagination.total} 个产品` : ""}`}
-                actions={
-                    <Link
-                        href={`/admin/products/new?returnTo=${encodeURIComponent(listReturnTo)}`}
-                    >
-                        <Button
-                            size="sm"
-                            leftIcon={<Plus className="h-4 w-4" />}
-                        >
-                            新增产品
-                        </Button>
-                    </Link>
-                }
+                description={`管理推荐产品与上架状态${pagination ? ` · 共 ${pagination.total} 个产品` : ""} · 产品基础信息由主站同步；新增/基础信息修改请前往主站`}
             />
 
             <PanelCard>
@@ -606,17 +632,19 @@ export default function ProductsClient({ role }: { role: string }) {
                                         >
                                             <Edit className="h-4 w-4" />
                                         </IconButton>
-                                        {canDelete && (
-                                            <IconButton
-                                                label={`删除 ${product.name}`}
-                                                variant="danger"
-                                                onClick={() =>
-                                                    setDeleteTarget(product)
-                                                }
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </IconButton>
-                                        )}
+                                        {canDelete &&
+                                            (!product.sourceProductId ||
+                                                product.sourceMissingAt) && (
+                                                <IconButton
+                                                    label={`删除 ${product.name}`}
+                                                    variant="danger"
+                                                    onClick={() =>
+                                                        setDeleteTarget(product)
+                                                    }
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </IconButton>
+                                            )}
                                     </div>
                                 </div>
                             </div>

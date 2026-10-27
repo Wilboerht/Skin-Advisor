@@ -100,12 +100,27 @@ export const POST = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (r
                     });
                     break;
 
-                case 'delete':
+                case 'delete': {
+                    // 主站仍在维护的同步产品禁止在子站删除；仅允许清理主站已删除的失效记录
+                    const protectedProducts = await tx.product.findMany({
+                        where: {
+                            id: { in: ids },
+                            sourceProductId: { not: null },
+                            sourceMissingAt: null,
+                        },
+                        select: { name: true },
+                    });
+                    if (protectedProducts.length > 0) {
+                        throw new Error(
+                            `SYNCED_PRODUCTS:${protectedProducts.map((p) => p.name).join("、")}`
+                        );
+                    }
                     result = await tx.product.deleteMany({
                         where: { id: { in: ids } }
                     });
                     // Junction table records are automatically cleaned up via onDelete: Cascade
                     break;
+                }
             }
 
             // Log audit inside transaction
@@ -139,6 +154,15 @@ export const POST = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (r
         });
 
     } catch (error) {
+        if (error instanceof Error && error.message.startsWith("SYNCED_PRODUCTS:")) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: `以下产品由主站同步，请在主站删除或下架：${error.message.slice("SYNCED_PRODUCTS:".length)}`,
+                },
+                { status: 409 }
+            );
+        }
         logger.error("Batch operation failed:", error);
         return NextResponse.json(
             { success: false, error: "Internal server error" },

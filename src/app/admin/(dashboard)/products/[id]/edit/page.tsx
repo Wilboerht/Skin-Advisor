@@ -58,6 +58,9 @@ export default async function EditProductPage({
         recommendReasons:
             (product.recommendReasons as ProductFormData["recommendReasons"]) ??
             null,
+        sourceProductId: product.sourceProductId,
+        sourceSyncedAt: product.sourceSyncedAt?.toISOString() ?? null,
+        sourceMissingAt: product.sourceMissingAt?.toISOString() ?? null,
     };
 
     return <ProductEditorPage product={formData} returnTo={returnTo} />;

@@ -21,7 +21,10 @@ export function formatPrice(price: string | number | null | undefined): string {
     if (!raw || isNaN(Number(raw)) || Number(raw) < 0) {
         return "咨询价格";
     }
-    return `¥ ${raw}`;
+    const formatted = Number(raw).toLocaleString("en-US", {
+        maximumFractionDigits: 2,
+    });
+    return `¥ ${formatted}`;
 }
 
 export function formatDateTime(date: Date | string | number) {

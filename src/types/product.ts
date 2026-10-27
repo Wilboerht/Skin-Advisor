@@ -288,6 +288,10 @@ export const productFormDataSchema = z.object({
     affiliateLinks: z.record(z.string(), z.string()).nullable().optional(),
     purchaseLinks: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
     recommendReasons: z.record(z.string(), z.union([z.string().max(500), seasonReasonsSchema])).nullable().optional(),
+    // 主站同步元数据（只读，不参与表单提交）
+    sourceProductId: z.string().nullable().optional(),
+    sourceSyncedAt: z.string().nullable().optional(),
+    sourceMissingAt: z.string().nullable().optional(),
 });
 
 // ==================== TypeScript Types ====================

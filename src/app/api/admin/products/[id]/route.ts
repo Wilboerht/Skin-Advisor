@@ -28,6 +28,21 @@ import { buildAffiliateLinks, normalizeProductPurchaseLinks } from "@/lib/produc
 import { deleteUnreferencedProductAssets, productImageRefs } from "@/lib/product-assets";
 import { logger } from "@/lib/logger";
 
+/** 已绑定主站的产品：这些基础字段只能由主站同步，子站管理端忽略写入 */
+const SYNCED_SHARED_FIELDS = [
+    "name",
+    "category",
+    "image",
+    "images",
+    "price",
+    "description",
+    "howToUse",
+    "origin",
+    "capacity",
+    "affiliateLinks",
+    "purchaseLinks",
+] as const;
+
 // GET /api/admin/products/[id] - Get product details
 // Available to super_admin and admin
 export const GET = withAdminAuth(async (
@@ -67,7 +82,21 @@ export const PUT = withAdminAuth(async (
 
     try {
         const { id } = await params;
-        const body = await request.json();
+        const existingMeta = await prisma.product.findUnique({
+            where: { id },
+            select: { sourceProductId: true },
+        });
+        if (!existingMeta) {
+            return apiError(ErrorCode.NOT_FOUND, "Product not found", 404);
+        }
+
+        const body = (await request.json()) as Record<string, unknown>;
+        // 已绑定主站的产品：基础字段只读，服务端直接忽略，避免绕过前端覆盖同步数据
+        if (existingMeta.sourceProductId) {
+            for (const field of SYNCED_SHARED_FIELDS) {
+                delete body[field];
+            }
+        }
         const clientInfo = getClientInfo(request);
 
         // Build update data — only include fields that are explicitly provided
@@ -337,6 +366,10 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (
             if (!product) {
                 throw new Error("NOT_FOUND");
             }
+            // 主站仍在维护的同步产品禁止在子站删除；仅允许清理主站已删除的失效记录
+            if (product.sourceProductId && !product.sourceMissingAt) {
+                throw new Error("SYNCED_PRODUCT");
+            }
 
             await tx.product.delete({ where: { id } });
             // Junction table records are automatically cleaned up via onDelete: Cascade
@@ -365,6 +398,13 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (
     } catch (error: unknown) {
         if (error instanceof Error && error.message === "NOT_FOUND") {
             return apiError(ErrorCode.NOT_FOUND, "Product not found", 404);
+        }
+        if (error instanceof Error && error.message === "SYNCED_PRODUCT") {
+            return apiError(
+                ErrorCode.CONFLICT,
+                "该产品由主站同步，请在主站删除或下架",
+                409
+            );
         }
         logger.error("Failed to delete product:", error);
         return apiError(ErrorCode.INTERNAL_ERROR, "Failed to delete", 500);

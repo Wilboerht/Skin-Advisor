@@ -299,6 +299,12 @@ model Product {
   negativeFor       Json     // string[] 不适合人群/负面标签，如 ["敏感肌", "痘痘肌", "孕妇"]
   recommendReasons  Json?    // 按肤质的推荐理由 { "oily": "专为油性肌调配...", "dry": "..." }
 
+  // ===== 主站同步字段 =====
+  sourceProductId   String?  @unique // 主站 Product.id；为空表示子站自建产品
+  sourceUpdatedAt   DateTime?        // 主站产品 updatedAt
+  sourceSyncedAt    DateTime?        // 最近一次同步写入时间
+  sourceMissingAt   DateTime?        // 主站已删除/快照中缺失的时间
+
   // Relations
   recommendationRules RecommendationRuleProduct[]
 
