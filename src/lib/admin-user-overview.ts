@@ -86,7 +86,7 @@ export async function getAdminUserOverview(
             prisma.advisorSession.count({ where: { userId, completedAt: { not: null } } }),
             prisma.diaryEntry.count({ where: { userId } }),
             prisma.advisorSession.findMany({
-                where: { userId },
+                where: { userId, archivedAt: null },
                 orderBy: { createdAt: "desc" },
                 take: RECENT_SESSIONS_LIMIT,
                 select: {

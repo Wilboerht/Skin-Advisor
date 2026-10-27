@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
                 { status: 401 }
             );
         }
-        if (!(await hasConsent(authUser.id))) {
+        if (process.env.CONSENT_ENFORCEMENT_ENABLED !== "false" && !(await hasConsent(authUser.id))) {
             return apiError("CONSENT_REQUIRED", "请先阅读并同意本次测肤所需的人脸、健康问卷与第三方 AI 处理授权", 403);
         }
         const ipHash = hashIP(ip);
@@ -852,8 +852,25 @@ export async function POST(request: NextRequest) {
                             }
                             await fs.unlink(realFilePath);
                         } else if (photoUrl.startsWith("http")) {
-                            const { deleteOSSFiles } = await import("@/lib/ali-oss");
-                            await deleteOSSFiles([photoUrl]);
+                            let deletedLocal = false;
+                            try {
+                                const url = new URL(photoUrl);
+                                const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL;
+                                const siteOrigin = siteUrl ? new URL(siteUrl).origin : "";
+                                if (siteOrigin && url.origin === siteOrigin && url.pathname.startsWith("/uploads/guest/")) {
+                                    const filePath = resolveLocalUploadPath(url.pathname);
+                                    if (filePath) {
+                                        await fs.unlink(filePath);
+                                        deletedLocal = true;
+                                    }
+                                }
+                            } catch {
+                                // fall through to OSS cleanup
+                            }
+                            if (!deletedLocal) {
+                                const { deleteOSSFiles } = await import("@/lib/ali-oss");
+                                await deleteOSSFiles([photoUrl]);
+                            }
                         }
                     })
                 );

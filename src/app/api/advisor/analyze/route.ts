@@ -401,7 +401,7 @@ export async function POST(request: NextRequest) {
         if (!user && (await isSubsiteAccountDisabled(request))) {
             return accountDisabledResponse();
         }
-        if (user && !(await hasConsent(user.id))) {
+        if (user && process.env.CONSENT_ENFORCEMENT_ENABLED !== "false" && !(await hasConsent(user.id))) {
             return apiError("CONSENT_REQUIRED", "请先阅读并同意本次测肤所需的授权", 403);
         }
         reservationUserId = user?.id;

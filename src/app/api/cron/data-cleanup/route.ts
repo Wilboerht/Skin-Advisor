@@ -316,6 +316,7 @@ export async function GET(request: NextRequest) {
             deletedOrphanReservations = await prisma.$executeRaw`
                 DELETE FROM "TestRecord" tr
                 WHERE tr."testDate" < ${orphanCutoff}
+                  AND tr."userId" IS NULL
                   AND NOT EXISTS (
                     SELECT 1 FROM "AdvisorSession" s WHERE s."sessionId" = tr."sessionId"
                   )
