@@ -329,8 +329,26 @@ export function sanitizeProductBenefits(value: unknown): string[] {
     return result;
 }
 
-function jsonEqual(a: unknown, b: unknown): boolean {
-    return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+function canonicalizeJson(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(canonicalizeJson);
+    if (value instanceof Date) return value.toISOString();
+    if (value && typeof value === "object") {
+        const record = value as Record<string, unknown>;
+        return Object.keys(record)
+            .sort()
+            .reduce<Record<string, unknown>>((acc, key) => {
+                acc[key] = canonicalizeJson(record[key]);
+                return acc;
+            }, {});
+    }
+    return value;
+}
+
+export function jsonEqual(a: unknown, b: unknown): boolean {
+    return (
+        JSON.stringify(canonicalizeJson(a ?? null)) ===
+        JSON.stringify(canonicalizeJson(b ?? null))
+    );
 }
 
 function readStringSetting(settings: Map<string, unknown>, key: string): string | null {

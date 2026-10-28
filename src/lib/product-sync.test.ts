@@ -17,6 +17,7 @@ vi.mock("@/lib/logger", () => ({ logger: mocks.logger }));
 
 import {
     __resetProductSyncLockForTests,
+    jsonEqual,
     normalizeProductName,
     normalizeProductPrice,
     sanitizeProductBenefits,
@@ -158,6 +159,18 @@ describe("product sync helpers", () => {
         expect(normalizeProductPrice("¥1,350.00")).toBe("1350");
         expect(normalizeProductPrice(2800)).toBe("2800");
         expect(normalizeProductPrice("面议")).toBe("面议");
+    });
+
+    it("jsonEqual 忽略对象键顺序（兼容 jsonb 回读）", () => {
+        expect(jsonEqual({ a: 1, b: 2 }, { b: 2, a: 1 })).toBe(true);
+        expect(
+            jsonEqual(
+                [{ platformKey: "tmall", url: "https://a.example.com", nested: { x: 1, y: 2 } }],
+                [{ nested: { y: 2, x: 1 }, url: "https://a.example.com", platformKey: "tmall" }]
+            )
+        ).toBe(true);
+        expect(jsonEqual({ a: 1 }, { a: 2 })).toBe(false);
+        expect(jsonEqual(null, undefined)).toBe(true);
     });
 
     it("sanitizeProductImages 过滤非法 URL 并限制 5 张", () => {

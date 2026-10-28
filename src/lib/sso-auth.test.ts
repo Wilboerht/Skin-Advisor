@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
     info: vi.fn(),
     verifyToken: vi.fn(),
     isDisabledUser: vi.fn(),
+    isMainUserActive: vi.fn(),
     fetch: vi.fn(),
 }));
 
@@ -51,6 +52,9 @@ vi.mock("@/lib/prisma", () => ({
 }));
 vi.mock("@/lib/logger", () => ({
     logger: { warn: mocks.warn, error: mocks.error, info: mocks.info },
+}));
+vi.mock("@/lib/main-user-status", () => ({
+    isMainUserActive: (...args: unknown[]) => mocks.isMainUserActive(...args),
 }));
 
 import {
@@ -86,6 +90,7 @@ const bearerReq = (token: string) => reqWith({ authorization: `Bearer ${token}` 
 beforeEach(() => {
     vi.clearAllMocks();
     resetProfileSyncBackoffForTests();
+    mocks.isMainUserActive.mockResolvedValue(true);
     vi.stubGlobal("fetch", mocks.fetch);
     mocks.fetch.mockRejectedValue(new Error("unexpected fetch"));
     mocks.cookies.mockResolvedValue({ get: () => undefined, set: vi.fn() });
@@ -187,6 +192,17 @@ describe("getSessionUser Bearer 通道", () => {
         // 未触碰 Cookie 路径与浏览器端验签器
         expect(mocks.cookies).not.toHaveBeenCalled();
         expect(mocks.ssoVerify).not.toHaveBeenCalled();
+    });
+
+    it("主站状态非 ACTIVE → 返回 null，且不 upsert 本地用户", async () => {
+        mocks.mpVerify.mockResolvedValue({ sub: "user_mp_1" });
+        mocks.isMainUserActive.mockResolvedValue(false);
+
+        const user = await getSessionUser(bearerReq("banned-mp-token"));
+
+        expect(user).toBeNull();
+        expect(mocks.isMainUserActive).toHaveBeenCalledWith("user_mp_1");
+        expect(mocks.upsert).not.toHaveBeenCalled();
     });
 
     it("profileSyncedAt 为空 → 回源 userinfo 并同步本地资料", async () => {

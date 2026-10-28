@@ -15,6 +15,7 @@ import { SSO_INSECURE_LOCAL_DEV, SSO_SERVER_BASE_URL } from "@/lib/sso-config";
 import { AUTH_COOKIE_NAME, AUTH_REFRESH_COOKIE_NAME, verifyToken, verifyRefreshToken } from "@/lib/auth-config";
 import { UserRole, isDisabledUser } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
+import { isMainUserActive } from "@/lib/main-user-status";
 import prisma from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth";
 
@@ -767,6 +768,9 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
     if (req?.headers.get("authorization")) {
         const mpPayload = await verifyMpBearerToken(req);
         if (!mpPayload?.sub) return null;
+        // 主站封禁/注销后，子站本地可能还没有禁用记录（状态 webhook 先于首次登录）；
+        // Bearer 通道每次按 userId 回源一次（60s 缓存），避免旧 access token 继续访问。
+        if (!(await isMainUserActive(mpPayload.sub))) return null;
         // 原始 token 用于回源主站 userinfo（仅服务端调用，不落日志）
         const accessToken = (req.headers.get("authorization") || "").slice("Bearer ".length).trim();
         return sessionUserFromVerifiedPayload(mpPayload, accessToken);
