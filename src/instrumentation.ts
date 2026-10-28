@@ -11,10 +11,10 @@
  */
 
 export async function register() {
-    if (process.env.NEXT_RUNTIME === "edge") {
-        return;
+    if (process.env.NEXT_RUNTIME === "nodejs") {
+        // 必须在分支内动态导入：webpack 会按 NEXT_RUNTIME 静态裁剪该分支，
+        // 否则 edge/browser 编译也会解析 node-init 中的 pg/os 等 Node 内置模块而报错。
+        const { initNode } = await import("@/lib/node-init");
+        await initNode();
     }
-
-    const { initNode } = await import("@/lib/node-init");
-    await initNode();
 }

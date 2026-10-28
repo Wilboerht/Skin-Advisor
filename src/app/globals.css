@@ -45,9 +45,9 @@
   /* 命名断点（统一来源，替代散落的 min-[1280px] 魔法值）：
      pc = 桌面版式起点 1280（首页四人同台、88px 顶栏）；
      2k = 1920、4k = 2560 为预留的大屏档位（当前暂无使用处，需要时直接用 2k:/4k: 变体） */
-  --breakpoint-pc: 1280px;
-  --breakpoint-2k: 1920px;
-  --breakpoint-4k: 2560px;
+  --breakpoint-pc: 80rem;
+  --breakpoint-2k: 120rem;
+  --breakpoint-4k: 160rem;
 
   --color-cream: #F0EDE1;
   --color-olive: #3D4430;
@@ -801,5 +801,102 @@ html.hide-page-scrollbar::-webkit-scrollbar {
 @media (min-width: 1280px) {
   .home-shell {
     padding-top: calc(88px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* ========== 首页 Hero 服务卡牌（扑克牌扇形） ========== */
+/* 牌堆尺寸随视口高度缩放：预留 88px 顶栏 + 56px 页脚 + 72px 上下呼吸 */
+@media (min-width: 1280px) {
+  .hero-card-fan {
+    width: min(860px, calc((100dvh - 216px) * 1.55), 61vw);
+    height: min(590px, calc(100dvh - 216px), 38vw);
+    max-width: none;
+    transform: rotate(-12deg);
+  }
+
+  .hero-card {
+    width: 48%;
+    height: 106%;
+  }
+
+  .hero-fan-wrap {
+    transform: translate(0px, 27px);
+  }
+}
+
+@media (min-width: 1280px) and (max-height: 820px) {
+  .hero-card {
+    width: 45%;
+    height: 98%;
+  }
+}
+
+@media (min-width: 1280px) and (min-height: 821px) {
+  .hero-fan-wrap {
+    transform: translate(0px, 115px);
+  }
+}
+
+.hero-card-center {
+  top: 0;
+}
+
+@media (min-width: 1280px) {
+  .hero-card-center {
+    top: -6%;
+  }
+}
+
+@media (min-width: 1280px) and (max-height: 820px) {
+  .hero-card-center {
+    top: -2%;
+  }
+}
+
+@media (min-width: 1280px) and (min-height: 821px) {
+  .hero-card-center {
+    top: -13%;
+    height: 118%;
+  }
+}
+
+.hero-card {
+  --card-hover-x: -8px;
+  --card-hover-y: -12px;
+  transform-origin: 50% 100%;
+  transform: rotate(var(--card-rotate, 0deg));
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms ease;
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hero-card:hover {
+    transform: translate(var(--card-hover-x), var(--card-hover-y)) rotate(var(--card-rotate, 0deg)) scale(1.03);
+    box-shadow: 0 42px 80px -28px rgba(0, 38, 62, 0.5);
+  }
+}
+
+.hero-card:focus-visible {
+  outline: 2px solid rgba(46, 77, 158, 0.65);
+  outline-offset: 4px;
+  transform: translate(var(--card-hover-x), var(--card-hover-y)) rotate(var(--card-rotate, 0deg)) scale(1.03);
+  box-shadow: 0 42px 80px -28px rgba(0, 38, 62, 0.5);
+}
+
+.hero-card:active {
+  transform: translate(var(--card-hover-x), var(--card-hover-y)) rotate(var(--card-rotate, 0deg)) scale(1.015);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-card {
+    transition: none;
+  }
+
+  .hero-card:hover,
+  .hero-card:focus-visible,
+  .hero-card:active {
+    transform: rotate(var(--card-rotate, 0deg));
   }
 }

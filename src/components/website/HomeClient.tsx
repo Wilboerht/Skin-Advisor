@@ -23,6 +23,7 @@ import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 import { HomepageFooter } from "@/components/website/HomepageFooter";
 import { HomeFeatureCards } from "@/components/website/HomeFeatureCards";
+import { HeroDoodles } from "@/components/website/HeroDoodles";
 import type { AccountTab } from "@/components/website/AccountModal";
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
 const FaqModal = dynamic(() => import("@/components/website/FaqModal").then((mod) => mod.FaqModal), { ssr: false });
@@ -511,7 +512,7 @@ export default function HomeClient() {
         type="button"
         onClick={handleStart}
         disabled={isLoading || isNavigating}
-        className="inline-flex h-12 items-center justify-center gap-3 rounded-full border border-[#22304E]/10 bg-white px-8 text-[16px] font-semibold tracking-[0.08em] text-[#22304E] shadow-[0_12px_30px_-16px_rgba(34,48,78,0.45)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(34,48,78,0.5)] active:translate-y-0 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 pc:h-14 pc:px-10 pc:text-[18px] cursor-pointer"
+        className="inline-flex h-12 items-center justify-center gap-3 rounded-full border border-[#22304E]/10 bg-white px-8 text-[16px] font-semibold tracking-[0.08em] text-[#22304E] shadow-[0_12px_30px_-16px_rgba(34,48,78,0.45)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(34,48,78,0.5)] active:translate-y-0 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 pc:h-[58px] pc:min-w-[256px] pc:px-12 pc:text-[18px] cursor-pointer"
       >
         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
         <span>{isLoading ? "正在连接" : "开始测肤"}</span>
@@ -522,7 +523,7 @@ export default function HomeClient() {
         type="button"
         onClick={openGiftModal}
         aria-haspopup="dialog"
-        className="mt-4 inline-flex items-center gap-2 rounded-full px-2 py-1.5 text-[13px] tracking-[0.06em] text-[#00263E]/60 transition-colors hover:text-[#00263E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:mt-5 pc:text-[14px] cursor-pointer"
+        className="mt-3 inline-flex items-center gap-2 rounded-full px-2 py-1.5 text-[13px] tracking-[0.06em] text-[#00263E]/60 transition-colors hover:text-[#00263E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:mt-3 pc:text-[14px] cursor-pointer"
       >
         <Gift className="h-4 w-4" strokeWidth={1.6} />
         <span>测肤分享赢好礼</span>
@@ -669,12 +670,12 @@ export default function HomeClient() {
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
           <div className="relative flex flex-1 overflow-hidden bg-[#F3F1EB]">
-            <div aria-hidden="true" className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full border-[28px] border-[#DDE1E5]/45 pc:h-96 pc:w-96" />
-            <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-2 px-6 py-8 sm:px-10 sm:py-10 pc:grid-cols-[0.88fr_1.12fr] pc:gap-8 pc:px-[6%] pc:py-6">
-              <section className="relative z-20 flex flex-col items-start text-left opacity-0 animate-fade-in-up">
+            <HeroDoodles />
+            <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-2 px-6 py-8 sm:px-10 sm:py-10 pc:grid-cols-[minmax(0,0.66fr)_minmax(0,1.34fr)] pc:gap-6 pc:pl-[8%] pc:pr-[1%] pc:py-6">
+              <section className="relative z-20 flex flex-col items-start text-left opacity-0 animate-fade-in-up pc:pb-16">
                 <h1 className="leading-[1.12]">
                   <span className="block text-[52px] font-bold tracking-[0.08em] text-[#2E4D9E] sm:text-[62px] pc:text-[84px]">觉醒</span>
-                  <span className="mt-2 flex items-center text-[30px] font-medium tracking-[0.06em] text-[#1c1c1c] sm:text-[36px] pc:mt-4 pc:text-[44px]">
+                  <span className="mt-2 flex items-center text-[30px] font-medium tracking-[0.06em] text-[#1c1c1c] sm:text-[36px] pc:text-[44px]">
                     <span>你的肌肤派系</span>
                     <button
                       type="button"
@@ -690,15 +691,15 @@ export default function HomeClient() {
                     </button>
                   </span>
                 </h1>
-                <p className="mt-5 max-w-[440px] text-[14px] leading-[1.8] tracking-[0.03em] text-[#77766F] pc:mt-6 pc:text-[16px]">
+                <p className="mt-4 max-w-[440px] text-[14px] leading-[1.8] tracking-[0.02em] text-[#77766F] pc:mt-4 pc:text-[15px]">
                   获得专业的面部分析报告，你口袋里的专属护肤管家
                 </p>
-                <div className="mt-7 flex flex-col items-start pc:mt-9">
+                <div className="mt-7 flex flex-col items-start pc:mt-7">
                   {heroCta}
                 </div>
               </section>
 
-              <div className="relative z-10 flex items-center justify-center pc:-mr-8">
+              <div className="hero-fan-wrap relative z-10 flex items-center justify-center pc:justify-end">
                 <HomeFeatureCards
                   onStartTest={handleStart}
                   onOpenProfile={() => openAccountModal("diary")}
@@ -709,7 +710,7 @@ export default function HomeClient() {
           </div>
 
           <div className="relative z-40 bg-[#FBF9F3]">
-            <div className="flex min-h-16 w-full items-center px-6 py-2 pc:h-14 pc:min-h-0 pc:px-10 pc:py-0">
+            <div className="flex min-h-16 w-full items-center px-6 py-2 pc:h-12 pc:min-h-0 pc:px-10 pc:py-0">
               <HomepageFooter onOpenFaq={handleOpenFaq} />
             </div>
           </div>
