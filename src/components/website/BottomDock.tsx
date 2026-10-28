@@ -19,8 +19,8 @@ const AdvisorContactModal = dynamic(() => import("@/components/website/AdvisorCo
 /**
  * BottomDock — 全端统一底部导航（移动端贴底通栏 / 桌面端悬浮胶囊）
  *
- * 挂载于根 layout（<main> 之外），通过 usePathname 自我排除沉浸式页面：
- * "默认接入、显式排除"，新增沉浸式页面只需往 HIDDEN_PREFIXES 加一行前缀。
+ * 挂载于根 layout（<main> 之外），通过 usePathname 自我排除首页与沉浸式页面：
+ * 首页由主视觉功能卡承接这些入口；新增沉浸式页面只需往 HIDDEN_PREFIXES 加一行前缀。
  */
 
 // 不渲染 Dock 的路由前缀：测评流程、微信回调、管理后台、认证全屏页
@@ -85,7 +85,7 @@ export function BottomDock() {
   // 专属顾问弹层懒加载 latch：同上
   const shouldRenderAdvisorModal = useLazyOpen(showAdvisorModal);
 
-  if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  if (pathname === "/" || HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return null;
   }
 
@@ -164,8 +164,7 @@ export function BottomDock() {
       aria-label="主导航"
       className="fixed bottom-0 left-0 right-0 z-[var(--z-dock)] pointer-events-none px-3"
     >
-      {/* 全端统一悬浮胶囊：移动端实色（全宽磨砂在低端机上合成开销高）+ 上浮 8px；桌面端磨砂 + 更宽定宽。
-          首页同样显示（上浮避开底部栏，见 globals.css 的 home-dock-raised） */}
+      {/* 移动端实色上浮 8px；桌面端磨砂并使用更宽的定宽胶囊 */}
       <div
         className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 max-w-[420px] md:max-w-md bg-[#FDFBF7] md:bg-[#FDFBF7]/90 md:backdrop-blur-md rounded-full border border-brand-charcoal/[0.08] shadow-[0_8px_30px_rgba(0,38,62,0.12)] mb-[calc(env(safe-area-inset-bottom,0px)+var(--dock-bottom-offset))] md:mb-8 pointer-events-auto"
       >
