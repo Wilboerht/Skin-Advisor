@@ -140,15 +140,14 @@ export const ssoVerifier = createTokenVerifier({
 });
 
 /**
- * 微信小程序验签器：与 ssoVerifier 完全相同的配置，仅 audience 不同
+ * 微信小程序验签器：audience 与 introspection client 均为小程序 public client
  * （小程序登录签发的 access token aud = MP_CLIENT_ID）。
  * 供 Authorization: Bearer 通道使用——小程序请求不携带 Cookie。
  */
 export const mpVerifier = createTokenVerifier({
     introspectionEndpoint: `${SSO_SERVER_BASE_URL}/api/oauth/introspect`,
     jwksUri: `${SSO_SERVER_BASE_URL}/api/oauth/jwks`,
-    clientId: SSO_CLIENT_ID,
-    clientSecret: SSO_CLIENT_SECRET,
+    clientId: MP_CLIENT_ID,
     audience: MP_CLIENT_ID,
     issuer: SSO_BASE_URL,
 });
