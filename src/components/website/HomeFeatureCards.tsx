@@ -10,13 +10,13 @@ interface HomeFeatureCardsProps {
 }
 
 const cardBaseClass =
-  "hero-card group absolute flex flex-col rounded-[26px] border border-white/70 text-[#172B43] shadow-[0_28px_60px_-28px_rgba(0,38,62,0.36)] cursor-pointer sm:rounded-[32px] sm:p-7 pc:rounded-[40px] pc:p-[clamp(20px,3.4vh,32px)]";
+  "hero-card group absolute flex flex-col rounded-[26px] border border-white/70 text-left text-[#172B43] shadow-[0_28px_60px_-28px_rgba(0,38,62,0.36)] cursor-pointer sm:rounded-[32px] sm:px-9 sm:pt-8 sm:pb-7 pc:rounded-[40px] pc:px-[clamp(32px,4.8vh,52px)] pc:pt-[clamp(26px,4vh,40px)] pc:pb-[clamp(20px,3.4vh,32px)]";
 
 const cardStyle = (rotate: string) => ({ "--card-rotate": rotate } as CSSProperties);
 
 const ribbonClass =
   "absolute flex items-center justify-center";
-const ribbonInnerClass = "relative z-10 h-8 w-8 sm:h-9 sm:w-9 pc:h-[clamp(30px,4.6vh,46px)] pc:w-[clamp(30px,4.6vh,46px)]";
+const ribbonInnerClass = "relative z-10 h-9 w-9 -translate-y-[2px] sm:h-10 sm:w-10 sm:-translate-y-[5px] pc:h-[clamp(34px,5.2vh,52px)] pc:w-[clamp(34px,5.2vh,52px)] pc:-translate-y-[15px]";
 
 function BookmarkShape() {
   return (
@@ -26,7 +26,7 @@ function BookmarkShape() {
       fill="none"
       preserveAspectRatio="none"
       className="pointer-events-none absolute inset-0 h-full w-full"
-      style={{ filter: "drop-shadow(0 10px 20px rgba(0,38,62,0.16))" }}
+      style={{ filter: "drop-shadow(0 6px 14px rgba(70, 64, 45, 0.12))" }}
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
@@ -51,7 +51,7 @@ export function HomeFeatureCards({ onStartTest, onOpenProfile, onOpenAdvisor }: 
         aria-label="联系专属顾问"
         aria-haspopup="dialog"
         style={cardStyle("-27deg")}
-        className={`${cardBaseClass} left-0 top-[18%] z-10 h-[80%] w-[46%] justify-end bg-[#BCC8D5] p-5 pc:left-[9%] pc:top-[20%]`}
+        className={`${cardBaseClass} left-0 top-[18%] z-10 h-[80%] w-[46%] justify-start bg-[#BCC8D5] px-7 pt-6 pb-5 pc:left-[9%] pc:top-[20%]`}
       >
         <span
           aria-hidden="true"
@@ -60,9 +60,9 @@ export function HomeFeatureCards({ onStartTest, onOpenProfile, onOpenAdvisor }: 
           <BookmarkShape />
           <Headset className={ribbonInnerClass} strokeWidth={1.6} />
         </span>
-        <span className="pb-[clamp(24px,4vh,40px)] sm:pb-[clamp(28px,5vh,52px)] pc:pb-[clamp(120px,22vh,240px)]">
-          <span className="block text-[22px] font-semibold tracking-[0.02em] sm:text-[24px] pc:text-[clamp(24px,3.2vh,28px)]">专属顾问</span>
-          <span className="mt-1 block text-[11px] font-light tracking-[0.02em] text-[#172B43]/55 sm:text-[12px] pc:text-[clamp(12px,1.7vh,14px)]">Personal Advisor</span>
+        <span className="block">
+          <span className="block text-[24px] font-semibold leading-[1.12] tracking-[0.06em] text-[#1c1c1c] sm:text-[26px] pc:text-[clamp(26px,3.4vh,30px)]">专属顾问</span>
+          <span className="mt-1 block text-[12px] font-light tracking-[0.02em] text-[#172B43]/55 sm:text-[13px] pc:text-[clamp(14px,1.9vh,16px)]">Personal Advisor</span>
         </span>
       </button>
 
@@ -71,7 +71,7 @@ export function HomeFeatureCards({ onStartTest, onOpenProfile, onOpenAdvisor }: 
         onClick={onStartTest}
         aria-label="开始在线测肤"
         style={cardStyle("-11deg")}
-        className={`${cardBaseClass} hero-card-center left-[27%] top-0 z-20 h-[80%] w-[46%] bg-white p-5 pc:left-[31%]`}
+        className={`${cardBaseClass} hero-card-center left-[27%] top-0 z-20 h-[80%] w-[46%] bg-white px-7 pt-6 pb-5 pc:left-[31%]`}
       >
         <span
           aria-hidden="true"
@@ -81,8 +81,8 @@ export function HomeFeatureCards({ onStartTest, onOpenProfile, onOpenAdvisor }: 
           <ScanFace className={ribbonInnerClass} strokeWidth={1.55} />
         </span>
         <span className="block pt-14 sm:pt-16 pc:pt-0">
-          <span className="block text-[25px] font-semibold tracking-[0.02em] sm:text-[28px] pc:text-[clamp(33px,4.4vh,38px)]">在线测肤</span>
-          <span className="mt-1 block text-[13px] font-light tracking-[0.02em] text-[#172B43]/45 sm:text-[15px] pc:text-[clamp(15px,2.1vh,19px)]">Skin Test</span>
+          <span className="block text-[24px] font-semibold leading-[1.12] tracking-[0.06em] text-[#1c1c1c] sm:text-[26px] pc:text-[clamp(26px,3.4vh,30px)]">在线测肤</span>
+          <span className="mt-1 block text-[12px] font-light tracking-[0.02em] text-[#172B43]/55 sm:text-[13px] pc:text-[clamp(14px,1.9vh,16px)]">Skin Test</span>
         </span>
         <span className="mt-5 block text-[12px] leading-[1.8] text-[#172B43]/65 sm:mt-7 sm:text-[13px] pc:mt-[clamp(16px,2.8vh,26px)] pc:text-[clamp(14px,1.8vh,16px)]">
           <span className="block">AI 面部分析</span>
@@ -106,7 +106,7 @@ export function HomeFeatureCards({ onStartTest, onOpenProfile, onOpenAdvisor }: 
         aria-label="查看护肤档案"
         aria-haspopup="dialog"
         style={cardStyle("5deg")}
-        className={`${cardBaseClass} left-[54%] top-[12%] z-30 h-[80%] w-[46%] bg-[#F8F7F3] p-5 pc:left-[53%] pc:top-[8%]`}
+        className={`${cardBaseClass} left-[54%] top-[12%] z-30 h-[80%] w-[46%] bg-[#F8F7F3] px-7 pt-6 pb-5 pc:left-[53%] pc:top-[8%]`}
       >
         <span
           aria-hidden="true"
@@ -116,8 +116,8 @@ export function HomeFeatureCards({ onStartTest, onOpenProfile, onOpenAdvisor }: 
           <NotebookPen className={ribbonInnerClass} strokeWidth={1.55} />
         </span>
         <span className="block pt-14 sm:pt-16 pc:pt-0">
-          <span className="block text-[23px] font-semibold tracking-[0.02em] sm:text-[27px] pc:text-[clamp(29px,4vh,34px)]">护肤档案</span>
-          <span className="mt-1 block whitespace-nowrap text-[11px] font-light tracking-[0.02em] text-[#172B43]/45 sm:text-[13px] pc:text-[clamp(14px,2vh,17px)]">Skincare Profile</span>
+          <span className="block text-[24px] font-semibold leading-[1.12] tracking-[0.06em] text-[#1c1c1c] sm:text-[26px] pc:text-[clamp(26px,3.4vh,30px)]">护肤档案</span>
+          <span className="mt-1 block whitespace-nowrap text-[12px] font-light tracking-[0.02em] text-[#172B43]/55 sm:text-[13px] pc:text-[clamp(14px,1.9vh,16px)]">Skincare Profile</span>
         </span>
         <span className="mt-6 block text-[12px] leading-[1.8] text-[#172B43]/60 sm:mt-8 sm:text-[13px] pc:mt-[clamp(20px,3.4vh,32px)] pc:text-[clamp(13px,1.7vh,15px)]">
           <span className="block">完成每日打卡</span>
