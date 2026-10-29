@@ -18,7 +18,7 @@ const ribbonClass =
   "absolute flex items-center justify-center";
 const ribbonInnerClass = "relative z-10 h-9 w-9 -translate-y-[2px] sm:h-10 sm:w-10 sm:-translate-y-[5px] pc:h-[clamp(34px,5.2vh,52px)] pc:w-[clamp(34px,5.2vh,52px)] pc:-translate-y-[15px]";
 
-function BookmarkShape() {
+export function BookmarkShape() {
   return (
     <svg
       aria-hidden="true"

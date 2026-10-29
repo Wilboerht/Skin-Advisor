@@ -23,6 +23,7 @@ import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 import { HomepageFooter } from "@/components/website/HomepageFooter";
 import { HomeFeatureCards } from "@/components/website/HomeFeatureCards";
+import { HomeMobileHero } from "@/components/website/HomeMobileHero";
 import { HeroDoodles } from "@/components/website/HeroDoodles";
 import type { AccountTab } from "@/components/website/AccountModal";
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
@@ -563,7 +564,7 @@ export default function HomeClient() {
               aria-label={showMenu ? "关闭菜单" : "打开菜单"}
               aria-expanded={showMenu}
               aria-controls="home-menu"
-              className="relative z-50 flex h-[72px] w-20 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2 pc:h-[88px] pc:w-40"
+              className="relative z-50 flex h-[72px] w-20 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2 max-md:h-16 max-md:w-14 max-md:bg-transparent max-md:text-[#22304E] max-md:hover:bg-[#22304E]/[0.04] max-md:active:bg-[#22304E]/[0.06] max-md:focus-visible:ring-inset pc:h-[88px] pc:w-40"
             >
               {showMenu ? <X className="h-6 w-6" strokeWidth={2} /> : <Menu className="h-6 w-6" strokeWidth={2} />}
             </button>
@@ -572,12 +573,12 @@ export default function HomeClient() {
               onClick={() => openAccountModal()}
               aria-label="打开我的账户"
               aria-haspopup="dialog"
-              className="relative z-50 flex h-[72px] w-14 items-center justify-center text-[#22304E]/75 transition-colors hover:bg-[#22304E]/[0.04] hover:text-[#22304E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5B7CAE]/50 pc:h-[88px] pc:w-20 cursor-pointer"
+              className="relative z-50 flex h-[72px] w-14 items-center justify-center text-[#22304E]/75 transition-colors hover:bg-[#22304E]/[0.04] hover:text-[#22304E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5B7CAE]/50 max-md:hidden pc:h-[88px] pc:w-20 cursor-pointer"
             >
               <CircleUserRound className="h-6 w-6 pc:h-7 pc:w-7" strokeWidth={1.5} />
             </button>
           </div>
-          <Link href="/" aria-label="回到首页" className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center" onClick={() => setShowMenu(false)}>
+          <Link href="/" aria-label="回到首页" className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center max-md:hidden" onClick={() => setShowMenu(false)}>
             <Image
               src="/images/jzp-eyebrow.png"
               alt="肌智派"
@@ -589,7 +590,7 @@ export default function HomeClient() {
             />
           </Link>
           {/* 右：NIHPLOD 品牌 logo（容器定宽与左侧汉堡按钮一致，左右对称） */}
-          <div className="w-28 pc:w-40 pr-4 pc:pr-8 flex items-center justify-end select-none">
+          <div className="w-28 pc:w-40 pr-4 pc:pr-8 flex items-center justify-end select-none max-md:hidden">
             <Image
               src="/NIHPLOD-logo.svg"
               alt="NIHPLOD"
@@ -600,6 +601,33 @@ export default function HomeClient() {
               priority
             />
           </div>
+
+          {/* 移动端顶栏：居中 NIHPLOD 标志，右侧账户入口 */}
+          <Link
+            href="/"
+            aria-label="回到首页"
+            className="absolute left-1/2 top-1/2 z-40 inline-flex -translate-x-1/2 -translate-y-1/2 items-center md:hidden"
+            onClick={() => setShowMenu(false)}
+          >
+            <Image
+              src="/NIHPLOD-logo.svg"
+              alt="NIHPLOD"
+              width={120}
+              height={30}
+              sizes="120px"
+              className="h-7 w-auto object-contain"
+              priority
+            />
+          </Link>
+          <button
+            type="button"
+            onClick={() => openAccountModal()}
+            aria-label="打开我的账户"
+            aria-haspopup="dialog"
+            className="absolute right-0 top-0 z-50 flex h-16 w-14 items-center justify-center text-[#22304E]/75 transition-colors hover:bg-[#22304E]/[0.04] hover:text-[#22304E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5B7CAE]/50 md:hidden cursor-pointer"
+          >
+            <CircleUserRound className="h-6 w-6" strokeWidth={1.5} />
+          </button>
 
           {/* 汉堡下拉菜单：遮罩点击关闭。<768px 为全宽贴边面板（上/左/右贴齐顶栏，仅底部 24px 圆角 + 下描边）；
               ≥768px 保持贴顶栏悬挂面板（240px 宽、右下圆角、右/下描边） */}
@@ -669,7 +697,12 @@ export default function HomeClient() {
       >
           <div className="relative flex flex-1 overflow-hidden bg-[#F3F1EB]">
             <HeroDoodles />
-            <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-2 px-6 py-8 sm:px-10 sm:py-10 pc:grid-cols-[minmax(0,0.66fr)_minmax(0,1.34fr)] pc:gap-6 pc:pl-[8%] pc:pr-[1%] pc:py-6">
+            <HomeMobileHero
+              onStartTest={handleStart}
+              onOpenProfile={() => openAccountModal("diary")}
+              onOpenAdvisor={() => setShowAdvisorModal(true)}
+            />
+            <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-2 px-6 py-8 max-md:hidden sm:px-10 sm:py-10 pc:grid-cols-[minmax(0,0.66fr)_minmax(0,1.34fr)] pc:gap-6 pc:pl-[8%] pc:pr-[1%] pc:py-6">
               <section className="relative z-20 flex flex-col items-start text-left opacity-0 animate-fade-in-up pc:pb-16">
                 <h1 className="leading-[1.12]">
                   <span className="block text-[52px] font-bold tracking-[0.08em] text-[#2E4D9E] sm:text-[62px] pc:text-[84px]">觉醒</span>
@@ -708,7 +741,7 @@ export default function HomeClient() {
           </div>
 
           <div className="relative z-40 bg-[#FBF9F3]">
-            <div className="flex min-h-16 w-full items-center px-6 py-2 pc:h-12 pc:min-h-0 pc:px-10 pc:py-0">
+            <div className="flex min-h-16 w-full items-center px-6 py-2 max-md:min-h-12 max-md:py-1 pc:h-12 pc:min-h-0 pc:px-10 pc:py-0">
               <HomepageFooter onOpenFaq={handleOpenFaq} />
             </div>
           </div>

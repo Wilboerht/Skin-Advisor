@@ -798,6 +798,12 @@ html.hide-page-scrollbar::-webkit-scrollbar {
   padding-top: calc(72px + env(safe-area-inset-top, 0px));
 }
 
+@media (max-width: 767px) {
+  .home-shell {
+    padding-top: calc(64px + env(safe-area-inset-top, 0px));
+  }
+}
+
 @media (min-width: 1280px) {
   .home-shell {
     padding-top: calc(88px + env(safe-area-inset-top, 0px));

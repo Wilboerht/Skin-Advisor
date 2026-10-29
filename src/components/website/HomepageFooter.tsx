@@ -25,7 +25,7 @@ export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
     const shouldRenderLegal = useLazyOpen(legalDoc !== null);
 
     return (
-        <footer className="w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/70 pc:flex-nowrap pc:justify-start">
+        <footer className="w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/70 max-md:flex-nowrap max-md:justify-start max-md:gap-x-2.5 max-md:text-[11px] max-md:font-normal max-md:tracking-[0.04em] max-md:text-brand-charcoal/55 pc:flex-nowrap pc:justify-start">
             {/* 公安备案：窄屏第一行左，宽屏左组第一 */}
             <Link
                 href="http://www.beian.gov.cn/portal/registerSystemInfo"
@@ -47,13 +47,13 @@ export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
 
             {/* 版权：窄屏第一行右，宽屏右组最后；窄屏用简写避免拥挤，
                 年份跨年瞬间 SSR/CSR 会不一致，抑制 hydration 告警 */}
-            <p suppressHydrationWarning className="order-3 pc:order-10">
+            <p suppressHydrationWarning className="order-3 max-md:hidden pc:order-10">
                 <span className="hidden pc:inline">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
                 <span className="pc:hidden">&copy; {new Date().getFullYear()} NIHPLOD</span>
             </p>
 
             {/* 窄屏断行（宽屏不渲染） */}
-            <div aria-hidden="true" className="order-4 basis-full h-0 pc:hidden" />
+            <div aria-hidden="true" className="order-4 basis-full h-0 max-md:hidden pc:hidden" />
 
             {/* ICP 备案：窄屏第二行首，宽屏左组第二；mr-auto 把后续项推到右侧形成右组 */}
             <Link
@@ -65,24 +65,24 @@ export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
                 沪ICP备2026014764号-1
             </Link>
 
-            <span aria-hidden="true" className={`order-6 pc:order-5 ${separatorClass}`}>|</span>
+            <span aria-hidden="true" className={`order-6 max-md:hidden pc:order-5 ${separatorClass}`}>|</span>
 
             <button
                 type="button"
                 onClick={() => setLegalDoc("privacy")}
                 aria-haspopup="dialog"
-                className={`order-7 pc:order-4 ${linkClass}`}
+                className={`order-7 max-md:hidden pc:order-4 ${linkClass}`}
             >
                 隐私政策
             </button>
 
-            <span aria-hidden="true" className={`order-8 pc:order-7 ${separatorClass}`}>|</span>
+            <span aria-hidden="true" className={`order-8 max-md:hidden pc:order-7 ${separatorClass}`}>|</span>
 
             <button
                 type="button"
                 onClick={() => setLegalDoc("terms")}
                 aria-haspopup="dialog"
-                className={`order-9 pc:order-6 ${linkClass}`}
+                className={`order-9 max-md:hidden pc:order-6 ${linkClass}`}
             >
                 服务条款
             </button>
@@ -91,12 +91,12 @@ export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
                 type="button"
                 onClick={onOpenFaq}
                 aria-haspopup="dialog"
-                className={`order-11 pc:order-8 hidden pc:flex ${linkClass}`}
+                className={`order-11 pc:order-8 hidden max-md:hidden pc:flex ${linkClass}`}
             >
                 常见问题
             </button>
 
-            <span aria-hidden="true" className={`order-10 pc:order-9 hidden pc:inline ${separatorClass}`}>|</span>
+            <span aria-hidden="true" className={`order-10 pc:order-9 hidden max-md:hidden pc:inline ${separatorClass}`}>|</span>
 
             {shouldRenderLegal && (
                 <LegalModal

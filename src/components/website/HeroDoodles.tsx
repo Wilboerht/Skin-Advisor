@@ -2,7 +2,7 @@ export function HeroDoodles() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute bottom-0 left-0 z-0 hidden w-[clamp(200px,22vw,320px)] select-none sm:block pc:-bottom-10 pc:left-[2%]"
+      className="pointer-events-none absolute bottom-0 left-0 z-0 hidden w-[clamp(200px,22vw,320px)] select-none md:block pc:-bottom-10 pc:left-[2%]"
     >
       <svg viewBox="0 0 360 240" fill="none" className="h-auto w-full" xmlns="http://www.w3.org/2000/svg">
         <g strokeLinecap="round" strokeLinejoin="round">
