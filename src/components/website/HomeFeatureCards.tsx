@@ -37,7 +37,7 @@ export function HomeFeatureCards({ onStartTest, onOpenProfile, onOpenAdvisor }: 
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/35 sm:h-11 sm:w-11 pc:h-[clamp(36px,5vh,46px)] pc:w-[clamp(36px,5vh,46px)]">
           <Headset className="h-5 w-5 pc:h-[clamp(18px,2.6vh,24px)] pc:w-[clamp(18px,2.6vh,24px)]" strokeWidth={1.6} />
         </span>
-        <span className="pb-[clamp(24px,4vh,40px)] sm:pb-[clamp(28px,5vh,52px)] pc:pb-[clamp(80px,16vh,168px)]">
+        <span className="pb-[clamp(24px,4vh,40px)] sm:pb-[clamp(28px,5vh,52px)] pc:pb-[clamp(120px,22vh,240px)]">
           <span className="block text-[22px] font-semibold tracking-[0.02em] sm:text-[24px] pc:text-[clamp(24px,3.2vh,28px)]">专属顾问</span>
           <span className="mt-1 block text-[11px] font-light tracking-[0.02em] text-[#172B43]/55 sm:text-[12px] pc:text-[clamp(12px,1.7vh,14px)]">Personal Advisor</span>
         </span>

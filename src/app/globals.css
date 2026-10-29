@@ -816,24 +816,24 @@ html.hide-page-scrollbar::-webkit-scrollbar {
 
   .hero-card {
     width: 48%;
-    height: 106%;
+    height: 110%;
   }
 
   .hero-fan-wrap {
-    transform: translate(0px, 27px);
+    transform: translate(-6px, 33px);
   }
 }
 
 @media (min-width: 1280px) and (max-height: 820px) {
   .hero-card {
     width: 45%;
-    height: 98%;
+    height: 100%;
   }
 }
 
 @media (min-width: 1280px) and (min-height: 821px) {
   .hero-fan-wrap {
-    transform: translate(0px, 115px);
+    transform: translate(-6px, 125px);
   }
 }
 
@@ -856,7 +856,7 @@ html.hide-page-scrollbar::-webkit-scrollbar {
 @media (min-width: 1280px) and (min-height: 821px) {
   .hero-card-center {
     top: -13%;
-    height: 118%;
+    height: 122%;
   }
 }
 
