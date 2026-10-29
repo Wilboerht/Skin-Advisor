@@ -167,7 +167,6 @@ export default function HomeClient() {
   // 了解肌智派弹窗（替代原 /skin-types 独立页）
   const [showSkinTypesModal, setShowSkinTypesModal] = useState(false);
   const [nickname, setNickname] = useState("");
-  const [isHomeExiting, setIsHomeExiting] = useState(false);
   // 当前版本隐私同意是否已存在：决定引导流程是否展示 legal 屏（登录用户同样适用）
   const [privacyConsentPresent, setPrivacyConsentPresent] = useState(false);
   useEffect(() => {
@@ -488,7 +487,6 @@ export default function HomeClient() {
         setNickname(latestUser.name);
         safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, latestUser.name);
       }
-      setIsHomeExiting(true);
       if (!showOnboardingModal) {
         setOnboardingOpenCount(prev => prev + 1);
       }
@@ -666,7 +664,7 @@ export default function HomeClient() {
       <m.div
         className="home-shell relative z-20 flex flex-col min-h-dvh"
         initial={{ opacity: 0, scale: 0.98 }}
-        animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
           <div className="relative flex flex-1 overflow-hidden bg-[#F3F1EB]">
@@ -757,7 +755,6 @@ export default function HomeClient() {
             startCancelledRef.current = true;
             setShowOnboardingModal(false);
             setIsLoading(false);
-            setIsHomeExiting(false);
           }}
           nickname={nickname}
           setNickname={setNickname}

@@ -88,7 +88,7 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: 
             document.removeEventListener("keydown", handleKeyDown);
             const idx = trapStack.indexOf(trapId);
             if (idx >= 0) trapStack.splice(idx, 1);
-            previousActiveElement.current?.focus();
+            previousActiveElement.current?.focus({ preventScroll: true });
         };
     }, [isOpen]);
 
