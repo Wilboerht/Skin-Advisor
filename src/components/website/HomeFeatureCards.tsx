@@ -10,13 +10,13 @@ interface HomeFeatureCardsProps {
 }
 
 const cardBaseClass =
-  "hero-card group absolute flex flex-col overflow-hidden rounded-[26px] border border-white/70 text-[#172B43] shadow-[0_28px_60px_-28px_rgba(0,38,62,0.36)] cursor-pointer sm:rounded-[32px] sm:p-7 pc:rounded-[40px] pc:p-[clamp(20px,3.4vh,32px)]";
+  "hero-card group absolute flex flex-col rounded-[26px] border border-white/70 text-[#172B43] shadow-[0_28px_60px_-28px_rgba(0,38,62,0.36)] cursor-pointer sm:rounded-[32px] sm:p-7 pc:rounded-[40px] pc:p-[clamp(20px,3.4vh,32px)]";
 
 const cardStyle = (rotate: string) => ({ "--card-rotate": rotate } as CSSProperties);
 
 const ribbonClass =
-  "absolute -top-1 left-1/2 flex -translate-x-1/2 items-start justify-center rounded-b-[17px] shadow-sm";
-const ribbonInnerClass = "h-7 w-7 sm:h-8 sm:w-8 pc:h-[clamp(26px,4.4vh,40px)] pc:w-[clamp(26px,4.4vh,40px)]";
+  "absolute flex items-center justify-center rounded-[24px] shadow-[0_12px_28px_-16px_rgba(0,38,62,0.35)]";
+const ribbonInnerClass = "h-8 w-8 sm:h-9 sm:w-9 pc:h-[clamp(30px,4.6vh,46px)] pc:w-[clamp(30px,4.6vh,46px)]";
 
 export function HomeFeatureCards({ onStartTest, onOpenProfile, onOpenAdvisor }: HomeFeatureCardsProps) {
   return (
@@ -52,11 +52,11 @@ export function HomeFeatureCards({ onStartTest, onOpenProfile, onOpenAdvisor }: 
       >
         <span
           aria-hidden="true"
-          className={`${ribbonClass} h-[64px] w-[54px] bg-[#E7ECF2] pt-4 text-[#2E4D9E] sm:h-[76px] sm:w-[62px] sm:pt-5 pc:h-[clamp(70px,12vh,104px)] pc:w-[clamp(54px,9vh,82px)] pc:rounded-b-[24px] pc:pt-[clamp(16px,3vh,28px)]`}
+          className={`${ribbonClass} -top-[28px] left-[60%] h-[64px] w-[54px] -translate-x-1/2 bg-[#E7ECF2] text-[#2E4D9E] sm:-top-[32px] sm:h-[76px] sm:w-[62px] pc:-top-[clamp(52px,8vh,84px)] pc:h-[clamp(110px,16vh,170px)] pc:w-[clamp(86px,12.5vh,132px)]`}
         >
           <ScanFace className={ribbonInnerClass} strokeWidth={1.55} />
         </span>
-        <span className="block pt-14 sm:pt-16 pc:pt-[clamp(56px,9.5vh,80px)]">
+        <span className="block pt-14 sm:pt-16 pc:pt-[clamp(64px,10vh,96px)]">
           <span className="block text-[25px] font-semibold tracking-[0.02em] sm:text-[28px] pc:text-[clamp(33px,4.4vh,38px)]">在线测肤</span>
           <span className="mt-1 block text-[13px] font-light tracking-[0.02em] text-[#172B43]/45 sm:text-[15px] pc:text-[clamp(15px,2.1vh,19px)]">Skin Test</span>
         </span>
@@ -84,11 +84,11 @@ export function HomeFeatureCards({ onStartTest, onOpenProfile, onOpenAdvisor }: 
       >
         <span
           aria-hidden="true"
-          className={`${ribbonClass} h-[58px] w-[50px] bg-[#DDE3EA] pt-4 text-[#172B43] sm:h-[70px] sm:w-[58px] sm:pt-5 pc:h-[clamp(64px,11vh,94px)] pc:w-[clamp(50px,8vh,76px)] pc:rounded-b-[23px] pc:pt-[clamp(15px,2.8vh,28px)]`}
+          className={`${ribbonClass} -top-[24px] left-[74%] h-[58px] w-[50px] -translate-x-1/2 bg-[#DDE3EA] text-[#172B43] sm:-top-[28px] sm:h-[70px] sm:w-[58px] pc:-top-[clamp(48px,7vh,74px)] pc:h-[clamp(100px,14vh,150px)] pc:w-[clamp(78px,11vh,118px)]`}
         >
           <NotebookPen className={ribbonInnerClass} strokeWidth={1.55} />
         </span>
-        <span className="block pt-14 sm:pt-16 pc:pt-[clamp(54px,9vh,78px)]">
+        <span className="block pt-14 sm:pt-16 pc:pt-[clamp(60px,9.5vh,86px)]">
           <span className="block text-[23px] font-semibold tracking-[0.02em] sm:text-[27px] pc:text-[clamp(29px,4vh,34px)]">护肤档案</span>
           <span className="mt-1 block whitespace-nowrap text-[11px] font-light tracking-[0.02em] text-[#172B43]/45 sm:text-[13px] pc:text-[clamp(14px,2vh,17px)]">Skincare Profile</span>
         </span>

@@ -523,7 +523,7 @@ export default function HomeClient() {
         type="button"
         onClick={openGiftModal}
         aria-haspopup="dialog"
-        className="mt-3 inline-flex items-center gap-2 rounded-full px-2 py-1.5 text-[13px] tracking-[0.06em] text-[#00263E]/60 transition-colors hover:text-[#00263E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:mt-3 pc:text-[14px] cursor-pointer"
+        className="mt-3 inline-flex items-center gap-2 rounded-full py-1.5 pl-0 pr-2 text-[14px] leading-[1.8] tracking-[0.02em] text-[#00263E]/60 transition-colors hover:text-[#00263E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:mt-3 pc:text-[15px] cursor-pointer"
       >
         <Gift className="h-4 w-4" strokeWidth={1.6} />
         <span>测肤分享赢好礼</span>
