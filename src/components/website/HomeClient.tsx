@@ -511,7 +511,7 @@ export default function HomeClient() {
         type="button"
         onClick={handleStart}
         disabled={isLoading || isNavigating}
-        className="inline-flex h-12 items-center justify-center gap-3 rounded-full border border-[#22304E]/10 bg-white px-8 text-[16px] font-semibold tracking-[0.08em] text-[#22304E] shadow-[0_12px_30px_-16px_rgba(34,48,78,0.45)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(34,48,78,0.5)] active:translate-y-0 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 pc:h-[58px] pc:min-w-[256px] pc:px-12 pc:text-[18px] cursor-pointer"
+        className="inline-flex h-12 items-center justify-center gap-3 rounded-full border border-[#22304E]/10 bg-white px-8 text-[17px] font-semibold tracking-[0.08em] text-[#22304E] shadow-[0_12px_30px_-16px_rgba(34,48,78,0.45)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(34,48,78,0.5)] active:translate-y-0 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 pc:h-[58px] pc:min-w-[256px] pc:px-12 pc:text-[20px] cursor-pointer"
       >
         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
         <span>{isLoading ? "正在连接" : "开始测肤"}</span>
@@ -522,9 +522,9 @@ export default function HomeClient() {
         type="button"
         onClick={openGiftModal}
         aria-haspopup="dialog"
-        className="mt-3 inline-flex items-center gap-2 rounded-full py-1.5 pl-0 pr-2 text-[14px] leading-[1.8] tracking-[0.02em] text-[#00263E]/60 transition-colors hover:text-[#00263E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:mt-3 pc:text-[15px] cursor-pointer"
+        className="mt-3 inline-flex items-center gap-2 rounded-full py-1.5 pl-0 pr-2 text-[15px] leading-[1.8] tracking-[0.02em] text-[#00263E]/60 transition-colors hover:text-[#00263E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:mt-3 pc:text-[17px] cursor-pointer"
       >
-        <Gift className="h-4 w-4" strokeWidth={1.6} />
+        <Gift className="h-[18px] w-[18px]" strokeWidth={1.6} />
         <span>测肤分享赢好礼</span>
       </button>
     </>
@@ -703,10 +703,10 @@ export default function HomeClient() {
               onOpenAdvisor={() => setShowAdvisorModal(true)}
             />
             <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-2 px-6 py-8 max-md:hidden sm:px-10 sm:py-10 pc:grid-cols-[minmax(0,0.66fr)_minmax(0,1.34fr)] pc:gap-6 pc:pl-[8%] pc:pr-[1%] pc:py-6">
-              <section className="relative z-20 flex flex-col items-start text-left opacity-0 animate-fade-in-up pc:pb-16">
+              <section className="home-hero-copy relative z-20 flex flex-col items-start text-left opacity-0 animate-fade-in-up">
                 <h1 className="leading-[1.12]">
-                  <span className="block text-[52px] font-bold tracking-[0.08em] text-[#2E4D9E] sm:text-[62px] pc:text-[84px]">觉醒</span>
-                  <span className="mt-2 flex items-center text-[30px] font-medium tracking-[0.06em] text-[#1c1c1c] sm:text-[36px] pc:text-[44px]">
+                  <span className="block text-[56px] font-bold tracking-[0.08em] text-[#2E4D9E] sm:text-[68px] pc:text-[92px]">觉醒</span>
+                  <span className="mt-2 flex items-center text-[33px] font-medium tracking-[0.06em] text-[#1c1c1c] sm:text-[39px] pc:text-[48px]">
                     <span>你的肌肤派系</span>
                     <button
                       type="button"
@@ -722,7 +722,7 @@ export default function HomeClient() {
                     </button>
                   </span>
                 </h1>
-                <p className="mt-4 max-w-[440px] text-[14px] leading-[1.8] tracking-[0.02em] text-[#77766F] pc:mt-4 pc:text-[15px]">
+                <p className="mt-4 max-w-[470px] text-[15px] leading-[1.8] tracking-[0.02em] text-[#77766F] pc:mt-4 pc:text-[17px]">
                   获得专业的面部分析报告，你口袋里的专属护肤管家
                 </p>
                 <div className="mt-7 flex flex-col items-start pc:mt-7">
