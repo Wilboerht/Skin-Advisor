@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pushUrlsToBaidu, getAllSiteUrls } from "@/lib/baidu-push";
+import { SITE_URL } from "@/lib/site-url";
 
 /**
  * GET /api/baidu-push?token=xxx
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const site = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
+  const site = SITE_URL;
   const baiduToken = process.env.BAIDU_PUSH_TOKEN;
 
   if (!baiduToken) {

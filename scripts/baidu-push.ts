@@ -10,11 +10,12 @@
 
 import { config } from "dotenv";
 import { pushUrlsToBaidu, getAllSiteUrls } from "../src/lib/baidu-push";
+import { SITE_URL } from "../src/lib/site-url";
 
 config({ path: ".env.production" });
 
 async function main() {
-  const site = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
+  const site = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
   const token = process.env.BAIDU_PUSH_TOKEN;
 
   if (!token) {

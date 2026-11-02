@@ -3,8 +3,9 @@ import { withDefaultOgImage } from "@/lib/metadata";
 import { SiteFooter } from "@/components/website/SiteFooter";
 import { FAQPageSchema, BreadcrumbSchema } from "@/components/website/StructuredData";
 import { faqs } from "@/lib/faq-data";
+import { SITE_URL } from "@/lib/site-url";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
+const BASE_URL = SITE_URL;
 
 export const metadata: Metadata = withDefaultOgImage({
   title: "常见问题 — AI 护肤分析 FAQ",

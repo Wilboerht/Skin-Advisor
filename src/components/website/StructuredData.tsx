@@ -3,7 +3,9 @@
  * 用于 SEO 富文本结果和 GEO (生成式引擎优化)
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
+import { SITE_URL } from "@/lib/site-url";
+
+const BASE_URL = SITE_URL;
 
 // ============================================================
 // 全站 Organization Schema

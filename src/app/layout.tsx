@@ -3,8 +3,9 @@ import { Suspense } from "react";
 import Script from "next/script";
 import "./globals.css";
 import { OrganizationSchema, WebApplicationSchema, WebsiteSearchSchema } from "@/components/website/StructuredData";
+import { SITE_URL } from "@/lib/site-url";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
+const BASE_URL = SITE_URL;
 
 const siteVerification = {
   ...(process.env.BAIDU_SITE_VERIFICATION

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-url";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
+const baseUrl = SITE_URL;
 
 // 内容最近实际更新日期（内容变更时手动维护，避免每次构建输出假新鲜度）
 const CONTENT_UPDATED_AT = new Date("2026-08-11");
