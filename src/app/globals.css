@@ -43,9 +43,9 @@
   --default-color-space: srgb;
 
   /* 命名断点（统一来源，替代散落的 min-[1280px] 魔法值）：
-     pc = 桌面版式起点 1280（首页四人同台、88px 顶栏）；
+     pc = 桌面版式起点 1024（首页三人同台、88px 顶栏、单行页脚）；
      2k = 1920、4k = 2560 为预留的大屏档位（当前暂无使用处，需要时直接用 2k:/4k: 变体） */
-  --breakpoint-pc: 80rem;
+  --breakpoint-pc: 64rem;
   --breakpoint-2k: 120rem;
   --breakpoint-4k: 160rem;
 
@@ -793,33 +793,33 @@ html.hide-page-scrollbar::-webkit-scrollbar {
 }
 
 /* ========== 首页 Hero 一屏适配 ========== */
-/* 首页壳：为固定顶栏预留高度（顶栏 = 72/88 + 安全区） */
+/* 首页壳：为固定顶栏预留高度（顶栏 = 64/88 + 安全区） */
 .home-shell {
-  padding-top: calc(72px + env(safe-area-inset-top, 0px));
+  padding-top: calc(64px + env(safe-area-inset-top, 0px));
 }
 
-@media (max-width: 767px) {
-  .home-shell {
-    padding-top: calc(64px + env(safe-area-inset-top, 0px));
-  }
-}
-
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .home-shell {
     padding-top: calc(88px + env(safe-area-inset-top, 0px));
   }
 }
 
 /* 主视觉文案组：顶部对齐 hero 区域高度的 1/3（hero = 100dvh - 88px 顶栏 - 48px 页脚），
-   再上移 140px（其中 100px ≈ 文案块高度的 1/3）；-24px 抵消 pc 下的容器内边距 */
-@media (min-width: 1280px) {
+   再上移 140px（其中 100px ≈ 文案块高度的 1/3）；-24px 抵消 pc 下的容器内边距。
+   短屏（如 1024×600）时公式会得到负值，clamp 到 8px 避免文案顶到顶栏。 */
+@media (min-width: 1024px) {
   .home-hero-copy {
     align-self: start;
-    margin-top: calc((100dvh - 136px) / 3 - 164px);
+    margin-top: clamp(8px, calc((100dvh - 136px) / 3 - 164px), 420px);
   }
 }
 
 /* ========== 首页 Hero 服务卡牌（扑克牌扇形） ========== */
+/* 卡牌内的字号/间距用 cqh 跟随牌堆高度缩放：
+   半屏（768–1023）时牌堆缩小，卡内文字与留白按同比例收缩，避免标题折行 */
+.hero-card-fan {
+  container-type: size;
+}
 /* 牌堆尺寸随可用高度连续缩放：高度公式把 -12° 旋转后的外接高度也算进去
    （0.76 × (100dvh - 144px)；144px = 88px 顶栏 + 48px 页脚 + 8px 余量），
    宽度与高度按 1.458 比例联动，避免只缩高度时旋转外接盒仍然过宽。
@@ -830,13 +830,21 @@ html.hide-page-scrollbar::-webkit-scrollbar {
   top: 0;
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .hero-card-fan {
-    --fan-h: min(590px, calc((100dvh - 144px) * 0.76), 38vw);
-    width: min(860px, 61vw, calc(var(--fan-h) * 1.458));
+    /* 1080p 及以下维持 590px 上限；更高的屏幕按 54.6vh 同步放大，
+       2K/4K 下卡牌不会相对视口越缩越小 */
+    --fan-h: min(max(590px, 54.63vh), calc((100dvh - 144px) * 0.76), 38vw);
+    /* 窄而高的窗口里牌堆被 38vw 限制、又垂直居中时，最右侧卡片的底边可能落在 hero 内。
+       这里按卡片底部实际位置做一次“出血补偿”：不足 12px 出血时把牌堆下移，
+       保证三张卡都像常规 PC 设计一样穿过 hero 底边被页脚裁切。 */
+    --fan-bleed-shift: max(0px, calc((100dvh - 136px) / 2 + 12px - var(--fan-h) * 0.97));
+    width: min(61vw, calc(var(--fan-h) * 1.458));
     height: var(--fan-h);
     max-width: none;
-    transform: translateX(calc(-1 * clamp(-12px, calc(7.4vw - 76px), 44px) + max(0px, calc((100vw - 1600px) * 0.5)))) translateY(clamp(8px, 1vh, 16px)) rotate(-12deg);
+    /* 容器宽度与 HomeClient 的 max-w 同步：≤1920 时 1600，之后按 83.33vw 放大；
+       补偿项把牌堆继续钉在视口右侧（超出视口部分由 hero 裁切，属预期设计） */
+    transform: translateX(calc(-1 * clamp(-12px, calc(7.4vw - 76px), 44px) + max(0px, calc((100vw - clamp(1600px, 83.33vw, 3200px)) * 0.5)))) translateY(calc(clamp(8px, 1vh, 16px) + var(--fan-bleed-shift))) rotate(-12deg);
   }
 
   .hero-card {

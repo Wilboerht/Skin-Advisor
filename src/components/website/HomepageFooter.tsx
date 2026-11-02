@@ -11,9 +11,9 @@ const LegalModal = dynamic(() => import("@/components/website/LegalModal").then(
 
 /**
  * HomepageFooter — 首页页脚（版权 + 政策入口 + 备案）
- * 浅色低存在感。宽屏（≥1280px）：备案居左、链接与版权居右（ICP 的 mr-auto 形成左右两组），单行排列。
- * 窄屏（<1280px）：居中两行——第一行 公安备案 | 版权，第二行 ICP备案 | 隐私政策 | 服务条款（常见问题仅宽屏显示）；
- * 通过 flex order 重排实现，宽屏顺序与分组不变。
+ * 浅色低存在感。PC（≥1024px）：备案居左、链接与版权居右（ICP 的 mr-auto 形成左右两组），单行排列。
+ * 手机/半屏（<1024px）：只保留公安备案 + ICP，左对齐；文字字号/字重/字距/颜色与 PC 完全一致。
+ * 768px 以下隐藏公安备案与 ICP 之间的分隔符，避免窄屏折行时出现悬空竖线。
  * 「隐私政策 / 服务条款」打开站内简版弹窗（LegalModal），完整版在弹窗内链至官网；「常见问题」由父级回调打开 FaqModal。
  */
 export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
@@ -25,8 +25,8 @@ export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
     const shouldRenderLegal = useLazyOpen(legalDoc !== null);
 
     return (
-        <footer className="w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/70 max-md:flex-nowrap max-md:justify-start max-md:gap-x-2.5 max-md:text-[11px] max-md:font-normal max-md:tracking-[0.04em] max-md:text-brand-charcoal/55 pc:flex-nowrap pc:justify-start">
-            {/* 公安备案：窄屏第一行左，宽屏左组第一 */}
+        <footer className="w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/70 max-pc:gap-x-2.5 pc:flex-nowrap pc:justify-start">
+            {/* 公安备案：手机端与宽屏左组均为第一项 */}
             <Link
                 href="http://www.beian.gov.cn/portal/registerSystemInfo"
                 target="_blank"
@@ -43,19 +43,15 @@ export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
                 <span>沪公网安备31010702010178号</span>
             </Link>
 
-            <span aria-hidden="true" className={`order-2 ${separatorClass}`}>|</span>
+            <span aria-hidden="true" className={`order-2 max-md:hidden ${separatorClass}`}>|</span>
 
-            {/* 版权：窄屏第一行右，宽屏右组最后；窄屏用简写避免拥挤，
-                年份跨年瞬间 SSR/CSR 会不一致，抑制 hydration 告警 */}
-            <p suppressHydrationWarning className="order-3 max-md:hidden pc:order-10">
+            {/* 版权：仅 PC 显示，宽屏右组最后；年份跨年瞬间 SSR/CSR 会不一致，抑制 hydration 告警 */}
+            <p suppressHydrationWarning className="order-3 max-pc:hidden pc:order-10">
                 <span className="hidden pc:inline">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
                 <span className="pc:hidden">&copy; {new Date().getFullYear()} NIHPLOD</span>
             </p>
 
-            {/* 窄屏断行（宽屏不渲染） */}
-            <div aria-hidden="true" className="order-4 basis-full h-0 max-md:hidden pc:hidden" />
-
-            {/* ICP 备案：窄屏第二行首，宽屏左组第二；mr-auto 把后续项推到右侧形成右组 */}
+            {/* ICP 备案：手机端紧随公安备案，宽屏左组第二；mr-auto 把后续项推到右侧形成右组 */}
             <Link
                 href="https://beian.miit.gov.cn/"
                 target="_blank"
@@ -65,24 +61,24 @@ export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
                 沪ICP备2026014764号-1
             </Link>
 
-            <span aria-hidden="true" className={`order-6 max-md:hidden pc:order-5 ${separatorClass}`}>|</span>
+            <span aria-hidden="true" className={`order-6 max-pc:hidden pc:order-5 ${separatorClass}`}>|</span>
 
             <button
                 type="button"
                 onClick={() => setLegalDoc("privacy")}
                 aria-haspopup="dialog"
-                className={`order-7 max-md:hidden pc:order-4 ${linkClass}`}
+                className={`order-7 max-pc:hidden pc:order-4 ${linkClass}`}
             >
                 隐私政策
             </button>
 
-            <span aria-hidden="true" className={`order-8 max-md:hidden pc:order-7 ${separatorClass}`}>|</span>
+            <span aria-hidden="true" className={`order-8 max-pc:hidden pc:order-7 ${separatorClass}`}>|</span>
 
             <button
                 type="button"
                 onClick={() => setLegalDoc("terms")}
                 aria-haspopup="dialog"
-                className={`order-9 max-md:hidden pc:order-6 ${linkClass}`}
+                className={`order-9 max-pc:hidden pc:order-6 ${linkClass}`}
             >
                 服务条款
             </button>
@@ -91,12 +87,12 @@ export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
                 type="button"
                 onClick={onOpenFaq}
                 aria-haspopup="dialog"
-                className={`order-11 pc:order-8 hidden max-md:hidden pc:flex ${linkClass}`}
+                className={`order-11 pc:order-8 hidden max-pc:hidden pc:flex ${linkClass}`}
             >
                 常见问题
             </button>
 
-            <span aria-hidden="true" className={`order-10 pc:order-9 hidden max-md:hidden pc:inline ${separatorClass}`}>|</span>
+            <span aria-hidden="true" className={`order-10 pc:order-9 hidden max-pc:hidden pc:inline ${separatorClass}`}>|</span>
 
             {shouldRenderLegal && (
                 <LegalModal

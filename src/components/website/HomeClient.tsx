@@ -511,7 +511,7 @@ export default function HomeClient() {
         type="button"
         onClick={handleStart}
         disabled={isLoading || isNavigating}
-        className="inline-flex h-12 items-center justify-center gap-3 rounded-full border border-[#22304E]/10 bg-white px-8 text-[17px] font-semibold tracking-[0.08em] text-[#22304E] shadow-[0_12px_30px_-16px_rgba(34,48,78,0.45)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(34,48,78,0.5)] active:translate-y-0 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 pc:h-[58px] pc:min-w-[256px] pc:px-12 pc:text-[20px] cursor-pointer"
+        className="inline-flex h-12 items-center justify-center gap-3 rounded-full border border-[#22304E]/10 bg-white px-8 text-[17px] font-semibold tracking-[0.08em] text-[#22304E] shadow-[0_12px_30px_-16px_rgba(34,48,78,0.45)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(34,48,78,0.5)] active:translate-y-0 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 pc:h-[clamp(52px,4.53vw,58px)] pc:min-w-[clamp(212px,20vw,256px)] pc:px-[clamp(32px,3.75vw,48px)] pc:text-[clamp(18px,1.5625vw,20px)] 2k:h-[clamp(58px,5.37vh,77px)] 2k:min-w-[clamp(256px,23.7vh,341px)] 2k:px-[clamp(48px,4.44vh,64px)] 2k:text-[clamp(20px,1.85vh,27px)] cursor-pointer"
       >
         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
         <span>{isLoading ? "正在连接" : "开始测肤"}</span>
@@ -522,9 +522,9 @@ export default function HomeClient() {
         type="button"
         onClick={openGiftModal}
         aria-haspopup="dialog"
-        className="mt-3 inline-flex items-center gap-2 rounded-full py-1.5 pl-0 pr-2 text-[15px] leading-[1.8] tracking-[0.02em] text-[#00263E]/60 transition-colors hover:text-[#00263E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:mt-3 pc:text-[17px] cursor-pointer"
+        className="mt-3 inline-flex items-center gap-2 rounded-full py-1.5 pl-0 pr-2 text-[15px] leading-[1.8] tracking-[0.02em] text-[#00263E]/60 transition-colors hover:text-[#00263E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00263E]/40 pc:mt-3 pc:text-[clamp(15px,1.328vw,17px)] 2k:text-[clamp(17px,1.574vh,22px)] cursor-pointer"
       >
-        <Gift className="h-[18px] w-[18px]" strokeWidth={1.6} />
+        <Gift className="h-[18px] w-[18px] 2k:h-[clamp(18px,1.67vh,24px)] 2k:w-[clamp(18px,1.67vh,24px)]" strokeWidth={1.6} />
         <span>测肤分享赢好礼</span>
       </button>
     </>
@@ -564,7 +564,7 @@ export default function HomeClient() {
               aria-label={showMenu ? "关闭菜单" : "打开菜单"}
               aria-expanded={showMenu}
               aria-controls="home-menu"
-              className="relative z-50 flex h-[72px] w-20 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2 max-md:h-16 max-md:w-14 max-md:bg-transparent max-md:text-[#22304E] max-md:hover:bg-[#22304E]/[0.04] max-md:active:bg-[#22304E]/[0.06] max-md:focus-visible:ring-inset pc:h-[88px] pc:w-40"
+              className="relative z-50 flex h-[72px] w-20 items-center justify-center bg-[#5B7CAE] text-white transition-colors hover:bg-[#4E6C9C] active:bg-[#476390] cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B7CAE]/50 focus-visible:ring-offset-2 max-pc:h-16 max-pc:w-14 max-pc:bg-transparent max-pc:text-[#22304E] max-pc:hover:bg-[#22304E]/[0.04] max-pc:active:bg-[#22304E]/[0.06] max-pc:focus-visible:ring-inset pc:h-[88px] pc:w-40"
             >
               {showMenu ? <X className="h-6 w-6" strokeWidth={2} /> : <Menu className="h-6 w-6" strokeWidth={2} />}
             </button>
@@ -573,12 +573,12 @@ export default function HomeClient() {
               onClick={() => openAccountModal()}
               aria-label="打开我的账户"
               aria-haspopup="dialog"
-              className="relative z-50 flex h-[72px] w-14 items-center justify-center text-[#22304E]/75 transition-colors hover:bg-[#22304E]/[0.04] hover:text-[#22304E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5B7CAE]/50 max-md:hidden pc:h-[88px] pc:w-20 cursor-pointer"
+              className="relative z-50 flex h-[72px] w-14 items-center justify-center text-[#22304E]/75 transition-colors hover:bg-[#22304E]/[0.04] hover:text-[#22304E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5B7CAE]/50 max-pc:hidden pc:h-[88px] pc:w-20 cursor-pointer"
             >
               <CircleUserRound className="h-6 w-6 pc:h-7 pc:w-7" strokeWidth={1.5} />
             </button>
           </div>
-          <Link href="/" aria-label="回到首页" className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center max-md:hidden" onClick={() => setShowMenu(false)}>
+          <Link href="/" aria-label="回到首页" className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center max-pc:hidden" onClick={() => setShowMenu(false)}>
             <Image
               src="/images/jzp-eyebrow.png"
               alt="肌智派"
@@ -590,7 +590,7 @@ export default function HomeClient() {
             />
           </Link>
           {/* 右：NIHPLOD 品牌 logo（容器定宽与左侧汉堡按钮一致，左右对称） */}
-          <div className="w-28 pc:w-40 pr-4 pc:pr-8 flex items-center justify-end select-none max-md:hidden">
+          <div className="w-28 pc:w-40 pr-4 pc:pr-8 flex items-center justify-end select-none max-pc:hidden">
             <Image
               src="/NIHPLOD-logo.svg"
               alt="NIHPLOD"
@@ -606,7 +606,7 @@ export default function HomeClient() {
           <Link
             href="/"
             aria-label="回到首页"
-            className="absolute left-1/2 top-1/2 z-40 inline-flex -translate-x-1/2 -translate-y-1/2 items-center md:hidden"
+            className="absolute left-1/2 top-1/2 z-40 inline-flex -translate-x-1/2 -translate-y-1/2 items-center pc:hidden"
             onClick={() => setShowMenu(false)}
           >
             <Image
@@ -624,13 +624,13 @@ export default function HomeClient() {
             onClick={() => openAccountModal()}
             aria-label="打开我的账户"
             aria-haspopup="dialog"
-            className="absolute right-0 top-0 z-50 flex h-16 w-14 items-center justify-center text-[#22304E]/75 transition-colors hover:bg-[#22304E]/[0.04] hover:text-[#22304E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5B7CAE]/50 md:hidden cursor-pointer"
+            className="absolute right-0 top-0 z-50 flex h-16 w-14 items-center justify-center text-[#22304E]/75 transition-colors hover:bg-[#22304E]/[0.04] hover:text-[#22304E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5B7CAE]/50 pc:hidden cursor-pointer"
           >
             <CircleUserRound className="h-6 w-6" strokeWidth={1.5} />
           </button>
 
-          {/* 汉堡下拉菜单：遮罩点击关闭。<768px 为全宽贴边面板（上/左/右贴齐顶栏，仅底部 24px 圆角 + 下描边）；
-              ≥768px 保持贴顶栏悬挂面板（240px 宽、右下圆角、右/下描边） */}
+          {/* 汉堡下拉菜单：遮罩点击关闭。<1024px 为全宽贴边面板（上/左/右贴齐顶栏，仅底部 24px 圆角 + 下描边）；
+              ≥1024px 保持贴顶栏悬挂面板（240px 宽、右下圆角、右/下描边） */}
           <AnimatePresence>
             {showMenu && (
               <m.div
@@ -648,7 +648,7 @@ export default function HomeClient() {
               <m.div
                 key="menu-panel"
                 id="home-menu"
-                className="absolute inset-x-0 top-full z-50 origin-top rounded-b-[24px] border-b border-black/[0.06] bg-[#FAF7F1] p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)] md:inset-x-auto md:left-0 md:w-60 md:origin-top-left md:rounded-bl-none md:rounded-br-2xl md:border-r"
+                className="absolute inset-x-0 top-full z-50 origin-top rounded-b-[24px] border-b border-black/[0.06] bg-[#FAF7F1] p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)] pc:inset-x-auto pc:left-0 pc:w-60 pc:origin-top-left pc:rounded-bl-none pc:rounded-br-2xl pc:border-r"
                 initial={{ opacity: 0, y: -6, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
@@ -702,27 +702,27 @@ export default function HomeClient() {
               onOpenProfile={() => openAccountModal("diary")}
               onOpenAdvisor={() => setShowAdvisorModal(true)}
             />
-            <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-2 px-6 py-8 max-md:hidden sm:px-10 sm:py-10 pc:grid-cols-[minmax(0,0.66fr)_minmax(0,1.34fr)] pc:gap-6 pc:pl-[8%] pc:pr-[1%] pc:py-6">
+            <div className="mx-auto grid w-full max-w-[clamp(1600px,83.33vw,3200px)] flex-1 grid-cols-1 items-center gap-2 px-6 py-8 max-pc:hidden sm:px-10 sm:py-10 pc:max-w-[clamp(1600px,83.33vw,3200px)] pc:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] pc:gap-6 pc:pl-[8%] pc:pr-[1%] pc:py-6 2k:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
               <section className="home-hero-copy relative z-20 flex flex-col items-start text-left opacity-0 animate-fade-in-up">
                 <h1 className="leading-[1.12]">
-                  <span className="block text-[56px] font-bold tracking-[0.08em] text-[#2E4D9E] sm:text-[68px] pc:text-[92px]">觉醒</span>
-                  <span className="mt-2 flex items-center text-[33px] font-medium tracking-[0.06em] text-[#1c1c1c] sm:text-[39px] pc:text-[48px]">
+                  <span className="block text-[56px] font-bold tracking-[0.08em] text-[#2E4D9E] sm:text-[68px] pc:text-[clamp(72px,7.1875vw,92px)] 2k:text-[clamp(92px,8.52vh,122px)]">觉醒</span>
+                  <span className="mt-2 flex items-center text-[33px] font-medium tracking-[0.06em] text-[#1c1c1c] sm:text-[39px] pc:text-[clamp(38px,3.75vw,48px)] 2k:text-[clamp(48px,4.44vh,64px)]">
                     <span>你的肌肤派系</span>
                     <button
                       type="button"
                       onClick={openSkinTypesModal}
                       aria-haspopup="dialog"
                       aria-label="了解肌智派"
-                      className="ml-2 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2E4D9E] text-white transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 pc:ml-3 pc:h-8 pc:w-8 cursor-pointer"
+                      className="ml-2 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2E4D9E] text-white transition-transform duration-200 hover:scale-105 active:scale-95 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 pc:ml-[clamp(8px,0.94vw,12px)] pc:h-[clamp(26px,2.5vw,32px)] pc:w-[clamp(26px,2.5vw,32px)] 2k:ml-[clamp(12px,1.11vh,16px)] 2k:h-[clamp(32px,2.96vh,43px)] 2k:w-[clamp(32px,2.96vh,43px)] cursor-pointer"
                     >
-                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px] pc:h-[22px] pc:w-[22px]">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px] pc:h-[clamp(18px,1.72vw,22px)] pc:w-[clamp(18px,1.72vw,22px)] 2k:h-[clamp(22px,2.04vh,29px)] 2k:w-[clamp(22px,2.04vh,29px)]">
                         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                         <path d="M12 17h.01" />
                       </svg>
                     </button>
                   </span>
                 </h1>
-                <p className="mt-4 max-w-[470px] text-[15px] leading-[1.8] tracking-[0.02em] text-[#77766F] pc:mt-4 pc:text-[17px]">
+                <p className="mt-4 max-w-[470px] text-[15px] leading-[1.8] tracking-[0.02em] text-[#77766F] pc:mt-4 pc:whitespace-nowrap pc:text-[15px] xl:text-[17px] 2k:max-w-none 2k:text-[clamp(17px,1.574vh,22px)]">
                   获得专业的面部分析报告，你口袋里的专属护肤管家
                 </p>
                 <div className="mt-7 flex flex-col items-start pc:mt-7">
@@ -741,7 +741,7 @@ export default function HomeClient() {
           </div>
 
           <div className="relative z-40 bg-[#FBF9F3]">
-            <div className="flex min-h-16 w-full items-center px-6 py-2 max-md:min-h-12 max-md:py-1 pc:h-12 pc:min-h-0 pc:px-10 pc:py-0">
+            <div className="flex min-h-16 w-full items-center px-6 py-2 max-pc:min-h-12 max-pc:py-1 pc:h-12 pc:min-h-0 pc:px-10 pc:py-0">
               <HomepageFooter onOpenFaq={handleOpenFaq} />
             </div>
           </div>
