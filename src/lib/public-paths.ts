@@ -21,8 +21,8 @@ export const PUBLIC_PATHS = [
     "/diary",                  // 护肤档案（游客可浏览页面，趋势/历程 API 仍需登录）
     "/preview/:path*",         // 前端风格预览演示页（myskin 复刻 Demo 用）
     "/profile",                // 我的（游客可预览页面，资料/记录 API 仍需登录）
-    "/privacy",                // 隐私政策
-    "/terms",                  // 服务条款
+    "/privacy",                // 隐私政策（308 → 主站；保留公开以确保重定向不被 SSO 拦截）
+    "/terms",                  // 服务条款（308 → 主站）
     "/robots.txt",
     "/sitemap.xml",
     "/site.webmanifest",       // PWA manifest

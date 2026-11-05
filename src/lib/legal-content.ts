@@ -1,6 +1,7 @@
 /**
  * 本站（AI 素颜测肤独立站）的简易版隐私政策与服务条款。
- * 仅供站内弹窗展示；完整法律文本以官网版本为准（nihplod.cn/privacy、nihplod.cn/terms）。
+ * 仅供站内弹窗展示；完整法律文本由主站统一维护（nihplod.cn/privacy、nihplod.cn/terms）。
+ * 子站 /privacy、/terms 仅做 308 跳转，不承载法务全文。
  */
 
 import { DATA_RETENTION_TEXT } from "@/lib/data-retention";

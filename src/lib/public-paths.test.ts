@@ -12,6 +12,11 @@ describe("isPublicPath", () => {
         expect(isPublicPath("/login")).toBe(true);
     });
 
+    it("法务入口保持公开（子站仅做 308 到主站）", () => {
+        expect(isPublicPath("/privacy")).toBe(true);
+        expect(isPublicPath("/terms")).toBe(true);
+    });
+
     it('":path*" 通配匹配自身与子路径', () => {
         expect(isPublicPath("/admin")).toBe(true);
         expect(isPublicPath("/admin/users")).toBe(true);

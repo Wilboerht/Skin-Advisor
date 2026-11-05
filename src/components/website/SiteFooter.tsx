@@ -1,10 +1,10 @@
-import Link from "next/link";
 import Image from "next/image";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
 /**
  * 全站共享页脚：版权 + 隐私政策/服务条款 + ICP 备案 + 公网安备。
+ * 隐私政策/服务条款直达主站：子站 /privacy、/terms 仅做 308，不再承载法务全文。
  * 移动端同样展示全部链接（小字号排版），文字对比度满足 WCAG AA。
  * 首页全屏布局使用独立的 HomepageFooter（样式由 globals.css 的 .home-footer 控制）。
  */
@@ -19,13 +19,23 @@ export function SiteFooter() {
             <span className="sm:hidden">© {CURRENT_YEAR} NIHPLOD</span>
           </p>
           <span aria-hidden="true" className="text-brand-charcoal/30">·</span>
-          <Link href="/privacy" className="transition-colors duration-300 hover:text-brand-charcoal">
+          <a
+            href="https://nihplod.cn/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors duration-300 hover:text-brand-charcoal"
+          >
             隐私政策
-          </Link>
+          </a>
           <span aria-hidden="true" className="text-brand-charcoal/30">·</span>
-          <Link href="/terms" className="transition-colors duration-300 hover:text-brand-charcoal">
+          <a
+            href="https://nihplod.cn/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors duration-300 hover:text-brand-charcoal"
+          >
             服务条款
-          </Link>
+          </a>
         </nav>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3">
           <a

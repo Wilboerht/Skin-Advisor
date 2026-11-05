@@ -108,14 +108,14 @@ export function LegalModal({ isOpen, onClose, doc }: LegalModalProps) {
               </div>
 
               <p className="mt-8 pt-5 border-t border-brand-charcoal/[0.08] text-[12px] text-brand-charcoal/50 font-light leading-[1.8] text-center">
-                本简版仅供快速了解，完整版本请访问
+                本页为摘要，完整版本以 NIHPLOD 主站为准：
                 <a
                   href={doc.fullUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-brand-charcoal underline underline-offset-2 hover:text-[var(--color-brand-cocoa)] transition-colors"
                 >
-                  官网全文
+                  查看完整版
                 </a>
                 。
               </p>

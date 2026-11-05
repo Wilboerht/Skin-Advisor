@@ -97,6 +97,17 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // 隐私政策/服务条款由主站统一承载：子站只保留摘要弹层，旧 URL 用真 308 收敛到主站
+      {
+        source: "/privacy",
+        destination: "https://nihplod.cn/privacy",
+        permanent: true,
+      },
+      {
+        source: "/terms",
+        destination: "https://nihplod.cn/terms",
+        permanent: true,
+      },
       // 测肤有礼已改为首页弹窗：/gift 旧链接（分享文案、搜索结果）308 到首页并自动打开弹窗
       {
         source: "/gift",
