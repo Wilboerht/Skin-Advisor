@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { guardInternalUserRequest } from "@/lib/internal-guard";
 import { logger } from "@/lib/logger";
+import { deleteUserAvatar, deleteUserFaceUploads } from "@/lib/user-data-files";
 
 export const maxDuration = 30;
 
@@ -44,6 +45,17 @@ export async function POST(request: NextRequest) {
     const userId = guard.userId;
 
     try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { avatarUrl: true },
+        });
+        const sessions = await prisma.advisorSession.findMany({
+            where: { userId },
+            select: { sessionId: true },
+        });
+        const deletedAvatarFiles = await deleteUserAvatar(user?.avatarUrl, userId);
+        const deletedFaceUploads = await deleteUserFaceUploads(sessions.map((session) => session.sessionId));
+
         const [testRecords, diaryEntries, productFeedbacks, advisorSessions, aiUsageLogs, localUser] =
             await prisma.$transaction([
                 prisma.testRecord.deleteMany({ where: { userId } }),
@@ -64,7 +76,7 @@ export async function POST(request: NextRequest) {
             aiUsageLogs: aiUsageLogs.count,
             localUser: localUser.count > 0,
         };
-        logger.info("[internal/user-data] purge completed", { userId, ...purged });
+        logger.info("[internal/user-data] purge completed", { userId, ...purged, deletedAvatarFiles, deletedFaceUploads });
         return NextResponse.json({ ok: true, userId, purged });
     } catch (error) {
         logger.error("[internal/user-data] purge failed", { userId, error: String(error) });

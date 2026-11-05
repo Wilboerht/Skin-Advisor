@@ -1,6 +1,7 @@
 import { compare, hash } from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { createHash } from 'crypto';
+import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import {
     AUTH_COOKIE_NAME,
@@ -79,10 +80,12 @@ function hashToken(token: string): string {
     return createHash("sha256").update(token).digest("hex");
 }
 
-async function saveRefreshTokenToDb(userId: string, token: string): Promise<void> {
+type RefreshTokenDb = Pick<Prisma.TransactionClient, "refreshToken">;
+
+async function saveRefreshTokenToDb(userId: string, token: string, db: RefreshTokenDb = prisma): Promise<void> {
     const tokenHash = hashToken(token);
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await prisma.refreshToken.create({
+    await db.refreshToken.create({
         data: { userId, token: tokenHash, expiresAt },
     });
 }
@@ -106,7 +109,7 @@ export async function issueLocalSession(user: {
     role: string;
     tokenVersion: number;
     dailyTestLimit?: number | null;
-}): Promise<IssuedLocalSession | null> {
+}, db: RefreshTokenDb = prisma): Promise<IssuedLocalSession | null> {
     try {
         const csrfToken = generateCsrfToken();
 
@@ -130,7 +133,7 @@ export async function issueLocalSession(user: {
         });
 
         // 持久化 refresh token 哈希到数据库
-        await saveRefreshTokenToDb(user.id, refreshToken);
+        await saveRefreshTokenToDb(user.id, refreshToken, db);
 
         return { accessToken, refreshToken, csrfToken };
     } catch (err) {
@@ -228,76 +231,71 @@ async function rotateLocalSessionInternal(
         const sub = typeof payload?.sub === "string" ? payload.sub : null;
         if (!sub) return null;
 
-        const dbUser = await prisma.user.findUnique({
-            where: { id: sub },
-            select: {
-                id: true,
-                email: true,
-                phoneNumber: true,
-                name: true,
-                avatarUrl: true,
-                gender: true,
-                role: true,
-                tokenVersion: true,
-                dailyTestLimit: true,
-                membershipLevel: true,
-                totalSpent: true,
-            },
-        });
-        if (!dbUser || isDisabledUser(dbUser.role)) return null;
-        if (typeof payload?.tokenVersion === "number" && payload.tokenVersion !== dbUser.tokenVersion) {
-            return null;
-        }
+        const rotated = await prisma.$transaction(async (tx) => {
+            const stored = await tx.refreshToken.findFirst({
+                where: {
+                    token: hashToken(refreshToken),
+                    userId: sub,
+                    revokedAt: null,
+                    expiresAt: { gt: new Date() },
+                },
+                select: { id: true },
+            });
+            if (!stored) return null;
 
-        const stored = await prisma.refreshToken.findFirst({
-            where: {
-                token: hashToken(refreshToken),
-                userId: dbUser.id,
-                revokedAt: null,
-                expiresAt: { gt: new Date() },
-            },
-            select: { id: true },
-        });
-        if (!stored) return null;
-
-        const user: SessionUser = {
-            id: dbUser.id,
-            email: dbUser.email,
-            phone: dbUser.phoneNumber,
-            name: dbUser.name ?? undefined,
-            avatar: dbUser.avatarUrl,
-            gender: dbUser.gender === "male" || dbUser.gender === "female" ? dbUser.gender : null,
-            role: dbUser.role,
-            tokenVersion: dbUser.tokenVersion,
-            dailyTestLimit: dbUser.dailyTestLimit,
-            membershipLevel: dbUser.membershipLevel,
-            totalSpent: dbUser.totalSpent,
-        };
-
-        const issued = await issueLocalSession(user);
-        if (!issued) return null;
-
-        // 登出发生在轮换签发之后：作废刚签发的新 token，避免会话复活
-        if (poisonedLocalRefreshTokens.has(refreshToken)) {
-            await revokeLocalRefreshToken(issued.refreshToken);
-            return null;
-        }
-
-        try {
-            await prisma.refreshToken.update({
-                where: { id: stored.id },
+            const consumed = await tx.refreshToken.updateMany({
+                where: { id: stored.id, revokedAt: null },
                 data: { revokedAt: new Date() },
             });
-        } catch (err) {
-            // 旧 token 撤销失败不阻断本次续期：新 token 已签发，旧 token 最长 30 天自然过期。
-            // 记录告警便于后续清理。
-            logger.warn("[auth] Failed to revoke rotated local refresh token", {
-                userId: dbUser.id,
-                error: String(err),
+            if (consumed.count !== 1) return null;
+
+            const dbUser = await tx.user.findUnique({
+                where: { id: sub },
+                select: {
+                    id: true,
+                    email: true,
+                    phoneNumber: true,
+                    name: true,
+                    avatarUrl: true,
+                    gender: true,
+                    role: true,
+                    tokenVersion: true,
+                    dailyTestLimit: true,
+                    membershipLevel: true,
+                    totalSpent: true,
+                },
             });
+            if (!dbUser || isDisabledUser(dbUser.role)) return null;
+            if (typeof payload?.tokenVersion === "number" && payload.tokenVersion !== dbUser.tokenVersion) {
+                return null;
+            }
+
+            const user: SessionUser = {
+                id: dbUser.id,
+                email: dbUser.email,
+                phone: dbUser.phoneNumber,
+                name: dbUser.name ?? undefined,
+                avatar: dbUser.avatarUrl,
+                gender: dbUser.gender === "male" || dbUser.gender === "female" ? dbUser.gender : null,
+                role: dbUser.role,
+                tokenVersion: dbUser.tokenVersion,
+                dailyTestLimit: dbUser.dailyTestLimit,
+                membershipLevel: dbUser.membershipLevel,
+                totalSpent: dbUser.totalSpent,
+            };
+
+            const issued = await issueLocalSession(user, tx);
+            if (!issued) throw new Error("Failed to issue rotated local session");
+            return { user, issued };
+        });
+        if (!rotated) return null;
+
+        if (poisonedLocalRefreshTokens.has(refreshToken)) {
+            await revokeLocalRefreshToken(rotated.issued.refreshToken);
+            return null;
         }
 
-        return { user, issued };
+        return rotated;
     } catch (err) {
         logger.warn("[auth] Local session rotation failed", { error: String(err) });
         return null;

@@ -169,3 +169,28 @@ export async function deleteOSSFiles(urls: string[]) {
         throw e;
     }
 }
+
+
+export async function deleteOSSPrefix(prefix: string): Promise<number> {
+    if (!ossClient || !/^guest\/[0-9a-f]{16}\/$/i.test(prefix)) return 0;
+
+    let deleted = 0;
+    let marker: string | undefined;
+    do {
+        const result = await ossClient.list({
+            prefix,
+            marker,
+            "max-keys": 1000,
+        });
+        const names = (result.objects || [])
+            .map((item: { name?: string }) => item.name)
+            .filter((name: string | undefined): name is string => typeof name === "string" && name.length > 0);
+        if (names.length > 0) {
+            await deleteOSSFiles(names);
+            deleted += names.length;
+        }
+        marker = result.isTruncated ? result.nextMarker : undefined;
+    } while (marker);
+
+    return deleted;
+}

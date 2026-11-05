@@ -21,7 +21,7 @@ vi.mock("@/components/ui/Toast", () => ({
     useToast: () => ({ error: mocks.showError, success: mocks.showSuccess }),
 }));
 
-import { SpentAdjustmentPanel } from "@/components/website/user-center/SpentAdjustmentPanel";
+import { SpentAdjustmentPanel, type SpentPanelView } from "@/components/website/user-center/SpentAdjustmentPanel";
 
 const fetchMock = vi.fn();
 
@@ -36,8 +36,8 @@ const emptyApplications = { success: true, data: { applications: [] } };
 
 let container: HTMLDivElement;
 let root: Root;
-let onViewChange: ReturnType<typeof vi.fn>;
-let onRequestLogin: ReturnType<typeof vi.fn>;
+let onViewChange: (view: SpentPanelView) => void;
+let onRequestLogin: () => void;
 
 async function renderPanel(
     view: "form" | "history" = "form",
@@ -47,8 +47,8 @@ async function renderPanel(
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    onViewChange = vi.fn();
-    onRequestLogin = vi.fn();
+    onViewChange = vi.fn<(view: SpentPanelView) => void>();
+    onRequestLogin = vi.fn<() => void>();
     await act(async () => {
         root.render(
             <SpentAdjustmentPanel

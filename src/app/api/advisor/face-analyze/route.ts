@@ -73,8 +73,7 @@ const FACE_CACHE_MAX_SIZE = 50; // 最多缓存 50 条
 function buildCacheKey(owner: string, images: VisionImage[], skinState?: string): string {
     const samples = images.map(img => {
         const data = img.data || "";
-        const sample = data.slice(0, 50 * 1024);
-        return `${img.angle}:${crypto.createHash("sha256").update(sample).digest("hex")}`;
+        return `${img.angle}:${crypto.createHash("sha256").update(data).digest("hex")}`;
     }).join("|");
     const stateSuffix = skinState ? `:${skinState}` : "";
     return `face:${crypto.createHash("sha256").update(`${owner}|${samples}${stateSuffix}:${VISION_PROMPT_VERSION}`).digest("hex")}`;
@@ -342,11 +341,10 @@ export async function POST(request: NextRequest) {
         // Dynamic imports for file handling
         const fs = await import('fs/promises');
         const path = await import('path');
-        // Lazy import sharp（sharp 0.35+ 改为命名导出）
-        let sharp: typeof import('sharp').sharp | undefined;
+        let sharp: typeof import('sharp').default | undefined;
         try {
             const sharpModule = await import('sharp');
-            sharp = sharpModule.sharp;
+            sharp = sharpModule.default;
         } catch {
             aiLogger.warn("Sharp module not found, compression disabled");
         }

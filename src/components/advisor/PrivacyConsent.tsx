@@ -80,7 +80,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         <div>
                             <h3 className="text-sm font-medium text-[#1A1A1A]">AI 分析说明</h3>
                             <p className="mt-1 text-xs text-[#5E5E5E] leading-relaxed">
-                                您的照片将发送至 AI 视觉模型进行肤质分析。分析完成后，照片将立即从 AI 服务商处删除。
+                                您的照片将发送至 AI 视觉模型进行肤质分析。分析完成后，本站会立即删除上传副本；服务商侧的数据保留与删除以其服务协议为准。
                             </p>
                         </div>
                     </div>

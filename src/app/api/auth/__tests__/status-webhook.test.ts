@@ -7,13 +7,17 @@ const SECRET = "test-webhook-secret-at-least-32-chars";
 const mocks = vi.hoisted(() => ({
     findUnique: vi.fn(),
     update: vi.fn(),
+    statusEventCreate: vi.fn(),
+    transaction: vi.fn(),
     revokeAllLocalRefreshTokens: vi.fn(),
     rateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
     default: {
+        $transaction: mocks.transaction,
         user: { findUnique: mocks.findUnique, update: mocks.update },
+        statusWebhookEvent: { create: mocks.statusEventCreate },
     },
 }));
 
@@ -67,6 +71,11 @@ beforeEach(() => {
     process.env.SSO_WEBHOOK_SECRET = SECRET;
     mocks.rateLimit.mockResolvedValue({ success: true, remaining: 59, reset: 0, limit: 60 });
     mocks.revokeAllLocalRefreshTokens.mockResolvedValue(2);
+    mocks.statusEventCreate.mockResolvedValue({});
+    mocks.transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => callback({
+        user: { findUnique: mocks.findUnique, update: mocks.update },
+        statusWebhookEvent: { create: mocks.statusEventCreate },
+    }));
 });
 
 afterEach(() => {
@@ -92,7 +101,7 @@ describe("POST /api/auth/status-webhook", () => {
     });
 
     it("封号（BANNED）：role 置 disabled、存 previousRole、tokenVersion 递增、撤销 refresh token", async () => {
-        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "user", previousRole: null });
+        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "user", previousRole: null, lastStatusEventAt: null });
         mocks.update.mockResolvedValue({});
 
         const res = await POST(makeRequest(statusPayload({ new_status: "BANNED" })));
@@ -103,13 +112,15 @@ describe("POST /api/auth/status-webhook", () => {
                 role: "disabled",
                 previousRole: "user",
                 tokenVersion: { increment: 1 },
+                lastStatusEventAt: expect.any(Date),
             },
         });
+        expect(mocks.statusEventCreate).toHaveBeenCalledTimes(1);
         expect(mocks.revokeAllLocalRefreshTokens).toHaveBeenCalledWith("user_1");
     });
 
     it("删除（deleted）按禁用处理", async () => {
-        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "user", previousRole: null });
+        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "user", previousRole: null, lastStatusEventAt: null });
         mocks.update.mockResolvedValue({});
 
         const res = await POST(makeRequest(statusPayload({ new_status: "deleted" })));
@@ -125,40 +136,69 @@ describe("POST /api/auth/status-webhook", () => {
         expect(res.status).toBe(200);
         await expect(res.json()).resolves.toEqual({ ok: true });
         expect(mocks.update).not.toHaveBeenCalled();
+        expect(mocks.statusEventCreate).not.toHaveBeenCalled();
     });
 
     it("解冻（ACTIVE）：优先恢复 previousRole 并清空", async () => {
-        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "disabled", previousRole: "user" });
+        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "disabled", previousRole: "user", lastStatusEventAt: null });
         mocks.update.mockResolvedValue({});
 
         const res = await POST(makeRequest(statusPayload({ old_status: "BANNED", new_status: "ACTIVE" })));
         expect(res.status).toBe(200);
         expect(mocks.update).toHaveBeenCalledWith({
             where: { id: "user_1" },
-            data: { role: "user", previousRole: null },
+            data: { role: "user", previousRole: null, lastStatusEventAt: expect.any(Date) },
         });
         expect(mocks.revokeAllLocalRefreshTokens).not.toHaveBeenCalled();
     });
 
     it("解冻时 previousRole 缺失回退为普通 user", async () => {
-        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "disabled", previousRole: null });
+        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "disabled", previousRole: null, lastStatusEventAt: null });
         mocks.update.mockResolvedValue({});
 
         const res = await POST(makeRequest(statusPayload({ new_status: "ACTIVE" })));
         expect(res.status).toBe(200);
         expect(mocks.update).toHaveBeenCalledWith({
             where: { id: "user_1" },
-            data: { role: "user", previousRole: null },
+            data: { role: "user", previousRole: null, lastStatusEventAt: expect.any(Date) },
         });
     });
 
-    it("已是禁用态时幂等成功（仍兜底撤销 refresh token），不重复写 role", async () => {
-        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "disabled", previousRole: "user" });
+    it("已是禁用态时只推进事件时间，不重复递增 tokenVersion", async () => {
+        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "disabled", previousRole: "user", lastStatusEventAt: null });
 
         const res = await POST(makeRequest(statusPayload({ new_status: "SUSPENDED" })));
         expect(res.status).toBe(200);
+        expect(mocks.update).toHaveBeenCalledWith({
+            where: { id: "user_1" },
+            data: { lastStatusEventAt: expect.any(Date) },
+        });
+        expect(mocks.revokeAllLocalRefreshTokens).toHaveBeenCalledWith("user_1");
+    });
+
+    it("同一事件重放返回成功但不重复更新角色", async () => {
+        mocks.findUnique.mockResolvedValue({ id: "user_1", role: "user", previousRole: null, lastStatusEventAt: null });
+        const payload = statusPayload({ event_id: "event-1" });
+        mocks.statusEventCreate.mockRejectedValueOnce({ code: "P2002" });
+
+        const res = await POST(makeRequest(payload));
+        expect(res.status).toBe(200);
         expect(mocks.update).not.toHaveBeenCalled();
         expect(mocks.revokeAllLocalRefreshTokens).toHaveBeenCalledWith("user_1");
+    });
+
+    it("旧事件乱序到达时不覆盖新状态", async () => {
+        mocks.findUnique.mockResolvedValue({
+            id: "user_1",
+            role: "user",
+            previousRole: null,
+            lastStatusEventAt: new Date("2026-11-05T12:00:00.000Z"),
+        });
+        const res = await POST(makeRequest(statusPayload({ timestamp: "2026-11-05T11:00:00.000Z" })));
+        expect(res.status).toBe(200);
+        expect(mocks.update).not.toHaveBeenCalled();
+        expect(mocks.statusEventCreate).not.toHaveBeenCalled();
+        expect(mocks.revokeAllLocalRefreshTokens).not.toHaveBeenCalled();
     });
 
     it("限流命中返回 429", async () => {

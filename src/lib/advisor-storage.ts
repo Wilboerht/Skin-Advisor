@@ -232,11 +232,26 @@ export async function clearAllData(): Promise<boolean> {
  * Clear expired data (older than specified hours)
  */
 export async function clearExpiredData(maxAgeHours: number = 6): Promise<void> {
+    const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
+    const now = Date.now();
+
+    if (typeof localStorage !== "undefined") {
+        for (const key of ["advisor_face_images", "advisor_processed_images"]) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) continue;
+                const stored = JSON.parse(raw) as { timestamp?: unknown };
+                if (typeof stored.timestamp !== "number" || now - stored.timestamp > maxAgeMs) {
+                    localStorage.removeItem(key);
+                }
+            } catch {
+                localStorage.removeItem(key);
+            }
+        }
+    }
+
     try {
         const db = await getDB();
-        const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
-        const now = Date.now();
-
         const transaction = db.transaction(
             [STORES.faceImages, STORES.results],
             "readwrite"
@@ -289,7 +304,10 @@ export const advisorStorage = {
 
         // Fallback to localStorage
         try {
-            localStorage.setItem("advisor_face_images", JSON.stringify(images));
+            localStorage.setItem("advisor_face_images", JSON.stringify({
+                images,
+                timestamp: Date.now(),
+            }));
             localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB);
             return true;
         } catch {
@@ -309,10 +327,22 @@ export const advisorStorage = {
             }
         }
 
-        // Try localStorage
         try {
             const str = localStorage.getItem("advisor_face_images");
-            if (str) return JSON.parse(str);
+            if (!str) return null;
+            const stored = JSON.parse(str) as {
+                images?: { front?: string; left?: string; right?: string; chin?: string };
+                timestamp?: unknown;
+            };
+            if (
+                !stored.images ||
+                typeof stored.timestamp !== "number" ||
+                Date.now() - stored.timestamp > MAX_STORAGE_AGE_MS
+            ) {
+                localStorage.removeItem("advisor_face_images");
+                return null;
+            }
+            return stored.images;
         } catch {
             console.error("localStorage parse error");
         }
@@ -382,8 +412,7 @@ export const advisorStorage = {
             const str = localStorage.getItem("advisor_processed_images");
             if (!str) return null;
             const data = JSON.parse(str);
-            // 24小时过期
-            if (Date.now() - data.timestamp > 24 * 60 * 60 * 1000) {
+            if (Date.now() - data.timestamp > MAX_STORAGE_AGE_MS) {
                 localStorage.removeItem("advisor_processed_images");
                 return null;
             }

@@ -212,6 +212,15 @@ class AIRequestQueue {
      *
      * @param options - timeoutMs: 队列等待超时（默认 60s）; signal: 外部 abort signal; userId: 用于单用户并发限制
      */
+    private cancelQueued(requestId: string, error: Error): boolean {
+        const index = this.queue.findIndex(item => item.id === requestId);
+        if (index < 0) return false;
+        const [item] = this.queue.splice(index, 1);
+        item.reject(error);
+        this.processQueue();
+        return true;
+    }
+
     async acquire(options?: { timeoutMs?: number; signal?: AbortSignal; userId?: string }): Promise<void> {
         const timeoutMs = options?.timeoutMs ?? 60000;
         const signal = options?.signal;
@@ -220,6 +229,7 @@ class AIRequestQueue {
         this.acquireCount++;
         return new Promise<void>((headerResolve, headerReject) => {
             let timeout: ReturnType<typeof setTimeout> | null = null;
+            let requestId: string | null = null;
             let resolved = false;
             let abortedOrTimedOut = false;
 
@@ -228,55 +238,47 @@ class AIRequestQueue {
                 if (signal) signal.removeEventListener('abort', onAbort);
             };
 
-            const onAbort = () => {
+            const rejectPending = (error: Error) => {
+                if (resolved || abortedOrTimedOut) return;
+                abortedOrTimedOut = true;
+                if (requestId && this.cancelQueued(requestId, error)) return;
                 cleanup();
-                // 只有在任务尚未开始执行时才减计数并拒绝；
-                // 若已开始执行，由调用方的 finally / release() 负责清理
-                if (!resolved) {
-                    abortedOrTimedOut = true;
-                    this.acquireCount = Math.max(0, this.acquireCount - 1);
-                    headerReject(new Error("Queue acquire aborted by signal"));
-                }
+                this.acquireCount = Math.max(0, this.acquireCount - 1);
+                headerReject(error);
             };
 
+            const onAbort = () => rejectPending(new Error("Queue acquire aborted by signal"));
             if (signal) signal.addEventListener('abort', onAbort);
 
             timeout = setTimeout(() => {
-                cleanup();
-                if (!resolved) {
-                    abortedOrTimedOut = true;
-                    this.acquireCount = Math.max(0, this.acquireCount - 1);
-                    headerReject(new Error(`Queue acquire timed out after ${timeoutMs}ms`));
-                }
+                rejectPending(new Error(`Queue acquire timed out after ${timeoutMs}ms`));
             }, timeoutMs);
 
-            this.enqueue("legacy-acquire", () => {
-                // 这个 Promise 会在任务开始执行时被创建，并一直挂起直到 release() 被调用
+            const enqueued = this.enqueue("legacy-acquire", () => {
                 return new Promise<void>((done) => {
                     cleanup();
 
-                    // 如果调用方在排队期间已经 abort/timeout，立即结束任务释放槽位，
-                    // 否则 releaseResolvers 中的 done 将永远等待，导致 runningCount 泄漏。
                     if (abortedOrTimedOut || signal?.aborted) {
                         done();
                         return;
                     }
 
                     resolved = true;
-                    // 1. 任务已开始执行，通知 acquire 调用者可以继续了
                     headerResolve();
-
-                    // 2. 将结束任务的控制权(done)暴露给 release 方法
                     this.releaseResolvers.push(done);
                 });
-            }, userId).promise.catch(err => {
-                // 如果入队或执行出错
+            }, userId);
+            requestId = enqueued.requestId;
+            enqueued.promise.catch(err => {
                 cleanup();
                 if (!resolved) {
+                    abortedOrTimedOut = true;
                     this.acquireCount = Math.max(0, this.acquireCount - 1);
                     headerReject(err);
                 }
             });
+
+            if (signal?.aborted) onAbort();
         });
     }
 

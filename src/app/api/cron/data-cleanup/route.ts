@@ -126,22 +126,34 @@ export async function GET(request: NextRequest) {
         );
 
         // ===== 2. 清理注册用户的垃圾会话 =====
-        // 「滚动续期的长期资产」策略：已完成的报告是用户的历史肌肤档案，
-        // 按冷热分层保留（见步骤 3），不按 expiresAt 删除；expiresAt 仅表示
-        // "当前档案"的 90 天有效期（报告页据此提示复测）。
-        // 此步骤仅清理从未完成分析的中断会话（无档案价值），按 expiresAt 过期或
-        // createdAt 满 24 小时兜底清理。
-        await cleanupInBatches(
-            {
-                userId: { not: null },
-                completedAt: null, // 仅清理从未完成分析的中断会话；已完成报告进入冷热分层保留
-                OR: [
-                    { expiresAt: { lt: new Date(now) } },
-                    { expiresAt: null, createdAt: { lt: nullExpiryFallback } },
-                ],
-            },
-            stats
-        );
+        // 报告结果先于 completedAt 落库；第二步写失败时，完整结果仍必须保留。
+        // 与 isCompletedAnalysisResult 同口径排除 v2/v1 完整报告，只删除真正的中断会话。
+        for (;;) {
+            const batch = await prisma.$queryRaw<Array<{ sessionId: string; userId: string }>>`
+                SELECT "sessionId", "userId"
+                FROM "AdvisorSession"
+                WHERE "userId" IS NOT NULL
+                  AND "completedAt" IS NULL
+                  AND (
+                    "expiresAt" < ${new Date(now)}
+                    OR ("expiresAt" IS NULL AND "createdAt" < ${nullExpiryFallback})
+                  )
+                  AND (
+                    "analysisResult" IS NULL
+                    OR (
+                      COALESCE("analysisResult"->>'reportVersion', '') <> '2'
+                      AND "analysisResult"->>'consultantReport' IS NULL
+                      AND "analysisResult"->>'skinProfile' IS NULL
+                      AND "analysisResult"->>'skinAnalysis' IS NULL
+                      AND "analysisResult"->>'analysis' IS NULL
+                    )
+                  )
+                LIMIT 500
+            `;
+            if (batch.length === 0) break;
+            await cleanupSessions(batch, stats);
+            if (batch.length < 500) break;
+        }
 
         // ===== 3. 冷热分层：最近 10 条之外、或满 365 天的报告脱水为脱敏摘要 =====
         // 热层（最近 10 条）用户可见、数据完整；冷层仅留统计摘要（无敏感问卷字段），
@@ -327,7 +339,6 @@ export async function GET(request: NextRequest) {
             deletedOrphanReservations = await prisma.$executeRaw`
                 DELETE FROM "TestRecord" tr
                 WHERE tr."testDate" < ${orphanCutoff}
-                  AND tr."userId" IS NULL
                   AND NOT EXISTS (
                     SELECT 1 FROM "AdvisorSession" s WHERE s."sessionId" = tr."sessionId"
                   )
