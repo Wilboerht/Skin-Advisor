@@ -13,7 +13,7 @@
  * 切勿在生产环境直接运行 prisma db push，否则可能破坏数据。
  *
  * 使用方法：
- * - 构建命令: node scripts/prepare-production.js && next build
+ * - 构建命令: node scripts/prepare-production.js && npm run build
  * - PM2 启动: pm2 start ecosystem.config.js
  */
 
@@ -34,7 +34,14 @@ console.log('🚀 准备生产环境...\n');
 // ========================================
 console.log('🔍 检查环境变量...');
 
-const requiredVars = ['DATABASE_URL', 'JWT_SECRET', 'ADMIN_SESSION_SECRET'];
+const requiredVars = [
+  'DATABASE_URL',
+  'JWT_SECRET',
+  'ADMIN_SESSION_SECRET',
+  'IP_HASH_SALT',
+  'SSO_CLIENT_SECRET',
+  'SSO_WEBHOOK_SECRET',
+];
 const optionalVars = [
   'CRON_SECRET',
   'OFFICIAL_API_URL',
@@ -62,7 +69,10 @@ for (const key of optionalVars) {
 }
 
 const internalApiKeysRaw = process.env.INTERNAL_API_KEYS;
-if (internalApiKeysRaw) {
+if (!internalApiKeysRaw) {
+  console.error('   ❌ 错误: INTERNAL_API_KEYS 未设置！生产环境默认强制内部 API 签名，缺少密钥会导致微信登录/积分/内部接口失败。');
+  hasError = true;
+} else {
   try {
     const parsed = JSON.parse(internalApiKeysRaw);
     if (!Array.isArray(parsed) || parsed.length === 0) {
@@ -72,10 +82,13 @@ if (internalApiKeysRaw) {
       if (!item || typeof item.project !== 'string' || typeof item.key !== 'string' || typeof item.secret !== 'string') {
         throw new Error('每个条目必须包含 project/key/secret');
       }
+      if (item.secret.length < 32) {
+        throw new Error(`project=${item.project} 的 secret 长度不足 32 位`);
+      }
     }
     console.log(`   ✅ INTERNAL_API_KEYS: ${parsed.length} 个密钥`);
   } catch (error) {
-    console.error(`   ❌ 错误: INTERNAL_API_KEYS 不是合法 JSON: ${error.message}`);
+    console.error(`   ❌ 错误: INTERNAL_API_KEYS 不合法: ${error.message}`);
     console.error("      不要用 export $(cat .env.production)、xargs、tr -d '\"' 注入该变量。");
     hasError = true;
   }
@@ -113,6 +126,10 @@ const secretVars = [
   'IP_HASH_SALT',
   'ADMIN_SECRET',
   'INTERNAL_API_SECRET',
+  'INTERNAL_API_KEY',
+  'ADVISOR_INTERNAL_SECRET',
+  'SSO_CLIENT_SECRET',
+  'SSO_WEBHOOK_SECRET',
   'ADMIN_SSO_CLIENT_SECRET',
   'ADMIN_SSO_SECRET',
   'BREAK_GLASS_TOTP_SECRET',
@@ -121,6 +138,15 @@ for (const key of secretVars) {
   const value = process.env[key];
   if (value && isPlaceholder(value)) {
     console.error(`   ❌ 错误: ${key} 使用了占位值或弱口令，请替换为强随机字符串！`);
+    hasError = true;
+  }
+}
+
+// 关键签名密钥长度下限：低于 32 字符时熵不足
+for (const key of ['JWT_SECRET', 'ADMIN_SESSION_SECRET', 'IP_HASH_SALT', 'SSO_CLIENT_SECRET', 'SSO_WEBHOOK_SECRET']) {
+  const value = process.env[key];
+  if (value && value.length < 32) {
+    console.error(`   ❌ 错误: ${key} 长度至少 32 位（当前 ${value.length}）`);
     hasError = true;
   }
 }
@@ -221,4 +247,4 @@ try {
 }
 
 console.log('✅ 生产环境准备完成！');
-console.log('   下一步: next build\n');
+console.log('   下一步: npm run build\n');

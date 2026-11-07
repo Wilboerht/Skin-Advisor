@@ -333,12 +333,24 @@ export function useAsyncAnalysis() {
                 const waitMs = status.status === 'rate_limited'
                     ? Math.max(intervalMs, status.retryAfterMs ?? intervalMs)
                     : intervalMs;
-                await new Promise(resolve => {
-                    const timeoutId = setTimeout(resolve, waitMs);
-                    options?.signal?.addEventListener('abort', () => {
+                await new Promise<void>(resolve => {
+                    if (options?.signal?.aborted) {
+                        resolve();
+                        return;
+                    }
+                    const cleanup = () => {
+                        options?.signal?.removeEventListener('abort', onAbort);
+                    };
+                    const onAbort = () => {
                         clearTimeout(timeoutId);
-                        resolve(undefined);
-                    }, { once: true });
+                        cleanup();
+                        resolve();
+                    };
+                    const timeoutId = setTimeout(() => {
+                        cleanup();
+                        resolve();
+                    }, waitMs);
+                    options?.signal?.addEventListener('abort', onAbort, { once: true });
                 });
             }
         }
@@ -964,14 +976,26 @@ export function useAsyncAnalysis() {
         }
     }, [checkSessionStatus, pollSessionResult]);
 
+    // Mock 模式：纯前端模拟进度，不调用任何 API，用于本地预览 AnalyzingOverlay / 结果页 UI
+    const mockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
     const reset = useCallback(() => {
         setAnalysisState({ status: 'idle', progress: 0, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
         isRunningRef.current = false;
         releaseAnalysisLock();
+        if (mockTimerRef.current) {
+            clearInterval(mockTimerRef.current);
+            mockTimerRef.current = null;
+        }
     }, []);
 
-    // Mock 模式：纯前端模拟进度，不调用任何 API，用于本地预览 AnalyzingOverlay / 结果页 UI
-    const mockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    // 卸载时清理 mock 定时器，避免卸载后 setState
+    useEffect(() => () => {
+        if (mockTimerRef.current) {
+            clearInterval(mockTimerRef.current);
+            mockTimerRef.current = null;
+        }
+    }, []);
     const startMock = useCallback(() => {
         if (mockTimerRef.current) return;
         setAnalysisState({ status: 'preparing', progress: 2, error: null });

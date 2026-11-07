@@ -2,6 +2,18 @@
 
 import { useSyncExternalStore, useCallback } from "react";
 
+const mqlCache = new Map<string, MediaQueryList>();
+
+function getMediaQueryList(query: string): MediaQueryList | null {
+  if (typeof window === "undefined") return null;
+  let media = mqlCache.get(query);
+  if (!media) {
+    media = window.matchMedia(query);
+    mqlCache.set(query, media);
+  }
+  return media;
+}
+
 /**
  * 媒体查询 Hook
  * 使用 useSyncExternalStore 订阅 matchMedia，避免 SSR 水合不匹配与 effect setState。
@@ -9,14 +21,15 @@ import { useSyncExternalStore, useCallback } from "react";
 export function useMediaQuery(query: string): boolean {
   const subscribe = useCallback(
     (callback: () => void) => {
-      const media = window.matchMedia(query);
+      const media = getMediaQueryList(query);
+      if (!media) return () => {};
       media.addEventListener("change", callback);
       return () => media.removeEventListener("change", callback);
     },
     [query]
   );
 
-  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
+  const getSnapshot = useCallback(() => getMediaQueryList(query)?.matches ?? false, [query]);
   const getServerSnapshot = useCallback(() => false, []);
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);

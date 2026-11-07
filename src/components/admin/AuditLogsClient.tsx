@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Download, Eye, RefreshCw } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
@@ -165,7 +165,14 @@ export default function AuditLogsClient({ role }: { role: string }) {
         [pathname, router, searchParams],
     );
 
+    const abortRef = useRef<AbortController | null>(null);
+    const requestSeqRef = useRef(0);
+
     const fetchLogs = useCallback(async () => {
+        const seq = ++requestSeqRef.current;
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
         setLoading(true);
         try {
             const params = new URLSearchParams({
@@ -187,19 +194,23 @@ export default function AuditLogsClient({ role }: { role: string }) {
 
             const response = await adminFetch(
                 `/api/admin/audit-logs?${params}`,
+                { signal: controller.signal },
             );
             const data = await response.json();
+            // 旧请求晚到不能覆盖新筛选条件的结果
+            if (seq !== requestSeqRef.current) return;
             if (!response.ok || !data.success)
                 throw new Error(data.error || "加载审计日志失败");
             setLogs(data.data);
             setPagination(data.pagination);
             if (data.filters) setFilterOptions(data.filters);
         } catch (error) {
+            if (controller.signal.aborted || seq !== requestSeqRef.current) return;
             toast.error(
                 error instanceof Error ? error.message : "加载审计日志失败",
             );
         } finally {
-            setLoading(false);
+            if (seq === requestSeqRef.current) setLoading(false);
         }
     }, [
         page,
@@ -215,6 +226,8 @@ export default function AuditLogsClient({ role }: { role: string }) {
     useEffect(() => {
         fetchLogs();
     }, [fetchLogs]);
+
+    useEffect(() => () => abortRef.current?.abort(), []);
 
     const handleExport = async () => {
         setExporting(true);

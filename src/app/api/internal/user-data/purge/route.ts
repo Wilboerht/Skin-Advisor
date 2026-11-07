@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 import { guardInternalUserRequest } from "@/lib/internal-guard";
 import { logger } from "@/lib/logger";
-import { deleteUserAvatar, deleteUserFaceUploads } from "@/lib/user-data-files";
+import { purgeUserData } from "@/lib/purge-user";
 
 export const maxDuration = 30;
 
@@ -45,38 +44,8 @@ export async function POST(request: NextRequest) {
     const userId = guard.userId;
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { avatarUrl: true },
-        });
-        const sessions = await prisma.advisorSession.findMany({
-            where: { userId },
-            select: { sessionId: true },
-        });
-        const deletedAvatarFiles = await deleteUserAvatar(user?.avatarUrl, userId);
-        const deletedFaceUploads = await deleteUserFaceUploads(sessions.map((session) => session.sessionId));
-
-        const [testRecords, diaryEntries, productFeedbacks, advisorSessions, aiUsageLogs, localUser] =
-            await prisma.$transaction([
-                prisma.testRecord.deleteMany({ where: { userId } }),
-                prisma.diaryEntry.deleteMany({ where: { userId } }),
-                prisma.productFeedback.deleteMany({ where: { userId } }),
-                prisma.advisorSession.deleteMany({ where: { userId } }),
-                // 匿名化而非删除：保留成本审计（token/费用无 PII）
-                prisma.aIUsageLog.updateMany({ where: { userId }, data: { userId: null } }),
-                // 最后删用户行：RefreshToken/PushSubscription/ReminderSettings 级联清除
-                prisma.user.deleteMany({ where: { id: userId } }),
-            ]);
-
-        const purged = {
-            testRecords: testRecords.count,
-            diaryEntries: diaryEntries.count,
-            advisorSessions: advisorSessions.count,
-            productFeedbacks: productFeedbacks.count,
-            aiUsageLogs: aiUsageLogs.count,
-            localUser: localUser.count > 0,
-        };
-        logger.info("[internal/user-data] purge completed", { userId, ...purged, deletedAvatarFiles, deletedFaceUploads });
+        const purged = await purgeUserData(userId);
+        logger.info("[internal/user-data] purge completed", { userId, ...purged });
         return NextResponse.json({ ok: true, userId, purged });
     } catch (error) {
         logger.error("[internal/user-data] purge failed", { userId, error: String(error) });

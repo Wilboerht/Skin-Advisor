@@ -6,6 +6,7 @@ import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
 
 interface OnboardingFlowProps {
@@ -44,6 +45,7 @@ export function OnboardingFlowModal({
 }: OnboardingFlowProps) {
     const toast = useToast();
     const { openLegalDoc } = useLegalDocModal();
+    useBodyScrollLock({ enabled: isOpen, iosSafe: true });
     // Determine which screens to show
     const hasNicknameScreen = !isLoggedIn || !nickname;
     // 登录用户也需要显式同意：换设备/清缓存后本地无同意记录时必须展示 legal 屏。
@@ -231,7 +233,7 @@ export function OnboardingFlowModal({
                         {/* Slide: Nickname */}
                         {screens.includes("nickname") && (
                             <div
-                                className="h-full flex flex-col items-center justify-center px-6 relative"
+                                className="h-full flex flex-col items-center justify-center overflow-y-auto overscroll-contain px-6 relative"
                                 style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
                             >
                                 {/* Subtle texture overlay */}
@@ -293,7 +295,7 @@ export function OnboardingFlowModal({
                         {/* Slide: Location */}
                         {screens.includes("location") && (
                         <div
-                            className="h-full flex flex-col items-center justify-center px-6 relative"
+                            className="h-full flex flex-col items-center justify-center overflow-y-auto overscroll-contain px-6 relative"
                             style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
                         >
                             <div
@@ -403,7 +405,7 @@ export function OnboardingFlowModal({
                         {/* Slide: Legal */}
                         {hasLegalScreen && (
                             <div
-                                className="h-full flex flex-col items-center justify-center px-6 relative"
+                                className="h-full flex flex-col items-center justify-center overflow-y-auto overscroll-contain px-6 relative"
                                 style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
                             >
                                 <div

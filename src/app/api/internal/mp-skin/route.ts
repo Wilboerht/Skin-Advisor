@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Invalid phone" }, { status: 400 });
     }
 
-    const page = Math.max(1, parseInt(request.nextUrl.searchParams.get("page") || "1", 10) || 1);
+    // 限制深分页上界，避免内部密钥泄漏后用超大 page 触发巨量读取
+    const page = Math.min(100, Math.max(1, parseInt(request.nextUrl.searchParams.get("page") || "1", 10) || 1));
     const pageSize = Math.min(20, Math.max(1, parseInt(request.nextUrl.searchParams.get("limit") || "10", 10) || 10));
 
     // 限流分三层：

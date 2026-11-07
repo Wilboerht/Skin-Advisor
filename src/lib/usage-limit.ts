@@ -43,6 +43,11 @@ export interface ReserveUsageResult {
     error?: string;
     role: 'guest' | 'member';
     /**
+     * 本次预占租约 token。回滚时必须带回，只删除本次租约对应的 reserved 记录，
+     * 避免请求 A 失败回滚时误删请求 B 复用的同一 session 预占。
+     */
+    leaseToken?: string;
+    /**
      * true 表示同一 sessionId 已存在预占记录（P2002 幂等命中），本次并未实际新增计数。
      * 调用方据此决定是否可安全回滚，避免误删其他请求的预占。
      */
@@ -69,6 +74,16 @@ const SILVER_DAILY_LIMIT = 10;
 const UNLIMITED_DAILY_LIMIT = 10;
 // dailyTestLimit 的历史系统默认值；等于该值视为未被管理员自定义
 const LEGACY_DEFAULT_DAILY_LIMIT = 10;
+
+/** 预占租约有效期：覆盖队列等待 + 视觉/文本最坏耗时，过期记录由 data-cleanup 回收 */
+const RESERVATION_LEASE_MS = 15 * 60 * 1000;
+
+function newLease() {
+    return {
+        leaseToken: crypto.randomUUID(),
+        leaseExpiresAt: new Date(Date.now() + RESERVATION_LEASE_MS),
+    };
+}
 
 // ===== 错误文案（单点配置）=====
 // 导出供 analyze 路由 freeRetry 分支的游客 401 复用，保证全链路同文案
@@ -300,6 +315,39 @@ export async function reserveUsage(
                 // 原实现 count→createMany 之间无锁，不同 sessionId 并发可同时通过并突破终身/每日上限
                 await tx.$queryRaw`SELECT 1 FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
 
+                // 同一 sessionId 已存在记录：只校验归属并续租，不再占用新额度。
+                // 续租会更换 leaseToken，旧请求的回滚 token 随之失效，避免误删复用中的记录。
+                const existing = await tx.testRecord.findUnique({
+                    where: { sessionId },
+                    select: { userId: true, status: true },
+                });
+                if (existing) {
+                    if (existing.userId !== userId) {
+                        return {
+                            success: false,
+                            role: 'member',
+                            forbidden: true,
+                            error: '报告会话不存在或无权访问',
+                        };
+                    }
+                    if (existing.status === 'consumed') {
+                        // 已消费的记录不能再次回滚；调用方按 alreadyReserved 处理
+                        return { success: true, role: 'member', alreadyReserved: true, userId };
+                    }
+                    const lease = newLease();
+                    await tx.testRecord.update({
+                        where: { sessionId },
+                        data: { status: 'reserved', ...lease },
+                    });
+                    return {
+                        success: true,
+                        role: 'member',
+                        alreadyReserved: true,
+                        userId,
+                        leaseToken: lease.leaseToken,
+                    };
+                }
+
                 // 从数据库读取最新额度与消费金额，避免 JWT 缓存滞后
                 // 与 checkUsageLimit 同口径：仅按 TestRecord 计数（预占即落库），不叠加在途 session
                 const [dbUser, count, lifetimeCount] = await Promise.all([
@@ -322,23 +370,28 @@ export async function reserveUsage(
                 }
                 // upsert 语义：createMany + skipDuplicates 天然幂等，
                 // 按实际插入行数判断是否首次预占，避免重试导致的漏计/重复计数。
+                const lease = newLease();
                 const created = await tx.testRecord.createMany({
-                    data: { userId, sessionId, testDate: new Date() },
+                    data: {
+                        userId,
+                        sessionId,
+                        testDate: new Date(),
+                        status: 'reserved',
+                        leaseToken: lease.leaseToken,
+                        leaseExpiresAt: lease.leaseExpiresAt,
+                    },
                     skipDuplicates: true
                 });
                 if (created.count === 0) {
-                    // sessionId 已预占：必须校验归属，不能把他人会话当作幂等成功。
-                    // 否则知道他人 sessionId 的请求可以复用其预占免费跑完整分析，
-                    // 后续 upsert 还会把会话 userId 改成当前请求者。
-                    const existing = await tx.testRecord.findUnique({
+                    // 并发兜底：createMany 0 行说明记录刚被创建，重读并校验归属后续租
+                    const raced = await tx.testRecord.findUnique({
                         where: { sessionId },
-                        select: { userId: true },
+                        select: { userId: true, status: true },
                     });
-                    if (!existing) {
-                        // createMany 0 行却没有记录：极端并发/脏数据，按可重试失败处理
+                    if (!raced) {
                         return { success: false, role: 'member', error: '请稍后再试。', userId };
                     }
-                    if (existing.userId !== userId) {
+                    if (raced.userId !== userId) {
                         return {
                             success: false,
                             role: 'member',
@@ -346,10 +399,23 @@ export async function reserveUsage(
                             error: '报告会话不存在或无权访问',
                         };
                     }
-                    // 本人的重复请求/重试：幂等成功，本次未实际新增计数
-                    return { success: true, role: 'member', alreadyReserved: true, userId };
+                    if (raced.status === 'consumed') {
+                        return { success: true, role: 'member', alreadyReserved: true, userId };
+                    }
+                    const racedLease = newLease();
+                    await tx.testRecord.update({
+                        where: { sessionId },
+                        data: { status: 'reserved', ...racedLease },
+                    });
+                    return {
+                        success: true,
+                        role: 'member',
+                        alreadyReserved: true,
+                        userId,
+                        leaseToken: racedLease.leaseToken,
+                    };
                 }
-                return { success: true, role: 'member', userId };
+                return { success: true, role: 'member', userId, leaseToken: lease.leaseToken };
             });
         });
     } catch (e: unknown) {
@@ -365,18 +431,77 @@ export async function reserveUsage(
 }
 
 /**
+ * 为既有预占续租（analyze 复用 face-analyze 预占时调用）。
+ * 续租会生成新的 leaseToken，使先前请求的回滚 token 失效。
+ */
+export async function renewUsageLease(
+    sessionId: string,
+    userId: string
+): Promise<{ success: boolean; leaseToken?: string; consumed?: boolean; forbidden?: boolean }> {
+    try {
+        return await withDbRetry(async () => {
+            return await prisma.$transaction(async (tx) => {
+                const existing = await tx.testRecord.findUnique({
+                    where: { sessionId },
+                    select: { userId: true, status: true },
+                });
+                if (!existing) return { success: false };
+                if (existing.userId !== userId) return { success: false, forbidden: true };
+                if (existing.status === "consumed") return { success: true, consumed: true };
+
+                const lease = newLease();
+                const updated = await tx.testRecord.updateMany({
+                    where: { sessionId, userId, status: "reserved" },
+                    data: { status: "reserved", ...lease },
+                });
+                if (updated.count === 0) return { success: false };
+                return { success: true, leaseToken: lease.leaseToken };
+            });
+        });
+    } catch (e) {
+        console.error(`[renewUsageLease] Failed for session ${sessionId}:`, e);
+        return { success: false };
+    }
+}
+
+/**
+ * 分析成功后把预占标记为已消费。
+ *
+ * 不按 leaseToken 过滤：任意一个并发请求成功完成分析，都必须把该 session 的额度
+ * 置为 consumed；否则另一个请求续租后，成功请求的标记会落空，随后失败请求的
+ * rollback 仍可能删掉已消费记录（导致少计额度）。
+ */
+export async function markUsageConsumed(
+    sessionId: string,
+    userId: string,
+    leaseToken?: string
+): Promise<void> {
+    void leaseToken;
+    try {
+        await prisma.testRecord.updateMany({
+            where: { sessionId, userId, status: "reserved" },
+            data: { status: "consumed", leaseToken: null, leaseExpiresAt: null },
+        });
+    } catch (e) {
+        // 标记失败只影响清理判定，不阻断已成功的分析响应
+        console.error(`[markUsageConsumed] Failed for session ${sessionId}:`, e);
+    }
+}
+
+/**
  * 回滚已预占的额度（用于 AI 服务不可用、图片验证失败等明确非用户原因的场景）
  *
  * 规则：
- * 1. 按 sessionId + userId 精确冲销：仅删除"当前请求者本人"该 session 的预占记录，
- *    防止知道他人 sessionId 的用户删除他人计数（归属校验）
- * 2. 天然幂等：重复调用时删除 0 行，不会重复扣减
- * 3. 游客不再预占额度（需登录），无 GuestUsage 回滚分支（该表已随游客测肤下线删除）
+ * 1. 按 sessionId + userId + leaseToken 精确冲销：只删除本次请求持有的 reserved 租约；
+ *    若同一 session 已被后续请求续租（token 变化），本次回滚不会误删。
+ * 2. 天然幂等：重复调用时删除 0 行，不会重复扣减。
+ * 3. 已消费（consumed）的记录永不删除，避免分析成功后额度被释放。
  */
 export async function rollbackUsage(
     request: NextRequest,
     sessionId: string,
-    userId?: string
+    userId?: string,
+    leaseToken?: string
 ): Promise<boolean> {
     // 归属校验：优先使用预占时捕获的 userId。
     // 原实现重新 getSessionUser，若请求期间 SSO/本地会话过期，回滚直接失败，
@@ -387,9 +512,13 @@ export async function rollbackUsage(
     try {
         await withDbRetry(async () => {
             await prisma.$transaction(async (tx) => {
-                // 按 sessionId + userId 精确删除本次预占的 TestRecord
                 await tx.testRecord.deleteMany({
-                    where: { sessionId, userId: ownerId }
+                    where: {
+                        sessionId,
+                        userId: ownerId,
+                        status: "reserved",
+                        ...(leaseToken ? { leaseToken } : {}),
+                    },
                 });
             });
         });

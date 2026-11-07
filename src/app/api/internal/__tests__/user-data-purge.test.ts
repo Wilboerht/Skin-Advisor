@@ -126,6 +126,8 @@ describe("POST /api/internal/user-data/purge 数据处置", () => {
         productFeedbacks: 1,
         aiUsageLogs: 4,
         localUser: true,
+        deletedAvatarFiles: 1,
+        deletedFaceUploads: 2,
       },
     });
 
@@ -162,6 +164,8 @@ describe("POST /api/internal/user-data/purge 数据处置", () => {
         productFeedbacks: 0,
         aiUsageLogs: 0,
         localUser: false,
+        deletedAvatarFiles: 0,
+        deletedFaceUploads: 0,
       },
     });
   });

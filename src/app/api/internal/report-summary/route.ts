@@ -37,15 +37,14 @@ export async function GET(request: NextRequest) {
     try {
         const session = await prisma.advisorSession.findUnique({
             where: { sessionId, archivedAt: null }, // 冷层归档摘要对用户不可见，内部接口保持同一可见性语义
-            select: { analysisResult: true, answers: true, expiresAt: true, createdAt: true },
+            select: { analysisResult: true, answers: true, createdAt: true },
         });
 
         if (!session?.analysisResult || !isCompletedAnalysisResult(session.analysisResult)) {
             return NextResponse.json({ found: false }, { status: 404 });
         }
-        if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
-            return NextResponse.json({ found: false }, { status: 404 });
-        }
+        // expiresAt 只表示“当前档案建议复测时间”，不是数据删除时间；
+        // 内部客服报告与用户历史接口保持同一可见性口径（归档/未完成才不可见）。
 
         // 真实聚合百分位（与前端证书口径一致）；聚合失败不阻断主流程
         let percentile: number | null = null;

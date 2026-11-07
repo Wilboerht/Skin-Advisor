@@ -2,12 +2,14 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: skin-advisor-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:-skin_advisor}
     ports:
-      - "5442:5432"
+      # 仅本机可访问，避免数据库暴露到公网
+      - "127.0.0.1:5442:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,18 +19,35 @@ services:
       retries: 5
 
   app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+        NEXT_PUBLIC_SSO_CLIENT_ID: ${NEXT_PUBLIC_SSO_CLIENT_ID}
+        NEXT_PUBLIC_SSO_BASE_URL: ${NEXT_PUBLIC_SSO_BASE_URL}
+        NEXT_PUBLIC_SSO_REDIRECT_URI: ${NEXT_PUBLIC_SSO_REDIRECT_URI}
+        NEXT_PUBLIC_SSO_SCOPES: ${NEXT_PUBLIC_SSO_SCOPES}
+        NEXT_PUBLIC_ALI_OSS_REGION: ${NEXT_PUBLIC_ALI_OSS_REGION}
+        NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID}
     image: skin-advisor:latest
     container_name: skin-advisor-app
+    restart: unless-stopped
     env_file:
       - .env.production
     environment:
       NODE_ENV: production
       TZ: Asia/Shanghai
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
       DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-skin_advisor}}
       DIRECT_URL: ${DIRECT_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-skin_advisor}}
-      PORT: 3000
     ports:
-      - "3000:3000"
+      # 与 DEPLOYMENT/PM2 一致对外使用 3002，容器内仍监听 3000
+      - "3002:3000"
+    volumes:
+      - ./public/uploads:/app/public/uploads
+      - ./logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy

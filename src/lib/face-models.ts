@@ -144,6 +144,17 @@ export function scheduleFaceModelPreload(idleTimeout = 5000, fallbackDelay = 200
   const current = faceModels.getStatus();
   if (current === "ready" || current === "loading") return;
 
+  // 省流/弱网用户不预加载约 1.26MB 的 face-api/TFJS chunk，进入拍摄后再按需加载
+  if (typeof navigator !== "undefined") {
+    const connection = (navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    }).connection;
+    if (connection?.saveData) return;
+    if (connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g" || connection?.effectiveType === "3g") {
+      return;
+    }
+  }
+
   preloadScheduled = true;
   runWhenIdle(() => {
     faceModels.load().catch(() => {

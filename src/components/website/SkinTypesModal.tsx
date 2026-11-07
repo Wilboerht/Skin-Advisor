@@ -9,6 +9,7 @@ import { SkinTypesClient } from "@/components/website/SkinTypesClient";
 import { SkinTypesMobileList } from "@/components/website/SkinTypesMobileList";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useModalBackClose } from "@/hooks/use-modal-back-close";
 
 interface SkinTypesModalProps {
   isOpen: boolean;
@@ -30,7 +31,8 @@ const orderedTypes = routeOrder
  */
 export function SkinTypesModal({ isOpen, onClose, hideTestCTA = false }: SkinTypesModalProps) {
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
-  useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+    useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+    useModalBackClose(isOpen, onClose);
 
   // 遮罩防误触：打开后 350ms 内忽略遮罩点击关闭（与站内弹层规范一致）
   const openSinceRef = useRef(0);

@@ -1267,7 +1267,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           await onCapture(allImages);
         } catch (err) {
           console.error("[FaceCapture] onCapture failed, resetting capture state:", err);
-          // 父级处理失败（如资源加载失败），重置拍摄状态，由错误浮层引导用户重试
+          // 父级处理失败（如资源加载失败），重置当前步骤并重新启动摄像头，
+          // 避免错误浮层出现时相机已停止、用户无法直接重拍
           setIsAllCaptured(false);
           setError("处理未成功，请重新拍摄");
           setFaceStatus("none");
@@ -1279,6 +1280,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           stepStartTimeRef.current = Date.now();
           setShowManualButton(false);
           successTimerRef.current = null;
+          setCapturedImages((prev) => ({ ...prev, [step]: null }));
+          await initCamera().catch(() => undefined);
           return;
         }
 
@@ -1286,7 +1289,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       }, successDisplayDuration);
     }
     }, 0);
-  }, [getNextStep, onCapture, speak, trackFaceScanStep]);
+  }, [getNextStep, initCamera, onCapture, speak, trackFaceScanStep]);
 
   // 保持 detectFace 始终能访问到最新的 takePhotoAuto，避免闭包过时
   useEffect(() => {

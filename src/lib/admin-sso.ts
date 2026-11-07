@@ -328,13 +328,22 @@ export async function upsertShadowAdmin(
     });
 
     if (existingByEmail) {
+      // 默认禁止按 email 兜底绑定既有本地管理员（防止主站邮箱抢注接管本地账号）；
+      // 仅迁移窗口内显式开启 ADMIN_SSO_EMAIL_FALLBACK=true 才允许。
+      if (process.env.ADMIN_SSO_EMAIL_FALLBACK !== "true") {
+        throw new AdminSsoError(
+          "EMAIL_CONFLICT",
+          "该邮箱已存在本地管理员账号，请先由超管完成绑定/迁移",
+          409
+        );
+      }
       if (
         existingByEmail.externalAdminId &&
         existingByEmail.externalAdminId !== claims.sub
       ) {
         throw new AdminSsoError(
           "EMAIL_CONFLICT",
-          "该邮箱已绑定其他主站管理员，请联系主站处理",
+          "该邮箱已绑定其他主站管理员，请联系主站管理员",
           409
         );
       }

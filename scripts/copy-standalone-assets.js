@@ -113,7 +113,11 @@ const envSrc = path.join(ROOT, '.env.production');
 const envDest = path.join(STANDALONE, '.env.production');
 if (fs.existsSync(envSrc)) {
   fs.copyFileSync(envSrc, envDest);
-  console.log('🔐 .env.production 已同步到 standalone（不会入库）');
+  try {
+    fs.chmodSync(envDest, 0o600);
+  } catch { /* Windows 无 POSIX 权限时忽略 */ }
+  console.log('🔐 .env.production 已同步到 standalone（权限 600，不会入库）');
+  console.log('   ⚠️  .next/standalone 含生产密钥，归档/分发前请排除该文件');
 } else {
   console.log('⚠️  根目录无 .env.production，跳过（本地开发可忽略）');
 }

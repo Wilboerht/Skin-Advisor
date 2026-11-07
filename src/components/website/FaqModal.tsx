@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { faqs } from "@/lib/faq-data";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useModalBackClose } from "@/hooks/use-modal-back-close";
 
 interface FaqModalProps {
   isOpen: boolean;
@@ -19,7 +20,8 @@ interface FaqModalProps {
  */
 export function FaqModal({ isOpen, onClose }: FaqModalProps) {
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
-  useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+    useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+    useModalBackClose(isOpen, onClose);
 
   // 遮罩防误触：记录打开时刻，打开后 350ms 内忽略遮罩点击关闭——
   // 入口双击的第二下会穿透到遮罩上，若不设保护会"打开即被关闭"

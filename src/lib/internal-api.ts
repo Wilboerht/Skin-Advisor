@@ -231,9 +231,13 @@ export interface VerifyInternalResult {
   signatureFormat?: "query-bound" | "legacy";
 }
 
-/** 旧格式（不绑定 query）的灰度开关：true 时仅接受新格式（收口开关） */
+/**
+ * 旧格式（不绑定 query）的灰度开关：true 时仅接受新格式（收口开关）。
+ * 生产环境默认收口；仅在显式设置 INTERNAL_API_ALLOW_LEGACY=true 的迁移窗口内放行旧格式。
+ */
 function isSignedQueryRequired(): boolean {
-  return process.env.INTERNAL_API_REQUIRE_SIGNED_QUERY === "true";
+  if (process.env.INTERNAL_API_REQUIRE_SIGNED_QUERY === "true") return true;
+  return process.env.NODE_ENV === "production" && process.env.INTERNAL_API_ALLOW_LEGACY !== "true";
 }
 
 /**
@@ -347,7 +351,9 @@ function safeCompareString(a: string, b: string): boolean {
  * 1. 带 `X-Internal-API-*` 签名头 → 走完整签名校验（推荐，防重放）；
  * 2. 未带签名头 → 回退旧版静态密钥（x-internal-key 或 Bearer ADVISOR_INTERNAL_SECRET），
  *    并打 warning 便于追踪未迁移的调用方；
- * 3. 设置 `INTERNAL_API_REQUIRE_SIGNATURE=true` 后旧模式直接拒绝（灰度完成后启用）。
+ * 3. 设置 `INTERNAL_API_REQUIRE_SIGNATURE=true` 后旧模式直接拒绝。
+ *    生产环境默认拒绝旧模式；仅在显式设置 `INTERNAL_API_ALLOW_LEGACY=true`
+ *    的迁移窗口内临时放行。
  */
 export async function authorizeInternalRequest(
   request: Request,
@@ -362,9 +368,14 @@ export async function authorizeInternalRequest(
     return { ok: false, mode: "signed", reason: result.reason, status: 401 };
   }
 
-  if (process.env.INTERNAL_API_REQUIRE_SIGNATURE === "true") {
+  const legacyExplicitlyAllowed = process.env.INTERNAL_API_ALLOW_LEGACY === "true";
+  if (
+    process.env.INTERNAL_API_REQUIRE_SIGNATURE === "true" ||
+    (process.env.NODE_ENV === "production" && !legacyExplicitlyAllowed)
+  ) {
     logger.warn("[InternalApi] 已强制签名校验，拒绝旧版静态密钥请求", {
       path: new URL(request.url).pathname,
+      legacyExplicitlyAllowed,
     });
     return { ok: false, mode: "legacy", reason: "signature_required", status: 401 };
   }

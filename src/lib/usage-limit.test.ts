@@ -118,7 +118,21 @@ describe("rollbackUsage 归属用户", () => {
 
         expect(ok).toBe(true);
         expect(prismaMock.testRecord.deleteMany).toHaveBeenCalledWith({
-            where: { sessionId: "sess-1", userId: "user-1" },
+            where: { sessionId: "sess-1", userId: "user-1", status: "reserved" },
+        });
+    });
+
+    it("带 leaseToken 时只删除本次租约（不误删后续请求续租的记录）", async () => {
+        const ok = await rollbackUsage(null as never, "sess-1", "user-1", "lease-a");
+
+        expect(ok).toBe(true);
+        expect(prismaMock.testRecord.deleteMany).toHaveBeenCalledWith({
+            where: {
+                sessionId: "sess-1",
+                userId: "user-1",
+                status: "reserved",
+                leaseToken: "lease-a",
+            },
         });
     });
 });

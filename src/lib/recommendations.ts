@@ -120,6 +120,19 @@ const PRICE_TIERS = [
 /** 环境功效匹配权重（每标签 +15 分，低于肤质但高于精选产品 */
 const ENV_BENEFIT_SCORE = 15;
 
+// 产品库变化频率低：60s 进程内缓存，避免每次测肤都全表加载 Product。
+type ProductRow = Awaited<ReturnType<typeof prisma.product.findMany>>[number];
+let activeProductsCache: { rows: ProductRow[]; expiresAt: number } | null = null;
+
+async function getActiveProductsCached(): Promise<ProductRow[]> {
+    if (activeProductsCache && activeProductsCache.expiresAt > Date.now()) {
+        return activeProductsCache.rows;
+    }
+    const rows = await prisma.product.findMany({ where: { active: true } });
+    activeProductsCache = { rows, expiresAt: Date.now() + 60_000 };
+    return rows;
+}
+
 /** 年龄段到推荐功效的映射 */
 const AGE_TO_BENEFITS: Record<string, string[]> = {
     "under20": ["控油", "清爽", "补水", "净化", "祛痘"],
@@ -558,9 +571,7 @@ export async function getCandidateProducts(
     envContext?: EnvContext
 ): Promise<ScoredProduct[]> {
     try {
-        const allProducts = await prisma.product.findMany({
-            where: { active: true }
-        });
+        const allProducts = await getActiveProductsCached();
 
         if (allProducts.length === 0) return [];
 
@@ -693,6 +704,8 @@ export async function getClusterSocialProof(
         const clusterSessions = await prisma.advisorSession.findMany({
             where: {
                 completedAt: { gte: ninetyDaysAgo },
+                // 归档摘要不含 products，计入分母会让推荐占比系统性下降
+                archivedAt: null,
             },
             orderBy: { completedAt: "desc" },
             take: 300,
@@ -815,11 +828,7 @@ export async function recommendProducts(
         // 1. Use preloaded products if available, otherwise fetch from DB
         const allProducts = (preloadedProducts && preloadedProducts.length > 0)
             ? preloadedProducts
-            : await prisma.product.findMany({
-                where: {
-                    active: true
-                }
-            });
+            : await getActiveProductsCached();
 
         if (allProducts.length === 0) {
             console.warn("No products found in DB");

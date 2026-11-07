@@ -7,6 +7,7 @@ import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 import { canViewFullPII, UserRole, AdminRole } from "@/lib/permissions";
 import { incrementTokenVersion } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { purgeUserData } from "@/lib/purge-user";
 import { Prisma } from "@prisma/client";
 import { logger } from "@/lib/logger";
 
@@ -265,13 +266,9 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (
             return apiError(ErrorCode.NOT_FOUND, "User not found", 404);
         }
 
-        await prisma.$transaction(async (tx) => {
-            // 隐私清理：注销即删除该用户的测肤会话（含过敏史/孕期等敏感问卷答案与分析结果）。
-            // AdvisorSession.user 为 onDelete: SetNull，不显式删除会留下最长 90 天的孤儿 PII 数据；
-            // 其余业务表（TestRecord/DiaryEntry/ProductFeedback/RefreshToken 等）依赖级联删除
-            await tx.advisorSession.deleteMany({ where: { userId: id } });
-            await tx.user.delete({ where: { id } });
-        });
+        // 与主站注销共用同一套物理删除口径（会话/日记/测试/反馈/AI 日志匿名化 + 头像/人脸文件）
+        const purged = await purgeUserData(id);
+        logger.info("[admin/users] user purged", { adminId: admin.adminId, userId: id, ...purged });
 
         // Log admin action
         const clientInfo = getClientInfo(request);

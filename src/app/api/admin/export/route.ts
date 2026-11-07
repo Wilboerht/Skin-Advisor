@@ -38,6 +38,16 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
         switch (type) {
             case "products":
                 const products = await prisma.product.findMany({
+                    // 只取导出列，避免 5000 条完整产品（图片/长文本/JSON）全部进内存
+                    select: {
+                        id: true,
+                        name: true,
+                        category: true,
+                        price: true,
+                        active: true,
+                        featured: true,
+                        createdAt: true,
+                    },
                     orderBy: { createdAt: "desc" },
                     take: 5000, // Hard limit to prevent memory exhaustion
                 });
@@ -120,30 +130,26 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                 // 白皮书群体统计：每行一条已完成测肤的脱敏统计字段（热层+冷层通吃）。
                 // 不含任何身份标识（userId/邮箱/昵称）与敏感问卷字段（过敏史/孕期/医美等），
                 // 地域粒度只到省级，供《NIHPLOD 中国女性白皮书》等群体统计使用。
-                const statsSessions = await prisma.advisorSession.findMany({
-                    where: { completedAt: { not: null } },
-                    orderBy: { completedAt: "asc" },
-                    take: 20000, // Hard limit to prevent memory exhaustion
-                    select: {
-                        completedAt: true,
-                        answers: true,
-                        analysisResult: true,
-                        faceScanUsed: true,
-                        faceScanSkipped: true,
-                        province: true,
-                        shareMethod: true,
-                        resultShared: true,
-                        archivedAt: true,
-                        utmSource: true,
-                    },
-                });
                 headers = [
                     "CompletedAt", "SkinType(AI)", "Persona", "OverallScore",
                     "Wrinkles", "WaterOil", "Spots", "Texture",
                     "AgeRange", "Budget", "SkinType(Self)", "PrimaryConcern",
                     "Province", "ScanMode", "Shared", "ShareChannel", "UTMSource", "DataLayer",
                 ];
-                data = statsSessions.map((s) => {
+                type StatsSession = {
+                    id: string;
+                    completedAt: Date | null;
+                    answers: unknown;
+                    analysisResult: unknown;
+                    faceScanUsed: boolean;
+                    faceScanSkipped: boolean;
+                    province: string | null;
+                    shareMethod: string | null;
+                    resultShared: boolean;
+                    archivedAt: Date | null;
+                    utmSource: string | null;
+                };
+                const toWhitepaperRow = (s: StatsSession): unknown[] => {
                     const st = extractSessionStats(s.analysisResult, s.answers);
                     return [
                         s.completedAt ? new Date(s.completedAt).toISOString() : "",
@@ -165,10 +171,45 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                         s.utmSource || "",
                         s.archivedAt ? "cold" : "hot",
                     ];
-                });
+                };
+
+                // 游标分批读取：避免一次把 20000 条完整 answers/analysisResult 载入内存。
+                // 只累积脱敏后的行数组，单批 JSON 解析完即释放。
+                const WHITEPAPER_LIMIT = 20000;
+                const WHITEPAPER_BATCH = 500;
+                const whitepaperRows: unknown[][] = [];
+                let cursorId: string | undefined;
+                while (whitepaperRows.length < WHITEPAPER_LIMIT) {
+                    const batch = await prisma.advisorSession.findMany({
+                        where: { completedAt: { not: null } },
+                        orderBy: [{ completedAt: "asc" }, { id: "asc" }],
+                        take: Math.min(WHITEPAPER_BATCH, WHITEPAPER_LIMIT - whitepaperRows.length),
+                        ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
+                        select: {
+                            id: true,
+                            completedAt: true,
+                            answers: true,
+                            analysisResult: true,
+                            faceScanUsed: true,
+                            faceScanSkipped: true,
+                            province: true,
+                            shareMethod: true,
+                            resultShared: true,
+                            archivedAt: true,
+                            utmSource: true,
+                        },
+                    });
+                    if (batch.length === 0) break;
+                    for (const session of batch) {
+                        whitepaperRows.push(toWhitepaperRow(session));
+                    }
+                    cursorId = batch[batch.length - 1].id;
+                    if (batch.length < WHITEPAPER_BATCH) break;
+                }
+                data = whitepaperRows;
                 filename = `whitepaper_stats_${new Date().toISOString().split("T")[0]}.csv`;
-                rowLimit = 20000;
-                truncated = statsSessions.length >= rowLimit;
+                rowLimit = WHITEPAPER_LIMIT;
+                truncated = whitepaperRows.length >= rowLimit;
                 break;
 
             case "audit-logs":

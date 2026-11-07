@@ -13,8 +13,7 @@ export interface Toast {
     duration?: number;
 }
 
-interface ToastContextType {
-    toasts: Toast[];
+interface ToastActions {
     toast: {
         success: (message: string, duration?: number) => void;
         error: (message: string, duration?: number) => void;
@@ -24,14 +23,17 @@ interface ToastContextType {
     removeToast: (id: string) => void;
 }
 
-const ToastContext = React.createContext<ToastContextType | undefined>(
+// 拆成两个 Context：toast 函数消费者不随 toast 列表变化重渲染
+const ToastActionsContext = React.createContext<ToastActions | undefined>(
     undefined,
 );
+const ToastListContext = React.createContext<Toast[]>([]);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = React.useState<Toast[]>([]);
-    const timeoutRefs = React.useRef<Set<ReturnType<typeof setTimeout>>>(
-        new Set(),
+    // 按 toastId 绑定定时器，避免按 Set 顺序误清其他 toast 的 timer
+    const timeoutRefs = React.useRef<Map<string, ReturnType<typeof setTimeout>>>(
+        new Map(),
     );
 
     React.useEffect(() => {
@@ -41,6 +43,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             timers.clear();
         };
     }, []);
+
+    // toast 被移除（手动/自动/超上限）后清理对应 timer
+    React.useEffect(() => {
+        const alive = new Set(toasts.map((t) => t.id));
+        for (const [id, timer] of timeoutRefs.current) {
+            if (!alive.has(id)) {
+                clearTimeout(timer);
+                timeoutRefs.current.delete(id);
+            }
+        }
+    }, [toasts]);
 
     const toastIdCounter = React.useRef(0);
     const MAX_TOASTS = 4;
@@ -61,22 +74,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                     { id, message, type, duration: effectiveDuration },
                 ];
                 // 超过上限时移除最早的 toast
-                if (next.length > MAX_TOASTS) {
-                    const removed = next.shift();
-                    if (removed) {
-                        const timer = timeoutRefs.current.values().next().value;
-                        if (timer) clearTimeout(timer);
-                    }
-                }
-                return next;
+                return next.length > MAX_TOASTS
+                    ? next.slice(next.length - MAX_TOASTS)
+                    : next;
             });
 
             if (effectiveDuration > 0) {
                 const timer = setTimeout(() => {
-                    timeoutRefs.current.delete(timer);
+                    timeoutRefs.current.delete(id);
                     removeToast(id);
                 }, effectiveDuration);
-                timeoutRefs.current.add(timer);
+                timeoutRefs.current.set(id, timer);
             }
         },
         [removeToast],
@@ -96,21 +104,25 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         [addToast],
     );
 
+    const actions = React.useMemo(
+        () => ({ toast, removeToast }),
+        [toast, removeToast],
+    );
+
     return (
-        <ToastContext.Provider value={{ toasts, toast, removeToast }}>
-            {children}
-            <ToastContainer toasts={toasts} removeToast={removeToast} />
-        </ToastContext.Provider>
+        <ToastActionsContext.Provider value={actions}>
+            <ToastListContext.Provider value={toasts}>
+                {children}
+                <ToastContainer />
+            </ToastListContext.Provider>
+        </ToastActionsContext.Provider>
     );
 }
 
-function ToastContainer({
-    toasts,
-    removeToast,
-}: {
-    toasts: Toast[];
-    removeToast: (id: string) => void;
-}) {
+function ToastContainer() {
+    const toasts = React.useContext(ToastListContext);
+    const actions = React.useContext(ToastActionsContext);
+    const removeToast = actions?.removeToast ?? (() => {});
     const [reducedMotion, setReducedMotion] = React.useState(false);
 
     React.useEffect(() => {
@@ -186,7 +198,7 @@ function ToastContainer({
 }
 
 export function useToast() {
-    const context = React.useContext(ToastContext);
+    const context = React.useContext(ToastActionsContext);
     if (context === undefined) {
         throw new Error("useToast must be used within a ToastProvider");
     }

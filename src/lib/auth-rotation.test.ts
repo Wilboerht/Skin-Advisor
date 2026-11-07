@@ -57,7 +57,12 @@ describe("rotateLocalSession", () => {
         const rotated = await rotateLocalSession(token);
         expect(rotated).not.toBeNull();
         expect(mocks.updateMany).toHaveBeenCalledWith({
-            where: { id: "stored-token", revokedAt: null },
+            where: expect.objectContaining({
+                userId: "user-1",
+                revokedAt: null,
+                token: expect.any(String),
+                expiresAt: { gt: expect.any(Date) },
+            }),
             data: { revokedAt: expect.any(Date) },
         });
         expect(mocks.create).toHaveBeenCalledWith({

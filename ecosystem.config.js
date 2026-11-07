@@ -35,16 +35,22 @@ if (internalApiKeys) {
     }
 }
 const securityEnv = {};
-for (const key of ['INTERNAL_API_KEYS', 'ADVISOR_INTERNAL_SECRET', 'INTERNAL_API_REQUIRE_SIGNED_QUERY']) {
+for (const key of [
+    'INTERNAL_API_KEYS',
+    'ADVISOR_INTERNAL_SECRET',
+    'INTERNAL_API_SECRET',
+    'INTERNAL_API_REQUIRE_SIGNATURE',
+    'INTERNAL_API_REQUIRE_SIGNED_QUERY',
+    'INTERNAL_API_ALLOW_LEGACY',
+]) {
     if (productionEnv[key]) securityEnv[key] = productionEnv[key];
 }
 
 module.exports = {
     apps: [{
         name: 'skin-advisor',
-        // 直接以 Node 运行 standalone server，避免 bash -c 包装导致
-        // PM2 无法正确监控 Node 内存/信号。
-        script: '.next/standalone/server.js',
+        // 用包装脚本加载 standalone server，并在端口真正可连接后 send('ready')
+        script: 'scripts/pm2-server.js',
         cwd: __dirname,
         interpreter: 'node',
         node_args: '--max-old-space-size=2048',
@@ -55,6 +61,8 @@ module.exports = {
             // 业务日界统一按北京时间；服务器/容器重建后不依赖系统时区配置
             TZ: 'Asia/Shanghai',
             PORT: 3002,
+            // 避免继承系统 HOSTNAME 导致 standalone 只绑定主机名而非 0.0.0.0
+            HOSTNAME: '0.0.0.0',
             ...securityEnv,
             // QWEN_API_KEY 等敏感配置请从 .env.production 读取
             // 不要在这里写死，以免泄露到 Git 仓库
@@ -73,7 +81,9 @@ module.exports = {
         max_memory_restart: '3G',
         // 优雅关闭 (15s 充足余量)
         kill_timeout: 15000,
-        listen_timeout: 10000,
+        // 等包装脚本确认端口可连接后再标记 online
+        wait_ready: true,
+        listen_timeout: 30000,
     }]
 };
 

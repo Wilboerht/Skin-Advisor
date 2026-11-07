@@ -51,45 +51,30 @@ export async function GET(request: NextRequest) {
         const start = new Date(todayStartUtc - RETEST_DAYS * DAY_MS);
         const end = new Date(start.getTime() + DAY_MS);
 
-        const grouped = await prisma.advisorSession.groupBy({
-            by: ["userId"],
-            where: { completedAt: { not: null } },
-            _max: { completedAt: true },
-        });
+        // 直接在 SQL 内按时间窗口筛选 + 排除禁用用户，避免对全量会话做 groupBy
+        const dueUsers = await prisma.$queryRaw<Array<{ userId: string; lastTestAt: Date }>>`
+            SELECT s."userId", MAX(s."completedAt") AS "lastTestAt"
+            FROM "AdvisorSession" s
+            JOIN "User" u ON u."id" = s."userId"
+            WHERE s."userId" IS NOT NULL
+              AND s."completedAt" >= ${start}
+              AND s."completedAt" < ${end}
+              AND u."role" <> ${UserRole.DISABLED}
+            GROUP BY s."userId"
+            ORDER BY "lastTestAt" DESC
+            LIMIT ${MAX_DUE_USERS + 1}
+        `;
 
-        const matched: Array<{ userId: string; lastTestAt: Date }> = [];
-        for (const g of grouped) {
-            const at = g._max.completedAt;
-            // userId 可空（游客会话）：游客无账号不可提醒，直接跳过
-            if (g.userId && at && at >= start && at < end) {
-                matched.push({ userId: g.userId, lastTestAt: at });
-            }
-        }
-
-        // 子站账号被禁用的用户不发复测提醒（主站 cron 会直接给小程序推送）
-        let activeMatched = matched;
-        if (matched.length > 0) {
-            const activeUsers = await prisma.user.findMany({
-                where: {
-                    id: { in: matched.map((g) => g.userId) },
-                    role: { not: UserRole.DISABLED },
-                },
-                select: { id: true },
-            });
-            const activeIds = new Set(activeUsers.map((u) => u.id));
-            activeMatched = matched.filter((g) => activeIds.has(g.userId));
-        }
-
-        if (activeMatched.length > MAX_DUE_USERS) {
+        if (dueUsers.length > MAX_DUE_USERS) {
             logger.warn("[internal/retest-due] 命中上限，超出部分本周期不再提醒", {
-                matched: activeMatched.length,
+                matched: dueUsers.length,
                 max: MAX_DUE_USERS,
             });
         }
 
-        const users = activeMatched.slice(0, MAX_DUE_USERS).map((g) => ({
-            userId: g.userId,
-            lastTestAt: g.lastTestAt.toISOString(),
+        const users = dueUsers.slice(0, MAX_DUE_USERS).map((row) => ({
+            userId: row.userId,
+            lastTestAt: new Date(row.lastTestAt).toISOString(),
         }));
 
         return NextResponse.json({ users });

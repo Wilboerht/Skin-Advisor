@@ -11,6 +11,8 @@ import { normalizeProductPurchaseLinks } from "@/lib/product-links";
 import { PlatformIcon } from "./PlatformIcon";
 import { lookupIngredient } from "@/lib/ingredient-glossary";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useModalBackClose } from "@/hooks/use-modal-back-close";
 
 interface ProductDetailModalProps {
     isOpen: boolean;
@@ -27,6 +29,8 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     const touchStartY = useRef(0);
     // 焦点圈定：Tab 在弹窗内循环，关闭后焦点归还触发元素（Esc 由下方既有监听处理）
     const modalRef = useFocusTrap<HTMLDivElement>(isOpen);
+    useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+    useModalBackClose(isOpen, onClose);
 
     // 合并主图 + 图库为完整图片列表
     const galleryImages = useMemo(() => {

@@ -30,7 +30,7 @@ mv .env*.bak* /root/secure-backups/ 2>/dev/null || true
 ```bash
 npm ci --legacy-peer-deps --registry=https://registry.npmjs.org
 node scripts/prepare-production.js
-NODE_OPTIONS=--max-old-space-size=2048 npm run build -- --webpack
+NODE_OPTIONS=--max-old-space-size=2048 npm run build
 pm2 delete skin-advisor 2>/dev/null || true
 # 若 3002 仍被旧进程占用（bash -c 包装可能留下孤儿 node）：
 #   ss -ltnp | grep ':3002'

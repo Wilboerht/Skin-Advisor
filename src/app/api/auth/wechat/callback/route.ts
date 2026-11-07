@@ -24,6 +24,7 @@ import {
     WECHAT_OAUTH_NONCE_COOKIE_OPTIONS,
 } from "@/lib/wechat-constants";
 import prisma from "@/lib/prisma";
+import { mergeUserByPhone } from "@/lib/user-merge";
 import { UserRole } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 import { getPublicOrigin, SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
@@ -206,15 +207,8 @@ export async function GET(req: NextRequest) {
         const membership = await fetchOfficialMembership(userPayload.phone);
         const membershipLevel = membership.level;
 
-        // 同步到本地数据库
-        const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
-        if (existingByPhone && existingByPhone.id !== userPayload.id) {
-            logger.warn(`[AUDIT] Phone collision detected (wechat-callback): new user ${userPayload.id} conflicts with existing user ${existingByPhone.id}. Merging old record.`);
-            await prisma.user.update({
-                where: { id: existingByPhone.id },
-                data: { phoneNumber: `merged_${existingByPhone.id}_${userPayload.phone}` }
-            });
-        }
+        // 同步到本地数据库：手机号已属于其他本地账号时，在事务内合并旧账号数据
+        await mergeUserByPhone(userPayload.id, userPayload.phone);
 
         let localUser;
         try {

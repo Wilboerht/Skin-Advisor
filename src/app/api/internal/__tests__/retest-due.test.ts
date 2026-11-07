@@ -10,8 +10,7 @@ const mocks = vi.hoisted(() => ({
   authorizeInternalRequest: vi.fn(),
   rateLimit: vi.fn(),
   getClientIP: vi.fn(),
-  groupBy: vi.fn(),
-  userFindMany: vi.fn(),
+  queryRaw: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
 }));
@@ -25,8 +24,7 @@ vi.mock("@/lib/ratelimit", () => ({
 }));
 vi.mock("@/lib/prisma", () => ({
   default: {
-    advisorSession: { groupBy: mocks.groupBy },
-    user: { findMany: mocks.userFindMany },
+    $queryRaw: mocks.queryRaw,
   },
 }));
 vi.mock("@/lib/logger", () => ({
@@ -61,10 +59,7 @@ describe("GET /api/internal/retest-due", () => {
     mocks.authorizeInternalRequest.mockResolvedValue({ ok: true, mode: "signed" });
     mocks.rateLimit.mockResolvedValue({ success: true, limit: 30, remaining: 29, reset: Date.now() + 60_000 });
     mocks.getClientIP.mockReturnValue("1.2.3.4");
-    mocks.groupBy.mockResolvedValue([]);
-    mocks.userFindMany.mockImplementation(async ({ where }: { where: { id: { in: string[] } } }) =>
-      where.id.in.map((id) => ({ id }))
-    );
+    mocks.queryRaw.mockResolvedValue([]);
   });
 
   it("鉴权失败返回 401，且不做限流", async () => {
@@ -85,17 +80,10 @@ describe("GET /api/internal/retest-due", () => {
     expect(res.status).toBe(429);
   });
 
-  it("仅返回 lastTestAt 落在「30 天前 CST 自然日」的用户（过新/过旧/空值均剔除）", async () => {
+  it("返回 SQL 窗口内（30 天前 CST 自然日）的用户", async () => {
     const inWindow = cstNoon(-30); // 30 天前正午 → 命中
-    const tooNew = cstNoon(-29); // 29 天前 → 太新
-    const tooOld = cstNoon(-31); // 31 天前 → 太旧
-    mocks.groupBy.mockResolvedValue([
-      { userId: "u1", _max: { completedAt: inWindow } },
-      { userId: "u2", _max: { completedAt: tooNew } },
-      { userId: "u3", _max: { completedAt: tooOld } },
-      { userId: "u4", _max: { completedAt: null } },
-      { userId: null, _max: { completedAt: inWindow } }, // 游客会话（无账号）：不可提醒
-    ]);
+    // SQL 已按时间窗口与禁用角色过滤，这里模拟查询结果
+    mocks.queryRaw.mockResolvedValue([{ userId: "u1", lastTestAt: inWindow }]);
 
     const res = await GET(fakeReq(URL_));
 
@@ -106,15 +94,14 @@ describe("GET /api/internal/retest-due", () => {
   });
 
   it("无命中返回空名单", async () => {
-    mocks.groupBy.mockResolvedValue([{ userId: "u1", _max: { completedAt: cstNoon(-10) } }]);
+    mocks.queryRaw.mockResolvedValue([]);
     const res = await GET(fakeReq(URL_));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ users: [] });
   });
 
-  it("子站账号已禁用的用户不进入提醒名单", async () => {
-    mocks.groupBy.mockResolvedValue([{ userId: "u1", _max: { completedAt: cstNoon(-30) } }]);
-    mocks.userFindMany.mockResolvedValue([]);
+  it("子站账号已禁用的用户由 SQL 过滤后不进入名单", async () => {
+    mocks.queryRaw.mockResolvedValue([]);
     const res = await GET(fakeReq(URL_));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ users: [] });

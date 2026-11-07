@@ -6,6 +6,7 @@ import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { incrementTokenVersion, clearLocalSession } from "@/lib/auth";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { validatePasswordStrength } from "@/lib/password";
+import { isSameOriginRequest } from "@/lib/same-origin";
 import { cookies } from "next/headers";
 import { logger } from "@/lib/logger";
 import { PHONE_REGEX } from "@/lib/validation";
@@ -18,6 +19,11 @@ import {
 
 export async function POST(req: NextRequest) {
     try {
+        // 该端点豁免了 proxy CSRF，必须自行校验同源，防止跨站触发密码重置
+        if (!isSameOriginRequest(req)) {
+            return apiError(ErrorCode.FORBIDDEN, "请求来源无效", 403);
+        }
+
         const ip = getClientIP(req);
         const ipLimit = await rateLimit(`reset-password-ip-${ip}`, "login", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
         if (!ipLimit.success) {

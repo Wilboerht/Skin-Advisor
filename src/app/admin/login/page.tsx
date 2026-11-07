@@ -92,6 +92,8 @@ function AdminLoginForm() {
                                 if (redirectTo !== "/admin")
                                     params.set("return_to", redirectTo);
                                 const query = params.toString();
+                                // 必须整页跳转：SSO start 会设置 HttpOnly Cookie
+                                // eslint-disable-next-line @next/next/no-location-assign-relative-destination
                                 window.location.href =
                                     "/api/admin/auth/sso/start" +
                                     (query ? `?${query}` : "");

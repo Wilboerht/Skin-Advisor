@@ -8,10 +8,10 @@ import { PanelCard } from "@/components/admin/PanelCard";
 
 export default function ProductsErrorBoundary({
     error,
-    reset,
+    retry,
 }: {
     error: Error & { digest?: string };
-    reset: () => void;
+    retry: () => void;
 }) {
     const router = useRouter();
 
@@ -47,7 +47,7 @@ export default function ProductsErrorBoundary({
                     </Button>
                     <Button
                         size="sm"
-                        onClick={reset}
+                        onClick={retry}
                         leftIcon={<RefreshCcw className="h-4 w-4" />}
                     >
                         重试

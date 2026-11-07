@@ -80,50 +80,52 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         const gen = sessionGenRef.current;
         inflightRef.current = (async () => {
-        // 10s 超时兜底；超时不视为未登录，保留现有会话状态（避免弱网误踢）
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        try {
-            const res = await fetch("/api/auth/me", { cache: "no-store", signal: controller.signal });
-            if (!res.ok) {
-                // 429 限流 / 5xx 等临时故障不代表已登出，保留现有登录状态，
-                // 交给下一次定时续期或操作时再确认
-                return;
-            }
-            const data = (await res.json()) as { user: User | null };
-            const nextUser = data.user ?? null;
-            // 期间已登出（logout 使代际递增）：丢弃本次结果，不更新用户态
-            if (gen !== sessionGenRef.current) {
-                return;
-            }
-            // 内容无变化时不更新引用：/api/auth/me 每次返回新对象，
-            // 若直接 setUser 会引发全站消费组件（含已打开的弹层）无谓重渲染/数据重置
-            setUser((prev) => {
-                if (
-                    prev?.id === nextUser?.id &&
-                    prev?.name === nextUser?.name &&
-                    prev?.avatar === nextUser?.avatar &&
-                    prev?.membershipLevel === nextUser?.membershipLevel &&
-                    prev?.totalSpent === nextUser?.totalSpent &&
-                    prev?.gender === nextUser?.gender &&
-                    prev?.role === nextUser?.role
-                ) {
-                    return prev;
+            // 首次加载超时/网络异常时重试一次：避免弱网下把已登录用户误判为游客。
+            // 重试仍失败则保留现有状态并结束 loading（后续定时续期/操作会再次校正）。
+            for (let attempt = 1; attempt <= 2; attempt++) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), attempt === 1 ? 10000 : 15000);
+                try {
+                    const res = await fetch("/api/auth/me", { cache: "no-store", signal: controller.signal });
+                    if (!res.ok) {
+                        // 429 限流 / 5xx 等临时故障不代表已登出，保留现有登录状态
+                        if (attempt === 1) continue;
+                        return;
+                    }
+                    const data = (await res.json()) as { user: User | null };
+                    const nextUser = data.user ?? null;
+                    // 期间已登出（logout 使代际递增）：丢弃本次结果，不更新用户态
+                    if (gen !== sessionGenRef.current) {
+                        return;
+                    }
+                    // 内容无变化时不更新引用：/api/auth/me 每次返回新对象，
+                    // 若直接 setUser 会引发全站消费组件（含已打开的弹层）无谓重渲染/数据重置
+                    setUser((prev) => {
+                        if (
+                            prev?.id === nextUser?.id &&
+                            prev?.name === nextUser?.name &&
+                            prev?.avatar === nextUser?.avatar &&
+                            prev?.membershipLevel === nextUser?.membershipLevel &&
+                            prev?.totalSpent === nextUser?.totalSpent &&
+                            prev?.gender === nextUser?.gender &&
+                            prev?.role === nextUser?.role
+                        ) {
+                            return prev;
+                        }
+                        return nextUser;
+                    });
+                    return;
+                } catch {
+                    // 请求超时或网络异常：保留现有登录状态，首次失败重试
+                    if (attempt === 1 && gen === sessionGenRef.current) continue;
+                    return;
+                } finally {
+                    clearTimeout(timeoutId);
                 }
-                return nextUser;
-            });
-        } catch (err) {
-            if (err instanceof DOMException && err.name === "AbortError") {
-                // 请求超时：保持现有登录状态不变
-                return;
             }
-            // 网络异常（断网/DNS/主站不可达）同样保留现有状态，避免误踢
-            return;
-        } finally {
-            clearTimeout(timeoutId);
+        })().finally(() => {
             setLoading(false);
-        }
-        })();
+        });
 
         try {
             await inflightRef.current;
@@ -198,6 +200,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
             const { pathname, search } = window.location;
             if (pathname === "/login" || pathname === "/register") return;
             getModalHistory().markNavigationPending();
+            // 登录入口必须整页跳转（SSO 会设置 HttpOnly Cookie）
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination
             window.location.href = `/api/auth/login?return_to=${encodeURIComponent(pathname + search)}`;
         };
         window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
@@ -212,6 +216,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         // 立旗：弹层（如「我的」）在点击登录的同一 tick 内关闭时，modal-history 会
         // 程序化 history.back() 清哨兵，与排队中的整页跳转竞争并取消导航（点登录没反应）
         getModalHistory().markNavigationPending();
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
     }, []);
 
@@ -277,6 +282,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         try { sessionStorage.setItem(LOGOUT_NOTICE_KEY, "1"); } catch { /* ignore */ }
         // 同 login：整页跳转前立旗，防止弹层关闭的哨兵回退取消导航
         getModalHistory().markNavigationPending();
+        // 全局登出必须整页跳转到主站 end-session（绝对地址，规则不适用）
         window.location.href = ssoLogoutUrl || "/";
     }, [toast]);
 

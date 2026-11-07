@@ -232,22 +232,18 @@ async function rotateLocalSessionInternal(
         if (!sub) return null;
 
         const rotated = await prisma.$transaction(async (tx) => {
-            const stored = await tx.refreshToken.findFirst({
+            // 按 token 哈希一次性撤销所有匹配行：历史上同一秒签发的重复 token
+            // 不能只撤销其中一行，否则旧 token 仍可重放
+            const consumed = await tx.refreshToken.updateMany({
                 where: {
                     token: hashToken(refreshToken),
                     userId: sub,
                     revokedAt: null,
                     expiresAt: { gt: new Date() },
                 },
-                select: { id: true },
-            });
-            if (!stored) return null;
-
-            const consumed = await tx.refreshToken.updateMany({
-                where: { id: stored.id, revokedAt: null },
                 data: { revokedAt: new Date() },
             });
-            if (consumed.count !== 1) return null;
+            if (consumed.count === 0) return null;
 
             const dbUser = await tx.user.findUnique({
                 where: { id: sub },

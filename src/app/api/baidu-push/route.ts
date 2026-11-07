@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { pushUrlsToBaidu, getAllSiteUrls } from "@/lib/baidu-push";
 import { SITE_URL } from "@/lib/site-url";
+
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length > 0 && bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
+}
 
 /**
  * GET /api/baidu-push?token=xxx
@@ -11,7 +18,7 @@ export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token");
   const expectedToken = process.env.CRON_SECRET;
 
-  if (!expectedToken || token !== expectedToken) {
+  if (!expectedToken || !token || !safeEqual(token, expectedToken)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

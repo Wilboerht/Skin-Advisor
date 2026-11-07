@@ -10,12 +10,20 @@ import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
-async function checkHttp(url: string, timeoutMs = 3000): Promise<string> {
+async function checkHttp(
+    url: string,
+    timeoutMs = 3000,
+    options: { authReachable?: boolean } = {}
+): Promise<string> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
         const res = await fetch(url, { signal: controller.signal });
-        return res.ok ? "ok" : `http_${res.status}`;
+        // 私有 OSS bucket 根路径返回 401/403 说明网络可达，不应判为 degraded
+        if (res.ok || (options.authReachable && (res.status === 401 || res.status === 403))) {
+            return "ok";
+        }
+        return `http_${res.status}`;
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         return msg.includes("abort") ? "timeout" : `unreachable`;
@@ -53,7 +61,7 @@ export async function GET(req: NextRequest) {
     if (process.env.ALI_OSS_REGION && process.env.ALI_OSS_BUCKET) {
         const ossHost = process.env.ALI_OSS_PUBLIC_DOMAIN
             || `https://${process.env.ALI_OSS_BUCKET}.${process.env.ALI_OSS_REGION}.aliyuncs.com`;
-        checks.oss = await checkHttp(ossHost, 3000);
+        checks.oss = await checkHttp(ossHost, 3000, { authReachable: true });
     }
 
     // 4. 官网 API 可达性（仅已配置时检查）

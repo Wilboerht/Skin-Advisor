@@ -12,7 +12,39 @@ const FOCUSABLE_SELECTORS = [
 ].join(", ");
 
 // 嵌套弹层栈：仅最上层弹层响应 Escape，避免"一次 Esc 连关多层"
-const trapStack: symbol[] = [];
+interface TrapEntry {
+    id: symbol;
+    container: HTMLElement;
+}
+const trapStack: TrapEntry[] = [];
+
+// 背景 inert：让屏幕阅读器/键盘无法进入弹层背后的页面内容
+const inertedElements = new Set<HTMLElement>();
+
+function restoreInert(): void {
+    for (const element of inertedElements) {
+        element.inert = false;
+    }
+    inertedElements.clear();
+}
+
+function applyInert(container: HTMLElement): void {
+    let node: HTMLElement | null = container;
+    while (node) {
+        const parent: HTMLElement | null = node.parentElement;
+        if (!parent) break;
+        for (const sibling of Array.from(parent.children)) {
+            if (sibling === node || !(sibling instanceof HTMLElement)) continue;
+            const tag = sibling.tagName;
+            if (tag === "SCRIPT" || tag === "STYLE" || tag === "LINK") continue;
+            if (sibling.inert || inertedElements.has(sibling)) continue;
+            sibling.inert = true;
+            inertedElements.add(sibling);
+        }
+        if (parent === document.body) break;
+        node = parent;
+    }
+}
 
 export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: () => void) {
     const containerRef = useRef<T>(null);
@@ -32,7 +64,10 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: 
         if (!container) return;
 
         const trapId = Symbol("focus-trap");
-        trapStack.push(trapId);
+        trapStack.push({ id: trapId, container });
+        // 重新计算背景 inert：嵌套弹层打开时，内层成为唯一可交互区域
+        restoreInert();
+        applyInert(container);
 
         // 动态获取可聚焦元素（支持模态框内容动态变化，如 loading → 内容）
         const getFocusableElements = () =>
@@ -53,7 +88,7 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: 
 
         const handleKeyDown = (e: KeyboardEvent) => {
             // 只有最上层弹层处理键盘事件，避免嵌套弹层互相抢焦点/重复关闭
-            if (trapStack[trapStack.length - 1] !== trapId) return;
+            if (trapStack[trapStack.length - 1]?.id !== trapId) return;
             if (e.key === "Escape") {
                 onEscapeRef.current?.();
                 return;
@@ -86,8 +121,11 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: 
         document.addEventListener("keydown", handleKeyDown);
         return () => {
             document.removeEventListener("keydown", handleKeyDown);
-            const idx = trapStack.indexOf(trapId);
+            const idx = trapStack.findIndex((entry) => entry.id === trapId);
             if (idx >= 0) trapStack.splice(idx, 1);
+            restoreInert();
+            const top = trapStack[trapStack.length - 1];
+            if (top) applyInert(top.container);
             previousActiveElement.current?.focus({ preventScroll: true });
         };
     }, [isOpen]);

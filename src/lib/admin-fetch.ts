@@ -19,6 +19,8 @@ function redirectToLogin(): void {
     if (typeof window === "undefined") return;
     // 避免在登录页自身请求（如 /api/admin/auth/login 意外 401）上死循环
     if (window.location.pathname.startsWith("/admin/login")) return;
+    // 401 后整页跳转，确保过期会话的页面状态全部清空
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = "/admin/login";
 }
 

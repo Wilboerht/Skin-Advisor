@@ -16,10 +16,21 @@ import {
     StatStrip,
     type StatStripItem,
 } from "@/components/admin";
-import {
-    DashboardCharts,
-    useDashboardStats,
-} from "@/components/admin/charts/DashboardCharts";
+import dynamic from "next/dynamic";
+import { useDashboardStats } from "@/components/admin/charts/useDashboardStats";
+
+// recharts 体积较大：首屏统计先渲染，图表按需加载
+const DashboardCharts = dynamic(
+    () => import("@/components/admin/charts/DashboardCharts").then((mod) => mod.DashboardCharts),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex h-72 items-center justify-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-charcoal/20 border-t-brand-primary" />
+            </div>
+        ),
+    }
+);
 
 export default function AdminDashboardPage() {
     const { stats, loading, error, refresh } = useDashboardStats();

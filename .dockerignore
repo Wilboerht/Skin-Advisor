@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+logs
+public/uploads
+*.log
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+README.md
+DEPLOYMENT.md
+SECURITY.md

@@ -170,7 +170,9 @@ export default function QuestionsPage() {
     // null = 尚未检查（避免首帧闪出性别选择页；登录态未决时也保持 null，避免误拦登录用户）
     const [accessDenied, setAccessDenied] = useState<boolean | null>(null);
     useEffect(() => {
-        if (hasPrivacyConsent()) {
+        // 已登录用户即使本地无同意记录（换设备/清缓存）也允许进入；
+        // 同意记录由后续问卷提交时的服务端校验兜底
+        if (hasPrivacyConsent() || user) {
             setAccessDenied(false);
             return;
         }

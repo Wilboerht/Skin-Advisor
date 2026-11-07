@@ -39,10 +39,12 @@ vi.mock("@/lib/diary-points", () => ({
 }));
 
 import { POST } from "../route";
+import { todayKeyShanghai } from "@/lib/time";
 
-// 固定"今天"为当前 UTC 日历日：与路由的日期写入窗口校验一致
-const today = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
-const dateStr = today.toISOString().slice(0, 10);
+// 业务“今天”固定为 Asia/Shanghai（与 isCheckinPointsEligibleDate 一致），
+// 避免 UTC 16:00–24:00（北京时间次日）运行时测试随机失败
+const dateStr = todayKeyShanghai();
+const today = new Date(`${dateStr}T00:00:00.000Z`);
 const daysBefore = (n: number) =>
     new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - n));
 

@@ -325,7 +325,11 @@ export async function analyzeImages(
                 }
                 // 预算/限额类错误与 provider 无关，换下一个 provider 也必然失败，直接上抛
                 if (typeof error?.message === 'string' &&
-                    (error.message.startsWith('[AIBudget]') || error.message.startsWith('[AIUserLimit]') || error.message.startsWith('[Validation]'))) {
+                    (error.message.startsWith('[AIBudget]') ||
+                        error.message.startsWith('[AIUserLimit]') ||
+                        error.message.startsWith('[Validation]') ||
+                        // 超时是 provider 级终止错误：继续换 provider 只会让总耗时翻倍并超出路由预算
+                        error.message.startsWith('[Timeout]'))) {
                     throw error;
                 }
                 lastError = error;
@@ -441,6 +445,10 @@ async function tryVisionProviderWithKeys(
             // JSON 提取/schema 校验失败是模型输出问题，同样与 Key 健康无关：
             // 直抛给 analyzeImages 走 provider fallback，不在本 provider 内空转轮换 Key
             if (typeof error?.message === 'string' && error.message.startsWith('[Parse]')) {
+                throw error;
+            }
+            // 单 provider 超时：不轮换 Key（同一 provider 的 Key 共享总预算），直接上抛走降级
+            if (typeof error?.message === 'string' && error.message.startsWith('[Timeout]')) {
                 throw error;
             }
             lastError = error;

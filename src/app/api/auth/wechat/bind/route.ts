@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
+import { mergeUserByPhone } from "@/lib/user-merge";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { UserRole } from "@/lib/permissions";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
@@ -119,15 +120,8 @@ export async function POST(req: NextRequest) {
         const membership = await fetchOfficialMembership(userPayload.phone);
         const membershipLevel = membership.level;
 
-        // Prevent unique constraint collision if the phone exists on a different ID locally
-        const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
-        if (existingByPhone && existingByPhone.id !== userPayload.id) {
-            logger.warn(`[AUDIT] Phone collision detected (wechat-bind): new user ${userPayload.id} conflicts with existing user ${existingByPhone.id}. Merging old record.`);
-            await prisma.user.update({
-                where: { id: existingByPhone.id },
-                data: { phoneNumber: `merged_${existingByPhone.id}_${userPayload.phone}` }
-            });
-        }
+        // 手机号已属于其他本地账号时，在事务内合并旧账号数据，避免历史报告/日记丢失
+        await mergeUserByPhone(userPayload.id, userPayload.phone);
 
         // Upsert user into local database
         let localUser;

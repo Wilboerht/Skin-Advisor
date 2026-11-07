@@ -1,5 +1,6 @@
 import { readdir, stat, unlink } from "fs/promises";
 import path from "path";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { deleteOSSFiles } from "@/lib/ali-oss";
 import { logger } from "@/lib/logger";
@@ -76,6 +77,28 @@ async function isReferencedByReport(ref: string): Promise<boolean> {
     return rows[0]?.exists === true;
 }
 
+/**
+ * 批量查询哪些资源仍被可见报告引用：
+ * 一次 SQL 处理多个候选路径，避免清理任务对每个文件做一次 LIKE 全表扫描。
+ */
+async function findReportReferencedRefs(refs: string[]): Promise<Set<string>> {
+    if (refs.length === 0) return new Set();
+    const patterns = [...new Set(refs.map(canonicalRef))];
+    const values = Prisma.join(patterns.map((value) => Prisma.sql`${value}`));
+    const rows = await prisma.$queryRaw<Array<{ ref: string }>>(Prisma.sql`
+        SELECT p.ref
+        FROM unnest(ARRAY[${values}]::text[]) AS p(ref)
+        WHERE EXISTS (
+            SELECT 1
+            FROM "AdvisorSession" s
+            WHERE s."archivedAt" IS NULL
+              AND s."analysisResult" IS NOT NULL
+              AND s."analysisResult"::text LIKE '%' || p.ref || '%'
+        )
+    `);
+    return new Set(rows.map((row) => row.ref));
+}
+
 export async function deleteUnreferencedProductAssets(
     refs: string[],
     excludeProductId: string
@@ -129,8 +152,8 @@ export async function cleanupOrphanProductAssets(): Promise<number> {
         )
     );
 
-    let deleted = 0;
     const entries = await readdir(dir).catch(() => []);
+    const candidates: Array<{ filename: string; filePath: string; ref: string }> = [];
     for (const filename of entries) {
         if (filename.includes("/") || filename.includes("\\") || filename.includes("..")) continue;
         const filePath = path.join(dir, filename);
@@ -140,14 +163,45 @@ export async function cleanupOrphanProductAssets(): Promise<number> {
 
             const ref = `/uploads/products/${filename}`;
             if (referenced.has(ref)) continue;
-            if (await isReferencedByReport(ref)) continue;
+            candidates.push({ filename, filePath, ref });
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+                logger.warn("[ProductAssets] Orphan candidate check failed", {
+                    filename,
+                    error: String(error),
+                });
+            }
+        }
+    }
 
-            await unlink(filePath);
+    // 每 100 个候选做一次批量报告引用查询，避免 O(文件数 × 全表扫描)
+    const reportReferenced = new Set<string>();
+    const BATCH = 100;
+    for (let i = 0; i < candidates.length; i += BATCH) {
+        const chunk = candidates.slice(i, i + BATCH);
+        try {
+            const matches = await findReportReferencedRefs(chunk.map((item) => item.ref));
+            matches.forEach((ref) => reportReferenced.add(ref));
+        } catch (error) {
+            logger.warn("[ProductAssets] Batch report reference check failed", {
+                count: chunk.length,
+                error: String(error),
+            });
+            // 查询失败时保守处理：本轮不删除这批候选，避免误删仍被报告引用的图片
+            chunk.forEach((item) => reportReferenced.add(canonicalRef(item.ref)));
+        }
+    }
+
+    let deleted = 0;
+    for (const candidate of candidates) {
+        if (reportReferenced.has(canonicalRef(candidate.ref))) continue;
+        try {
+            await unlink(candidate.filePath);
             deleted++;
         } catch (error) {
             if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
                 logger.warn("[ProductAssets] Orphan cleanup failed", {
-                    filename,
+                    filename: candidate.filename,
                     error: String(error),
                 });
             }

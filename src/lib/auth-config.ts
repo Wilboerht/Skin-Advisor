@@ -59,7 +59,9 @@ export async function signRefreshToken(payload: Record<string, unknown>): Promis
         .setIssuer(getJwtIssuer())
         .setAudience("advisor-api")
         .setIssuedAt()
-        .setExpirationTime("30d");
+        .setExpirationTime("30d")
+        // jti 保证同一秒签发的 refresh token 也不同，避免数据库出现相同哈希的重复记录
+        .setJti(crypto.randomUUID());
     return token.sign(getJwtSecret());
 }
 

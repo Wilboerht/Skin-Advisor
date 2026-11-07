@@ -117,26 +117,33 @@ export async function POST(req: NextRequest) {
                 return "stale" as const;
             }
 
-            await tx.statusWebhookEvent.create({
-                data: { id: eventId, userId, eventAt, newStatus },
-            });
+            // 条件更新：只有 lastStatusEventAt 仍早于本次事件才生效，
+            // 并发 disable/restore 时不会用旧读值互相覆盖
+            const freshEvent = {
+                OR: [
+                    { lastStatusEventAt: null },
+                    { lastStatusEventAt: { lt: eventAt } },
+                ],
+            };
 
             if (isDisable) {
-                if (isDisabledUser(user.role)) {
-                    await tx.user.update({
-                        where: { id: userId },
-                        data: { lastStatusEventAt: eventAt },
-                    });
-                    return "disabled" as const;
-                }
-                await tx.user.update({
-                    where: { id: userId },
-                    data: {
-                        role: UserRole.DISABLED,
-                        previousRole: user.role,
-                        tokenVersion: { increment: 1 },
-                        lastStatusEventAt: eventAt,
-                    },
+                const applied = isDisabledUser(user.role)
+                    ? await tx.user.updateMany({
+                          where: { id: userId, ...freshEvent },
+                          data: { lastStatusEventAt: eventAt },
+                      })
+                    : await tx.user.updateMany({
+                          where: { id: userId, ...freshEvent },
+                          data: {
+                              role: UserRole.DISABLED,
+                              previousRole: user.role,
+                              tokenVersion: { increment: 1 },
+                              lastStatusEventAt: eventAt,
+                          },
+                      });
+                if (applied.count === 0) return "stale" as const;
+                await tx.statusWebhookEvent.create({
+                    data: { id: eventId, userId, eventAt, newStatus },
                 });
                 return "disabled" as const;
             }
@@ -146,13 +153,17 @@ export async function POST(req: NextRequest) {
                     ? user.previousRole
                     : UserRole.USER
                 : user.role;
-            await tx.user.update({
-                where: { id: userId },
+            const applied = await tx.user.updateMany({
+                where: { id: userId, ...freshEvent },
                 data: {
                     role: restoredRole,
                     previousRole: null,
                     lastStatusEventAt: eventAt,
                 },
+            });
+            if (applied.count === 0) return "stale" as const;
+            await tx.statusWebhookEvent.create({
+                data: { id: eventId, userId, eventAt, newStatus },
             });
             return "restored" as const;
         });
@@ -166,7 +177,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
     } catch (error) {
         if ((error as { code?: string })?.code === "P2002") {
-            if (isDisable) {
+            // 只处理“同一事件 ID 已记录”的幂等重试；不能因为任意 P2002 就撤销当前用户 token。
+            const existingEvent = await prisma.statusWebhookEvent.findUnique({
+                where: { id: eventId },
+                select: { userId: true, newStatus: true },
+            }).catch(() => null);
+            if (existingEvent?.userId === userId && existingEvent.newStatus === newStatus && isDisable) {
                 try {
                     await revokeAllLocalRefreshTokens(userId);
                 } catch (revokeError) {

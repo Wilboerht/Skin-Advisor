@@ -7,6 +7,7 @@ import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useModalBackClose } from "@/hooks/use-modal-back-close";
 
 /** 彩带配色：品牌金/可可/藏蓝 + 派系点缀色 */
 const CONFETTI_COLORS = ["#C9A86C", "#5c4937", "#00263E", "#E4A6B5", "#A8C6DF", "#E0A75E"];
@@ -77,7 +78,8 @@ interface GiftModalProps {
  */
 export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
   // 打开弹窗时锁定背景滚动（首页自身也有一把 iosSafe 锁，引用计数保证嵌套安全）
-  useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+    useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+    useModalBackClose(isOpen, onClose);
   // 焦点圈定 + Escape 关闭
   const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
 

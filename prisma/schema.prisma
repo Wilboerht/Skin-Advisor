@@ -74,12 +74,14 @@ model AdvisorSession {
   archivedAt      DateTime?
 
   // ===== 性能索引 =====
-  @@index([userId])              // JOIN User 加速
+  // userId 单列索引由 (userId, archivedAt, completedAt) 的前缀覆盖，无需重复
   @@index([createdAt])           // 时间范围查询加速
   @@index([expiresAt])           // 清理任务按过期时间过滤
   @@index([completedAt])         // 历史记录查询加速
   @@index([archivedAt])          // 归档任务过滤/历史接口排除归档行
+  @@index([completedAt, expiresAt]) // data-cleanup：完成时间 + 过期时间组合过滤
   @@index([userId, archivedAt, completedAt]) // 历史列表/趋势：userId + 排除归档 + 完成时间倒序
+  @@index([userId, createdAt])   // 每用户超量报告清理：userId + 创建时间
   @@index([ip, completedAt])     // 懒认领：未归属会话按 IP + 完成时间扫描
 }
 
@@ -250,7 +252,7 @@ model ConsentRecord {
 model RefreshToken {
   id        String   @id @default(cuid())
   userId    String
-  token     String   // SHA-256 哈希后的 refresh token JWT
+  token     String   @unique // SHA-256 哈希后的 refresh token JWT（唯一，防重复行）
   expiresAt DateTime
   revokedAt DateTime?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -258,7 +260,8 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   @@index([userId, revokedAt, expiresAt])
-  @@index([token])
+  @@index([expiresAt])
+  @@index([revokedAt])
 }
 
 // 测试次数记录
@@ -268,11 +271,19 @@ model TestRecord {
   guestId   String?  // 游客 (浏览器指纹)
   testDate  DateTime @default(now()) // 测试日期
   sessionId String?  @unique // 关联的会话ID
-  
+
+  // 预占租约：reserved = 已预占待分析；consumed = 分析成功已消费。
+  // leaseToken 用于回滚时精确匹配本次预占，防止请求 A 失败回滚误删请求 B 复用的记录。
+  status         String    @default("reserved")
+  leaseToken     String?
+  leaseExpiresAt DateTime?
+
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId, testDate])
   @@index([guestId, testDate])
+  @@index([testDate]) // data-cleanup：孤儿预占按测试时间清理
+  @@index([status, testDate]) // 只清理仍在 reserved 的孤儿预占
 }
 
 // 产品库
@@ -309,6 +320,7 @@ model Product {
 
   // Relations
   recommendationRules RecommendationRuleProduct[]
+  productFeedbacks    ProductFeedback[]
 
   // ===== 常用查询索引 =====
   @@index([category])
@@ -380,7 +392,6 @@ model AIUsageLog {
   @@index([createdAt])
   @@index([provider, model])
   @@index([sessionId])
-  @@index([userId])
   @@index([requestType, createdAt])
   @@index([userId, createdAt, success]) // AI 预算检查：按用户统计窗口内成功调用
 }
@@ -423,6 +434,7 @@ model ProductFeedback {
   note        String?  // 自由备注
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId, sessionId])
   @@index([productId])
@@ -445,7 +457,7 @@ model DiaryEntry {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, date])
-  @@index([userId])
+  // userId 单列索引由 (userId, date) 唯一索引的前缀覆盖
 }
 
 

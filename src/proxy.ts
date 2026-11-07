@@ -7,6 +7,7 @@ import { AUTH_COOKIE_NAME, AUTH_REFRESH_COOKIE_NAME, verifyToken, verifyRefreshT
 import { ACCESS_TOKEN_COOKIE } from "@/lib/sso-auth";
 import { SSO_INSECURE_LOCAL_DEV, getPublicOrigin } from "@/lib/sso-config";
 import { PUBLIC_PATHS } from "@/lib/public-paths";
+import { buildContentSecurityPolicy } from "@/lib/security-headers";
 
 /**
  * Next.js 全局 Proxy (formerly Middleware)
@@ -389,19 +390,9 @@ export async function proxy(request: NextRequest) {
     if (!response.headers.has("Content-Security-Policy")) {
         response.headers.set(
             "Content-Security-Policy",
-            [
-                "default-src 'self'",
-                "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com https://www.googletagmanager.com https://hm.baidu.com",
-                "style-src 'self' 'unsafe-inline'",
-                "img-src 'self' blob: data: https://nihplod.cn https://images.unsplash.com https://wp-cdn.4ce.cn https://*.alicdn.com https://*.aliyuncs.com https://*.qpic.cn https://*.myqcloud.com https://*.jd.com https://*.tmall.com https://*.taobao.com https://*.xiaohongshu.com https://*.douyincdn.com https://*.bilibili.com https://*.cdninstagram.com",
-                "font-src 'self'",
-                "connect-src 'self' data: https://nihplod.cn https://*.aliyuncs.com https://wp-cdn.4ce.cn https://images.unsplash.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://hm.baidu.com https://*.google-analytics.com https://*.analytics.google.com https://www.google.com",
-                "manifest-src 'self' https://nihplod.cn",
-                "frame-src 'self' https://nihplod.cn",
-                "frame-ancestors 'none'",
-                "base-uri 'self'",
-                "form-action 'self' https://nihplod.cn",
-            ].join("; ")
+            buildContentSecurityPolicy({
+                allowUnsafeEval: process.env.NODE_ENV !== "production",
+            })
         );
     }
 

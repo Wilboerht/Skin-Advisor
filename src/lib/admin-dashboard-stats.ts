@@ -64,10 +64,30 @@ function getSkinTypeColor(type: string): string {
     return colors[type] || "#6B7280";
 }
 
+const STATS_CACHE_TTL_MS = 30_000;
+let statsCache: { value: AdminDashboardStats; expiresAt: number } | null = null;
+let statsInflight: Promise<AdminDashboardStats> | null = null;
+
 /**
- * 子站管理端仪表盘统计（admin stats 路由与主站控制中台内部接口共用）
+ * 子站管理端仪表盘统计（admin stats 路由与主站控制中台内部接口共用）。
+ * 30 秒进程内缓存 + 并发防击穿，避免每次刷新都重复全表聚合。
  */
 export async function getAdvisorDashboardStats(): Promise<AdminDashboardStats> {
+    if (statsCache && statsCache.expiresAt > Date.now()) return statsCache.value;
+    if (!statsInflight) {
+        statsInflight = loadAdvisorDashboardStats()
+            .then((value) => {
+                statsCache = { value, expiresAt: Date.now() + STATS_CACHE_TTL_MS };
+                return value;
+            })
+            .finally(() => {
+                statsInflight = null;
+            });
+    }
+    return statsInflight;
+}
+
+async function loadAdvisorDashboardStats(): Promise<AdminDashboardStats> {
     const [totalUsers, totalProducts, totalSessions, completedSessions] = await Promise.all([
         prisma.user.count(),
         prisma.product.count(),
@@ -122,21 +142,31 @@ export async function getAdvisorDashboardStats(): Promise<AdminDashboardStats> {
     }));
 
     const timezone = "Asia/Shanghai";
-    const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const todayStart = startOfTodayShanghai();
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    // 最近 7 个北京时间自然日（含今天），而不是“now - 7*24h”导致的 8 天窗口
+    const weekStart = new Date(todayStart.getTime() - 6 * DAY_MS);
 
     let weeklyRaw: Array<{ day: string; started: bigint; completed: bigint }> = [];
     try {
         weeklyRaw = await prisma.$queryRaw<
             Array<{ day: string; started: bigint; completed: bigint }>
         >`
-            SELECT
-                TO_CHAR("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone}, 'YYYY-MM-DD') as day,
-                COUNT(*) as started,
-                COUNT("completedAt") as completed
-            FROM "AdvisorSession"
-            WHERE "createdAt" >= ${weekAgo}
-            GROUP BY 1
+            SELECT day, SUM(started)::bigint AS started, SUM(completed)::bigint AS completed
+            FROM (
+                SELECT
+                    TO_CHAR("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone}, 'YYYY-MM-DD') AS day,
+                    1 AS started, 0 AS completed
+                FROM "AdvisorSession"
+                WHERE "createdAt" >= ${weekStart}
+                UNION ALL
+                SELECT
+                    TO_CHAR("completedAt" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone}, 'YYYY-MM-DD') AS day,
+                    0 AS started, 1 AS completed
+                FROM "AdvisorSession"
+                WHERE "completedAt" >= ${weekStart}
+            ) t
+            GROUP BY day
             ORDER BY day
         `;
     } catch (error) {
@@ -147,34 +177,23 @@ export async function getAdvisorDashboardStats(): Promise<AdminDashboardStats> {
     }
 
     const weeklyData: Record<string, { started: number; completed: number }> = {};
-    const getShanghaiDayName = (dateInput: Date | string) => {
-        const date =
-            typeof dateInput === "string" ? new Date(dateInput + "T12:00:00+08:00") : dateInput;
-        return date.toLocaleDateString("en-US", { timeZone: timezone, weekday: "short" });
-    };
-
-    for (let i = 6; i >= 0; i--) {
-        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        weeklyData[getShanghaiDayName(date)] = { started: 0, completed: 0 };
-    }
-
     for (const row of weeklyRaw) {
-        const dayName = getShanghaiDayName(row.day);
-        if (weeklyData[dayName]) {
-            weeklyData[dayName].started = Number(row.started);
-            weeklyData[dayName].completed = Number(row.completed);
-        }
+        weeklyData[row.day] = {
+            started: Number(row.started),
+            completed: Number(row.completed),
+        };
     }
 
-    const weeklyGrowth: AdminWeeklyGrowthItem[] = Object.entries(weeklyData).map(
-        ([day, data]) => ({
-            day,
+    const weeklyGrowth: AdminWeeklyGrowthItem[] = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(todayStart.getTime() - (6 - index) * DAY_MS);
+        const key = date.toLocaleDateString("en-CA", { timeZone: timezone });
+        const data = weeklyData[key] ?? { started: 0, completed: 0 };
+        return {
+            day: date.toLocaleDateString("en-US", { timeZone: timezone, weekday: "short" }),
             started: data.started,
             completed: data.completed,
-        })
-    );
-
-    const todayStart = startOfTodayShanghai();
+        };
+    });
     const [todaySessions, todayCompletions] = await Promise.all([
         prisma.advisorSession.count({ where: { createdAt: { gte: todayStart } } }),
         prisma.advisorSession.count({ where: { completedAt: { gte: todayStart } } }),

@@ -17,6 +17,7 @@ import { UserRole, isDisabledUser } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 import { isMainUserActive } from "@/lib/main-user-status";
 import prisma from "@/lib/prisma";
+import { mergeUserByPhone } from "@/lib/user-merge";
 import type { SessionUser } from "@/lib/auth";
 
 const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn";
@@ -544,21 +545,23 @@ export async function upsertLocalUser(
         tokenVersion: true,
     } as const;
 
+    const updateData = {
+        phoneNumber: phone,
+        // 仅在本次拿到昵称时覆盖，避免无 profile 的调用（getSessionUser）洗掉已有昵称
+        ...(nickname ? { name: nickname } : {}),
+        ...(avatarUrl ? { avatarUrl } : {}),
+        ...(membershipLevel ? { membershipLevel } : {}),
+        ...(totalSpent !== undefined ? { totalSpent } : {}),
+        // gender 三态：undefined 不动；null 清除；male/female 设定（见 SsoProfileClaims）
+        ...(profile?.gender !== undefined ? { gender: profile.gender } : {}),
+        // userinfo 回源成功时由调用方传入当前时间，标记资料已同步（/api/auth/me 据此做 6 小时强制刷新）
+        ...(options?.profileSyncedAt ? { profileSyncedAt: options.profileSyncedAt } : {}),
+    };
+
     try {
         return await prisma.user.upsert({
             where: { id: payload.sub },
-            update: {
-                phoneNumber: phone,
-                // 仅在本次拿到昵称时覆盖，避免无 profile 的调用（getSessionUser）洗掉已有昵称
-                ...(nickname ? { name: nickname } : {}),
-                ...(avatarUrl ? { avatarUrl } : {}),
-                ...(membershipLevel ? { membershipLevel } : {}),
-                ...(totalSpent !== undefined ? { totalSpent } : {}),
-                // gender 三态：undefined 不动；null 清除；male/female 设定（见 SsoProfileClaims）
-                ...(profile?.gender !== undefined ? { gender: profile.gender } : {}),
-                // userinfo 回源成功时由调用方传入当前时间，标记资料已同步（/api/auth/me 据此做 6 小时强制刷新）
-                ...(options?.profileSyncedAt ? { profileSyncedAt: options.profileSyncedAt } : {}),
-            },
+            update: updateData,
             create: {
                 id: payload.sub,
                 phoneNumber: phone || null,
@@ -575,11 +578,52 @@ export async function upsertLocalUser(
             select,
         });
     } catch (err) {
-        // P2002 唯一键冲突：并发首登时两个请求同时走 create 分支，只有一个成功；
-        // 冲突方重读已存在的记录返回即可（重读不到说明是其他唯一键问题，继续抛）
+        // P2002 唯一键冲突：并发首登或手机号已被其他本地账号占用
         if ((err as { code?: string })?.code === "P2002") {
             const existing = await prisma.user.findUnique({ where: { id: payload.sub }, select });
-            if (existing) return existing;
+            if (existing) {
+                // 目标账号已存在：去掉会冲突的 phoneNumber 重试一次，保留昵称/会员/头像等资料
+                if (phone) {
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { phoneNumber: _phone, ...withoutPhone } = updateData;
+                    try {
+                        return await prisma.user.update({
+                            where: { id: payload.sub },
+                            data: withoutPhone,
+                            select,
+                        });
+                    } catch {
+                        return existing;
+                    }
+                }
+                return existing;
+            }
+
+            // 目标账号不存在但手机号被旧账号占用：创建不含手机号的目标账号，
+            // 合并旧账号业务数据后再写入手机号（与微信登录同口径）
+            if (phone) {
+                await prisma.user.create({
+                    data: {
+                        id: payload.sub,
+                        phoneNumber: null,
+                        name: nickname || "",
+                        avatarUrl: avatarUrl || null,
+                        membershipLevel: membershipLevel || null,
+                        totalSpent: totalSpent ?? 0,
+                        gender: profile?.gender ?? null,
+                        profileSyncedAt: options?.profileSyncedAt ?? null,
+                        password: null,
+                        role: UserRole.USER,
+                        tokenVersion: 0,
+                    },
+                });
+                await mergeUserByPhone(payload.sub, phone);
+                return await prisma.user.update({
+                    where: { id: payload.sub },
+                    data: updateData,
+                    select,
+                });
+            }
         }
         throw err;
     }

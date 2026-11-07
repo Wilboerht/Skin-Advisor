@@ -27,7 +27,7 @@ import { matchCharacterIP } from "@/lib/result-utils";
 import { isCompletedAnalysisResult } from "@/lib/analysis-result";
 import { getEnvContextFromLocation } from "@/lib/weather-context";
 
-import { checkUsageLimit, reserveUsage, rollbackUsage, GUEST_REQUIRE_LOGIN_MESSAGE, type ReserveUsageResult } from "@/lib/usage-limit";
+import { checkUsageLimit, markUsageConsumed, renewUsageLease, reserveUsage, rollbackUsage, GUEST_REQUIRE_LOGIN_MESSAGE, type ReserveUsageResult } from "@/lib/usage-limit";
 import { aiLogger, logger } from "@/lib/logger";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import DOMPurify from 'isomorphic-dompurify';
@@ -345,6 +345,9 @@ export async function POST(request: NextRequest) {
     let reservedResult: ReserveUsageResult | null = null;
     // 预占归属用户：回滚时不依赖会话仍然有效，避免留下孤儿 TestRecord
     let reservationUserId: string | undefined;
+    // 复用 face-analyze 预占时，等本请求真正 claim 成功后再续租，
+    // 避免输掉 claim 的请求把赢家的 rollback token 提前作废
+    let needsPriorLeaseRenewal = false;
 
     try {
         // 1. 解析请求体（带 guard，malformed JSON 返回 400 而非 500）
@@ -519,9 +522,16 @@ export async function POST(request: NextRequest) {
 
         if (!isFreeRetryAllowed) {
             if (hasPriorReservation) {
-                // 复用 face-analyze 的既有预占（等价 alreadyReserved）：
-                // 不再重复计数，且本请求任何失败路径都不得回滚这条他人创建的预占
-                reservedResult = { success: true, role: "member", alreadyReserved: true };
+                // 复用 face-analyze 的既有预占；续租延后到本请求 claim 成功之后，
+                // 避免并发请求在输掉 claim 时提前使赢家的 rollback token 失效。
+                reservedResult = {
+                    success: true,
+                    role: "member",
+                    alreadyReserved: true,
+                    userId: user!.id,
+                };
+                reservationUserId = user!.id;
+                needsPriorLeaseRenewal = true;
             } else {
                 const reserved = await reserveUsage(request, effectiveSessionId);
                 if (!reserved.success) {
@@ -654,8 +664,15 @@ export async function POST(request: NextRequest) {
                     sessionId: effectiveSessionId,
                     analysisStartedAt: null,
                     ...(isFreeRetryAllowed ? {} : { completedAt: null }),
-                    // 视觉分析进行中时不允许文本 claim；已完成（有 face）或未开始则允许
                     AND: [
+                        // 会话归属：本人会话，或同 IP 哈希的未归属游客会话；
+                        // 不能仅凭 sessionId 把他人未归属会话写到自己账号下
+                        {
+                            OR: user?.id
+                                ? [{ userId: user.id }, { userId: null, ip: ipHash }]
+                                : [{ userId: null, ip: ipHash }],
+                        },
+                        // 视觉分析进行中时不参与文本 claim（若已 face 完成可继续）
                         { OR: [{ faceScanCompletedAt: { not: null } }, { faceScanStartedAt: null }] },
                     ],
                 },
@@ -694,7 +711,7 @@ export async function POST(request: NextRequest) {
         if (lockResult.status === 'forbidden') {
             // 竞态窗口内完成的会话不属于当前请求者：退还本次预占并返回 404（不暴露会话存在性）
             if (reservedResult && !reservedResult.alreadyReserved) {
-                await rollbackUsage(request, effectiveSessionId, reservationUserId);
+                await rollbackUsage(request, effectiveSessionId, reservationUserId, reservedResult?.leaseToken);
             }
             return apiError(ErrorCode.NOT_FOUND, "报告不存在或无权访问", 404);
         }
@@ -704,7 +721,7 @@ export async function POST(request: NextRequest) {
             // 返回缓存时退还本次预占：仅当本请求实际新增了计数时才回滚
             //（P2002 幂等命中时 alreadyReserved=true，回滚会误删其他请求的预占）
             if (reservedResult && !reservedResult.alreadyReserved) {
-                await rollbackUsage(request, effectiveSessionId, reservationUserId);
+                await rollbackUsage(request, effectiveSessionId, reservationUserId, reservedResult?.leaseToken);
             }
             console.log(`[analyze] Returning cached result after lock for session ${effectiveSessionId}`);
             return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
@@ -729,6 +746,38 @@ export async function POST(request: NextRequest) {
 
         if (lockResult.status !== 'started') {
             return apiError(ErrorCode.INTERNAL_ERROR, "分析状态异常，请重试", 500);
+        }
+
+        // 本请求已成功 claim，才续租既有预占：使先前请求的 rollback token 失效，
+        // 同时不误伤仍在正常执行的赢家。
+        if (needsPriorLeaseRenewal && user && reservedResult) {
+            const renewed = await renewUsageLease(effectiveSessionId, user.id);
+            if (renewed.success) {
+                if (renewed.leaseToken) {
+                    reservedResult = { ...reservedResult, leaseToken: renewed.leaseToken };
+                }
+            } else {
+                // 预占在 claim 前被原请求回滚/清理：重新走一次原子预占，
+                // 否则本请求会在没有任何 TestRecord 的情况下跑 AI（少计额度）。
+                const reReserved = await reserveUsage(request, effectiveSessionId);
+                if (!reReserved.success) {
+                    await clearAnalysisStartedAt(effectiveSessionId);
+                    if (reReserved.requireLogin) {
+                        return NextResponse.json(
+                            { success: false, error: { code: ErrorCode.UNAUTHORIZED, message: reReserved.error }, requireLogin: true },
+                            { status: 401 }
+                        );
+                    }
+                    if (reReserved.forbidden) {
+                        return apiError(ErrorCode.NOT_FOUND, reReserved.error || "报告会话不存在或无权访问", 404);
+                    }
+                    const response = apiError(ErrorCode.RATE_LIMITED, reReserved.error || "您已达到今日测试上限", 429);
+                    Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
+                    return response;
+                }
+                reservedResult = reReserved;
+                reservationUserId = reReserved.userId ?? user.id;
+            }
         }
 
         // 只使用 /face-analyze 服务端持久化的结果；客户端 faceAnalysis 已不再读取。
@@ -939,7 +988,7 @@ export async function POST(request: NextRequest) {
                         hasSuccessfulTextAnalysis(effectiveSessionId),
                     ]);
                     if (reservedResult && !reservedResult.alreadyReserved && !visionConsumed && !textConsumed) {
-                        await rollbackUsage(request, effectiveSessionId, reservationUserId);
+                        await rollbackUsage(request, effectiveSessionId, reservationUserId, reservedResult?.leaseToken);
                     }
                     await clearAnalysisStartedAt(effectiveSessionId);
                     const response = apiError(ErrorCode.AI_SERVICE_ERROR, "报告生成超时，请点击重试", 503);
@@ -953,7 +1002,7 @@ export async function POST(request: NextRequest) {
                 const isQueueOnlyCancel = err.message === "Request cancelled during queue wait.";
                 if (isQueueOnlyCancel) {
                     if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                        await rollbackUsage(request, effectiveSessionId, reservationUserId);
+                        await rollbackUsage(request, effectiveSessionId, reservationUserId, reservedResult?.leaseToken);
                     }
                 }
                 await clearAnalysisStartedAt(effectiveSessionId);
@@ -963,7 +1012,7 @@ export async function POST(request: NextRequest) {
                 // 单用户日限：用户侧限额（429 + 明确原因），不回退为"服务暂不可用"的平台口径
                 aiLogger.warn("User daily AI limit reached", { error: err.message });
                 if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                    await rollbackUsage(request, effectiveSessionId, reservationUserId);
+                    await rollbackUsage(request, effectiveSessionId, reservationUserId, reservedResult?.leaseToken);
                 }
                 await clearAnalysisStartedAt(effectiveSessionId);
                 const msg = err.message.replace("[AIUserLimit]", "").trim() || "今日分析次数已达上限";
@@ -972,7 +1021,7 @@ export async function POST(request: NextRequest) {
             if (err.message?.includes("[AIBudget]")) {
                 aiLogger.warn("AI budget exceeded, rejecting request", { error: err.message });
                 if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                    await rollbackUsage(request, effectiveSessionId, reservationUserId);
+                    await rollbackUsage(request, effectiveSessionId, reservationUserId, reservedResult?.leaseToken);
                 }
                 await clearAnalysisStartedAt(effectiveSessionId);
                 const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
@@ -982,7 +1031,7 @@ export async function POST(request: NextRequest) {
             if (err.message?.includes("[CircuitBreaker]")) {
                 aiLogger.warn("Circuit breaker open, rejecting request", { error: err.message });
                 if (reservedResult && !reservedResult.alreadyReserved && !(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
-                    await rollbackUsage(request, effectiveSessionId, reservationUserId);
+                    await rollbackUsage(request, effectiveSessionId, reservationUserId, reservedResult?.leaseToken);
                 }
                 await clearAnalysisStartedAt(effectiveSessionId);
                 const response = apiError("AI_CIRCUIT_OPEN", "服务暂不可用，请稍后重试", 503);
@@ -1011,7 +1060,7 @@ export async function POST(request: NextRequest) {
                 hasSuccessfulTextAnalysis(effectiveSessionId),
             ]);
             if (reservedResult && !reservedResult.alreadyReserved && !visionConsumed && !textConsumed) {
-                await rollbackUsage(request, effectiveSessionId, reservationUserId);
+                await rollbackUsage(request, effectiveSessionId, reservationUserId, reservedResult?.leaseToken);
             }
             await clearAnalysisStartedAt(effectiveSessionId);
             const response = apiError(ErrorCode.AI_SERVICE_ERROR, "报告生成失败，请点击重试（不会额外消耗次数）", 503);
@@ -1148,8 +1197,8 @@ export async function POST(request: NextRequest) {
             // 报告保留 90 天（游客已被前置 401 拦截，此处仅登录用户可达；TS 兜底同样按 90 天）
             const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
 
-            // 持久化拆两步：先写结果，再写 completedAt。
-            // 结果写成功即视为报告可恢复；completedAt 失败不应让 ghost analysis 重跑 AI。
+            // 结果与 completedAt 同一次 update 原子写入：避免“结果已保存但 completedAt
+            // 失败”的幽灵报告（用户历史/趋势/百分位查不到，且永不进入归档）。
             const existingSession = await prisma.advisorSession.findUnique({
                 where: { sessionId: effectiveSessionId },
                 select: { analysisResult: true },
@@ -1169,8 +1218,13 @@ export async function POST(request: NextRequest) {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: mergedResult as any,
                             analysisSource: faceAnalysis ? "hybrid" : "text",
-                            // 报告结果已落库，立即释放分析中标记；completedAt 稍后补
                             analysisStartedAt: null,
+                            completedAt: new Date(),
+                            expiresAt,
+                            province: geoLocation?.region,
+                            city: geoLocation?.city,
+                            userAgent,
+                            ...parseUserAgent(userAgent),
                         },
                     });
                 });
@@ -1182,21 +1236,9 @@ export async function POST(request: NextRequest) {
                 return response;
             }
 
-            // completedAt 仅用于展示/排序/统计；失败时结果仍可按 analysisResult 读取。
-            try {
-                await prisma.advisorSession.update({
-                    where: { sessionId: effectiveSessionId },
-                    data: {
-                        completedAt: new Date(),
-                        expiresAt,
-                        province: geoLocation?.region,
-                        city: geoLocation?.city,
-                        userAgent,
-                        ...parseUserAgent(userAgent),
-                    },
-                });
-            } catch (completeErr) {
-                logger.error("Failed to set completedAt (analysisResult already saved):", completeErr);
+            // 分析成功落库：把预占标记为 consumed，后续失败路径不得再回滚本次额度
+            if (user?.id && reservedResult) {
+                await markUsageConsumed(effectiveSessionId, user.id, reservedResult.leaseToken);
             }
 
             // ====== 护肤日记自动生成：测肤完成后写入/更新当日条目 ======
@@ -1247,7 +1289,7 @@ export async function POST(request: NextRequest) {
                         hasSuccessfulTextAnalysis(effectiveSessionId),
                     ]);
                     if (!visionConsumed && !textConsumed) {
-                        await rollbackUsage(request, effectiveSessionId, reservationUserId);
+                        await rollbackUsage(request, effectiveSessionId, reservationUserId, reservedResult?.leaseToken);
                     }
                 } catch (rollbackError) {
                     logger.warn("[analyze] Failed to check/rollback reservation after unexpected error", {

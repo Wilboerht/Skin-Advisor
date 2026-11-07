@@ -55,14 +55,17 @@ export default function AdminSidebar() {
     }, [pathname]);
 
     useEffect(() => {
+        // 只在挂载时拉取一次：导航不应重复请求 /api/admin/auth/me
+        const controller = new AbortController();
         // adminFetch 统一拦截 401：会话过期时自动跳转 /admin/login
-        adminFetch("/api/admin/auth/me")
+        adminFetch("/api/admin/auth/me", { signal: controller.signal })
             .then((res) => (res.ok ? res.json() : null))
             .then((data: { user?: AdminMe } | null) => {
                 if (data?.user) setAdmin(data.user);
             })
             .catch(() => {});
-    }, [pathname]);
+        return () => controller.abort();
+    }, []);
 
     // 管理员账号统一由主站管理，子站不再提供管理员管理入口
     const menuItems = BASE_MENU_ITEMS;

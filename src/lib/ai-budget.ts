@@ -53,8 +53,8 @@ interface ModelPricing {
 
 const DEFAULT_PRICING: ModelPricing = { input: 0.1, output: 0.3 };
 
-// TODO: 价格表当前硬编码在代码中。后续应迁移到数据库/环境变量配置，
-// 以便运营人员在模型价格调整或新增 provider 时无需发版。
+// 代码内保留一份兜底价格表；生产可通过 AI_PRICING_JSON 覆盖/追加，
+// 运营调整价格或新增模型时无需发版。
 const PRICING_TABLE: Record<string, Partial<Record<string, ModelPricing>>> = {
     qwen: {
         "qwen-turbo": { input: 0.0005, output: 0.002 },
@@ -75,6 +75,46 @@ const PRICING_TABLE: Record<string, Partial<Record<string, ModelPricing>>> = {
         "deepseek-vl": { input: 0.005, output: 0.005 },
     },
 };
+
+let pricingTableCache: Record<string, Partial<Record<string, ModelPricing>>> | null = null;
+
+/**
+ * 合并 AI_PRICING_JSON（可选）：
+ * {"qwen":{"qwen-plus":{"input":0.004,"output":0.012}}}
+ */
+function getPricingTable(): Record<string, Partial<Record<string, ModelPricing>>> {
+    if (pricingTableCache) return pricingTableCache;
+    const merged: Record<string, Partial<Record<string, ModelPricing>>> = {};
+    for (const [provider, models] of Object.entries(PRICING_TABLE)) {
+        merged[provider] = { ...models };
+    }
+    const raw = process.env.AI_PRICING_JSON;
+    if (raw) {
+        try {
+            const parsed = JSON.parse(raw) as Record<string, Record<string, Partial<ModelPricing>>>;
+            for (const [provider, models] of Object.entries(parsed)) {
+                const target = (merged[provider] ||= {});
+                for (const [model, pricing] of Object.entries(models)) {
+                    // 只接受完整的 input/output 数值，避免部分覆盖产生 NaN 费用
+                    if (
+                        typeof pricing?.input === "number" &&
+                        Number.isFinite(pricing.input) &&
+                        typeof pricing?.output === "number" &&
+                        Number.isFinite(pricing.output)
+                    ) {
+                        target[model] = { input: pricing.input, output: pricing.output };
+                    } else {
+                        aiLogger.warn("[AIBudget] AI_PRICING_JSON 忽略非法条目", { provider, model });
+                    }
+                }
+            }
+        } catch {
+            aiLogger.warn("[AIBudget] AI_PRICING_JSON 解析失败，使用内置价格表");
+        }
+    }
+    pricingTableCache = merged;
+    return merged;
+}
 
 /**
  * 判断当前北京时间是否在 DeepSeek 高峰定价时段
@@ -100,7 +140,7 @@ export function estimateAICost(
 ): number {
     const normalizedProvider = provider.toLowerCase();
     const normalizedModel = model.toLowerCase();
-    const providerTable = PRICING_TABLE[normalizedProvider] || {};
+    const providerTable = getPricingTable()[normalizedProvider] || {};
     const pricing = providerTable[normalizedModel] || DEFAULT_PRICING;
 
     const inputCost = (promptTokens / 1000) * pricing.input;
@@ -142,9 +182,18 @@ function getMonthBounds(date = new Date()) {
     return { start, end };
 }
 
-async function getUsageStats(
-    requestType?: AIRequestType
-): Promise<{ dailyTokens: number; dailyCost: number; monthlyTokens: number; monthlyCost: number }> {
+interface UsageStats {
+    dailyTokens: number;
+    dailyCost: number;
+    monthlyTokens: number;
+    monthlyCost: number;
+}
+
+const USAGE_STATS_TTL_MS = 3_000;
+const usageStatsCache = new Map<string, { value: UsageStats; expiresAt: number }>();
+const usageStatsInflight = new Map<string, Promise<UsageStats>>();
+
+async function loadUsageStats(requestType?: AIRequestType): Promise<UsageStats> {
     const day = getDayBounds();
     const month = getMonthBounds();
 
@@ -173,6 +222,47 @@ async function getUsageStats(
         monthlyTokens: monthlyAgg._sum.totalTokens || 0,
         monthlyCost: monthlyAgg._sum.estimatedCost || 0,
     };
+}
+
+/**
+ * 预算统计短 TTL 缓存（3s）+ 并发防击穿：
+ * 高频 AI 调用时避免每次都打两条聚合查询；3s 内的少量滞后由 pending 预留兜底。
+ */
+async function getUsageStats(requestType?: AIRequestType): Promise<UsageStats> {
+    const key = requestType ?? "all";
+    const cached = usageStatsCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+    const inflight = usageStatsInflight.get(key);
+    if (inflight) return inflight;
+
+    const task = loadUsageStats(requestType)
+        .then((value) => {
+            usageStatsCache.set(key, { value, expiresAt: Date.now() + USAGE_STATS_TTL_MS });
+            return value;
+        })
+        .finally(() => {
+            usageStatsInflight.delete(key);
+        });
+    usageStatsInflight.set(key, task);
+    return task;
+}
+
+/** 进程内串行化预算检查与预留，关闭 check-then-act 并发窗口 */
+let budgetCheckMutex: Promise<void> = Promise.resolve();
+
+async function withBudgetCheckLock<T>(fn: () => Promise<T>): Promise<T> {
+    const previous = budgetCheckMutex;
+    let release!: () => void;
+    budgetCheckMutex = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    await previous;
+    try {
+        return await fn();
+    } finally {
+        release();
+    }
 }
 
 // ============================================================================
@@ -245,56 +335,57 @@ export async function checkAIBudget(
         return { allowed: true, dailyTokens: 0, dailyCost: 0, monthlyTokens: 0, monthlyCost: 0 };
     }
 
-    const budget = getBudgetConfig();
-    // 预算阈值是全局口径：文本 + 视觉一起统计，避免两者各自花满一份预算。
-    const stats = await getUsageStats();
-    const pendingCost = getTotalPendingReservationCost();
+    return withBudgetCheckLock(async () => {
+        const budget = getBudgetConfig();
+        // 预算阈值是全局口径：文本 + 视觉一起统计，避免两者各自花满一份预算。
+        const stats = await getUsageStats();
+        const pendingCost = getTotalPendingReservationCost();
 
-    // 实际用量 = 已入库用量 + 在途预留
-    const effectiveDailyCost = stats.dailyCost + pendingCost;
-    const effectiveMonthlyCost = stats.monthlyCost + pendingCost;
+        // 实际用量 = 已入库用量 + 在途预留
+        const effectiveDailyCost = stats.dailyCost + pendingCost;
+        const effectiveMonthlyCost = stats.monthlyCost + pendingCost;
 
-    // 单用户每日 AI 调用硬上限（防止单用户无限刷额度）
-    if (userId) {
-        const userLimitCheck = await checkUserAILimit(userId);
-        if (!userLimitCheck.allowed) {
-            return {
-                allowed: false,
-                reason: userLimitCheck.reason,
-                userLimited: true,
-                ...stats,
-            };
+        // 单用户每日 AI 调用硬上限（防止单用户无限刷额度）
+        if (userId) {
+            const userLimitCheck = await checkUserAILimit(userId);
+            if (!userLimitCheck.allowed) {
+                return {
+                    allowed: false,
+                    reason: userLimitCheck.reason,
+                    userLimited: true,
+                    ...stats,
+                };
+            }
         }
-    }
 
-    if (budget.dailyTokenBudget && stats.dailyTokens >= budget.dailyTokenBudget) {
-        return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
-    }
-    if (budget.dailyCostBudget && effectiveDailyCost >= budget.dailyCostBudget) {
-        return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
-    }
-    if (budget.monthlyTokenBudget && stats.monthlyTokens >= budget.monthlyTokenBudget) {
-        return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
-    }
-    if (budget.monthlyCostBudget && effectiveMonthlyCost >= budget.monthlyCostBudget) {
-        return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
-    }
+        if (budget.dailyTokenBudget && stats.dailyTokens >= budget.dailyTokenBudget) {
+            return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
+        }
+        if (budget.dailyCostBudget && effectiveDailyCost >= budget.dailyCostBudget) {
+            return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
+        }
+        if (budget.monthlyTokenBudget && stats.monthlyTokens >= budget.monthlyTokenBudget) {
+            return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
+        }
+        if (budget.monthlyCostBudget && effectiveMonthlyCost >= budget.monthlyCostBudget) {
+            return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
+        }
 
-    // 预留预估成本作为在途开销，防止并发请求同时通过预算检查
-    // 默认: text=¥0.10, vision=¥0.30（基于 qwen-plus/qwen-vl-max 单次调用上限估算）
-    const effectiveEstimatedCost = estimatedCost ?? (requestType === "vision" ? 0.30 : 0.10);
+        // 预留预估成本作为在途开销，防止并发请求同时通过预算检查
+        // 默认: text=¥0.10, vision=¥0.30（基于 qwen-plus/qwen-vl-max 单次调用上限估算）
+        const effectiveEstimatedCost = estimatedCost ?? (requestType === "vision" ? 0.30 : 0.10);
 
-    // TOCTOU 防护：用当前调用成本 + 在途预留 做二次校验，关小并发绕过窗口
-    // 8 个并发槽位 × ¥0.30 = ¥2.40 理论最大超支，二次校验将其压缩到 ~¥0.30
-    if (budget.dailyCostBudget && effectiveDailyCost + effectiveEstimatedCost > budget.dailyCostBudget * 1.05) {
-        return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
-    }
+        // 二次校验：当前调用成本 + 在途预留（锁内执行，并发窗口已关闭）
+        if (budget.dailyCostBudget && effectiveDailyCost + effectiveEstimatedCost > budget.dailyCostBudget * 1.05) {
+            return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
+        }
 
-    if (requestType) {
-        addPendingReservation(requestType, effectiveEstimatedCost);
-    }
+        if (requestType) {
+            addPendingReservation(requestType, effectiveEstimatedCost);
+        }
 
-    return { allowed: true, ...stats };
+        return { allowed: true, ...stats };
+    });
 }
 
 // ============================================================================

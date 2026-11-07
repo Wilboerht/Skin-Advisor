@@ -46,23 +46,20 @@ openssl rand -base64 32
 - `CRON_SECRET`
 - `IP_HASH_SALT`
 - `ADMIN_SECRET`
-- `SETUP_SECRET`
 - `INTERNAL_API_SECRET`
 - `POSTGRES_PASSWORD`
-- `ADMIN_INITIAL_PASSWORD`（首次 setup 后立即移除）
 
 ### 2.2 运行生产准备脚本
 ```bash
-node scripts/prepare-production.js && next build
+node scripts/prepare-production.js && npm run build
 ```
 脚本会校验上述 secret 不是占位值、PostgreSQL 密码强度、至少配置了一个 AI Key。
 
 ### 2.3 数据库结构同步
 生产环境使用 PostgreSQL 时执行：
 ```bash
-npx prisma db push
-# 或迁移方式：
-# npx prisma migrate dev --name add_ai_usage_log
+npx prisma migrate deploy
+# 禁止在生产环境使用 prisma db push / migrate dev（会绕过迁移历史，可能破坏数据）
 ```
 
 ### 2.4 密钥存储方式升级（建议）

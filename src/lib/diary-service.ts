@@ -91,13 +91,19 @@ export function normalizeDiaryPageSize(raw?: string | null): number {
 /** 里程碑统计（summary=1 或 archive 聚合内复用） */
 export async function getDiarySummary(userId: string, filter: DiaryQueryFilter = {}): Promise<DiarySummary> {
     const where = buildDiaryWhere(userId, filter);
-    const [rows, testCount] = await Promise.all([
+    const hasDateFilter = !!(filter.month || filter.before);
+    const [rows, streakRows, testCount] = await Promise.all([
         prisma.diaryEntry.findMany({ where, select: { date: true }, orderBy: { date: "desc" } }),
+        // 连续天数始终基于全量历史：月份筛选只影响 totalCheckins，不应截断里程碑
+        hasDateFilter
+            ? prisma.diaryEntry.findMany({ where: { userId }, select: { date: true }, orderBy: { date: "desc" } })
+            : Promise.resolve(null),
+        // 累计测肤次数：归档只影响报告可见性，不应让里程碑回退
         prisma.advisorSession.count({
-            where: { userId, completedAt: { not: null }, archivedAt: null },
+            where: { userId, completedAt: { not: null } },
         }),
     ]);
-    const { current, longest } = computeStreak(rows.map((r) => r.date));
+    const { current, longest } = computeStreak((streakRows ?? rows).map((r) => r.date));
     return {
         totalCheckins: rows.length,
         currentStreak: current,
@@ -121,8 +127,9 @@ export async function getDiaryArchive(
         prisma.diaryEntry.findMany({ where, orderBy: { date: "desc" }, take: limit, select: ENTRY_SELECT }),
         prisma.diaryEntry.count({ where }),
         prisma.diaryEntry.findMany({ where: { userId }, select: { date: true }, orderBy: { date: "desc" } }),
+        // 累计测肤次数：归档只影响报告可见性，不应让里程碑回退
         prisma.advisorSession.count({
-            where: { userId, completedAt: { not: null }, archivedAt: null },
+            where: { userId, completedAt: { not: null } },
         }),
     ]);
     const { current, longest } = computeStreak(streakRows.map((r) => r.date));
@@ -166,7 +173,17 @@ export async function getDiaryList(
     ]);
     return {
         entries,
-        pagination: { total, offset, limit, hasMore: offset + entries.length < total },
+        pagination: {
+            total,
+            offset,
+            limit,
+            // 游标模式不能再用 offset 计算；月份模式一次返回全月
+            hasMore: params.month
+                ? false
+                : params.before
+                  ? entries.length === limit
+                  : offset + entries.length < total,
+        },
     };
 }
 

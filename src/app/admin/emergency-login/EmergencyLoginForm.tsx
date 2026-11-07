@@ -30,6 +30,8 @@ export function EmergencyLoginForm() {
                 setError(data?.error || "登录失败");
                 return;
             }
+            // 整页导航以便服务端读取新设置的 Cookie
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination
             window.location.href = "/admin";
         } catch {
             setError("网络异常，请稍后重试");

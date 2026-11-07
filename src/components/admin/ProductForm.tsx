@@ -237,7 +237,8 @@ export default function ProductForm({
     const router = useRouter();
     const toast = useToast();
     const [saving, setSaving] = useState(false);
-    const [uploading, setUploading] = useState(false);
+    const [uploadingCount, setUploadingCount] = useState(0);
+    const uploading = uploadingCount > 0;
     const [errors, setErrors] = useState<FormErrors>({});
     const [dragOver, setDragOver] = useState(false);
     const isSynced = Boolean(initialData?.sourceProductId);
@@ -364,7 +365,7 @@ export default function ProductForm({
             toast.error("图片不能超过10MB");
             return;
         }
-        setUploading(true);
+        setUploadingCount((count) => count + 1);
         try {
             const formData = new FormData();
             formData.append("file", file);
@@ -381,7 +382,7 @@ export default function ProductForm({
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "上传失败");
         } finally {
-            setUploading(false);
+            setUploadingCount((count) => Math.max(0, count - 1));
         }
     };
 
@@ -1538,7 +1539,7 @@ export default function ProductForm({
                         >
                             取消
                         </Button>
-                        <Button type="submit" loading={saving}>
+                        <Button type="submit" loading={saving} disabled={uploading}>
                             {initialData?.id ? "保存修改" : "创建产品"}
                         </Button>
                     </div>

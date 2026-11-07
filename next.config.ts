@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { buildContentSecurityPolicy } from "./src/lib/security-headers";
 
 const nextConfig: NextConfig = {
   webpack: (config) => {
@@ -8,13 +9,14 @@ const nextConfig: NextConfig = {
     config.module.unknownContextCritical = false;
     return config;
   },
-  turbopack: {},
   output: 'standalone',
   images: {
     // 优化后图片的浏览器缓存时长（秒）。默认仅 4 小时（max-age=14400），
     // 对 /images/character 等静态品牌资产太短，每次会话都回源；
     // 7 天可覆盖复访用户，内容更新时更换文件名即可刷新。
     minimumCacheTTL: 604800,
+    // 组件中使用了 quality={90}；Next 16 默认只允许 [75]，不显式配置会被静默降级
+    qualities: [75, 90],
     remotePatterns: [
       {
         protocol: 'https',
@@ -74,10 +76,6 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.cdninstagram.com',
       },
-      {
-        protocol: 'https',
-        hostname: 'cdn.*',
-      },
     ],
   },
   compiler: {
@@ -88,12 +86,18 @@ const nextConfig: NextConfig = {
   },
   poweredByHeader: false,
   async rewrites() {
-    return [
-      {
-        source: "/uploads/:path*",
-        destination: "/api/file/:path*",
-      },
-    ];
+    // 必须用 beforeFiles：数组形式的 rewrite 属于 afterFiles，public/ 物理文件会先被
+    // 静态服务命中，绕过 /api/file 的 guest/ 鉴权与路径校验（人脸照片隐私边界）。
+    return {
+      beforeFiles: [
+        {
+          source: "/uploads/:path*",
+          destination: "/api/file/:path*",
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
   },
   async redirects() {
     return [
@@ -124,10 +128,30 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // 注意：Next 的 headers source 使用 path-to-regexp，括号分组不会匹配子路径；
+      // 必须分别为 /images、/fonts、/models 使用 :path*，否则 /images/a.png 拿不到缓存头。
       {
-        source: "/(images|fonts|models|android-chrome.*|apple-touch-icon.*|favicon.*|site.webmanifest)",
+        source: "/images/:path*",
         headers: [
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/fonts/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/models/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/(android-chrome.*|apple-touch-icon.*|favicon.*|site.webmanifest)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400" },
         ],
       },
       {
@@ -150,17 +174,9 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
             key: "Content-Security-Policy",
-            value: [
-              "default-src 'self';",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com https://www.googletagmanager.com https://hm.baidu.com;",
-              "style-src 'self' 'unsafe-inline';",
-              "img-src 'self' blob: data: https://nihplod.cn https://images.unsplash.com https://wp-cdn.4ce.cn https://*.alicdn.com https://*.aliyuncs.com https://*.qpic.cn https://*.myqcloud.com https://*.jd.com https://*.tmall.com https://*.taobao.com https://*.xiaohongshu.com https://*.douyincdn.com https://*.bilibili.com https://*.cdninstagram.com;",
-              "font-src 'self';",
-              "connect-src 'self' data: https://nihplod.cn https://*.aliyuncs.com https://wp-cdn.4ce.cn https://images.unsplash.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://hm.baidu.com https://*.google-analytics.com https://*.analytics.google.com https://www.google.com;",
-              "manifest-src 'self' https://nihplod.cn;",
-              "frame-src 'self' https://nihplod.cn;",
-              "frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://nihplod.cn;",
-            ].join(" "),
+            value: buildContentSecurityPolicy({
+              allowUnsafeEval: process.env.NODE_ENV !== "production",
+            }),
           },
           ...(process.env.NODE_ENV === "production"
             ? [

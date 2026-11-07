@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -20,32 +21,81 @@ interface CleanupStats {
     archived: number;
 }
 
+type CleanupTx = Prisma.TransactionClient;
+
+/**
+ * 删除前在事务内重新校验候选会话：查询到删除之间用户可能刚好完成分析/认领会话，
+ * 不能只凭批次查询结果直接删。
+ */
+async function revalidateSessionIds(
+    tx: CleanupTx,
+    sessionIds: string[],
+    whereSql: Prisma.Sql
+): Promise<string[]> {
+    if (sessionIds.length === 0) return [];
+    const rows = await tx.$queryRaw<Array<{ sessionId: string }>>(Prisma.sql`
+        SELECT "sessionId" FROM "AdvisorSession"
+        WHERE "sessionId" IN (${Prisma.join(sessionIds)})
+          AND (${whereSql})
+    `);
+    return rows.map((row) => row.sessionId);
+}
+
 async function cleanupSessions(
     sessions: Array<{ sessionId: string; userId?: string | null }>,
-    stats: CleanupStats
+    stats: CleanupStats,
+    revalidate?: (tx: CleanupTx, sessionIds: string[]) => Promise<string[]>
 ): Promise<void> {
     if (sessions.length === 0) return;
 
-    const sessionIds = sessions.map((s) => s.sessionId);
-    const guestSessionIds = sessions.filter((s) => !s.userId).map((s) => s.sessionId);
+    const candidateIds = sessions.map((s) => s.sessionId);
 
     const deletedStats = await prisma.$transaction(async (tx) => {
+        const sessionIds = revalidate ? await revalidate(tx, candidateIds) : candidateIds;
+        if (sessionIds.length === 0) return { testRecords: 0, sessions: 0 };
+
+        const guestSessionIds = sessions
+            .filter((s) => !s.userId && sessionIds.includes(s.sessionId))
+            .map((s) => s.sessionId);
+
         // 注册用户的 TestRecord 是终身/每日额度计数来源，不能随历史报告删除而释放额度。
         const testRecords = guestSessionIds.length > 0
             ? await tx.testRecord.deleteMany({
                 where: { sessionId: { in: guestSessionIds } },
             })
             : { count: 0 };
-        // 无外键引用：会话删除后把日记/产品反馈的 sessionId 置空，
+        // 无外键引用：会话删除后把日记/产品反馈的 sessionId 置空/哨兵值，
         // 避免前端"查看报告"跳到已删除的 404，或反馈记录无法回联。
+        // 产品反馈使用 _nosession_ 哨兵，保持唯一索引语义（NULL 在 Postgres 唯一索引中互不相等）
         await tx.diaryEntry.updateMany({
             where: { sessionId: { in: sessionIds } },
             data: { sessionId: null },
         });
-        await tx.productFeedback.updateMany({
+        // 产品反馈使用 _nosession_ 哨兵（NULL 不参与唯一约束）；
+        // 同一用户/产品可能有多条不同 session 的反馈，直接 updateMany 会撞唯一键，
+        // 因此逐条检查：已有哨兵记录时删除待清理记录，否则改写成哨兵。
+        const feedbacks = await tx.productFeedback.findMany({
             where: { sessionId: { in: sessionIds } },
-            data: { sessionId: null },
+            select: { id: true, userId: true, productId: true },
         });
+        for (const feedback of feedbacks) {
+            const existing = await tx.productFeedback.findFirst({
+                where: {
+                    userId: feedback.userId,
+                    productId: feedback.productId,
+                    sessionId: "_nosession_",
+                },
+                select: { id: true },
+            });
+            if (existing) {
+                await tx.productFeedback.delete({ where: { id: feedback.id } });
+            } else {
+                await tx.productFeedback.update({
+                    where: { id: feedback.id },
+                    data: { sessionId: "_nosession_" },
+                });
+            }
+        }
         const advisorSessions = await tx.advisorSession.deleteMany({
             where: { sessionId: { in: sessionIds } },
         });
@@ -66,7 +116,8 @@ async function cleanupSessions(
 async function cleanupInBatches(
     where: Prisma.AdvisorSessionWhereInput,
     stats: CleanupStats,
-    batchSize = 500
+    batchSize = 500,
+    revalidate?: (tx: CleanupTx, sessionIds: string[]) => Promise<string[]>
 ): Promise<void> {
     for (;;) {
         const batch = await prisma.advisorSession.findMany({
@@ -75,9 +126,40 @@ async function cleanupInBatches(
             take: batchSize,
         });
         if (batch.length === 0) return;
-        await cleanupSessions(batch, stats);
+        await cleanupSessions(batch, stats, revalidate);
         if (batch.length < batchSize) return;
     }
+}
+
+function guestExpiredSql(nowDate: Date, fallback: Date): Prisma.Sql {
+    return Prisma.sql`
+        "userId" IS NULL
+        AND (
+            "expiresAt" < ${nowDate}
+            OR ("expiresAt" IS NULL AND "createdAt" < ${fallback})
+        )
+    `;
+}
+
+function registeredIncompleteSql(nowDate: Date, fallback: Date): Prisma.Sql {
+    return Prisma.sql`
+        "userId" IS NOT NULL
+        AND "completedAt" IS NULL
+        AND (
+            "expiresAt" < ${nowDate}
+            OR ("expiresAt" IS NULL AND "createdAt" < ${fallback})
+        )
+        AND (
+            "analysisResult" IS NULL
+            OR (
+                COALESCE("analysisResult"->>'reportVersion', '') <> '2'
+                AND "analysisResult"->>'consultantReport' IS NULL
+                AND "analysisResult"->>'skinProfile' IS NULL
+                AND "analysisResult"->>'skinAnalysis' IS NULL
+                AND "analysisResult"->>'analysis' IS NULL
+            )
+        )
+    `;
 }
 
 export async function GET(request: NextRequest) {
@@ -87,10 +169,14 @@ export async function GET(request: NextRequest) {
         const cronSecret = process.env.CRON_SECRET;
 
         if (cronSecret) {
-            const isValidHeader = authHeader === `Bearer ${cronSecret}`;
-            const isValidQuery = request.nextUrl.searchParams.get("secret") === cronSecret;
-
-            if (!isValidHeader && !isValidQuery) {
+            // 只接受 Authorization Header（不再接受 query secret，避免进入访问日志）；
+            // 使用常量时间比较，防止计时侧信道
+            const provided = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
+            const a = Buffer.from(provided);
+            const b = Buffer.from(cronSecret);
+            const isValidHeader =
+                a.length === b.length && a.length > 0 && timingSafeEqual(a, b);
+            if (!isValidHeader) {
                 return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
             }
         } else if (process.env.NODE_ENV === "production") {
@@ -114,15 +200,19 @@ export async function GET(request: NextRequest) {
 
         // ===== 1. 清理已过期的游客数据（expiresAt 已过 或 expiresAt 为 NULL 且创建超过兜底时限）=====
         // 使用 expiresAt 而非 createdAt，与用户端过期判断同源
+        const nowDate = new Date(now);
         await cleanupInBatches(
             {
                 userId: null,
                 OR: [
-                    { expiresAt: { lt: new Date(now) } },
+                    { expiresAt: { lt: nowDate } },
                     { expiresAt: null, createdAt: { lt: nullExpiryFallback } },
                 ],
             },
-            stats
+            stats,
+            500,
+            (tx, sessionIds) =>
+                revalidateSessionIds(tx, sessionIds, guestExpiredSql(nowDate, nullExpiryFallback))
         );
 
         // ===== 2. 清理注册用户的垃圾会话 =====
@@ -151,7 +241,9 @@ export async function GET(request: NextRequest) {
                 LIMIT 500
             `;
             if (batch.length === 0) break;
-            await cleanupSessions(batch, stats);
+            await cleanupSessions(batch, stats, (tx, sessionIds) =>
+                revalidateSessionIds(tx, sessionIds, registeredIncompleteSql(nowDate, nullExpiryFallback))
+            );
             if (batch.length < 500) break;
         }
 
@@ -178,6 +270,8 @@ export async function GET(request: NextRequest) {
                 WHERE s."userId" IS NOT NULL
                   AND s."completedAt" IS NOT NULL
                   AND s."archivedAt" IS NULL
+                  -- 免费重试进行中（analysisStartedAt 晚于 completedAt）不归档
+                  AND (s."analysisStartedAt" IS NULL OR s."analysisStartedAt" <= s."completedAt")
             ) t
             WHERE (t.rn > ${MAX_FULL_REPORTS} OR t."completedAt" < ${retentionCutoff})
             LIMIT ${ARCHIVE_BATCH_LIMIT}
@@ -236,7 +330,13 @@ export async function GET(request: NextRequest) {
             LIMIT ${EXCESS_BATCH_LIMIT}
         `;
 
-        await cleanupSessions(excessSessions, stats);
+        await cleanupSessions(excessSessions, stats, (tx, sessionIds) =>
+            revalidateSessionIds(
+                tx,
+                sessionIds,
+                Prisma.sql`"userId" IS NOT NULL AND "completedAt" IS NOT NULL`
+            )
+        );
 
         // ===== 4b. 清理超过保留期的冷层摘要 =====
         await cleanupInBatches(
@@ -248,8 +348,8 @@ export async function GET(request: NextRequest) {
         );
 
 
-        // ===== 5. 清理过期 AI 用量日志（保留 30 天）=====
-        const aiLogCutoff = new Date(now - 30 * 24 * 60 * 60 * 1000);
+        // ===== 5. 清理过期 AI 用量日志（保留 35 天，覆盖完整自然月 + 缓冲）=====
+        const aiLogCutoff = new Date(now - 35 * 24 * 60 * 60 * 1000);
         const deletedAiLogs = await prisma.aIUsageLog.deleteMany({
             where: { createdAt: { lt: aiLogCutoff } },
         });
@@ -339,12 +439,19 @@ export async function GET(request: NextRequest) {
             deletedOrphanReservations = await prisma.$executeRaw`
                 DELETE FROM "TestRecord" tr
                 WHERE tr."testDate" < ${orphanCutoff}
-                  AND NOT EXISTS (
-                    SELECT 1 FROM "AdvisorSession" s WHERE s."sessionId" = tr."sessionId"
-                  )
+                  AND tr."status" = 'reserved'
                   AND NOT EXISTS (
                     SELECT 1 FROM "AIUsageLog" l
                     WHERE l."sessionId" = tr."sessionId" AND l.success = true
+                  )
+                  -- 已完成报告或在途分析不删；仅有残留会话行但无成功 AI 消费的预占要释放
+                  AND NOT EXISTS (
+                    SELECT 1 FROM "AdvisorSession" s
+                    WHERE s."sessionId" = tr."sessionId"
+                      AND (
+                        s."completedAt" IS NOT NULL
+                        OR s."analysisStartedAt" > ${orphanCutoff}
+                      )
                   )
             `;
         } catch (orphanErr) {

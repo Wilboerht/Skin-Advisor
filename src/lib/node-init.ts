@@ -21,6 +21,8 @@ export async function initNode() {
         } catch (e) {
             logger.warn('[init] Instance unregister failed', { error: String(e) });
         }
+        // 留出短暂窗口让在途请求收尾；PM2 的 kill_timeout=15s 仍会在超时后强制结束
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         try {
             await prisma.$disconnect();
             logger.info('[init] Prisma disconnected');

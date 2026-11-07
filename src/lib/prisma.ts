@@ -47,7 +47,8 @@ const prismaClientSingleton = () => {
     // PostgreSQL 连接池配置（常驻进程优化）
     const pool = new Pool({
         connectionString: url,
-        max: 50,
+        // 单实例默认 30 连接（PostgreSQL 默认 max_connections=100），可用 env 覆盖
+        max: Number(process.env.DATABASE_POOL_MAX) || 30,
         min: 2, // 保持最小连接以减少请求延迟
         idleTimeoutMillis: 60000,
         connectionTimeoutMillis: 30000,
@@ -80,7 +81,9 @@ const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
 export default prisma;
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// 所有环境都复用同一实例：生产环境若 instrumentation 与 route 分属不同模块图，
+// 不写 globalThis 会创建两个连接池（30 + 30），可能耗尽数据库连接
+globalForPrisma.prisma = prisma;
 
 // 优雅关闭信号处理已移至 instrumentation.ts（Node.js runtime only），
 // 避免 Edge Runtime 静态分析时检测到 process.on。

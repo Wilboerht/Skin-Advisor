@@ -520,6 +520,7 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
             let deactivated = 0;
             let missing = 0;
             let skippedProducts = 0;
+            const processedSourceIds = new Set<string>();
             const now = new Date();
 
             for (const raw of envelope.products) {
@@ -551,6 +552,13 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
                     sourceProductId: item.sourceProductId,
                     name: item.name,
                 };
+                // 同一快照内重复 sourceProductId：第二次 create 会触发唯一约束并回滚整批
+                if (processedSourceIds.has(item.sourceProductId)) {
+                    skippedProducts += 1;
+                    warn(warnings, "DUPLICATE_SOURCE_ID", "同一快照内 sourceProductId 重复，已跳过", itemRef);
+                    continue;
+                }
+                processedSourceIds.add(item.sourceProductId);
                 const name = item.name.trim().slice(0, MAX_NAME_LENGTH);
                 const category = item.category.trim().slice(0, MAX_CATEGORY_LENGTH);
                 const price = normalizeProductPrice(item.price);
@@ -561,9 +569,12 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
                 const origin = trimOrNull(item.origin, MAX_ORIGIN_LENGTH);
                 const howToUse = trimOrNull(item.howToUse, MAX_HOW_TO_USE_LENGTH);
                 const images = sanitizeProductImages(item.images, warnings, itemRef);
+                // 区分“字段未提供”和“明确为空”：旧版/部分快照未带购买链接时不能清空子站已有配置
+                const hasPurchaseLinksField =
+                    item.purchaseLinks !== undefined || item.purchaseLinksTotal !== undefined;
                 const purchaseLinksTotal =
                     item.purchaseLinksTotal ??
-                    (Array.isArray(item.purchaseLinks) ? item.purchaseLinks.length : 0);
+                    (Array.isArray(item.purchaseLinks) ? item.purchaseLinks.length : undefined);
                 const purchaseLinks = sanitizeProductPurchaseLinks(
                     item.purchaseLinks,
                     warnings,
@@ -574,6 +585,7 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
                 const sourceUpdatedAt = new Date(item.updatedAt);
 
                 if (
+                    purchaseLinksTotal !== undefined &&
                     purchaseLinksTotal > purchaseLinks.length &&
                     purchaseLinks.length > 0
                 ) {
@@ -688,11 +700,14 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
                             itemRef
                         );
                     }
-                    if (capacity && existing.capacity !== capacity) {
+                    // 主站显式传入空值（""/null）时同步清空；字段未提供（undefined）时保留旧值
+                    if (item.capacity !== undefined && existing.capacity !== capacity) {
                         set("capacity", capacity);
                     }
-                    if (origin && existing.origin !== origin) set("origin", origin);
-                    if (howToUse && existing.howToUse !== howToUse) {
+                    if (item.origin !== undefined && existing.origin !== origin) {
+                        set("origin", origin);
+                    }
+                    if (item.howToUse !== undefined && existing.howToUse !== howToUse) {
                         set("howToUse", howToUse);
                     }
                     if (images.length > 0) {
@@ -708,29 +723,32 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
                             itemRef
                         );
                     }
-                    if (purchaseLinksTotal === 0) {
-                        if (existing.purchaseLinks !== null) {
-                            set("purchaseLinks", Prisma.DbNull);
-                            set("affiliateLinks", Prisma.DbNull);
-                        }
-                    } else if (purchaseLinks.length > 0) {
-                        if (!jsonEqual(existing.purchaseLinks, purchaseLinks)) {
-                            set(
-                                "purchaseLinks",
-                                purchaseLinks as unknown as Prisma.InputJsonValue
+                    // 快照未携带购买链接字段时保留子站现有配置
+                    if (hasPurchaseLinksField) {
+                        if (purchaseLinksTotal === 0) {
+                            if (existing.purchaseLinks !== null) {
+                                set("purchaseLinks", Prisma.DbNull);
+                                set("affiliateLinks", Prisma.DbNull);
+                            }
+                        } else if (purchaseLinks.length > 0) {
+                            if (!jsonEqual(existing.purchaseLinks, purchaseLinks)) {
+                                set(
+                                    "purchaseLinks",
+                                    purchaseLinks as unknown as Prisma.InputJsonValue
+                                );
+                                set(
+                                    "affiliateLinks",
+                                    (affiliateLinks ?? Prisma.DbNull) as unknown as Prisma.InputJsonValue
+                                );
+                            }
+                        } else {
+                            warn(
+                                warnings,
+                                "NO_SUPPORTED_PURCHASE_LINKS",
+                                "主站购买链接都不在子站支持平台内，已保留子站原购买链接",
+                                itemRef
                             );
-                            set(
-                                "affiliateLinks",
-                                (affiliateLinks ?? Prisma.DbNull) as unknown as Prisma.InputJsonValue
-                            );
                         }
-                    } else {
-                        warn(
-                            warnings,
-                            "NO_SUPPORTED_PURCHASE_LINKS",
-                            "主站购买链接都不在子站支持平台内，已保留子站原购买链接",
-                            itemRef
-                        );
                     }
 
                     if (justBound || existing.sourceProductId !== item.sourceProductId) {
@@ -930,7 +948,7 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
             }
 
             return summary;
-        });
+        }, { timeout: 120_000, maxWait: 10_000 });
 
         logger.info("[ProductSync] completed", {
             trigger: summary.trigger,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useSyncExternalStore } from "react";
+import Image from "next/image";
 import { useAuthModal } from "./AuthModalContext";
 import { useToast } from "@/components/ui/Toast";
 import { LazyMotion, domAnimation, m, AnimatePresence, useAnimationControls, useReducedMotion } from "framer-motion";
@@ -261,10 +262,13 @@ export function AuthModal() {
                             <div className="w-full max-w-[480px] py-12">
                                 {/* Logo */}
                                 <div className="mb-14 flex justify-center">
-                                    <img
+                                    <Image
                                         src="/NIHPLOD-logo.svg"
                                         alt="NIHPLOD"
-                                        className="h-[52px] object-contain"
+                                        width={160}
+                                        height={52}
+                                        className="h-[52px] w-auto object-contain"
+                                        priority
                                     />
                                 </div>
 
@@ -405,9 +409,11 @@ export function AuthModal() {
                             <ChevronLeft className="h-6 w-6 text-[#00263E]" />
                         </button>
                         {view !== "login" && (
-                            <img
+                            <Image
                                 src="/NIHPLOD-logo.svg"
                                 alt="NIHPLOD"
+                                width={110}
+                                height={36}
                                 className="object-contain h-auto w-[110px]"
                             />
                         )}

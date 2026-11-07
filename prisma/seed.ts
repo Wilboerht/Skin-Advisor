@@ -1,4 +1,5 @@
 import { config } from "dotenv";
+import crypto from "crypto";
 config({ path: ".env.local" });
 
 // Prisma 7.x 导入方式
@@ -52,26 +53,33 @@ async function main() {
         console.log("AI settings already exist.");
     }
 
-    // Seed dev test user (development only)
-    if (process.env.NODE_ENV !== "production") {
+    // Seed dev test user: 必须显式开发环境 + SEED_DEV_USER=true，防止误在生产库创建弱口令账号
+    const shouldSeedDevUser =
+        process.env.NODE_ENV === "development" && process.env.SEED_DEV_USER === "true";
+    if (shouldSeedDevUser) {
         console.log("Seeding dev test user...");
         const devPhone = "18700000000";
-        const devPassword = await hashPassword("123456");
+        const devPassword =
+            process.env.SEED_DEV_PASSWORD ||
+            `dev-${crypto.randomBytes(12).toString("base64url")}`;
         await prisma.user.upsert({
             where: { phoneNumber: devPhone },
             update: {
-                password: devPassword,
+                password: await hashPassword(devPassword),
                 name: "开发测试账号",
                 role: "user"
             },
             create: {
                 phoneNumber: devPhone,
-                password: devPassword,
+                password: await hashPassword(devPassword),
                 name: "开发测试账号",
                 role: "user"
             }
         });
         console.log("Dev test user created/updated:", devPhone);
+        if (!process.env.SEED_DEV_PASSWORD) {
+            console.log("Generated dev password (shown once):", devPassword);
+        }
     }
 
     console.log("Seeding finished.");
