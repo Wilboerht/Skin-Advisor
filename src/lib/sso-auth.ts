@@ -131,14 +131,15 @@ export const ssoVerifier = createTokenVerifier({
     // introspect 是服务器间调用：走内网地址（若配置）；
     // issuer 校验仍用公网地址（token 中的 iss 按公网 origin 签发）
     introspectionEndpoint: `${SSO_SERVER_BASE_URL}/api/oauth/introspect`,
-    // RS256 本地验签（第一级）：主站 JWKS 发布 access/id/logout token 公钥，
-    // 命中时免去 introspect 回源；本地验签不感知撤销，revoked/HS256 等情况
-    // 仍由 introspectionEndpoint 兜底（sso-verify 验证顺序：HS256→RS256 本地→introspect）
+    // sso-verify 2.x 默认 auto：配置了 introspection 时优先实时校验（可即时感知
+    // 撤销/封禁）；本地 JWKS 仅作为未配置 introspection 时的回退。主站 access
+    // token 默认 8 小时，不能再依赖“本地验签 + 短 TTL”兜底撤销。
     jwksUri: `${SSO_SERVER_BASE_URL}/api/oauth/jwks`,
     clientId: SSO_CLIENT_ID,
     clientSecret: SSO_CLIENT_SECRET,
     audience: SSO_CLIENT_ID,
     issuer: SSO_BASE_URL,
+    verificationMode: "auto",
 });
 
 /**
@@ -152,6 +153,7 @@ export const mpVerifier = createTokenVerifier({
     clientId: MP_CLIENT_ID,
     audience: MP_CLIENT_ID,
     issuer: SSO_BASE_URL,
+    verificationMode: "auto",
 });
 
 /**
@@ -160,11 +162,11 @@ export const mpVerifier = createTokenVerifier({
  * 这里按 sha256(token) 记入进程内黑名单，verifySsoToken 命中即拒绝。
  *
  * 已知限制：进程内方案，多实例部署不同步（与上方单飞缓存同级）；
- * 撤销窗口最长到 token 自然过期（主站 access token 15 分钟）。
+ * 撤销窗口最长到 token 自然过期（主站 access token 默认 8 小时）。
  */
 const revokedAccessTokenHashes = new Map<string, number>();
 const REVOKED_CACHE_CAPACITY = 1000;
-const DEFAULT_ACCESS_TOKEN_TTL_MS = 15 * 60 * 1000;
+const DEFAULT_ACCESS_TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
 
 function hashAccessToken(token: string): string {
     return createHash("sha256").update(token).digest("hex");
@@ -172,7 +174,7 @@ function hashAccessToken(token: string): string {
 
 /**
  * 标记 access token 已撤销。expiresAtMs 缺省时按 token JWT 的 exp 解析，
- * 解析失败按 15 分钟兜底（主站 access token 标准有效期）。
+ * 解析失败按 8 小时兜底（主站 access token 默认有效期）。
  */
 export function markAccessTokenRevoked(token: string, expiresAtMs?: number): void {
     let exp = expiresAtMs;
@@ -425,7 +427,7 @@ export function clearSsoSessionCookies(response: NextResponse): void {
 export async function verifySsoToken(req?: NextRequest): Promise<VerifiedTokenPayload | null> {
     const token = await getAccessToken(req);
     if (!token) return null;
-    // 登出撤销窗口：本地黑名单命中直接拒绝（JWKS 本地验签不感知撤销）
+    // 登出撤销窗口：本地黑名单命中直接拒绝（introspection 有 30s 缓存，前端登出需即时生效）
     if (isAccessTokenRevoked(token)) return null;
     return ssoVerifier.verify(token);
 }
@@ -821,7 +823,7 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
     }
 
     let payload = await verifySsoToken(req);
-    // access_token（15 分钟）过期后用 refresh_token 静默轮换，
+    // access_token（默认 8 小时）过期后用 refresh_token 静默轮换，
     // 避免用户在测肤等长流程中被误判为未登录（401 requireLogin）
     if (!payload?.sub) {
         payload = await refreshSessionFromCookie();

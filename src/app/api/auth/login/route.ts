@@ -25,7 +25,7 @@ import { isSafeInternalPath } from "@/lib/url-utils";
 const SSO_BASE_URL = (process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn").replace(/\/+$/, "");
 const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID!;
 const SSO_REDIRECT_URI = process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!;
-const SSO_SCOPES = process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile";
+const SSO_SCOPES = process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile phone membership birthday profile:write phone:write password:write";
 const CALLBACK_PATH = "/api/auth/callback";
 
 /** 生成 URL-safe 随机字符串（与 SDK 中间件同源实现） */
