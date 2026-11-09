@@ -18,6 +18,8 @@
 # next.js
 /.next/
 /out/
+# 手动备份的旧 .next：里面可能含绝对软链接，Tailwind 扫描后会触发 webpack 快照崩溃
+/.next-backup*/
 
 # production
 /build

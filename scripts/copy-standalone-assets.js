@@ -66,6 +66,20 @@ if (fs.existsSync(staticSrc)) {
   console.log('⚠️  .next/static/ 目录不存在，跳过');
 }
 
+/**
+ * 创建 uploads 符号链接。
+ * Windows 的 junction 必须使用绝对路径；Linux/macOS 使用相对路径，
+ * 因为 webpack FileSystemInfo 会把“绝对 target 的软链接”拼成不存在的路径，
+ * 随后在 hash.update(undefined) 崩溃（webpack#21636，Next 16.4.5 仍内置 5.98）。
+ */
+function createUploadsSymlink(linkPath, targetPath) {
+  if (process.platform === 'win32') {
+    fs.symlinkSync(targetPath, linkPath, 'junction');
+  } else {
+    fs.symlinkSync(path.relative(path.dirname(linkPath), targetPath), linkPath, 'dir');
+  }
+}
+
 // 3. 建立 uploads 符号链接：.next/standalone/public/uploads → 源码 public/uploads
 // 原因：standalone 运行时 process.cwd() 是 .next/standalone，上传文件会写入该目录；
 // Nginx /uploads/ 也可能映射到这里。通过符号链接让上传文件始终落到源码目录的持久化位置，
@@ -81,23 +95,29 @@ try {
       // 写入落错误目录，Nginx 从 public/uploads 读不到 → 全站上传文件 404）
       const target = fs.readlinkSync(uploadsDest);
       const resolvedTarget = path.resolve(path.dirname(uploadsDest), target);
-      if (resolvedTarget === uploadsSrc) {
+      // 非 Windows 上历史绝对链接也要重建为相对链接，避免 webpack 快照崩溃
+      const shouldBeRelative = process.platform !== 'win32' && path.isAbsolute(target);
+      if (resolvedTarget === uploadsSrc && !shouldBeRelative) {
         console.log('🔗 uploads 符号链接已存在且指向正确，跳过');
       } else {
-        console.log(`⚠️  uploads 符号链接指向错误（${target}），重建 → ${uploadsSrc}`);
+        console.log(
+          shouldBeRelative
+            ? `⚠️  uploads 符号链接为绝对路径（${target}），重建为相对链接 → ${uploadsSrc}`
+            : `⚠️  uploads 符号链接指向错误（${target}），重建 → ${uploadsSrc}`
+        );
         fs.rmSync(uploadsDest, { force: true });
-        fs.symlinkSync(uploadsSrc, uploadsDest, 'junction');
+        createUploadsSymlink(uploadsDest, uploadsSrc);
       }
     } else if (destStat.isDirectory()) {
       // standalone 目录里已有真实 uploads（历史上传），先合并回源码目录再替换为链接
       console.log('📦 合并 standalone/public/uploads 中已有文件 → public/uploads ...');
       copyDir(uploadsDest, uploadsSrc);
       fs.rmSync(uploadsDest, { recursive: true, force: true });
-      fs.symlinkSync(uploadsSrc, uploadsDest, 'junction');
+      createUploadsSymlink(uploadsDest, uploadsSrc);
       console.log('   ✅ uploads 已合并并替换为符号链接');
     }
   } else {
-    fs.symlinkSync(uploadsSrc, uploadsDest, 'junction');
+    createUploadsSymlink(uploadsDest, uploadsSrc);
     console.log('🔗 已创建符号链接 .next/standalone/public/uploads → public/uploads');
   }
 } catch (err) {
