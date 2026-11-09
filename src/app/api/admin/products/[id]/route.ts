@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
+import { invalidateActiveProductsCache } from "@/lib/product-cache";
 import { withAdminAuth, requireRole, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -329,6 +330,9 @@ export const PUT = withAdminAuth(async (
             return apiError(ErrorCode.NOT_FOUND, "Product not found", 404);
         }
 
+        // 事务提交后立即失效，避免资产清理/响应前仍读到旧产品列表
+        invalidateActiveProductsCache();
+
         const oldRefs = productImageRefs(txResult.oldProduct.image, txResult.oldProduct.images);
         const newRefs = new Set(productImageRefs(txResult.product.image, txResult.product.images));
         await deleteUnreferencedProductAssets(
@@ -387,6 +391,8 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (
             });
             return product;
         });
+
+        invalidateActiveProductsCache();
 
         await deleteUnreferencedProductAssets(
             productImageRefs(deletedProduct.image, deletedProduct.images),

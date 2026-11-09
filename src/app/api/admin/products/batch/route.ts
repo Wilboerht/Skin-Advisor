@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { invalidateActiveProductsCache } from "@/lib/product-cache";
 import { requireRole, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -138,6 +139,9 @@ export const POST = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (r
                 }
             });
         });
+
+        // 事务提交后立即失效推荐缓存，资产清理失败不影响缓存一致性
+        invalidateActiveProductsCache();
 
         if (action === 'delete') {
             for (const product of productsToDelete) {

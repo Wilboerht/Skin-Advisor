@@ -5,6 +5,7 @@ import type { Product } from "@prisma/client";
 import type { EnvContext } from "@/lib/weather-context";
 import { getSeasonLabel } from "@/lib/weather-context";
 import { PREGNANCY_FORBIDDEN_TERMS, getAllergyTerms } from "@/lib/ingredient-guard";
+import { getActiveProductsCached } from "@/lib/product-cache";
 import {
     normalizeProductPurchaseLinks,
     type ProductPurchaseLink,
@@ -120,18 +121,7 @@ const PRICE_TIERS = [
 /** 环境功效匹配权重（每标签 +15 分，低于肤质但高于精选产品 */
 const ENV_BENEFIT_SCORE = 15;
 
-// 产品库变化频率低：60s 进程内缓存，避免每次测肤都全表加载 Product。
-type ProductRow = Awaited<ReturnType<typeof prisma.product.findMany>>[number];
-let activeProductsCache: { rows: ProductRow[]; expiresAt: number } | null = null;
 
-async function getActiveProductsCached(): Promise<ProductRow[]> {
-    if (activeProductsCache && activeProductsCache.expiresAt > Date.now()) {
-        return activeProductsCache.rows;
-    }
-    const rows = await prisma.product.findMany({ where: { active: true } });
-    activeProductsCache = { rows, expiresAt: Date.now() + 60_000 };
-    return rows;
-}
 
 /** 年龄段到推荐功效的映射 */
 const AGE_TO_BENEFITS: Record<string, string[]> = {

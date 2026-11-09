@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { invalidateActiveProductsCache } from "@/lib/product-cache";
 import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import {
@@ -498,6 +499,7 @@ export const POST = withAdminAuth(async (request, { admin }) => {
             return [product];
         });
 
+        invalidateActiveProductsCache();
         return NextResponse.json(product);
     } catch (error) {
         logger.error("Failed to create product", error);

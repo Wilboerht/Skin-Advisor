@@ -13,6 +13,7 @@
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { invalidateActiveProductsCache } from "@/lib/product-cache";
 import { logger } from "@/lib/logger";
 import { buildAffiliateLinks, type ProductPurchaseLink } from "@/lib/product-links";
 import {
@@ -949,6 +950,9 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
 
             return summary;
         }, { timeout: 120_000, maxWait: 10_000 });
+
+        // 同步提交后让推荐缓存立即失效（dryRun 未写库，不需要）
+        if (!dryRun) invalidateActiveProductsCache();
 
         logger.info("[ProductSync] completed", {
             trigger: summary.trigger,

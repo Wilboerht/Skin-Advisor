@@ -430,27 +430,32 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // ===== 10. 清理孤儿预占：没有会话、没有成功 AI 日志、超过 24 小时 =====
+        // ===== 10. 清理孤儿预占：租约过期（或超过 24h）且没有成功 AI 消费 =====
         // 这些通常是 face-analyze 预占后请求中断/回滚失败留下的 TestRecord，
         // 会白扣用户额度；有成功 AI 消费的预占不在这里删（另行补偿）。
         const orphanCutoff = new Date(now - 24 * 60 * 60 * 1000);
+        const orphanLeaseExpiredBefore = new Date(now);
+        const orphanActiveAnalysisAfter = new Date(now - 5 * 60 * 1000);
         let deletedOrphanReservations = 0;
         try {
             deletedOrphanReservations = await prisma.$executeRaw`
                 DELETE FROM "TestRecord" tr
-                WHERE tr."testDate" < ${orphanCutoff}
-                  AND tr."status" = 'reserved'
+                WHERE tr."status" = 'reserved'
+                  AND (
+                    tr."testDate" < ${orphanCutoff}
+                    OR (tr."leaseExpiresAt" IS NOT NULL AND tr."leaseExpiresAt" < ${orphanLeaseExpiredBefore})
+                  )
                   AND NOT EXISTS (
                     SELECT 1 FROM "AIUsageLog" l
                     WHERE l."sessionId" = tr."sessionId" AND l.success = true
                   )
-                  -- 已完成报告或在途分析不删；仅有残留会话行但无成功 AI 消费的预占要释放
+                  -- 已完成报告或近 5 分钟仍在分析的不删；其余残留预占释放额度
                   AND NOT EXISTS (
                     SELECT 1 FROM "AdvisorSession" s
                     WHERE s."sessionId" = tr."sessionId"
                       AND (
                         s."completedAt" IS NOT NULL
-                        OR s."analysisStartedAt" > ${orphanCutoff}
+                        OR s."analysisStartedAt" > ${orphanActiveAnalysisAfter}
                       )
                   )
             `;
