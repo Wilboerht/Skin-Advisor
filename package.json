@@ -18,8 +18,8 @@
     "node": ">=22.12 <25"
   },
   "dependencies": {
-    "@nihplod/sso-sdk": "^1.7.0",
-    "@nihplod/sso-verify": "^2.0.0",
+    "@nihplod/sso-sdk": "^1.8.0",
+    "@nihplod/sso-verify": "^3.0.0",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "@vladmandic/face-api": "^1.7.15",
