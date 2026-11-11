@@ -933,8 +933,6 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
               feedback = "请睁大眼睛";
             } else if (!isSharp && isLightSufficient) {
               feedback = "画面模糊，请保持手机稳定";
-            } else if (isEyesOpen && currentStep === "front" && !livenessPassedRef.current) {
-              feedback = "请眨一下眼";
             }
 
             if (feedback && feedback !== lastSpokenPhraseRef.current) {
