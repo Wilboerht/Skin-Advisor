@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useReducedMotion } from "framer-motion";
 import {
     PolarAngleAxis,
     PolarGrid,
@@ -10,15 +11,13 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import { useMounted } from "@/hooks/use-mounted";
-import type { SkinDimensionKey, SkinDimensions } from "@/lib/advisor-labels";
-import { DIMENSION_LABELS, DIMENSION_ORDER } from "@/lib/advisor-labels";
+import type { SkinDimensions } from "@/lib/advisor-labels";
+import { DIMENSION_DESCRIPTIONS, DIMENSION_LABELS, DIMENSION_ORDER, SCORE_DIRECTION_HINT } from "@/lib/advisor-labels";
+import { ATTENTION_SCORE_THRESHOLD, getScoreBand, isAttentionScore } from "@/lib/score-bands";
 
 interface DimensionRadarChartProps {
     dimensions: SkinDimensions;
 }
-
-/** 需要重点关注的阈值：维度分数 < 60 视为"有很大问题"，标签后追加红色「注意」 */
-const ALERT_SCORE_THRESHOLD = 60;
 
 function AlertTick(props: {
     x?: number;
@@ -29,14 +28,14 @@ function AlertTick(props: {
 }) {
     const label = props.payload?.value ?? "";
     const score = props.scoreMap[label];
-    const alert = typeof score === "number" && score < ALERT_SCORE_THRESHOLD;
+    const alert = isAttentionScore(score);
 
     return (
         <text x={props.x} y={props.y} textAnchor={props.textAnchor} fill="#7a6552" fontSize={11} fontWeight={500}>
             <tspan>{label}</tspan>
             {alert && (
-                <tspan fill="#c45a4a" fontSize={9} fontWeight={600} dx={2} dy={0.5}>
-                    注意
+                <tspan fill="#b06a3b" fontSize={9} fontWeight={600} dx={2} dy={0.5}>
+                    需关注
                 </tspan>
             )}
         </text>
@@ -45,54 +44,117 @@ function AlertTick(props: {
 
 /**
  * 十维评分雷达图：报告页数据总览。
- * 仅展示有真实分数的维度；有效维度不足 3 个（无法构成面）时不渲染。
+ * - 不可见维度不参与雷达图；低置信维度在明细中标注；
+ * - 统一“低于 70 需关注”阈值；
+ * - 提供文字明细，避免只能看形状读不出分数。
  */
 export function DimensionRadarChart({ dimensions }: DimensionRadarChartProps) {
     const mounted = useMounted();
+    const reduceMotion = useReducedMotion();
 
-    const chartData = useMemo(
-        () =>
-            DIMENSION_ORDER
-                .map((key) => ({
-                    key,
-                    label: DIMENSION_LABELS[key],
-                    score: dimensions[key]?.score,
-                }))
-                .filter((d): d is { key: SkinDimensionKey; label: string; score: number } => typeof d.score === "number"),
+    const allRows = useMemo(
+        () => DIMENSION_ORDER.map((key) => {
+            const dim = dimensions[key];
+            return {
+                key,
+                label: DIMENSION_LABELS[key],
+                description: DIMENSION_DESCRIPTIONS[key],
+                score: typeof dim?.score === "number" ? dim.score : undefined,
+                confidence: typeof dim?.confidence === "number" ? dim.confidence : undefined,
+                notVisible: dim?.notVisible === true,
+            };
+        }),
         [dimensions]
     );
 
-    // label → score 映射：自定义角度轴 tick 用于标注低分「注意」
+    const chartData = useMemo(
+        () => allRows
+            .filter((row) => typeof row.score === "number" && !row.notVisible)
+            .map((row) => ({ key: row.key, label: row.label, score: row.score as number })),
+        [allRows]
+    );
+
     const scoreMap = useMemo(
-        () => Object.fromEntries(chartData.map((d) => [d.label, d.score as number | undefined])),
+        () => Object.fromEntries(chartData.map((row) => [row.label, row.score])),
         [chartData]
     );
 
-    // 少于 3 个有效维度画不出面，视为无数据
-    if (chartData.length < 3) return null;
-
-    // SSR/水合前占位，避免 ResponsiveContainer 尺寸测量抖动
     if (!mounted) {
         return <div className="w-full" style={{ height: 320 }} aria-hidden="true" />;
     }
 
+    if (chartData.length < 3) {
+        return (
+            <div className="rounded-xl border border-dashed border-[var(--color-brand-espresso)]/20 bg-white/50 px-4 py-6 text-center">
+                <p className="text-sm text-[var(--color-brand-cocoa)]">本次可判断的维度不足，暂不展示雷达图。</p>
+                <p className="mt-1 text-xs text-[var(--color-brand-taupe)]">建议在自然光下素颜重拍，或直接查看下方文字明细。</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="w-full" style={{ height: 320 }} role="img" aria-label="十维肌肤评分雷达图">
-            <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={chartData} outerRadius="72%" margin={{ top: 10, right: 24, bottom: 10, left: 24 }}>
-                    <PolarGrid stroke="#5c4937" strokeOpacity={0.12} />
-                    <PolarAngleAxis dataKey="label" tick={<AlertTick scoreMap={scoreMap} />} />
-                    <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar
-                        dataKey="score"
-                        stroke="#8B7355"
-                        strokeWidth={2}
-                        fill="#8B7355"
-                        fillOpacity={0.22}
-                        isAnimationActive
-                    />
-                </RadarChart>
-            </ResponsiveContainer>
+        <div className="w-full">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[11px] text-[var(--color-brand-taupe)]">{SCORE_DIRECTION_HINT}；低于 {ATTENTION_SCORE_THRESHOLD} 分标为需关注。</p>
+            </div>
+            <div className="w-full" style={{ height: 320 }} role="img" aria-label="十维肌肤评分雷达图">
+                <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={chartData} outerRadius="72%" margin={{ top: 10, right: 24, bottom: 10, left: 24 }}>
+                        <PolarGrid stroke="#5c4937" strokeOpacity={0.12} />
+                        <PolarAngleAxis dataKey="label" tick={<AlertTick scoreMap={scoreMap} />} />
+                        <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                        <Radar
+                            dataKey="score"
+                            stroke="#8B7355"
+                            strokeWidth={2}
+                            fill="#8B7355"
+                            fillOpacity={0.22}
+                            isAnimationActive={!reduceMotion}
+                        />
+                    </RadarChart>
+                </ResponsiveContainer>
+            </div>
+
+            {/* 文字明细：让用户能读到每个维度的分数/档位，而不是只看形状 */}
+            <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2" aria-label="十维评分明细">
+                {allRows.map((row) => {
+                    const band = getScoreBand(row.score);
+                    const lowConfidence = typeof row.confidence === "number" && row.confidence < 0.5;
+                    return (
+                        <li
+                            key={row.key}
+                            title={row.description}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-brand-espresso)]/10 bg-white/60 px-3 py-2"
+                        >
+                            <span className="text-[12px] text-[var(--color-brand-espresso)]">{row.label}</span>
+                            <span className="flex items-center gap-1.5 text-[11px]">
+                                {row.notVisible ? (
+                                    <span className="text-[var(--color-brand-taupe)]">图片不足以判断</span>
+                                ) : (
+                                    <>
+                                        <span className="tabular-nums font-medium text-[var(--color-brand-espresso)]">
+                                            {typeof row.score === "number" ? `${row.score} 分` : "—"}
+                                        </span>
+                                        {band && (
+                                            <span
+                                                className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                                                style={{ color: band.color, background: band.background }}
+                                            >
+                                                {band.label}
+                                            </span>
+                                        )}
+                                        {lowConfidence && (
+                                            <span className="rounded-full bg-[var(--color-brand-taupe)]/10 px-1.5 py-0.5 text-[10px] text-[var(--color-brand-taupe)]">
+                                                置信度低
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </span>
+                        </li>
+                    );
+                })}
+            </ul>
         </div>
     );
 }

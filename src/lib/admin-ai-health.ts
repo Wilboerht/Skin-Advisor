@@ -1,5 +1,7 @@
 import { getAIBudgetHealth } from "@/lib/ai-budget";
 import { circuitBreaker } from "@/lib/circuit-breaker";
+import { aiQueue, analysisQueue, visionQueue } from "@/lib/ai-queue";
+import { getSharedCacheMode } from "@/lib/shared-cache";
 
 const SERVICE_KEYS = ["text-qwen", "text-deepseek", "vision-qwen", "vision-deepseek"];
 
@@ -26,6 +28,12 @@ export interface AdminAIHealth {
         failureCount: number;
         isBlocked: boolean;
     }>;
+    queues: {
+        general: ReturnType<typeof aiQueue.getStats>;
+        vision: ReturnType<typeof visionQueue.getStats>;
+        analysis: ReturnType<typeof analysisQueue.getStats>;
+    };
+    cacheMode: "redis" | "memory";
     status: "healthy" | "warning" | "critical";
 }
 
@@ -65,6 +73,12 @@ export async function getAdvisorAIHealth(): Promise<AdminAIHealth> {
         exhausted: budgetHealth.exhausted,
         exhaustedReason: budgetHealth.exhaustedReason,
         circuits,
+        queues: {
+            general: aiQueue.getStats(),
+            vision: visionQueue.getStats(),
+            analysis: analysisQueue.getStats(),
+        },
+        cacheMode: getSharedCacheMode(),
         status,
     };
 }

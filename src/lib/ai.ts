@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import prisma from "./prisma";
 import { aiLogger } from "./logger";
 import { circuitBreaker } from "./circuit-breaker";
-import { checkAIBudget, recordAIUsage, releasePendingReservation, isBudgetSafeForRetry } from "./ai-budget";
+import { checkAIBudget, estimateAICost, recordAIUsage, releasePendingReservation, isBudgetSafeForRetry } from "./ai-budget";
 import { filterHealthyKeys, recordKeyResult } from "./ai-key-health";
 import {
     extractJsonFromResponse,
@@ -18,8 +18,8 @@ export const ALLOWED_AI_PROVIDERS: AIProvider[] = ["deepseek", "qwen"];
 
 export const ALLOWED_AI_MODELS: Record<AIProvider, string[]> = {
     // deepseek-chat / deepseek-reasoner / deepseek-vl 已于 2026-07 从官方 API 退役，
-    // 保留在白名单仅为兼容存量 DB 配置；现役模型为 deepseek-flash / deepseek-v4-pro
-    deepseek: ["deepseek-flash", "deepseek-v4-pro", "deepseek-chat", "deepseek-reasoner", "deepseek-vl"],
+    // 不再放行，避免存量 DB 配置命中后运行时失败。
+    deepseek: ["deepseek-flash", "deepseek-v4-pro"],
     qwen: ["qwen-turbo", "qwen-plus", "qwen-max", "qwen-vl-max", "qwen-vl-plus", "qwen3-vl-plus"],
 };
 
@@ -230,15 +230,15 @@ export async function getAISettings(): Promise<AISettings> {
  * 只要配置了非空 Key 即认为启用；真正的无效 Key 会在首次 chat.completions.create()
  * 调用时快速失败，并在上层被错误处理捕获。
  */
-export async function isAIEnabled(): Promise<boolean> {
+export async function isAIEnabled(role: "text" | "vision" = "text"): Promise<boolean> {
     // 1. 环境变量强制开关 (最高优先级)
     if (process.env.AI_ENABLED === "false") {
         return false;
     }
 
-    // 2. 检查是否有有效的 API Key 配置
+    // 2. 检查对应链路的 API Key 配置（文本/视觉可能使用不同 provider）
     const settings = await getAISettings();
-    const provider = settings.provider || "qwen";
+    const provider = role === "vision" ? settings.visionProvider : settings.provider;
     const keys = getApiKeysForProvider(provider, settings).filter(isKeyFormatValid);
 
     if (keys.length === 0) {
@@ -379,21 +379,30 @@ export async function generateText(
         throw new Error("Request cancelled by client.");
     }
 
-    // 全局预算熔断检查（text 类型预估 ¥0.10 覆盖 qwen-plus/deepseek 上限场景）
-    const budgetStatus = await checkAIBudget("text", 0.10, userId);
+    const settings = await getAISettings();
+    const primaryProvider = preferredProvider || settings.provider || "qwen";
+    const primaryModel = primaryProvider === settings.provider
+        ? settings.model
+        : getModelForProvider(primaryProvider);
+
+    // 模型感知预算预估：按实际模型与 maxTokens 预估，避免 qwen-max 等高价模型
+    // 仍按 ¥0.10 预占导致并发时突破日预算。
+    const promptTokensEstimate = Math.ceil((systemPrompt.length + userPrompt.length) / 2);
+    const estimatedCost = Math.max(
+        0.01,
+        estimateAICost(primaryProvider, primaryModel, promptTokensEstimate, settings.maxTokens)
+    );
+    let reservationCost: number | null = null;
+    const budgetStatus = await checkAIBudget("text", estimatedCost, userId);
     if (!budgetStatus.allowed) {
         // 单用户日限与全局预算分开标记：用户侧限额走 [AIUserLimit]（路由返回 429+原因），
         // 全局预算/在途预留走 [AIBudget]（路由 503 平台口径）
         const tag = budgetStatus.userLimited ? "[AIUserLimit]" : "[AIBudget]";
         throw new Error(`${tag} ${budgetStatus.reason}`);
     }
+    reservationCost = estimatedCost;
 
     try {
-        const settings = await getAISettings();
-        const primaryProvider = preferredProvider || settings.provider || "qwen";
-        const primaryModel = primaryProvider === settings.provider
-            ? settings.model
-            : getModelForProvider(primaryProvider);
 
         // 构建尝试队列
         const fallbackList = PROVIDER_FALLBACK_CHAIN[primaryProvider] || [];
@@ -402,6 +411,7 @@ export async function generateText(
         aiLogger.info(`AI Execution Plan: ${providerQueue.join(" -> ")}`);
 
         let lastError: Error | null = null;
+        let truncatedRetryUsed = false;
 
         for (const provider of providerQueue) {
             const model = provider === primaryProvider ? primaryModel : getModelForProvider(provider);
@@ -415,6 +425,25 @@ export async function generateText(
                 if (error.name === 'AbortError' || signal?.aborted) {
                     throw new Error("Request cancelled by client.");
                 }
+                // 截断自愈：同一 provider 用“精简输出”指令重试一次，仍失败再切换 provider
+                if (typeof error?.message === "string"
+                    && error.message.startsWith("[Truncated]")
+                    && !truncatedRetryUsed) {
+                    truncatedRetryUsed = true;
+                    const concisePrompt = `${userPrompt}
+
+【输出精简】上一次输出因长度上限被截断。请保持 JSON 结构完整，压缩每段文字：overview ≤ 120 字，每个 issue 各字段尽量短，最多 3 个 issue；宁少勿长，必须让 JSON 完整闭合。`;
+                    aiLogger.warn(`Text output truncated (${provider}/${model}), retrying once with concise instruction`);
+                    try {
+                        const retried = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, concisePrompt, settings, signal, userId, sessionId, timeoutMs);
+                        aiLogger.info(`AI Generation Success after concise retry using provider: ${provider}`);
+                        return retried;
+                    } catch (retryError: unknown) {
+                        lastError = retryError instanceof Error ? retryError : new Error(String(retryError));
+                        aiLogger.warn(`Concise retry failed (${provider}): ${lastError.message}. Switching to next...`);
+                        continue;
+                    }
+                }
                 aiLogger.warn(`Provider ${provider} failed: ${error.message}. Switching to next...`);
                 lastError = error;
                 continue;
@@ -424,7 +453,7 @@ export async function generateText(
         throw lastError || new Error("All AI providers failed.");
     } finally {
         // 安全释放：确保即使异常路径未调 recordAIUsage 也能释放预留
-        releasePendingReservation("text", 0.10);
+        if (reservationCost !== null) releasePendingReservation("text", reservationCost);
     }
 }
 
@@ -650,6 +679,8 @@ async function callProviderInternal(
             aiLogger.warn(`Text output truncated by max_tokens (${provider}/${model})`, {
                 completionTokens: completion.usage?.completion_tokens,
             });
+            // 交给上层做一次“精简重试”，不要把截断的 JSON 当正常输出返回
+            throw new Error("[Truncated] Text output truncated by max_tokens");
         }
         return completion.choices[0]?.message?.content || "";
     } catch (err) {

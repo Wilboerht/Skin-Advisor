@@ -32,13 +32,13 @@ export const AI_VISION_QUEUE_MAX_LENGTH = parseEnvInt("AI_VISION_QUEUE_MAX_LENGT
 /** 每日 token 预算（单位：tokens，0 = 不限制） */
 export const AI_DAILY_TOKEN_BUDGET = parseEnvIntOptional("AI_DAILY_TOKEN_BUDGET") ?? 3000000;
 
-/** 每日费用预算（单位：元，0 = 不限制） */
-export const AI_DAILY_COST_BUDGET_CNY = parseEnvFloatOptional("AI_DAILY_COST_BUDGET_CNY") ?? 1000;
+/** 每日费用预算（单位：元，0 = 不限制；与 .env.example 默认口径对齐） */
+export const AI_DAILY_COST_BUDGET_CNY = parseEnvFloatOptional("AI_DAILY_COST_BUDGET_CNY") ?? 50;
 
 /** 每月 token 预算 */
 export const AI_MONTHLY_TOKEN_BUDGET = parseEnvIntOptional("AI_MONTHLY_TOKEN_BUDGET") ?? 10000000;
 
-/** 每月费用预算 */
+/** 每月费用预算（月预算必须大于日预算，避免日预算永远无法触发） */
 export const AI_MONTHLY_COST_BUDGET_CNY = parseEnvFloatOptional("AI_MONTHLY_COST_BUDGET_CNY") ?? 500;
 
 /** 单用户每日 AI 调用次数上限 */

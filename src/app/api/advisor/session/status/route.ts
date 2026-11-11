@@ -5,6 +5,7 @@ import { accountDisabledResponse } from "@/lib/api-response";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
 import { isCompletedAnalysisResult, normalizeAnalysisResult } from "@/lib/analysis-result";
+import { deriveSessionPhase, phaseToStatus } from "@/lib/session-phase";
 import { logger } from "@/lib/logger";
 
 export const maxDuration = 10;
@@ -49,6 +50,8 @@ export async function GET(request: NextRequest) {
                 analysisStartedAt: true,
                 completedAt: true,
                 analysisResult: true,
+                faceScanStartedAt: true,
+                faceScanCompletedAt: true,
                 archivedAt: true,
                 ip: true,
                 userId: true
@@ -62,13 +65,12 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // 4. 状态判断：以 analysisResult 的实际内容为准。
-        // completedAt 是展示/排序字段；持久化拆步后它可能短暂为空，但报告已经可读。
+        // 4. 状态判断：以 analysisResult 的实际内容 + 阶段时间戳为准。
+        // completedAt 是展示/排序字段；拆步后它可能短暂为空，但报告已经可读。
         const rawResult = session.analysisResult as Record<string, unknown> | null;
-        const isCompleted = isCompletedAnalysisResult(rawResult);
-        const isStarted = !!session.analysisStartedAt;
+        const hasReport = isCompletedAnalysisResult(rawResult);
         // 免费重试进行中：completedAt 保留旧报告，analysisStartedAt 被更新为本次重试开始时间。
-        // 此时必须返回 analyzing，否则轮询会立刻拿到旧报告，前端误以为重试已完成。
+        // 此时必须返回 text_analyzing，否则轮询会立刻拿到旧报告，前端误以为重试已完成。
         const retryInProgress = !!session.completedAt
             && !!session.analysisStartedAt
             && new Date(session.analysisStartedAt).getTime() > new Date(session.completedAt).getTime();
@@ -76,14 +78,16 @@ export async function GET(request: NextRequest) {
         const retryStale = retryInProgress
             && Date.now() - new Date(session.analysisStartedAt!).getTime() > 5 * 60 * 1000;
 
-        let status: "pending" | "analyzing" | "completed";
-        if (isCompleted && (!retryInProgress || retryStale)) {
-            status = "completed";
-        } else if (isStarted) {
-            status = "analyzing";
-        } else {
-            status = "pending";
-        }
+        const phase = deriveSessionPhase({
+            faceScanStartedAt: session.faceScanStartedAt,
+            faceScanCompletedAt: session.faceScanCompletedAt,
+            analysisStartedAt: session.analysisStartedAt,
+            completedAt: session.completedAt,
+            hasReport,
+            retryInProgress,
+            retryStale,
+        });
+        const status = phaseToStatus(phase);
 
         // 5. 所有权校验：对所有状态统一检查，防止 session 枚举攻击
         const currentUser = await getSessionUser(request);
@@ -127,6 +131,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json(
                 {
                     status,
+                    phase,
                     sessionId,
                     result: normalized,
                     rawResult
@@ -136,7 +141,7 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json(
-            { status, sessionId },
+            { status, phase, sessionId },
             { status: 200, headers: rateLimitHeaders }
         );
     } catch (error: unknown) {

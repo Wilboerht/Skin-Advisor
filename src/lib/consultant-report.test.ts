@@ -20,6 +20,22 @@ function makeRaw(issues: unknown[], extra: Record<string, unknown> = {}) {
     return JSON.stringify({ overview: "整体状态稳定。", issues, strengths: [], ...extra });
 }
 
+describe("sanitizeConsultantReport - 去除自报档位与套话", () => {
+    it("去掉 62 分（良好）、暂不需要就医、预计 X 周见效", () => {
+        const report = parseConsultantReport(makeRaw([
+            makeIssue({
+                observation: "眼周 62 分（良好），轻度暗沉。",
+                medicalBoundary: "暂不需要就医，坚持护理观察即可。",
+                skincarePlan: "使用含烟酰胺的精华，预计 4-6 周可见明显改善。",
+            }),
+        ]));
+        const sanitized = sanitizeConsultantReport(report);
+        expect(sanitized.issues[0].observation).not.toContain("（良好）");
+        expect(sanitized.issues[0].medicalBoundary).not.toContain("暂不需要就医");
+        expect(sanitized.issues[0].skincarePlan).not.toContain("预计");
+    });
+});
+
 describe("parseConsultantReport - v2 报告解析容错", () => {
     it("severity 支持中文归一小写；缺失推理链字段触发修复重试", () => {
         const report = parseConsultantReport(makeRaw([

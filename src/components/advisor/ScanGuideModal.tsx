@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sun, Info, ChevronLeft, Smile, Droplets, Brush, Palette } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -17,6 +17,8 @@ interface ScanGuideModalProps {
     onExit?: () => void;
     /** 问卷中选择的性别：决定中间引导头像；未知时默认女性头像 */
     gender?: "female" | "male" | null;
+    /** 上次选择的肌肤状态；返回修改问卷后再次进入时保留，不再重置为素颜 */
+    initialSkinState?: SkinStateValue;
 }
 
 /** 状态胶囊的短文案：完整文案（SKIN_STATE_LABELS）仍用于报告与 AI 提示词，这里只做界面简写 */
@@ -37,8 +39,12 @@ const STATE_ICONS: Record<SkinStateValue, LucideIcon> = {
     heavy_makeup: Palette,
 };
 
-export function ScanGuideModal({ isOpen, onConfirm, onExit, gender }: ScanGuideModalProps) {
-    const [skinState, setSkinState] = useState<SkinStateValue>(DEFAULT_SKIN_STATE);
+export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinState }: ScanGuideModalProps) {
+    const [skinState, setSkinState] = useState<SkinStateValue>(initialSkinState ?? DEFAULT_SKIN_STATE);
+
+    useEffect(() => {
+        if (isOpen && initialSkinState) setSkinState(initialSkinState);
+    }, [isOpen, initialSkinState]);
     const { openLegalDoc } = useLegalDocModal();
     // 带妆时在状态选择下方就地提示影响范围（与结果页 banner、AI 条件化提示同口径）
     const isMakeup = isMakeupState(skinState);

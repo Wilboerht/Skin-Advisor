@@ -105,6 +105,19 @@ export function extractSessionStats(
     };
 }
 
+/** 归档只保留趋势需要的维度分数，去掉 details/confidence/notVisible/percentile 等描述性字段 */
+function toScoreOnlyDimensions(raw: unknown): Record<string, { score: number }> | null {
+    if (!raw || typeof raw !== "object") return null;
+    const out: Record<string, { score: number }> = {};
+    for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+        const score = (value as { score?: unknown } | null)?.score;
+        if (typeof score === "number" && Number.isFinite(score)) {
+            out[key] = { score };
+        }
+    }
+    return Object.keys(out).length > 0 ? out : null;
+}
+
 export function buildArchivedSummary(
     analysisResult: unknown,
     answers: unknown
@@ -129,15 +142,15 @@ export function buildArchivedSummary(
 
     // 归档时固化派生纹理分：冷层不再保留 zoneAnalysis，若不在此写回，
     // 超过热层保留条数后趋势的 texture 线会整段断掉
-    const rawDimensions = faceAnalysis?.dimensions;
+    const rawDimensions = toScoreOnlyDimensions(faceAnalysis?.dimensions);
     const derivedTexture = faceAnalysis ? resolveTrendDimensionScore(faceAnalysis, "texture") : null;
     const dimensions =
         derivedTexture !== null
             ? {
-                ...(rawDimensions && typeof rawDimensions === "object" ? rawDimensions as Record<string, unknown> : {}),
+                ...(rawDimensions ?? {}),
                 texture: { score: derivedTexture },
             }
-            : rawDimensions ?? null;
+            : rawDimensions;
 
     return {
         archived: true,

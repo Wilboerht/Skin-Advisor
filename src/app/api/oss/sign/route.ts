@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { filename, type, size, sessionId, guestId, cookieId, fingerprint, kind } = body;
+        const { filename, type, size, kind } = body;
 
         if (!filename || !type) {
             return NextResponse.json({ error: "Missing filename or type" }, { status: 400 });
@@ -52,15 +52,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "仅支持 jpg/png/webp/gif 图片上传" }, { status: 400 });
         }
 
-        // 3. 路径隔离：使用可溯源但不暴露原始标识的短哈希作为前缀。
-        // 头像使用登录用户 id 作为稳定标识，便于按用户归集；面部照片按游客/会话标识。
-        const rawId = uploadKind === "avatar"
-            ? avatarUser?.id
-            : (sessionId || guestId || cookieId
-                || request.headers.get("x-guest-cookie-id")
-                || fingerprint
-                || request.headers.get("x-fingerprint")
-                || crypto.randomUUID());
+        // 3. 路径隔离：面部/头像都绑定登录用户 ID，忽略客户端传入的 sessionId/guestId，
+        //    防止伪造他人 guest 路径后读取/删除他人照片。
+        const rawId = uploadKind === "avatar" ? avatarUser?.id : signedInUser.id;
         const idHash = crypto.createHash("sha256").update(String(rawId)).digest("hex").slice(0, 16);
         const date = new Date().toISOString().split("T")[0];
         const randomId = crypto.randomUUID();

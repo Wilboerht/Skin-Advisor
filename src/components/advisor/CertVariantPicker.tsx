@@ -18,7 +18,7 @@ interface CertVariantPickerProps {
 
 const VARIANTS: { id: CertVariant; label: string; desc: string }[] = [
     { id: "qr", label: "标准版", desc: "含综合评分与二维码" },
-    { id: "noqr", label: "分享版", desc: "无二维码，适合小红书等平台分享" },
+    { id: "noqr", label: "分享版", desc: "无二维码、无评分区，适合小红书等平台分享" },
 ];
 
 /** 「保存测肤证书」的版本选择弹层：标准版（含二维码）/ 分享版（无二维码） */

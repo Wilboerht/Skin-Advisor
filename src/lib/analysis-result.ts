@@ -5,6 +5,7 @@
 
 import type { ConsultantReport } from "@/lib/advisor-utils";
 import type { ProductPurchaseLink } from "@/lib/product-links";
+import type { SafetyNotes } from "@/lib/report-safety";
 
 /**
  * 上一次测肤摘要（趋势对比板块数据源）。
@@ -69,6 +70,8 @@ export interface ComprehensiveResult {
     freeRetryUsed?: boolean;
     /** 顾问叙事报告数据（v2-only；历史 v1 记录无此字段） */
     consultantReport?: ConsultantReport;
+    /** 安全与成分摘要（v2 起确定性生成；历史记录缺省） */
+    safetyNotes?: SafetyNotes;
 }
 
 function normalizeDataSource(
@@ -107,6 +110,26 @@ function toStringArray(value: unknown): string[] {
  * 防御性归一化历史脏数据：旧记录可能缺 issues/strengths 数组或字段类型异常，
  * 强转前补齐安全默认，保证组件渲染假设成立。
  */
+function normalizeSafetyNotes(raw: unknown): SafetyNotes | undefined {
+    if (!raw || typeof raw !== "object") return undefined;
+    const record = raw as Record<string, unknown>;
+    const notes: SafetyNotes = {
+        excluded: toStringArray(record.excluded),
+        actives: toStringArray(record.actives),
+        conflicts: toStringArray(record.conflicts),
+        patchTest: typeof record.patchTest === "string" ? record.patchTest : "",
+        sunProtection: typeof record.sunProtection === "string" ? record.sunProtection : "",
+        whenToSeeDoctor: toStringArray(record.whenToSeeDoctor),
+    };
+    const hasContent = notes.excluded.length > 0
+        || notes.actives.length > 0
+        || notes.conflicts.length > 0
+        || notes.patchTest.length > 0
+        || notes.sunProtection.length > 0
+        || notes.whenToSeeDoctor.length > 0;
+    return hasContent ? notes : undefined;
+}
+
 function normalizeConsultantReport(raw: unknown): ConsultantReport | undefined {
     if (!raw || typeof raw !== "object") return undefined;
     const record = raw as Record<string, unknown>;
@@ -189,5 +212,6 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
         reportVersion: typeof record.reportVersion === "number" ? record.reportVersion : undefined,
         freeRetryUsed: record.freeRetryUsed === true ? true : undefined,
         consultantReport: normalizeConsultantReport(record.consultantReport),
+        safetyNotes: normalizeSafetyNotes(record.safetyNotes),
     };
 }

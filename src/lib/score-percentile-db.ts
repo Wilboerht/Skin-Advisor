@@ -9,12 +9,15 @@
  * - 归档冷层保留 faceAnalysis.overallScore，一并参与。
  *
  * 性能：一次查询取全量分数直方图（≤101 桶）并全局缓存，任意 score 由缓存求累计，
- * 避免按 score 缓存被刷导致重复扫表；样本不足时由 percentileFromDistribution 给出展示性排名。
+ * 避免按 score 缓存被刷导致重复扫表；样本不足时 percentileFromDistribution 返回 null，
+ * 前端不展示具体排名，绝不编造“超过 X%”。
  */
 import prisma from "@/lib/prisma";
 import { buildDistribution, type ScoreDistribution } from "@/lib/score-percentile";
+import { getSharedJson, setSharedJson } from "@/lib/shared-cache";
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
+const SHARED_CACHE_KEY = "advisor:score-distribution:v1";
 
 interface DistributionCache {
     dist: ScoreDistribution;
@@ -54,14 +57,20 @@ export async function getScoreDistribution(): Promise<ScoreDistribution> {
     if (cache && cache.expiresAt > Date.now()) return cache.dist;
     // 并发防击穿：同一次刷新只发一条查询
     if (!refreshPromise) {
-        refreshPromise = loadDistribution()
-            .then((dist) => {
-                cache = { dist, expiresAt: Date.now() + CACHE_TTL_MS };
-                return dist;
-            })
-            .finally(() => {
-                refreshPromise = null;
-            });
+        refreshPromise = (async () => {
+            // 多实例优先读共享缓存；Redis 未配置时 shared-cache 自动回落内存
+            const shared = await getSharedJson<ScoreDistribution>(SHARED_CACHE_KEY);
+            if (shared && Array.isArray(shared.buckets) && typeof shared.total === "number") {
+                cache = { dist: shared, expiresAt: Date.now() + CACHE_TTL_MS };
+                return shared;
+            }
+            const dist = await loadDistribution();
+            cache = { dist, expiresAt: Date.now() + CACHE_TTL_MS };
+            await setSharedJson(SHARED_CACHE_KEY, dist, Math.floor(CACHE_TTL_MS / 1000));
+            return dist;
+        })().finally(() => {
+            refreshPromise = null;
+        });
     }
     return refreshPromise;
 }

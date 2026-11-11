@@ -151,6 +151,19 @@ function CompactProductCard({
                             {product.reason}
                         </p>
 
+                        {/* 对应维度：把“为什么推荐”落到本次报告的具体分数上 */}
+                        {product.dimensionLink && (
+                            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-espresso)]/[0.06] px-2 py-0.5 text-[10px] text-[var(--color-brand-cocoa)]">
+                                针对 {product.dimensionLink.dimension}
+                                <span className="font-medium tabular-nums">{product.dimensionLink.score} 分</span>
+                            </p>
+                        )}
+                        {product.howToUse && (
+                            <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-[var(--color-brand-taupe)]">
+                                用法：{product.howToUse}
+                            </p>
+                        )}
+
                         {/* 社交证明标签 */}
                         {product.socialProof && product.socialProof.affinity >= 10 && (
                             <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#F0EDE1]/70 px-2 py-0.5 text-[10px] text-[#8B7355] font-medium">

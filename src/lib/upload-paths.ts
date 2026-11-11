@@ -10,6 +10,8 @@
  * - 头像目录由 data-cleanup 豁免，避免 30 天后头像 404。
  */
 
+import crypto from "crypto";
+
 const UUID_PART =
     "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const EXT_PART = "(jpg|jpeg|png|webp|gif)";
@@ -43,6 +45,27 @@ export function isManagedUploadPath(pathOrUrl: string | null | undefined): boole
     if (!pathOrUrl) return false;
     const pathname = toManagedPath(pathOrUrl);
     return pathname ? GUEST_UPLOAD_RE.test(pathname) : false;
+}
+
+/** 当前登录用户在 guest/ 临时目录中的稳定前缀哈希（与 oss/sign 签发口径一致） */
+export function guestUploadOwnerHash(userId: string): string {
+    return crypto.createHash("sha256").update(userId).digest("hex").slice(0, 16);
+}
+
+/**
+ * 校验 guest 上传对象是否属于指定用户。
+ * 仅校验形状合法且 owner hash 匹配，防止拿到他人 URL 后分析/删除他人人脸照片。
+ */
+export function isOwnedGuestUploadPath(
+    pathOrUrl: string | null | undefined,
+    userId: string | null | undefined
+): boolean {
+    if (!pathOrUrl || !userId) return false;
+    if (!isManagedUploadPath(pathOrUrl)) return false;
+    const pathname = toManagedPath(pathOrUrl);
+    if (!pathname) return false;
+    const expected = `guest/${guestUploadOwnerHash(userId)}/`;
+    return pathname.startsWith(expected);
 }
 
 /**

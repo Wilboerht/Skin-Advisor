@@ -128,8 +128,8 @@ export function FaceScanOverlay({
                                 </div>
                                 <span className="text-white text-base font-medium drop-shadow-md">
                                     {successStep === "front" && "正脸拍摄完成"}
-                                    {successStep === "left" && "左转拍摄完成"}
-                                    {successStep === "right" && "右转拍摄完成"}
+                                    {successStep === "left" && "右转拍摄完成"}
+                                    {successStep === "right" && "左转拍摄完成"}
                                     {successStep === "chin" && "下颚拍摄完成"}
                                 </span>
                             </m.div>

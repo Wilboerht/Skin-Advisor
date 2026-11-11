@@ -9,13 +9,16 @@ import Image from "next/image";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { ScanGuideModal } from "@/components/advisor/ScanGuideModal";
-import { hasPrivacyConsent } from "@/components/advisor/PrivacyConsent";
+import { hasPrivacyConsent } from "@/lib/consent-storage";
+import { fetchConsentState } from "@/lib/consent-client";
+import { useAuth } from "@/hooks/useAuth";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useNavPush } from "@/hooks/use-nav-push";
 import { useFaceModels } from "@/hooks/use-face-models";
 import { scheduleFaceModelPreload } from "@/lib/face-models";
+import type { SkinStateValue } from "@/lib/skin-state";
 
 export default function FaceScanPage() {
     const router = useRouter();
@@ -23,6 +26,7 @@ export default function FaceScanPage() {
     const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/questions?edit=true"]);
     const toast = useToast();
     const { trackFaceScanStart, trackFaceScanComplete } = useAdvisorAnalytics();
+    const { user, isInitialized } = useAuth();
 
     // 本地开发环境自动启用 mock 模式，跳过 AI 调用
     const isDev = process.env.NODE_ENV !== "production";
@@ -35,57 +39,82 @@ export default function FaceScanPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [storageError, setStorageError] = useState(false);
+    // 退出确认框的目标：返回首页 or 返回问卷；避免顶部“返回”静默丢弃已拍照片
+    const [exitTarget, setExitTarget] = useState<"/" | "/questions?edit=true">("/");
     // 问卷中选择的性别（ADVISOR_GENDER）：决定 ScanGuideModal 的引导头像
     const [gender, setGender] = useState<"female" | "male" | null>(null);
+    // 上次选择的肌肤状态：返回修改问卷后再次进入时保留，避免静默重置为素颜
+    const [initialSkinState, setInitialSkinState] = useState<SkinStateValue | undefined>(undefined);
     // 面部模型全局状态（唯一事实源）：face-models store 单飞加载，问卷页已触发、这里只订阅
-    const { status: faceModelStatus } = useFaceModels();
+    const { status: faceModelStatus, load: loadFaceModels } = useFaceModels();
 
     // 模态框打开时锁定 body 滚动，防止 iOS 上顶部栏跟随滑动
-    useBodyScrollLock({ enabled: isModalOpen || showExitConfirm });
+    useBodyScrollLock({ enabled: isModalOpen || showExitConfirm || storageError });
     // 弹窗焦点管理 + Escape 关闭
     const exitModalRef = useFocusTrap<HTMLDivElement>(showExitConfirm, () => setShowExitConfirm(false));
     const storageErrorModalRef = useFocusTrap<HTMLDivElement>(storageError);
 
     useEffect(() => {
-        if (!hasPrivacyConsent()) {
-            toast.warning("请先完成隐私授权");
-            router.replace("/");
-            return;
-        }
+        if (!isInitialized) return;
+        let cancelled = false;
 
-        // 校验是否有问卷数据 (增加对无痕模式及禁用Storage时的异常处理)
-        let answers = null;
-        try {
-            answers = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
-        } catch (e) {
-            console.warn("Storage API disabled or unavailable", e);
-            // Storage 不可用时重定向回问卷页，由问卷页引导用户
-            toast.warning("请先完成问卷");
-            router.replace("/questions");
-            return;
-        }
+        (async () => {
+            // 扫脸接口强制登录：提前拦截，避免用户拍完才 401
+            if (!isDev && !user) {
+                toast.warning("请先登录后再进行测肤");
+                router.replace("/?auth=login&redirect=/face-scan");
+                return;
+            }
 
-        if (!answers) {
-            toast.warning("请先完成问卷");
-            router.replace("/questions");
-            return;
-        }
+            // 本地无同意记录时，再查一次服务端（支持换设备/清缓存后的老用户）
+            if (!hasPrivacyConsent()) {
+                const state = await fetchConsentState().catch(() => null);
+                if (cancelled) return;
+                if (!state || state.missing.length > 0) {
+                    toast.warning("请先完成隐私授权");
+                    router.replace("/");
+                    return;
+                }
+            }
 
-        try {
-            const savedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
-            if (savedGender === "female" || savedGender === "male") setGender(savedGender);
-        } catch { /* Storage 不可用时保持默认头像 */ }
+            // 校验是否有问卷数据 (增加对无痕模式及禁用Storage时的异常处理)
+            let answers = null;
+            try {
+                answers = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
+            } catch (e) {
+                console.warn("Storage API disabled or unavailable", e);
+                // Storage 不可用时重定向回问卷页，由问卷页引导用户
+                toast.warning("请先完成问卷");
+                router.replace("/questions");
+                return;
+            }
 
-        if (!hasTrackedStart.current) {
-            trackFaceScanStart();
-            hasTrackedStart.current = true;
-        }
-    }, [trackFaceScanStart, router, toast]);
+            if (!answers) {
+                toast.warning("请先完成问卷");
+                router.replace("/questions");
+                return;
+            }
 
-    // 双保险：isPreparing 全屏遮罩 30 秒兜底关闭，防止模型加载异常时遮罩永不消失
+            try {
+                const savedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
+                if (savedGender === "female" || savedGender === "male") setGender(savedGender);
+                const savedSkinState = localStorage.getItem(STORAGE_KEYS.ADVISOR_SKIN_STATE);
+                if (savedSkinState) setInitialSkinState(savedSkinState as SkinStateValue);
+            } catch { /* Storage 不可用时保持默认头像 */ }
+
+            if (!hasTrackedStart.current) {
+                trackFaceScanStart();
+                hasTrackedStart.current = true;
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [trackFaceScanStart, router, toast, isDev, isInitialized, user]);
+
+    // 双保险：isPreparing 全屏遮罩 12 秒兜底关闭，让 FaceCapture 的手动降级尽快可见
     useEffect(() => {
         if (!isPreparing) return;
-        const timer = setTimeout(() => setIsPreparing(false), 30000);
+        const timer = setTimeout(() => setIsPreparing(false), 12000);
         return () => clearTimeout(timer);
     }, [isPreparing]);
 
@@ -134,7 +163,9 @@ export default function FaceScanPage() {
                 toast.error("存储空间不足，请清理浏览器缓存后重试");
                 setIsSubmitting(false);
                 setStorageError(true);
-                return;
+                // 抛给 FaceCapture：让它重置 isAllCaptured 并重新打开相机，
+                // 否则用户会卡在“正在分析”且相机已停止的死路。
+                throw new Error("STORAGE_FULL");
             }
         }
 
@@ -156,7 +187,14 @@ export default function FaceScanPage() {
             {/* Top Bar —— 复用 /questions 统一样式 */}
             <header className={`w-full relative flex items-center justify-center pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-brand-charcoal/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
                 <button
-                    onClick={() => navPush("/questions?edit=true")}
+                    onClick={() => {
+                        if (hasStarted) {
+                            setExitTarget("/questions?edit=true");
+                            setShowExitConfirm(true);
+                        } else {
+                            navPush("/questions?edit=true");
+                        }
+                    }}
                     disabled={isNavigating}
                     className="absolute left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 touch-manipulation active:scale-95 disabled:opacity-40"
                     aria-label="返回"
@@ -175,7 +213,10 @@ export default function FaceScanPage() {
                 />
 
                 <button
-                    onClick={() => setShowExitConfirm(true)}
+                    onClick={() => {
+                        setExitTarget("/");
+                        setShowExitConfirm(true);
+                    }}
                     className="absolute right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 touch-manipulation active:scale-95"
                     aria-label="退出测试"
                 >
@@ -242,6 +283,13 @@ export default function FaceScanPage() {
                         <Loader2 className="w-10 h-10 text-[#8B7355] animate-spin mb-8" />
                         <p className="text-brand-charcoal text-xl md:text-2xl font-serif font-light tracking-[0.02em]">正在准备 AI 面部扫描</p>
                         <p className="text-brand-charcoal/60 text-[13px] md:text-sm mt-3 font-light max-w-xs text-center leading-[1.8] tracking-[0.06em]">首次加载模型需要几秒钟，请稍等</p>
+                        <button
+                            type="button"
+                            onClick={() => setIsPreparing(false)}
+                            className="mt-6 inline-flex h-10 min-w-[120px] items-center justify-center rounded-full border border-brand-charcoal/20 px-5 text-[13px] font-light tracking-[0.08em] text-brand-charcoal/70 transition-colors hover:bg-brand-charcoal/5"
+                        >
+                            改用手动拍照
+                        </button>
                     </m.div>
                 )}
             </AnimatePresence>
@@ -287,11 +335,11 @@ export default function FaceScanPage() {
                                             // 仅清除人脸照片缓存，保留问卷答案和进度供用户返回修改
                                             const { advisorStorage } = await import("@/lib/advisor-storage");
                                             await advisorStorage.clearFaceImages();
-                                            navPush("/");
+                                            navPush(exitTarget);
                                         }}
                                         className="px-6 h-10 border border-brand-charcoal/20 text-brand-charcoal/60 hover:text-brand-charcoal hover:border-brand-charcoal/40 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
-                                        退出并返回首页
+                                        {exitTarget === "/questions?edit=true" ? "离开并返回问卷" : "退出并返回首页"}
                                     </button>
                                 </div>
                             </div>
@@ -362,12 +410,17 @@ export default function FaceScanPage() {
             <ScanGuideModal
                 isOpen={isModalOpen}
                 gender={gender}
+                initialSkinState={initialSkinState}
                 onConfirm={(skinState) => {
                     // 记录拍摄时肌肤状态（供分析条件化与结果页提示）
                     try { localStorage.setItem(STORAGE_KEYS.ADVISOR_SKIN_STATE, skinState); } catch { /* ignore */ }
                     setHasStarted(true);
-                    // 模型已就绪时不闪准备遮罩；失败/加载中则由遮罩或 FaceCapture 降级态接管
-                    if (faceModelStatus !== "ready") setIsPreparing(true);
+                    // 用户明确开始扫描时强制按需加载模型（saveData/慢网也不跳过），
+                    // 加载期间给 12s 兜底遮罩与手动拍照入口。
+                    if (faceModelStatus !== "ready") {
+                        setIsPreparing(true);
+                        void loadFaceModels();
+                    }
                     setIsModalOpen(false);
                 }}
                 onExit={() => navPush("/questions?edit=true")}

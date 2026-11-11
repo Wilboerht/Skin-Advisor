@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { isManagedUploadPath, isAvatarUploadPath } from "./upload-paths";
+import {
+    guestUploadOwnerHash,
+    isAvatarUploadPath,
+    isManagedUploadPath,
+    isOwnedGuestUploadPath,
+} from "./upload-paths";
 
 const UUID = "123e4567-e89b-12d3-a456-426614174000";
 const HASH = "0123456789abcdef";
@@ -22,5 +27,17 @@ describe("upload-path guards", () => {
         expect(isManagedUploadPath("guest/../../etc/passwd")).toBe(false);
         expect(isAvatarUploadPath("avatars/../../foo.jpg")).toBe(false);
         expect(isAvatarUploadPath("https://evil.com/avatars/x.jpg")).toBe(false);
+    });
+
+    it("only accepts guest uploads owned by the current user", () => {
+        const userId = "user-123";
+        const ownHash = guestUploadOwnerHash(userId);
+        const otherHash = guestUploadOwnerHash("someone-else");
+
+        expect(isOwnedGuestUploadPath(`guest/${ownHash}/2026-10-19/${UUID}.jpg`, userId)).toBe(true);
+        expect(isOwnedGuestUploadPath(`/uploads/guest/${ownHash}/2026-10-19/${UUID}.jpg`, userId)).toBe(true);
+        expect(isOwnedGuestUploadPath(`guest/${otherHash}/2026-10-19/${UUID}.jpg`, userId)).toBe(false);
+        expect(isOwnedGuestUploadPath(`guest/${HASH}/2026-10-19/${UUID}.jpg`, userId)).toBe(false);
+        expect(isOwnedGuestUploadPath(`guest/${ownHash}/2026-10-19/${UUID}.jpg`, null)).toBe(false);
     });
 });

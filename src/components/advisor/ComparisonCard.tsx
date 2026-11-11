@@ -4,6 +4,7 @@ import { m } from "framer-motion";
 import { ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
 import type { PreviousTestSummary } from "@/lib/analysis-result";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
+import { SKIN_AGE_NOISE_THRESHOLD, SCORE_NOISE_THRESHOLD } from "@/lib/score-bands";
 import { cn } from "@/lib/utils";
 
 interface ComparisonCardProps {
@@ -63,12 +64,19 @@ function DeltaFigure({ delta, unit, goodWhenNegative = false }: { delta?: number
 }
 
 export default function ComparisonCard({ prev, score, skinAge, persona, at, onOpenDiary }: ComparisonCardProps) {
-    const scoreDelta = score !== undefined && typeof prev.score === "number"
+    const rawScoreDelta = score !== undefined && typeof prev.score === "number"
         ? Math.round(score - prev.score)
         : undefined;
-    const skinAgeDelta = skinAge !== undefined && typeof prev.skinAge === "number"
+    const rawSkinAgeDelta = skinAge !== undefined && typeof prev.skinAge === "number"
         ? Math.round(skinAge - prev.skinAge)
         : undefined;
+    // 小于噪声阈值的变化视为“基本持平”，避免把模型波动/1 岁差异说成真实趋势。
+    const scoreDelta = rawScoreDelta !== undefined && Math.abs(rawScoreDelta) >= SCORE_NOISE_THRESHOLD
+        ? rawScoreDelta
+        : rawScoreDelta === undefined ? undefined : 0;
+    const skinAgeDelta = rawSkinAgeDelta !== undefined && Math.abs(rawSkinAgeDelta) >= SKIN_AGE_NOISE_THRESHOLD
+        ? rawSkinAgeDelta
+        : rawSkinAgeDelta === undefined ? undefined : 0;
     const personaChanged = !!prev.persona && !!persona && prev.persona !== persona;
 
     const prevLabel = prev.persona ? getSkinTypeByIpKey(prev.persona)?.typeName ?? "未知肤质" : "—";
@@ -76,16 +84,19 @@ export default function ComparisonCard({ prev, score, skinAge, persona, at, onOp
     const prevDate = formatDate(prev.at);
     const gapDays = daysBetween(at, prev.at);
 
-    // 结论文案：派系变化 > 评分变化 > 肌肤年龄 > 稳定
+    // 结论文案：派系变化 > 评分变化 > 肌肤年龄 > 稳定/数据不足
     const conclusions: string[] = [];
     if (personaChanged) {
-        conclusions.push(`你的派系已从「${prevLabel}」切换为「${curLabel}」`);
+        conclusions.push(`护肤派系从「${prevLabel}」变为「${curLabel}」（可能受预算/护肤频率变化影响）`);
     }
     if (scoreDelta !== undefined && scoreDelta > 0) conclusions.push(`综合评分提升 ${scoreDelta} 分`);
     if (scoreDelta !== undefined && scoreDelta < 0) conclusions.push(`综合评分回落 ${Math.abs(scoreDelta)} 分`);
-    if (skinAgeDelta !== undefined && skinAgeDelta < 0) conclusions.push(`肌肤年轻了 ${Math.abs(skinAgeDelta)} 岁`);
+    if (skinAgeDelta !== undefined && skinAgeDelta < 0) conclusions.push(`肌肤年龄减少 ${Math.abs(skinAgeDelta)} 岁`);
     if (skinAgeDelta !== undefined && skinAgeDelta > 0) conclusions.push(`肌肤年龄增加 ${skinAgeDelta} 岁，值得关注`);
-    if (conclusions.length === 0) conclusions.push("整体肌肤状态保持稳定");
+    const hasComparableMetric = scoreDelta !== undefined || skinAgeDelta !== undefined;
+    if (conclusions.length === 0) {
+        conclusions.push(hasComparableMetric ? "整体肌肤状态基本持平" : "暂无可对比的评分/肌龄数据");
+    }
     const conclusion = conclusions.join("；");
 
     return (

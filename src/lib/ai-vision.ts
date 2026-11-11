@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import {
     getAISettings,
     getApiKeysForProvider,
@@ -8,7 +9,7 @@ import {
 } from "./ai";
 import { aiLogger } from "./logger";
 import { circuitBreaker } from "./circuit-breaker";
-import { checkAIBudget, recordAIUsage, releasePendingReservation, isBudgetSafeForRetry } from "./ai-budget";
+import { checkAIBudget, estimateAICost, recordAIUsage, releasePendingReservation, isBudgetSafeForRetry } from "./ai-budget";
 import { filterHealthyKeys, recordKeyResult } from "./ai-key-health";
 import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
@@ -19,6 +20,10 @@ import {
     VisionAnalysisOutputSchema,
 } from "./advisor-utils";
 import { enforceZoneAdviceIngredients } from "./ingredient-guard";
+import {
+    ZONE_NUMERIC_KEYS,
+    calibrateVisionScores,
+} from "./vision-scoring";
 
 export interface VisionImage {
     data: string; // base64 string (data:image/...)
@@ -28,81 +33,7 @@ export interface VisionImage {
 // 辅助函数：延迟
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-/** 单个分数夹取到 0-100 整数；非数值返回 undefined（保持字段缺失而不是写脏值） */
-function clampScore(value: unknown): number | undefined {
-    if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
-    return Math.min(100, Math.max(0, Math.round(value)));
-}
 
-const ZONE_NUMERIC_KEYS = ["oil", "texture", "wrinkles", "spots", "redness", "darkCircles", "firmness", "contour"] as const;
-const VISION_DIMENSION_KEYS = [
-    "waterOil", "skinTone", "spots", "wrinkles", "uvDamage",
-    "sensitivity", "darkCircles", "firmness", "acne", "radiance",
-] as const;
-
-function gradeFromScore(score: number): "excellent" | "good" | "average" | "fair" | "poor" {
-    if (score >= 85) return "excellent";
-    if (score >= 70) return "good";
-    if (score >= 55) return "average";
-    if (score >= 40) return "fair";
-    return "poor";
-}
-
-/**
- * 视觉结果分数校准（原地修改）：
- * - 十维/子分/区域指标统一夹取 0-100；
- * - overallScore 由十维分数均值重算，保证与雷达图/证据链一致（模型自报综合分不参与）；
- * - 肌龄夹取 10-80 的合理区间。
- */
-function calibrateVisionScores(data: Record<string, unknown>): void {
-    const dims = data.dimensions as Record<string, { score?: unknown; grade?: unknown; blackheads?: unknown; pimples?: unknown; confidence?: unknown }> | undefined;
-
-    if (dims && typeof dims === "object") {
-        const scores: number[] = [];
-        for (const key of VISION_DIMENSION_KEYS) {
-            const dim = dims[key];
-            if (!dim || typeof dim !== "object") continue;
-            const score = clampScore(dim.score);
-            if (score !== undefined) {
-                dim.score = score;
-                dim.grade = gradeFromScore(score);
-                scores.push(score);
-            } else {
-                delete dim.score;
-                delete dim.grade;
-            }
-            if (dim.blackheads !== undefined) dim.blackheads = clampScore(dim.blackheads);
-            if (dim.pimples !== undefined) dim.pimples = clampScore(dim.pimples);
-            if (typeof dim.confidence === "number" && Number.isFinite(dim.confidence)) {
-                dim.confidence = dim.confidence > 1
-                    ? Math.min(1, dim.confidence / 100)
-                    : Math.min(1, Math.max(0, dim.confidence));
-            } else {
-                delete dim.confidence;
-            }
-        }
-        data.overallScore = scores.length > 0
-            ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length)
-            : undefined;
-    } else {
-        data.overallScore = undefined;
-    }
-
-    const zones = data.zoneAnalysis as Record<string, Record<string, unknown>> | undefined;
-    if (zones && typeof zones === "object") {
-        for (const zone of Object.values(zones)) {
-            if (!zone || typeof zone !== "object") continue;
-            for (const key of ZONE_NUMERIC_KEYS) {
-                if (zone[key] !== undefined) zone[key] = clampScore(zone[key]);
-            }
-        }
-    }
-
-    const skinAge = data.skinAge as { estimated?: unknown } | undefined;
-    if (skinAge && typeof skinAge === "object" && typeof skinAge.estimated === "number" && Number.isFinite(skinAge.estimated)) {
-        skinAge.estimated = Math.min(80, Math.max(10, Math.round(skinAge.estimated)));
-    }
-}
 
 /**
  * 性别枚举容错（原地修改）：模型可能返回 男/Male/未知 等值导致 zod 枚举校验失败。
@@ -262,19 +193,29 @@ export async function analyzeImages(
     if (signal?.aborted) {
         throw new Error("Vision request cancelled by client.");
     }
-    // 0. 全局预算熔断检查（vision 类型预估 ¥0.30 覆盖 qwen-vl-max 多图上限场景）
-    const budgetStatus = await checkAIBudget("vision", 0.30, userId);
+    // 1. 获取配置（预算预估需要知道 provider/model，故提前到熔断检查之前）
+    const settings = await getAISettings();
+    const primaryProvider = (settings.visionProvider || _defaultProvider) as AIProvider;
+    const primaryModel = settings.visionModel || getDefaultVisionModel(primaryProvider);
+
+    // 0. 全局预算熔断检查：按实际视觉模型 + 图片数 + 输出上限预估，
+    // 避免 qwen-vl-max 等高价模型仍按 ¥0.30 预占。
+    const promptTokensEstimate = Math.ceil((_defaultSystemPrompt?.length || 0) / 2) + images.length * 1200;
+    const estimatedCost = Math.max(
+        0.05,
+        estimateAICost(primaryProvider, primaryModel, promptTokensEstimate, 6000)
+    );
+    let reservationCost: number | null = null;
+    const budgetStatus = await checkAIBudget("vision", estimatedCost, userId);
     if (!budgetStatus.allowed) {
         // 单用户日限与全局预算分开标记：用户侧限额走 [AIUserLimit]（路由返回 429+原因），
         // 全局预算/在途预留走 [AIBudget]（路由 503 平台口径）
         const tag = budgetStatus.userLimited ? "[AIUserLimit]" : "[AIBudget]";
         throw new Error(`${tag} ${budgetStatus.reason}`);
     }
+    reservationCost = estimatedCost;
 
     try {
-        // 1. 获取配置
-        const settings = await getAISettings();
-        const primaryProvider = (settings.visionProvider || _defaultProvider) as AIProvider;
         const fallbackList = PROVIDER_FALLBACK_CHAIN[primaryProvider] || [];
         const providerQueue = [primaryProvider, ...fallbackList];
 
@@ -286,6 +227,7 @@ export async function analyzeImages(
         }
 
         let lastError: Error | null = null;
+        let truncatedRetryUsed = false;
 
         for (const provider of providerQueue) {
             const isPrimary = provider === primaryProvider;
@@ -323,6 +265,33 @@ export async function analyzeImages(
                 if (error.name === 'AbortError' || signal?.aborted) {
                     throw new Error("Vision request cancelled by client.");
                 }
+                // 截断自愈：同一 provider 追加“精简输出”后重试一次
+                if (typeof error?.message === "string"
+                    && error.message.startsWith("[Truncated]")
+                    && !truncatedRetryUsed) {
+                    truncatedRetryUsed = true;
+                    const concisePrompt = `${finalUserPrompt}
+
+【输出精简】上一次输出因长度上限被截断。请保持 JSON 结构完整：zoneAnalysis 每个 advice ≤ 60 字、dimensions.details ≤ 30 字，skinConditions 最多 2 条；宁少勿长，必须让 JSON 完整闭合。`;
+                    aiLogger.warn(`Vision output truncated (${provider}/${model}), retrying once with concise instruction`);
+                    try {
+                        const retried = await tryVisionProviderWithKeys(
+                            provider,
+                            model,
+                            images,
+                            systemPrompt,
+                            concisePrompt,
+                            signal,
+                            userId,
+                            sessionId
+                        );
+                        return retried;
+                    } catch (retryError: unknown) {
+                        lastError = retryError instanceof Error ? retryError : new Error(String(retryError));
+                        aiLogger.warn(`Concise vision retry failed (${provider}): ${lastError.message}. Switching to next...`);
+                        continue;
+                    }
+                }
                 // 预算/限额类错误与 provider 无关，换下一个 provider 也必然失败，直接上抛
                 if (typeof error?.message === 'string' &&
                     (error.message.startsWith('[AIBudget]') ||
@@ -340,7 +309,7 @@ export async function analyzeImages(
 
         throw lastError || new Error("Vision analysis failed after exhausting all providers.");
     } finally {
-        releasePendingReservation("vision", 0.30);
+        if (reservationCost !== null) releasePendingReservation("vision", reservationCost);
     }
 }
 
@@ -391,8 +360,7 @@ async function tryVisionProviderWithKeys(
                 // 提取失败多为输出截断/空响应，记录首尾便于定位
                 aiLogger.warn(`Vision JSON extraction failed (${provider}/${model})`, {
                     contentLen: result.length,
-                    contentHead: result.slice(0, 150),
-                    contentTail: result.slice(-150),
+                    contentHash: crypto.createHash("sha256").update(result).digest("hex").slice(0, 16),
                 });
                 // [Parse] 前缀：模型输出问题而非 Key 故障，catch 里据此直抛（不轮换 Key、不记 Key 健康）
                 const extractMsg = extractErr instanceof Error ? extractErr.message : String(extractErr);
@@ -402,14 +370,20 @@ async function tryVisionProviderWithKeys(
             if (!parsed.success) {
                 aiLogger.warn(`Vision schema validation failed (${provider}/${model})`, {
                     issues: parsed.error.message.slice(0, 500),
-                    contentHead: result.slice(0, 200),
+                    contentLen: result.length,
+                    contentHash: crypto.createHash("sha256").update(result).digest("hex").slice(0, 16),
                 });
                 throw new Error(`[Parse] AI response schema validation failed: ${parsed.error.message}`);
             }
             const jsonData = parsed.data;
 
             // 分数校准：0-100 夹取 + 综合评分由十维均值重算（模型自报综合分常与维度矛盾）
-            calibrateVisionScores(jsonData as unknown as Record<string, unknown>);
+            const scoring = calibrateVisionScores(jsonData as unknown as Record<string, unknown>);
+            if (scoring.insufficient) {
+                throw new Error(
+                    `[Validation] 照片可判断的皮肤信息不足（有效维度 ${scoring.scoredDimensions}/10），请调整光线后重新拍摄`
+                );
+            }
 
             // 硬保证：zoneAnalysis advice 禁用成分扫描（prompt 软约束的兜底）。
             // 命中时该区域 advice 降级为安全通用文案并告警，禁用成分文本不出库
@@ -541,7 +515,7 @@ async function callOpenAICompatibleVision(
     // 路由 90s / 队列 15s：70s + 15s = 85s，给外层 abort 和客户端留出缓冲。
     // 历史上 qwen-vl-max 4图实测 48-50s；2026-10 起仅传正脸单图，70s 覆盖单图生成。
     const visionTimeout = new AbortController();
-    const visionTimeoutId = setTimeout(() => visionTimeout.abort(), 70000);
+    const visionTimeoutId = setTimeout(() => visionTimeout.abort(), 65000);
     const mergedSignal = mergeAbortSignals(signal, visionTimeout.signal);
     const cleanupTimeout = () => clearTimeout(visionTimeoutId);
 
@@ -680,6 +654,7 @@ async function callOpenAICompatibleVision(
         aiLogger.warn(`Vision output truncated by max_tokens (${provider}/${model})`, {
             completionTokens: response.usage?.completion_tokens,
         });
+        throw new Error("[Truncated] Vision output truncated by max_tokens");
     }
 
     return response.choices[0]?.message?.content || "";

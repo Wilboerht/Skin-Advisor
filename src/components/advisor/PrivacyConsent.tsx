@@ -4,10 +4,9 @@ import { useState } from "react";
 import { m } from "framer-motion";
 import { Shield, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
-import { CONSENT_VERSION } from "@/lib/consent-constants";
 import { recordClientConsent } from "@/lib/consent-client";
+import { savePrivacyConsent } from "@/lib/consent-storage";
 
 interface PrivacyConsentProps {
     onConsent: () => void;
@@ -148,14 +147,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                     <button
                         onClick={async () => {
                             if (!agreed) return;
-                            try {
-                                localStorage.setItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT, JSON.stringify({
-                                    version: CONSENT_VERSION,
-                                    consentedAt: new Date().toISOString()
-                                }));
-                            } catch (e) {
-                                console.warn("Failed to save privacy consent", e);
-                            }
+                            savePrivacyConsent();
                             await recordClientConsent();
                             onConsent();
                         }}
@@ -175,25 +167,5 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
     );
 }
 
-export function hasPrivacyConsent(): boolean {
-    if (typeof window === "undefined") return false;
-    try {
-        const raw = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
-        if (!raw) return false;
-        const data = JSON.parse(raw);
-        return data.version === CONSENT_VERSION && !!data.consentedAt;
-    } catch {
-        return false;
-    }
-}
-
-export function getPrivacyConsentPayload() {
-    if (typeof window === "undefined") return null;
-    try {
-        const raw = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
-        if (!raw) return null;
-        return JSON.parse(raw);
-    } catch {
-        return null;
-    }
-}
+// 兼容旧引用：实际实现已移到 lib/consent-storage（纯存储，不引入 UI）
+export { hasPrivacyConsent, getPrivacyConsentPayload } from "@/lib/consent-storage";

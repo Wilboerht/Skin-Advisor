@@ -173,7 +173,6 @@ if (process.env.ADMIN_SSO_ENABLED !== 'false') {
     'ADMIN_SSO_CLIENT_ID',
     'ADMIN_SSO_CLIENT_SECRET',
     'ADMIN_SSO_REDIRECT_URI',
-    'ADMIN_SSO_SECRET',
   ];
   for (const key of ssoVars) {
     if (!process.env[key]) {
@@ -184,6 +183,9 @@ if (process.env.ADMIN_SSO_ENABLED !== 'false') {
   if (process.env.ADMIN_SSO_SECRET && process.env.ADMIN_SSO_SECRET.length < 32) {
     console.error('   ❌ 错误: ADMIN_SSO_SECRET 长度至少 32 位');
     hasError = true;
+  }
+  if (process.env.ADMIN_SSO_SECRET) {
+    console.warn('   ⚠️  提示: ADMIN_SSO_SECRET 仅用于迁移期 HS256 回退；主站切换 RS256 后请删除');
   }
 }
 

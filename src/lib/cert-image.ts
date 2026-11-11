@@ -34,6 +34,12 @@ export interface CertImageInput {
     score?: number;
     /** 百分位（击败了全国 X% 的用户）；null/缺省不叠加 */
     percentile?: number | null;
+    /** 参与百分位统计的样本量；有百分位时展示，避免无口径排名 */
+    sampleSize?: number;
+    /** 测肤日期（ISO）；缺失时不叠加，避免把导出时间伪装成测肤时间 */
+    testDate?: string;
+    /** 报告编号（会话 ID）；展示短码即可 */
+    reportId?: string;
     /** 派系建议（m7 建议标题），最多叠加 2 条 */
     advice?: string[];
     /** 用户昵称：在「肌智派自测证书」标题下方叠加一行"{昵称}的肌智派系是：" */
@@ -79,6 +85,53 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
     }
     if (line) lines.push(line);
     return lines;
+}
+
+function formatCertDate(value?: string): string | null {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
+}
+
+function shortReportId(value?: string): string | null {
+    if (!value) return null;
+    const compact = value.replace(/[^a-zA-Z0-9]/g, "");
+    return compact ? compact.slice(-8).toUpperCase() : null;
+}
+
+/**
+ * 证书底部披露：AI 声明 + 测肤日期 + 报告编号 + 样本量 + 低分保护文案。
+ * 这是对外传播物料，不能只有分数没有口径。
+ */
+function drawFooter(ctx: CanvasRenderingContext2D, input: CertImageInput): void {
+    const date = formatCertDate(input.testDate);
+    const reportId = shortReportId(input.reportId);
+    const lines: string[] = ["AI 图像分析，仅供参考，不构成医疗诊断"];
+
+    const meta: string[] = [];
+    if (date) meta.push(`测肤日期 ${date}`);
+    if (reportId) meta.push(`报告编号 ${reportId}`);
+    if (typeof input.percentile === "number" && typeof input.sampleSize === "number" && input.sampleSize > 0) {
+        meta.push(`样本 ${input.sampleSize} 位用户`);
+    }
+    if (meta.length > 0) lines.push(meta.join(" · "));
+    if (typeof input.percentile === "number" && input.percentile < 40) {
+        lines.push("肌肤状态会随作息、换季和激素波动变化，本次评分作为护理起点，建议 4 周后复测对比");
+    }
+
+    ctx.save();
+    ctx.globalAlpha = 0.58;
+    ctx.fillStyle = TEXT_COLOR;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.font = `20px ${FONT_STACK}`;
+    const startY = lines.length >= 3 ? 1796 : 1812;
+    lines.forEach((line, index) => {
+        ctx.fillText(fitText(ctx, line, 1264), 88, startY + index * 32);
+    });
+    ctx.restore();
 }
 
 /** qr 版：标题下叠加昵称行；夹板留空区叠加评分 + 圆环叠加百分位 + 护肤建议（每条一行） */
@@ -156,6 +209,7 @@ export async function renderCertImage(input: CertImageInput): Promise<Blob> {
     ctx.fillStyle = TEXT_COLOR;
     if (variant === "noqr") drawNoqrOverlays(ctx, input);
     else drawQrOverlays(ctx, input);
+    drawFooter(ctx, input);
 
     return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {

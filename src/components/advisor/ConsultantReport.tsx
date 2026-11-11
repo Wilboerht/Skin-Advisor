@@ -40,6 +40,9 @@ function getEvidenceChips(issue: ConsultantIssue, dimensions?: ConsultantReportP
             const dim = dimensions[key];
             const label = DIMENSION_LABELS[key];
             if (!dim || typeof dim.score !== "number" || !label) return null;
+            // 不可见/低置信维度不作为硬证据；避免报告拿“看不清”的维度下结论。
+            if (dim.notVisible === true) return null;
+            if (typeof dim.confidence === "number" && dim.confidence < 0.5) return null;
             return { key, label, score: dim.score };
         })
         .filter((c): c is NonNullable<typeof c> => c !== null);
@@ -89,6 +92,8 @@ interface DimensionLike {
     score?: number;
     grade?: string;
     details?: string;
+    confidence?: number;
+    notVisible?: boolean;
 }
 
 interface ConsultantReportProps {
@@ -187,6 +192,17 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                     />
                 </span>
             </button>
+
+            {/* 中度/重度问题的就医边界在折叠态就露出摘要：安全信息不能藏在展开后才可见 */}
+            {!expanded && issue.severity !== "mild" && issue.medicalBoundary.trim() && (
+                <div className="mx-4 mb-3 flex items-start gap-1.5 rounded-lg border border-amber-200/60 bg-amber-50 px-3 py-2 text-amber-900 lg:mx-5">
+                    <Stethoscope className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
+                    <p className="text-[11px] leading-relaxed line-clamp-2">
+                        <span className="font-medium">就医边界 · </span>
+                        {stripConsultantStepLabels(issue.medicalBoundary)}
+                    </p>
+                </div>
+            )}
 
             {/* 卡体：默认折叠，展开动画（高度 + 透明度；减弱动效偏好时瞬时切换） */}
             <AnimatePresence initial={false}>
@@ -302,11 +318,16 @@ function StepLabel({ children, emphasize = false }: { children: ReactNode; empha
     );
 }
 
+const NEGATIVE_STRENGTH_PATTERN = /(受损|敏感|升高|明显|风险|较差|失衡|堵塞|泛红|干燥|痘|斑|纹|脆弱|炎症|应激|问题|不足)/;
+
 export function ConsultantReport({ report, dimensions, personaRoute }: ConsultantReportProps) {
     const personaData = personaRoute ? getSkinTypeByIpKey(personaRoute) : undefined;
     const hasRoutine = personaData?.m4 && (personaData.m4.morning || personaData.m4.night);
     const hasFormula = !!personaData?.m7?.formulaCore;
-    const hasAdvantages = personaData?.m5?.advantages?.length;
+    const safeAdvantage = personaData?.m5?.advantages?.find(
+        (advantage) => !NEGATIVE_STRENGTH_PATTERN.test(advantage.title)
+    );
+    const hasAdvantages = !!safeAdvantage;
     // 防御历史脏数据：normalizeAnalysisResult 已归一化，这里再兜底非数组场景
     const issues = Array.isArray(report.issues) ? report.issues : [];
     const strengths = Array.isArray(report.strengths) ? report.strengths : [];
@@ -422,8 +443,8 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
                         </ul>
                     ) : (
                         <p className="text-sm leading-[1.85] text-brand-charcoal/75">
-                            <span className="font-medium text-[var(--color-brand-espresso)]">{personaData!.m5.advantages[0].title}：</span>
-                            {personaData!.m5.advantages[0].content}
+                            <span className="font-medium text-[var(--color-brand-espresso)]">{safeAdvantage!.title}：</span>
+                            {safeAdvantage!.content}
                         </p>
                     )}
                 </section>

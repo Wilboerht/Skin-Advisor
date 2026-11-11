@@ -132,10 +132,22 @@ function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; onSwitc
             {RESULT_PAGE_TABS.map(({ index, label }) => (
                 <button
                     key={label}
+                    id={`result-tab-${index}`}
                     role="tab"
                     aria-selected={pageIndex === index}
+                    aria-controls={`result-panel-${index}`}
+                    tabIndex={pageIndex === index ? 0 : -1}
                     onClick={() => { if (pageIndex !== index) onSwitchPage(index); }}
-                    className={`rounded-full px-4 py-2 text-xs transition-colors active:opacity-70 cursor-pointer ${
+                    onKeyDown={(e) => {
+                        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+                        e.preventDefault();
+                        const next = e.key === "ArrowRight" ? 1 : 0;
+                        onSwitchPage(next as 0 | 1);
+                        requestAnimationFrame(() => {
+                            document.getElementById(`result-tab-${next}`)?.focus();
+                        });
+                    }}
+                    className={`rounded-full px-4 py-2 text-xs transition-colors active:opacity-70 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-charcoal)]/40 focus-visible:ring-offset-1 ${
                         pageIndex === index
                             ? "bg-[var(--color-brand-charcoal)]/10 font-medium text-[var(--color-brand-charcoal)]"
                             : "text-stone-500 hover:text-stone-800"
@@ -156,7 +168,7 @@ function ResultFooter({ simple = false }: { simple?: boolean }) {
             <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
                 <span suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
                 <span aria-hidden="true" className="hidden sm:inline">|</span>
-                <p>*AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议</p>
+                <p>*AI 图像分析结果仅供参考，不构成医疗诊断、治疗建议或处方</p>
             </div>
         );
     }
@@ -185,7 +197,7 @@ function ResultFooter({ simple = false }: { simple?: boolean }) {
                 </a>
             </div>
             <p className="text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
-                *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
+                *AI 图像分析结果仅供参考，不构成医疗诊断、治疗建议或处方。如有皮肤疾病或健康问题，请咨询专业皮肤科医生。
             </p>
         </div>
     );
@@ -209,7 +221,7 @@ function ResultHeader({
         // 顶部间距：固定顶栏（76/84px）下缘到标题的初始留白，比原 pt-6/8 各加大 16px
         <div className="w-full flex flex-col items-center pt-10 lg:pt-12 pb-4 lg:pb-5">
             {/* 状态标签属于标题一体：紧跟标题文字同行参与布局（整体居中） */}
-            <p className="mt-0 mb-4 lg:mb-5 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
+            <h1 className="mt-0 mb-4 lg:mb-5 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
                 <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                 {nickname} 的专属肌智派在线测肤报告
                 {skinStateLabel && (
@@ -217,7 +229,7 @@ function ResultHeader({
                         {skinStateLabel}
                     </span>
                 )}
-            </p>
+            </h1>
             {/* 两页切换 tab：与标题、与下方卡片保持同一间距
                 （标题 mb-4/5 == 页头 pb-4/5，tab 自身不再带下边距） */}
             <ResultPageTabs pageIndex={pageIndex} onSwitchPage={onSwitchPage} />
@@ -484,10 +496,10 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         })();
         return () => { cancelled = true; };
     }, [isMock, userId]);
-    // 综合评分百分位（后端聚合；样本不足时后端按分数给出 72–93 展示性排名）：
-    // 仅评分可用时请求，请求失败则不展示副标
+    // 综合评分百分位（后端真实聚合）：样本不足时后端返回 null，前端不展示具体排名。
+    // 该请求不阻塞保存证书（排名是附加信息，不是报告生成前提）。
     const [scorePercentile, setScorePercentile] = useState<number | null>(null);
-    // 首帧就按"有分数"初始化 loading，避免 effect 执行前保存按钮短暂可点
+    const [percentileSampleSize, setPercentileSampleSize] = useState<number>(0);
     const [percentileLoading, setPercentileLoading] = useState(
         typeof faceAnalysis?.overallScore === "number" && !isMock
     );
@@ -496,18 +508,21 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         if (typeof overallScore !== "number") {
             // 分数变为 undefined 时清空旧百分位，避免封面/证书展示与当前报告不符的副标
             setScorePercentile(null);
+            setPercentileSampleSize(0);
             setPercentileLoading(false);
             return;
         }
         // mock 预览（本地 UI 走查，无真实聚合）：给演示百分位，保证「超过 X% 用户」徽章可见
         if (isMock) {
-            setScorePercentile(96);
+            setScorePercentile(86);
+            setPercentileSampleSize(320);
             setPercentileLoading(false);
             return;
         }
         let cancelled = false;
         // 评分变化（如重新分析）先清掉旧百分位，避免展示与当前分数不符的副标
         setScorePercentile(null);
+        setPercentileSampleSize(0);
         setPercentileLoading(true);
         (async () => {
             try {
@@ -519,6 +534,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 const data = await res.json();
                 if (cancelled) return;
                 setScorePercentile(typeof data.percentile === "number" ? data.percentile : null);
+                setPercentileSampleSize(typeof data.sampleSize === "number" ? data.sampleSize : 0);
             } catch {
                 // 静默降级：不展示百分比副标
             } finally {
@@ -1068,8 +1084,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 variant,
                 score: faceAnalysis?.overallScore,
                 percentile: scorePercentile,
+                sampleSize: percentileSampleSize,
                 advice,
                 nickname: userNickname,
+                testDate: certDate,
+                reportId: sessionId,
             });
 
             // 微信内置浏览器（移动端与桌面端）：<a download> 与 navigator.share(files) 均不可靠，
@@ -1456,7 +1475,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         const errorMessage = analysisState.error || "";
         const isQuotaError = /测试次数|测试上限|次数已用完|免费重试|限流|明天再试/i.test(errorMessage);
         // 游客/会话失效触发 401 requireLogin：重试无意义，引导登录
-        const isRequireLogin = /需登录|登录后使用/i.test(errorMessage);
+        const isRequireLogin = /需登录|登录后使用|请先登录/i.test(errorMessage);
+        // 强制扫脸：无面部结果时引导回扫脸页，而不是反复重试文本分析
+        const isFaceRequired = /请先完成扫脸|扫脸.*(未完成|拍摄)|面部分析未完成|FACE_REQUIRED/i.test(errorMessage);
+        // 服务端同意缺失：重试不会成功，需回到首页重新阅读并同意
+        const isConsentRequired = /测肤授权|隐私授权|重新阅读并同意/.test(errorMessage);
         return (
             <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
@@ -1465,7 +1488,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">
-                                {isRequireLogin ? "测肤需登录后使用" : isQuotaError ? "今日测试次数已用完" : "分析遇到了一些问题"}
+                                {isRequireLogin ? "测肤需登录后使用" : isConsentRequired ? "需要重新授权" : isFaceRequired ? "请先完成扫脸拍摄" : isQuotaError ? "今日测试次数已用完" : "分析遇到了一些问题"}
                             </h3>
                             <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em]">
                                 {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
@@ -1479,6 +1502,28 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         登录 / 注册
+                                    </button>
+                                    <button
+                                        onClick={() => navPush("/")}
+                                        className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    >
+                                        返回首页
+                                    </button>
+                                </>
+                            ) : isConsentRequired ? (
+                                <button
+                                    onClick={() => navPush("/")}
+                                    className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                >
+                                    返回首页重新授权
+                                </button>
+                            ) : isFaceRequired ? (
+                                <>
+                                    <button
+                                        onClick={() => navPush("/face-scan")}
+                                        className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    >
+                                        重新拍摄
                                     </button>
                                     <button
                                         onClick={() => navPush("/")}
@@ -1632,6 +1677,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         {pageIndex === 0 && (
                             <m.div
                                 key="cover-layer"
+                                id="result-panel-0"
+                                role="tabpanel"
+                                aria-labelledby="result-tab-0"
                                 className={`${styles.pageLayer} ${styles.coverLayer} flex flex-col`}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -1649,6 +1697,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             nickname={userNickname}
                                             score={faceAnalysis?.overallScore ?? undefined}
                                             percentile={scorePercentile}
+                                            percentileSampleSize={percentileSampleSize}
+                                            testDate={certDate}
+                                            reportId={sessionId}
                                             skinType={result?.skinProfile?.type || 'combination'}
                                             budget={ipBudget}
                                             skincareFrequency={ipSkincareFrequency}
@@ -1679,6 +1730,9 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             <m.div
                                 key="report-layer"
                                 ref={setReportLayerRef}
+                                id="result-panel-1"
+                                role="tabpanel"
+                                aria-labelledby="result-tab-1"
                                 className={styles.pageLayer}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -1735,9 +1789,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             faceAnalysis={faceAnalysis}
                                             nickname={userNickname}
                                             previousSummary={prevSum || null}
-                                            authInitialized={authInitialized}
-                                            isLoggedIn={!!user}
-                                            onUnlock={() => openAuthModal("login")}
+                                            sessionId={sessionId}
                                             onOpenDiary={() => setAccountOpenSeq((n) => n + 1)}
                                         />
                                     </section>

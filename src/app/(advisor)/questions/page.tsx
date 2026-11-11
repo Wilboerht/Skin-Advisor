@@ -15,7 +15,8 @@ import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
 import { cn } from "@/lib/utils";
 import { scheduleFaceModelPreload } from "@/lib/face-models";
-import { hasPrivacyConsent } from "@/components/advisor/PrivacyConsent";
+import { hasPrivacyConsent } from "@/lib/consent-storage";
+import { getOrCreateAnalyticsSessionId } from "@/lib/analytics-session";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useNavPush } from "@/hooks/use-nav-push";
@@ -613,6 +614,14 @@ export default function QuestionsPage() {
             sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
         } catch { /* ignore */ }
         trackQuestionnaireComplete(finalAnswers);
+        // 让分析流程复用埋点 UUID：face-analyze / analyze / 漏斗事件落到同一条会话
+        const analyticsSessionId = getOrCreateAnalyticsSessionId();
+        if (analyticsSessionId) {
+            try {
+                sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID, analyticsSessionId);
+                sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT, String(Date.now()));
+            } catch { /* ignore */ }
+        }
         // 性别不一致免费重试：复用已存的面部结果，跳过 face-scan/视觉 AI，直接进入 analyze。
         const isFreeRetry = safeStorage.get(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
         navPush(isFreeRetry ? "/result?status=analyzing" : "/face-scan");

@@ -6,17 +6,15 @@ import {
 } from "./score-percentile";
 
 describe("percentileFromDistribution", () => {
-    it("样本不足时按分数给 72–93 的展示性排名", () => {
+    it("样本不足时返回 null（不编造展示性排名）", () => {
         const dist = buildDistribution([{ score: 85, count: MIN_PERCENTILE_SAMPLE_SIZE - 1 }]);
-        // 区间内直接用分数
-        expect(percentileFromDistribution(dist, 85)).toBe(85);
-        // 低于下限 → 夹到 72；高于上限 → 夹到 93
-        expect(percentileFromDistribution(dist, 60)).toBe(72);
-        expect(percentileFromDistribution(dist, 98)).toBe(93);
+        expect(percentileFromDistribution(dist, 85)).toBeNull();
+        expect(percentileFromDistribution(dist, 60)).toBeNull();
+        expect(percentileFromDistribution(dist, 98)).toBeNull();
     });
 
-    it("空分布同样给展示性排名（徽章始终展示）", () => {
-        expect(percentileFromDistribution(buildDistribution([]), 80)).toBe(80);
+    it("空分布返回 null", () => {
+        expect(percentileFromDistribution(buildDistribution([]), 80)).toBeNull();
     });
 
     it("达到最小样本量后按真实分布计算", () => {

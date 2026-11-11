@@ -48,9 +48,9 @@ function formatLogEntry(entry: LogEntry): string {
 function sanitizeContext(context: LogContext): LogContext {
     const sensitiveKeys = [
         "apiKey", "apikey", "secret", "password", "token", "authorization",
-        "phone", "phonenumber", "cookie", "session", "jwt", "signature",
+        "phone", "phonenumber", "cookie", "jwt", "signature",
         "refreshtoken", "creditcard", "ssn", "passport",
-        "privatekey", "private_key",
+        "privatekey", "private_key", "sessiontoken", "sessionsecret",
     ];
     const sanitized: LogContext = {};
 

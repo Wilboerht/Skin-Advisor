@@ -6,7 +6,7 @@ import { fetchWithCsrf } from '@/lib/fetch-client';
 import { preprocessFaceImage } from '@/lib/image-processing';
 import { useToast } from '@/components/ui/Toast';
 
-import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
+import { getPrivacyConsentPayload } from '@/lib/consent-storage';
 import { ensureClientConsent } from '@/lib/consent-client';
 import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from '@/lib/storage-keys';
 import { localDateStr } from '@/lib/local-date';
@@ -28,6 +28,8 @@ export interface AsyncAnalysisState {
 
 export interface SessionStatusResponse {
     status: 'pending' | 'analyzing' | 'completed' | 'not_found' | 'forbidden' | 'unauthorized' | 'rate_limited' | 'transient_error';
+    /** 服务端阶段：决定恢复时是否只需续跑文本分析 */
+    phase?: 'pending' | 'face_analyzing' | 'face_completed' | 'text_analyzing' | 'completed';
     sessionId: string;
     result?: Record<string, unknown> | null;
     rawResult?: Record<string, unknown> | null;
@@ -65,7 +67,8 @@ function clearAnalyzingSessionMarkers(): void {
     } catch { /* ignore */ }
 }
 
-const ANALYSIS_LOCK_TTL_MS = 90 * 1000;
+// 覆盖视觉 95s + 文本 85s + 队列/网络开销；过短会让刷新后的恢复流程与在途分析并发。
+const ANALYSIS_LOCK_TTL_MS = 300 * 1000;
 
 // 失败重试暂存的读写包装：纯逻辑（指纹/TTL/形状校验）在 lib/failed-analysis-retry.ts
 function readFailedAnalysisRetry(): FailedAnalysisRetry | null {
@@ -357,6 +360,37 @@ export function useAsyncAnalysis() {
         throw new SessionRecoveryError('timeout', '分析结果准备时间有点长，请稍后重试。');
     }, [checkSessionStatus]);
 
+    /**
+     * face-analyze 返回 202 时，等待面部阶段完成（不等到整份报告完成）。
+     * 随后 analyze 会用服务端已持久化的 faceAnalysis 继续文本阶段。
+     */
+    const waitForFaceCompleted = useCallback(async (
+        sessionId: string,
+        signal?: AbortSignal
+    ): Promise<{ completedResult?: Record<string, unknown>; faceReady: boolean }> => {
+        const deadline = Date.now() + 120_000;
+        while (Date.now() < deadline) {
+            if (signal?.aborted) throw new Error('已取消等待');
+            const status = await checkSessionStatus(sessionId, signal);
+            if (status.status === 'completed' && status.rawResult) {
+                return { completedResult: status.rawResult, faceReady: true };
+            }
+            if (status.phase === 'face_completed' || status.phase === 'text_analyzing') {
+                return { faceReady: true };
+            }
+            if (status.status === 'not_found') {
+                // face-analyze 会 upsert 会话占位行；短暂 not_found 多为请求尚未落库，继续等。
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+                continue;
+            }
+            if (status.status === 'forbidden' || status.status === 'unauthorized') {
+                throw new Error(status.status === 'unauthorized' ? '登录状态已失效，请重新登录。' : '无权访问该会话。');
+            }
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+        throw new Error('面部分析时间较长，请稍后重试。');
+    }, [checkSessionStatus]);
+
     const runAnalysis = useCallback(async () => {
         // 并发保护：防止双击或重渲染导致多个分析流程竞争
         if (isRunningRef.current) {
@@ -506,6 +540,8 @@ export function useAsyncAnalysis() {
 
             // 1. Face Analysis
             let faceAnalysis = null;
+            // 免费重试直接复用服务端已存的面部结果；正常流程必须等到面部阶段成功
+            let faceReady = isFreeRetryEarly;
 
             // 拍摄时肌肤状态（扫脸引导弹窗选择）：随分析请求透传，用于视觉/文本 prompt 条件化
             let skinState: string | undefined;
@@ -534,7 +570,11 @@ export function useAsyncAnalysis() {
                     hadSavedFaceImages = localStorage.getItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB) === "true";
                 } catch { /* ignore */ }
                 if (hadSavedFaceImages) {
-                    toast.warning("扫脸照片已超过保留期限，本次报告仅基于问卷结果生成");
+                    toast.warning("扫脸照片已超过保留期限，请重新拍摄后再生成报告");
+                }
+                // 产品决策：不允许跳过扫脸，纯问卷报告不再生成。
+                if (!isFreeRetryEarly) {
+                    throw new Error("请先完成扫脸拍摄后再生成报告");
                 }
             }
 
@@ -562,9 +602,8 @@ export function useAsyncAnalysis() {
 
                             try {
                                 let finalData = imgData;
-                                // Always preprocess base64 images to keep payload small,
-                                // even if they are already under 300KB.
-                                if (finalData.startsWith('data:')) {
+                                // 已经足够小（约 300KB 以内 base64）就跳过重编码，避免把纹理压糊。
+                                if (finalData.startsWith('data:') && finalData.length > 420_000) {
                                     const processed = await preprocessFaceImage(imgData);
                                     finalData = processed.imageData;
                                 }
@@ -584,7 +623,8 @@ export function useAsyncAnalysis() {
                     //    侧脸/下巴不参与视觉分析，减少上传体积、视觉编码与生成耗时；
                     //    其余角度照常拍摄/上传，仅供报告页展示
                     const MAX_VISION_IMAGES = 1;
-                    const MAX_IMAGE_BASE64_CHARS = 2_000_000; // 约 1.5MB 原始数据
+                    // 与服务端 FaceAnalyzeRequestSchema 保持一致（1.5M base64 字符）
+                    const MAX_IMAGE_BASE64_CHARS = 1_500_000;
                     for (const result of uploadResults) {
                         if (result.key !== "front") continue;
                         // 跳过过大的图片（前端预处理应已将单张控制在 300KB 以内，此处为兜底）
@@ -614,9 +654,15 @@ export function useAsyncAnalysis() {
                             }, { retries: 0 });
 
                             if (faceRes.status === 202) {
-                                faceAnalysis = null;
+                                // 面部仍在分析：只等面部阶段完成，再交给 analyze 续跑文本。
+                                const wait = await waitForFaceCompleted(sessionId, abortController.signal);
+                                faceReady = wait.faceReady;
+                                if (wait.completedResult) {
+                                    faceAnalysis = (wait.completedResult.faceAnalysis as typeof faceAnalysis) ?? null;
+                                }
                             } else if (faceRes.ok) {
                                 faceAnalysis = await faceRes.json();
+                                faceReady = true;
                                 // 读取队列状态（如果系统繁忙，告诉用户）
                                 const qp = faceRes.headers.get("X-Queue-Position");
                                 const qw = faceRes.headers.get("X-Queue-Wait-Seconds");
@@ -666,6 +712,11 @@ export function useAsyncAnalysis() {
                 }
             }
 
+            // 强制扫脸：面部阶段未成功时不得进入文本分析（不再降级为纯问卷报告）。
+            if (!faceReady && !isFreeRetryEarly) {
+                throw new Error("面部分析未完成，请重新拍摄或稍后重试。");
+            }
+
             // 面部分析完成 → 推进进度条（同时切换到下一阶段，合并更新减少 re-render）
             if (faceAnalysis) {
                 setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 65) }));
@@ -680,22 +731,35 @@ export function useAsyncAnalysis() {
             // NOTE: Do NOT clear localStorage here — only clear after server confirms success
 
             const privacyConsent = getPrivacyConsentPayload();
+            const analyzePayload = {
+                answers,
+                faceAnalysis: faceAnalysis || undefined,
+                sessionId: sessionId,
+                nickname: nickname,
+                privacyConsent,
+                clientDate: localDateStr(new Date()),
+                skinState,
+                ...(isFreeRetry ? { freeRetry: true } : {})
+            };
             // AI 综合分析调用：不在 5xx 时自动重试，避免单次失败放大为多次扣费
-            const analyzeRes = await fetchWithRetry("/api/advisor/analyze", {
+            const doAnalyze = () => fetchWithRetry("/api/advisor/analyze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    answers,
-                    faceAnalysis: faceAnalysis || undefined,
-                    sessionId: sessionId,
-                    nickname: nickname,
-                    privacyConsent,
-                    clientDate: localDateStr(new Date()),
-                    skinState,
-                    ...(isFreeRetry ? { freeRetry: true } : {})
-                }),
+                body: JSON.stringify(analyzePayload),
                 signal: abortController.signal
             }, { retries: 0 });
+
+            let analyzeRes = await doAnalyze();
+
+            // analyze 可能因面部阶段仍在进行返回 202：等面部完成后再续跑一次，
+            // 不能直接进入 pollSessionResult（没有文本请求在跑，会空等至超时）。
+            if (analyzeRes.status === 202) {
+                const statusData = await analyzeRes.json().catch(() => ({})) as { phase?: string };
+                if (statusData.phase === "face_analyzing") {
+                    await waitForFaceCompleted(sessionId, abortController.signal);
+                    analyzeRes = await doAnalyze();
+                }
+            }
 
             // 读取队列状态
             const qp = analyzeRes.headers.get("X-Queue-Position");
@@ -828,7 +892,7 @@ export function useAsyncAnalysis() {
                 }
             }
         }
-    }, [trackAnalysisStart, trackAnalysisComplete, pollSessionResult, user, toast]);
+    }, [trackAnalysisStart, trackAnalysisComplete, pollSessionResult, waitForFaceCompleted, user, toast]);
 
     // Fake progress animation to fill the gaps between milestones
     useEffect(() => {
@@ -909,6 +973,48 @@ export function useAsyncAnalysis() {
             }, { once: true });
         });
 
+        // 面部结果已由服务端持久化时，恢复流程只需补跑文本阶段。
+        // 返回 null 表示服务端已有其它请求在分析（202），由下方轮询等待。
+        const launchTextAnalysis = async (): Promise<Record<string, unknown> | null> => {
+            let answersStr: string | null = null;
+            let nickname = "您";
+            try {
+                answersStr = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
+                nickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME) || user?.name || "您";
+            } catch { /* ignore */ }
+            if (!answersStr) throw new Error("答题数据缺失，请重新填写问卷");
+            const answers = JSON.parse(answersStr);
+            let skinState: string | undefined;
+            try { skinState = localStorage.getItem(STORAGE_KEYS.ADVISOR_SKIN_STATE) || undefined; } catch { /* ignore */ }
+            let isFreeRetry = false;
+            try {
+                isFreeRetry = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true"
+                    && localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID) === sessionId;
+            } catch { /* ignore */ }
+
+            const res = await fetchWithRetry("/api/advisor/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    answers,
+                    sessionId,
+                    nickname,
+                    privacyConsent: getPrivacyConsentPayload(),
+                    clientDate: localDateStr(new Date()),
+                    skinState,
+                    ...(isFreeRetry ? { freeRetry: true } : {}),
+                }),
+                signal,
+            }, { retries: 0 });
+
+            if (res.status === 202) return null;
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(getServerErrorMessage(errorData, "报告生成未完成，请重试。"));
+            }
+            return await res.json();
+        };
+
         try {
             let statusRes = await checkSessionStatus(sessionId, signal);
 
@@ -938,7 +1044,38 @@ export function useAsyncAnalysis() {
                 return { status: 'error', message };
             }
 
-            // pending / analyzing / rate_limited / transient_error：统一进入轮询。
+            // 阶段感知恢复：
+            // - face_analyzing：只等面部阶段完成，再补跑文本；
+            // - face_completed：直接补跑文本；
+            // - text_analyzing / 老服务端 analyzing：继续轮询；
+            // - pending：没有扫脸结果，明确要求返回拍摄（不降级为纯问卷）。
+            if (statusRes.phase === 'face_analyzing') {
+                const wait = await waitForFaceCompleted(sessionId, signal);
+                if (wait.completedResult) {
+                    clearAnalyzingSessionMarkers();
+                    setAnalysisState({ status: 'completed', progress: 100, error: null });
+                    return { status: 'completed', result: wait.completedResult, sessionId };
+                }
+                const result = await launchTextAnalysis();
+                if (result) {
+                    clearAnalyzingSessionMarkers();
+                    setAnalysisState({ status: 'completed', progress: 100, error: null });
+                    return { status: 'completed', result, sessionId };
+                }
+            } else if (statusRes.phase === 'face_completed') {
+                const result = await launchTextAnalysis();
+                if (result) {
+                    clearAnalyzingSessionMarkers();
+                    setAnalysisState({ status: 'completed', progress: 100, error: null });
+                    return { status: 'completed', result, sessionId };
+                }
+            } else if (statusRes.phase === 'pending') {
+                const message = '尚未完成扫脸拍摄，请返回扫脸页完成拍摄后再试。';
+                setAnalysisState({ status: 'error', progress: 0, error: message });
+                return { status: 'error', message };
+            }
+
+            // text_analyzing / rate_limited / transient_error / 老服务端无 phase：统一轮询。
             // 轮询内部会把瞬时错误当作可重试状态，不会新建会话。
             const pollResult = await pollSessionResult(sessionId, {
                 onProgress: (attempt) => {
@@ -974,7 +1111,7 @@ export function useAsyncAnalysis() {
             isRunningRef.current = false;
             releaseAnalysisLock();
         }
-    }, [checkSessionStatus, pollSessionResult]);
+    }, [checkSessionStatus, pollSessionResult, waitForFaceCompleted, user]);
 
     // Mock 模式：纯前端模拟进度，不调用任何 API，用于本地预览 AnalyzingOverlay / 结果页 UI
     const mockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);

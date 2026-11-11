@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getScoreDistribution } from "@/lib/score-percentile-db";
-import { percentileFromDistribution } from "@/lib/score-percentile";
+import { MIN_PERCENTILE_SAMPLE_SIZE, percentileFromDistribution } from "@/lib/score-percentile";
 
 /**
  * 综合评分真实百分位：按「每个用户最近一次含真实视觉评分的测肤」聚合。
@@ -21,12 +21,16 @@ export async function GET(request: NextRequest) {
     try {
         const dist = await getScoreDistribution();
         return NextResponse.json(
-            { percentile: percentileFromDistribution(dist, score), sampleSize: dist.total },
+            {
+                percentile: percentileFromDistribution(dist, score),
+                sampleSize: dist.total,
+                reliable: dist.total >= MIN_PERCENTILE_SAMPLE_SIZE,
+            },
             { headers: { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=1800" } }
         );
     } catch (error) {
         // 数据库不可用（如未配置 DATABASE_URL 的本地环境）：静默降级为不展示，且不写缓存
         console.error("[score-percentile] aggregate failed:", error);
-        return NextResponse.json({ percentile: null, sampleSize: 0 });
+        return NextResponse.json({ percentile: null, sampleSize: 0, reliable: false });
     }
 }

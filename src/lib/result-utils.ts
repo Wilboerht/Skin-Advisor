@@ -1,11 +1,15 @@
 /**
- * 根据水油维度分数返回 T 区标签
+ * 根据水油平衡维度分数返回状态标签。
+ * 注意：分数低代表“失衡”，不能反推为“偏油”；不要再用“油脂分泌”文案。
  */
-export function getTZoneLabel(waterOilScore: number): string {
-    if (waterOilScore >= 80) return 'T区平衡';
-    if (waterOilScore >= 60) return 'T区略油';
-    return 'T区偏油';
+export function getWaterOilBalanceLabel(waterOilScore: number): string {
+    if (waterOilScore >= 80) return '平衡';
+    if (waterOilScore >= 60) return '轻度失衡';
+    return '明显失衡';
 }
+
+/** @deprecated 使用 getWaterOilBalanceLabel；保留别名避免旧引用报错 */
+export const getTZoneLabel = getWaterOilBalanceLabel;
 
 // ============================================================================
 // 新版 IP 角色体系 (8 派)

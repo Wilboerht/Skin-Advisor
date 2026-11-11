@@ -20,12 +20,14 @@ import {
     BarChart3,
     FileSpreadsheet,
     LayoutDashboard,
+    Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSuperAdmin } from "@/lib/permissions";
 
 const BASE_MENU_ITEMS = [
     { href: "/admin", label: "仪表盘", icon: LayoutDashboard },
+    { href: "/admin/funnel", label: "转化漏斗", icon: Filter },
     { href: "/admin/products", label: "产品管理", icon: Package },
     { href: "/admin/recommendation-rules", label: "推荐规则", icon: Wand2 },
     { href: "/admin/ai-costs", label: "AI成本", icon: BarChart3 },

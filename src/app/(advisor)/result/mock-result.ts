@@ -101,7 +101,7 @@ export const MOCK_RESULT: ComprehensiveResult = {
                 title: "眼周轻度暗沉",
                 severity: "mild",
                 observation:
-                    "黑眼圈 62 分（良好），眼周观察到轻度色素与循环型暗沉，未见明显细纹。",
+                    "眼周状态 62 分，观察到轻度色素与循环型暗沉，未见明显细纹。",
                 directCauses:
                     "眼周皮肤较薄，微循环偏慢时血液代谢产物堆积，会在视觉上呈现青褐色暗沉。",
                 indirectCauses:
@@ -110,7 +110,7 @@ export const MOCK_RESULT: ComprehensiveResult = {
                     "早晚使用含烟酰胺（提亮肤色、改善暗沉）的眼部产品，点涂后无名指轻按至吸收，每日两次；白天配合防晒时注意眼周补涂。",
                 lifestylePlan:
                     "保证睡眠时长，睡前减少屏幕使用；午间可做 1-2 分钟眼周热敷促进循环。",
-                medicalBoundary: "暂不需要就医，坚持护理观察即可。",
+                medicalBoundary: "",
                 relatedDimensions: ["darkCircles"],
             },
         ],
@@ -140,7 +140,17 @@ export const MOCK_FACE_ANALYSIS: FaceAnalysisResult = {
     },
     skinAge: {
         estimated: 24,
+        range: [22, 26],
         factors: ["光老化程度低", "弹性良好", "眼周无明显细纹"],
+    },
+    scoring: {
+        version: 2,
+        overallScore: 72,
+        scoredDimensions: 10,
+        totalDimensions: 10,
+        lowConfidenceDimensions: [],
+        notVisibleDimensions: [],
+        insufficient: false,
     },
     gender: { value: "female", confidence: 0.92 },
     dimensions: {
@@ -157,7 +167,7 @@ export const MOCK_FACE_ANALYSIS: FaceAnalysisResult = {
     },
     overallScore: 72,
     summary:
-        "您的肌肤综合评分 72 分，整体状态良好。敏感维度是当前最需要关注的短板，建议以屏障修护为核心策略，配合精简护肤流程，预计 4-6 周可见明显改善。",
+        "您的肌肤综合评分 72 分，整体状态良好。屏障耐受度是当前最需要关注的短板，建议以屏障修护为核心策略，配合精简护肤流程，并持续观察复测。",
     recommendations: [
         "早晚使用氨基酸系温和洁面，水温控制在 32-35°C。",
         "护肤步骤精简至 3 步以内：洁面 → 修护精华 → 面霜/防晒。",

@@ -22,6 +22,12 @@ interface ShareCardPageProps {
     score?: number;
     /** 综合评分百分位（后端真实聚合）；null/undefined 时不展示"超过 X% 用户"副标 */
     percentile?: number | null;
+    /** 参与百分位统计的样本量；样本不足时前端不展示排名 */
+    percentileSampleSize?: number;
+    /** 测肤日期（ISO）；仅用于封面/证书脚注，不伪造当前时间 */
+    testDate?: string;
+    /** 报告编号（会话 ID 短码）；仅用于封面/证书脚注 */
+    reportId?: string;
     skinType: string;
     budget?: string;
     skincareFrequency?: string;
@@ -70,6 +76,9 @@ export default function ShareCardPage({
     nickname,
     score,
     percentile = null,
+    percentileSampleSize = 0,
+    testDate,
+    reportId,
     skinType,
     budget,
     skincareFrequency,
@@ -91,8 +100,18 @@ export default function ShareCardPage({
     // 缺失时才按 skinType/budget/频率匹配，避免封面与证书/正文派系不一致。
     const ipParams: IPMatchParams = { score: score ?? 80, skinType, budget, skincareFrequency, persona };
     const characterReady = gender === "male" || gender === "female";
-    // 性别/百分位未就绪时禁止保存：避免男性用户拿到 female 兜底形象，或证书缺百分位
-    const posterDisabled = isPosterLoading || isPercentileLoading || !characterReady;
+    // 性别未就绪时禁止保存：避免男性用户拿到 female 兜底形象。
+    // 百分位是附加信息，不阻塞保存；未就绪时证书不叠加排名即可。
+    const posterDisabled = isPosterLoading || !characterReady;
+    const lowPercentile = typeof percentile === "number" && percentile < 40;
+    const formattedDate = (() => {
+        if (!testDate) return null;
+        const date = new Date(testDate);
+        if (Number.isNaN(date.getTime())) return null;
+        const pad = (n: number) => String(n).padStart(2, "0");
+        return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
+    })();
+    const shortReportId = reportId ? reportId.replace(/-/g, "").slice(0, 8).toUpperCase() : null;
     const characterImage = getCharacterImage({ ...ipParams, gender });
     const characterIp = matchCharacterIP(ipParams);
     const skinTypeName = characterIp.name;
@@ -198,6 +217,11 @@ export default function ShareCardPage({
                     <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-3">
                         {factionIntro || summary || "详细分析见下方报告。"}
                     </p>
+                    {lowPercentile && (
+                        <p className="mt-2 max-w-[210px] text-[9.5px] leading-[1.7] tracking-[0.02em] text-[#6B7B8C]/85">
+                            肌肤状态会随作息、换季和激素波动变化，本次评分仅代表拍摄当时；建议把它作为护理起点，4 周后复测对比。
+                        </p>
+                    )}
 
                     {/* 派系介绍入口：打开对应派系的说明弹窗（首次点击才加载弹窗 chunk） */}
                     {factionContent && (
@@ -254,6 +278,11 @@ export default function ShareCardPage({
                                     </div>
                                 </div>
                             )}
+                            {percentile !== null && !isPercentileLoading && percentileSampleSize > 0 && (
+                                <span className="text-[7px] leading-[1.4] tracking-[0.04em] text-[#3D2F25]/40">
+                                    样本 {percentileSampleSize}
+                                </span>
+                            )}
                         </div>
                     )}
                 </div>
@@ -298,12 +327,12 @@ export default function ShareCardPage({
                         aria-busy={posterDisabled}
                         className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#22304E]/10 bg-white px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#22304E]/75 shadow-[2px_3px_0_0_rgba(34,48,78,0.28)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[1px_2px_0_0_rgba(34,48,78,0.28)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        {isPosterLoading || isPercentileLoading ? (
+                        {isPosterLoading ? (
                             <Loader2 className="h-[13px] w-[13px] flex-none animate-spin" strokeWidth={2} />
                         ) : (
                             <ImageDown className="h-[13px] w-[13px] flex-none" strokeWidth={1.75} />
                         )}
-                        {isPosterLoading || isPercentileLoading ? "生成中..." : "保存证书"}
+                        {isPosterLoading ? "生成中..." : "保存证书"}
                     </button>
                     {onGift && (
                         <button
@@ -359,6 +388,12 @@ export default function ShareCardPage({
                         </button>
                     )
                 )}
+                {/* 移动端证书脚注：AI 声明 + 日期 + 报告编号，避免传播物料披露不足 */}
+                <div className="pointer-events-none absolute bottom-1 left-0 right-0 z-[6] px-6 text-center text-[8px] leading-[1.5] tracking-[0.02em] text-[#22364B]/40">
+                    AI 图像分析，仅供参考，不构成医疗诊断
+                    {formattedDate ? ` · 测肤日期 ${formattedDate}` : ""}
+                    {shortReportId ? ` · 报告编号 ${shortReportId}` : ""}
+                </div>
             </m.div>
 
             {/* ===== 桌面端：活页笔记本证书（静态元素烘焙进背景图，动态字段绝对定位覆盖，≥1024px 生效） ===== */}
@@ -519,14 +554,24 @@ export default function ShareCardPage({
                     aria-busy={posterDisabled}
                     className="inline-flex min-w-[224px] h-11 px-8 items-center justify-center gap-2 rounded-full border border-[#1D3A5F]/55 text-[#1D3A5F] text-[14px] font-medium tracking-[0.08em] transition-colors duration-200 hover:border-[#1D3A5F] hover:bg-[#1D3A5F]/[0.05] active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D3A5F]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F2EDE5] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                    {isPosterLoading || isPercentileLoading ? (
+                    {isPosterLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />
                     ) : (
                         <ImageDown className="w-4 h-4" strokeWidth={1.75} />
                     )}
-                    {isPosterLoading || isPercentileLoading ? "生成中..." : "保存测肤证书"}
+                    {isPosterLoading ? "生成中..." : "保存测肤证书"}
                 </button>
             </m.div>
+            <p className="mt-4 text-center text-[10px] leading-relaxed tracking-[0.02em] text-[#22364B]/45">
+                AI 图像分析，仅供参考，不构成医疗诊断
+                {formattedDate ? ` · 测肤日期 ${formattedDate}` : ""}
+                {shortReportId ? ` · 报告编号 ${shortReportId}` : ""}
+            </p>
+            {lowPercentile && (
+                <p className="mx-auto mt-1 max-w-[520px] text-center text-[10px] leading-relaxed tracking-[0.02em] text-[#22364B]/45">
+                    肌肤状态会随作息、换季和激素波动变化，本次评分仅代表拍摄当时；建议把它作为护理起点，4 周后复测对比。
+                </p>
+            )}
             </div>
 
             {/* 重新测试二次确认：移动端「?」入口使用（样式对齐保存海报弹窗）；桌面端证书面不提供重测入口 */}

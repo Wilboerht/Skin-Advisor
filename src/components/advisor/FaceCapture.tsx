@@ -122,6 +122,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const faceDetectionRef = useRef<number | null>(null);
   const stableCountRef = useRef<number>(0);
+  // 活体采用被动策略：正脸稳定性 + 侧脸/抬头头部动作 + 服务端视觉反翻拍。
+  // 不要求眨眼/摇头等额外挑战，避免用户产生“像贷款认证”的担忧。
   const cooldownRef = useRef<boolean>(false); // 步骤切换冷却标志
   const lastSpeakTimeRef = useRef<number>(0); // 语音防抖时间戳
   const lastSpokenPhraseRef = useRef<string>(""); // 避免短时间内重复播报同一句话
@@ -176,6 +178,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const faceBoxRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   // 摄像头初始化调用ID，防竞态
   const initCallIdRef = useRef(0);
+  // 卸载后 getUserMedia 才 resolve 时，必须立即 stop 轨道，避免相机指示灯常亮。
+  const isMountedRef = useRef(true);
   // 面部检测并发锁
   const isDetectingRef = useRef(false);
   // 语音锁定截止时间
@@ -211,7 +215,12 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const lastTiltRatioRef = useRef<number>(0.5);
   // 屏幕常亮锁
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-  const trackMuteListenersRef = useRef<{ track: MediaStreamTrack; onMute: () => void; onUnmute: () => void } | null>(null);
+  const trackMuteListenersRef = useRef<{
+    track: MediaStreamTrack;
+    onMute: () => void;
+    onUnmute: () => void;
+    onEnded: () => void;
+  } | null>(null);
   // 调试信息
   const [debugInfo, setDebugInfo] = useState<{
     headPose: string;
@@ -387,8 +396,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
       if (lastError) throw lastError;
 
-      // 竞态保护：如果 facingMode 在此期间已变化，丢弃本次结果
-      if (callId !== initCallIdRef.current) {
+      // 竞态保护：如果 facingMode 已变化或组件已卸载，立即释放本次流
+      if (!isMountedRef.current || callId !== initCallIdRef.current) {
         mediaStream!.getTracks().forEach(t => t.stop());
         return;
       }
@@ -428,9 +437,15 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         const onUnmute = () => {
           if (DEBUG) console.log("Camera track unmuted.");
         };
+        const onEnded = () => {
+          if (!isMountedRef.current) return;
+          setError("摄像头已断开，请检查设备连接后重试");
+          setIsLoading(false);
+        };
         videoTrack.addEventListener("mute", onMute);
         videoTrack.addEventListener("unmute", onUnmute);
-        trackMuteListenersRef.current = { track: videoTrack, onMute, onUnmute };
+        videoTrack.addEventListener("ended", onEnded);
+        trackMuteListenersRef.current = { track: videoTrack, onMute, onUnmute, onEnded };
       }
 
       streamRef.current = mediaStream!;
@@ -448,10 +463,11 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       console.error("Camera error:", err);
 
       if ((err as Error)?.name === 'AbortError') {
-        if (DEBUG) {
-          console.warn("Camera init interrupted, ignoring.");
-        }
+        // AbortError 常见于 iOS 切后台/来电中断；不能让用户卡在“正在启动摄像头”
         setIsSwitchingCamera(false);
+        setIsLoading(false);
+        if (!isMountedRef.current) return;
+        setError("摄像头启动被中断，请重试");
         return;
       }
 
@@ -685,7 +701,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
   /* 语音播报函数 */
   const speak = useCallback((text: string): SpeechSynthesisUtterance | null => {
-    if (isMutedRef.current || reducedMotionRef.current || typeof window === 'undefined') return null;
+    // 减弱动效偏好只影响动画，不应关闭语音引导（用户可能依赖语音操作）
+    if (isMutedRef.current || typeof window === 'undefined') return null;
     try {
       // 防止同一个指令在短时间内重复堆积
       if (window.speechSynthesis.speaking && text === lastSpokenPhraseRef.current) {
@@ -828,7 +845,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         // 核心拍照条件：姿势正确 + 大小基本合适 + 光线足够 + 睁眼 + 画面清晰
         //（光线不足/闭眼/模糊时仍可手动拍照）
         const isLightSufficient = lightBrightnessRef.current >= MIN_LIGHT_LEVEL_FOR_AUTO_CAPTURE;
-        const canCapture = isSizeOk && isPoseCorrect && isLightSufficient && isEyesOpen && isSharp;
+        // 过亮/不均/过暗不自动拍；低光保留自动拍（部分室内设备很难达到 good，另有提示与手动兜底）。
+        const lightLevelOk = !["too_bright", "too_dark", "uneven", "unknown"].includes(lightLevelRef.current);
+        const canCapture = isInEllipse && isSizeOk && isPoseCorrect && lightLevelOk && isLightSufficient && isEyesOpen && isSharp;
 
         if (canCapture) {
           // 冷却结束后的静默期内：检测正常进行但不累加 stableCount，给用户调整姿势的缓冲
@@ -914,6 +933,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
               feedback = "请睁大眼睛";
             } else if (!isSharp && isLightSufficient) {
               feedback = "画面模糊，请保持手机稳定";
+            } else if (isEyesOpen && currentStep === "front" && !livenessPassedRef.current) {
+              feedback = "请眨一下眼";
             }
 
             if (feedback && feedback !== lastSpokenPhraseRef.current) {
@@ -1024,6 +1045,10 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
    */
   const takePhotoAuto = useCallback((mode: "auto" | "manual" = "auto") => {
     if (!videoRef.current || !canvasRef.current || cooldownRef.current) return;
+    // 手动拍照仍允许作为兜底，但明确提示绕过了自动质量门控，避免用户误以为照片一定合格
+    if (mode === "manual" && Date.now() - lastFaceDetectedRef.current > 1500) {
+      setQualityHint("未检测到清晰人脸，照片可能无法通过分析，建议正对镜头后重拍");
+    }
 
     // 立即进入冷却，防止 detectFace 在异步窗口内再次触发
     cooldownRef.current = true;
@@ -1106,9 +1131,12 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         cropX = Math.max(0, Math.min(cropX, videoWidth - cropWidth));
         cropY = Math.max(0, Math.min(cropY, videoHeight - cropHeight));
 
-        // 设置输出尺寸（保持高质量）
-        const outputWidth = 720;
-        const outputHeight = 960;
+        // 输出尺寸按实际裁剪计算，不放大低分辨率源（放大只会把纹理变糊）
+        const maxOutputWidth = 720;
+        const maxOutputHeight = 960;
+        const scale = Math.min(maxOutputWidth / cropWidth, maxOutputHeight / cropHeight, 1);
+        const outputWidth = Math.max(1, Math.round(cropWidth * scale));
+        const outputHeight = Math.max(1, Math.round(cropHeight * scale));
         canvas.width = outputWidth;
         canvas.height = outputHeight;
 
@@ -1419,7 +1447,11 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       level = "low";
     }
 
-    setLightLevel(level);
+    // 同值不触发 re-render；ref 立即更新供拍摄门控使用（effect 同步有延迟）
+    if (lightLevelRef.current !== level) {
+      lightLevelRef.current = level;
+      setLightLevel(level);
+    }
   }, []);
 
   /**
@@ -1527,6 +1559,11 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         if (DEBUG) {
           console.warn("Video play error (handled):", e);
         }
+        // iOS 低电量模式/自动播放策略可能拒绝 play()：给出可见提示，避免黑屏无反馈
+        if (isMountedRef.current && (e as Error)?.name === "NotAllowedError") {
+          setError("浏览器阻止了摄像头预览，请点击页面后重试或切换摄像头");
+          setIsLoading(false);
+        }
       });
       // 重新枚举设备，通常在授权后标签可用
       navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -1545,12 +1582,17 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
   // 组件卸载时清理摄像头流（stream 切换由 initCamera 内部自行处理旧流停止）
   useEffect(() => {
+    isMountedRef.current = true;
     const video = videoRef.current;
     return () => {
+      isMountedRef.current = false;
+      // 让在途 getUserMedia 的结果失效，并在 resolve 分支立即 stop 轨道
+      initCallIdRef.current += 1;
       const listeners = trackMuteListenersRef.current;
       if (listeners) {
         try { listeners.track.removeEventListener("mute", listeners.onMute); } catch { /* ignore */ }
         try { listeners.track.removeEventListener("unmute", listeners.onUnmute); } catch { /* ignore */ }
+        try { listeners.track.removeEventListener("ended", listeners.onEnded); } catch { /* ignore */ }
         trackMuteListenersRef.current = null;
       }
       if (streamRef.current) {
@@ -1682,7 +1724,14 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
     requestWakeLock();
 
+    // 浏览器在页面隐藏时会自动释放 wake lock，回到前台需要重新申请
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void requestWakeLock();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       wakeLockRef.current?.release().catch(() => {});
       wakeLockRef.current = null;
     };
@@ -1704,6 +1753,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             autoPlay
             playsInline
             muted
+            aria-label="摄像头预览"
             className={cn(
               "h-full w-full object-cover",
               facingMode === "user" && "scale-x-[-1]"
@@ -1818,7 +1868,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-4"
           >
-            <h3 className="text-2xl md:text-3xl font-serif text-white mb-2 drop-shadow-md">
+            <h3 aria-live="polite" className="text-2xl md:text-3xl font-serif text-white mb-2 drop-shadow-md">
               {faceStatus === "success" && showSuccessForStep
                 ? `${CAPTURE_STEPS.find(s => s.step === showSuccessForStep)?.label}拍摄完成`
                 : isInCooldown
@@ -1834,6 +1884,16 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                   <>
                     <SunDim className="w-4 h-4 text-yellow-300" />
                     <span className="text-yellow-100">光线不足，请移至明亮处</span>
+                  </>
+                ) : lightLevel === 'too_bright' ? (
+                  <>
+                    <SunDim className="w-4 h-4 text-yellow-300" />
+                    <span className="text-yellow-100">光线过亮，请避开直射光</span>
+                  </>
+                ) : lightLevel === 'uneven' ? (
+                  <>
+                    <SunDim className="w-4 h-4 text-yellow-300" />
+                    <span className="text-yellow-100">光线不均，请正对光源</span>
                   </>
                 ) : (
                   <>

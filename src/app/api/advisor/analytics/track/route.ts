@@ -233,44 +233,15 @@ export async function POST(request: NextRequest) {
             }
 
             case "face_scan_start": {
-                await prisma.advisorSession.upsert({
-                    where: { sessionId },
-                    create: {
-                        sessionId,
-                        faceScanStartedAt: now,
-                        userAgent: clientInfo.userAgent,
-                        ip: clientInfo.ip,
-                        referrer: clientInfo.referer,
-                        deviceType: clientInfo.deviceType,
-                        browser: clientInfo.browser,
-                        os: clientInfo.os,
-                    },
-                    update: { faceScanStartedAt: now },
-                });
+                // 只记交互，不写 faceScanStartedAt：该字段由 face-analyze 的 AI claim 使用，
+                // 埋点提前写入会让 claim 误判“已有面部分析在跑”。
+                await appendInteraction(sessionId, { type: "face_scan_start", at: now.toISOString() });
                 break;
             }
 
             case "face_scan_complete": {
-                await prisma.advisorSession.upsert({
-                    where: { sessionId },
-                    create: {
-                        sessionId,
-                        faceScanCompletedAt: now,
-                        faceScanUsed: true,
-                        faceScanSkipped: false,
-                        userAgent: clientInfo.userAgent,
-                        ip: clientInfo.ip,
-                        referrer: clientInfo.referer,
-                        deviceType: clientInfo.deviceType,
-                        browser: clientInfo.browser,
-                        os: clientInfo.os,
-                    },
-                    update: {
-                        faceScanCompletedAt: now,
-                        faceScanUsed: true,
-                        faceScanSkipped: false,
-                    },
-                });
+                // 只记拍摄完成交互；AI 面部结果完成由 face-analyze 写 faceScanCompletedAt
+                await appendInteraction(sessionId, { type: "face_scan_complete", at: now.toISOString() });
                 break;
             }
 
@@ -284,30 +255,18 @@ export async function POST(request: NextRequest) {
             }
 
             case "analysis_start": {
-                await prisma.advisorSession.upsert({
-                    where: { sessionId },
-                    create: {
-                        sessionId,
-                        analysisStartedAt: now,
-                        userAgent: clientInfo.userAgent,
-                        ip: clientInfo.ip,
-                        referrer: clientInfo.referer,
-                        deviceType: clientInfo.deviceType,
-                        browser: clientInfo.browser,
-                        os: clientInfo.os,
-                    },
-                    update: { analysisStartedAt: now },
-                });
+                // 只记交互；analysisStartedAt 由 analyze 路由 claim 写入，避免抢先占用导致 claim 失败
+                await appendInteraction(sessionId, { type: "analysis_start", at: now.toISOString() });
                 break;
             }
 
             case "analysis_complete": {
+                // analysisSource 由 analyze 路由按 hybrid/text 写入，埋点不再覆盖
                 await prisma.advisorSession.upsert({
                     where: { sessionId },
                     create: {
                         sessionId,
                         analysisCompletedAt: now,
-                        analysisSource: (data?.source as string) || null,
                         userAgent: clientInfo.userAgent,
                         ip: clientInfo.ip,
                         referrer: clientInfo.referer,
@@ -317,7 +276,6 @@ export async function POST(request: NextRequest) {
                     },
                     update: {
                         analysisCompletedAt: now,
-                        analysisSource: (data?.source as string) || null,
                     },
                 });
                 break;

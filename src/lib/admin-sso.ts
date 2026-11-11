@@ -4,14 +4,16 @@
  * 子站不保存管理员密码/权限来源：
  * - 账号身份、密码、TOTP、角色、权限均以主站为准；
  * - 子站只保留影子 AdminUser（会话/审计/同步用）；
- * - 断言由主站用 ADMIN_SSO_SECRET 签发，子站验签后签发本地会话。
+ * - 断言默认由主站用 RS256 私钥签发，子站通过 JWKS 公钥验签，
+ *   不再持有可伪造任意管理员的共享签名密钥。
  */
 import { createHash, randomBytes } from "crypto";
-import { jwtVerify } from "jose";
+import { createRemoteJWKSet, importSPKI, jwtVerify } from "jose";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { createSignedSession } from "@/lib/session-verify";
 import { AdminRole } from "@/lib/permissions";
+import { logger } from "@/lib/logger";
 
 export const ADMIN_SSO_AUDIENCE = "advisor-admin";
 export const ADMIN_SSO_ISSUER = "https://nihplod.cn";
@@ -46,7 +48,13 @@ export interface AdminSsoConfig {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
-  secret: string;
+  /** 主站 JWKS 地址；未显式配置时与换票地址同源 */
+  jwksUrl: string;
+  /** 可选：离线固定公钥（SPKI PEM），配置后优先于 JWKS */
+  publicKey: string | null;
+  /** 仅迁移窗口：允许验证旧 HS256 断言 */
+  allowLegacyHs256: boolean;
+  legacySecret: string | null;
   sessionTtlMinutes: number;
 }
 
@@ -54,6 +62,21 @@ function required(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`[AdminSSO] ${name} 未配置`);
   return value;
+}
+
+function assertHttpsOrLoopback(name: string, value: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(`[AdminSSO] ${name} 不是合法 URL`);
+  }
+  if (
+    parsed.protocol !== "https:" &&
+    !["127.0.0.1", "localhost", "::1"].includes(parsed.hostname)
+  ) {
+    throw new Error(`[AdminSSO] ${name} 必须使用 https 或本机回环地址`);
+  }
 }
 
 export function getAdminSsoConfig(): AdminSsoConfig {
@@ -66,33 +89,30 @@ export function getAdminSsoConfig(): AdminSsoConfig {
     // 保留默认 issuer；配置错误会在 authorize 跳转时暴露
   }
   const clientSecret = required("ADMIN_SSO_CLIENT_SECRET");
-  const secret = required("ADMIN_SSO_SECRET");
   if (clientSecret.length < 32) {
     throw new Error("[AdminSSO] ADMIN_SSO_CLIENT_SECRET 至少需要 32 位");
   }
-  if (secret.length < 32) {
+
+  // 旧共享密钥仅用于迁移窗口：必须显式开启开关才接受 HS256，避免遗留密钥长期生效。
+  const legacySecret = process.env.ADMIN_SSO_SECRET || null;
+  if (legacySecret && legacySecret.length < 32) {
     throw new Error("[AdminSSO] ADMIN_SSO_SECRET 至少需要 32 位");
   }
+  const allowLegacyHs256 =
+    Boolean(legacySecret) && process.env.ADMIN_SSO_ALLOW_LEGACY_HS256 === "true";
 
   const tokenUrl = required("ADMIN_SSO_TOKEN_URL");
   const statusUrl = required("ADMIN_SSO_STATUS_URL");
+  // 默认与换票地址同源（常见部署是同机 127.0.0.1，避免绕公网/Cloudflare）
+  const jwksUrl =
+    process.env.ADMIN_SSO_JWKS_URL || new URL("/api/oauth/jwks", tokenUrl).toString();
   for (const [name, value] of [
     ["ADMIN_SSO_TOKEN_URL", tokenUrl],
     ["ADMIN_SSO_STATUS_URL", statusUrl],
+    ["ADMIN_SSO_JWKS_URL", jwksUrl],
   ] as const) {
-    let parsed: URL;
-    try {
-      parsed = new URL(value);
-    } catch {
-      throw new Error(`[AdminSSO] ${name} 不是合法 URL`);
-    }
-    // 换票/状态接口会携带 client_secret：只允许 https，或同机回环地址
-    if (
-      parsed.protocol !== "https:" &&
-      !["127.0.0.1", "localhost", "::1"].includes(parsed.hostname)
-    ) {
-      throw new Error(`[AdminSSO] ${name} 必须使用 https 或本机回环地址`);
-    }
+    // 换票/状态接口会携带 client_secret；JWKS 也应走 HTTPS。
+    assertHttpsOrLoopback(name, value);
   }
 
   return {
@@ -104,7 +124,10 @@ export function getAdminSsoConfig(): AdminSsoConfig {
     clientId: required("ADMIN_SSO_CLIENT_ID"),
     clientSecret,
     redirectUri: required("ADMIN_SSO_REDIRECT_URI"),
-    secret,
+    jwksUrl,
+    publicKey: process.env.ADMIN_SSO_PUBLIC_KEY || null,
+    allowLegacyHs256,
+    legacySecret,
     // 硬上限 9 小时，防止误配成超长会话
     sessionTtlMinutes:
       Number.isFinite(ttlRaw) && ttlRaw > 0
@@ -151,28 +174,133 @@ export function createPkcePair(): { verifier: string; challenge: string } {
   return { verifier, challenge };
 }
 
+const staticPublicKeyCache = new Map<string, CryptoKey>();
+let cachedRemoteJwks: {
+  url: string;
+  jwks: ReturnType<typeof createRemoteJWKSet>;
+} | null = null;
+
+function normalizePem(raw: string): string {
+  return raw.includes("\\n") ? raw.replace(/\\n/g, "\n") : raw;
+}
+
+async function getStaticPublicKey(pem: string): Promise<CryptoKey> {
+  const normalized = normalizePem(pem);
+  const cached = staticPublicKeyCache.get(normalized);
+  if (cached) return cached;
+  const key = await importSPKI(normalized, "RS256");
+  staticPublicKeyCache.set(normalized, key);
+  return key;
+}
+
+function getRemoteJwks(url: string): ReturnType<typeof createRemoteJWKSet> {
+  if (!cachedRemoteJwks || cachedRemoteJwks.url !== url) {
+    cachedRemoteJwks = {
+      url,
+      jwks: createRemoteJWKSet(new URL(url), {
+        timeoutDuration: 5000,
+        cooldownDuration: 30000,
+        cacheMaxAge: 600000,
+      }),
+    };
+  }
+  return cachedRemoteJwks.jwks;
+}
+
+async function verifyRs256Assertion(
+  assertion: string,
+  config: AdminSsoConfig
+): Promise<Record<string, unknown>> {
+  const options = {
+    issuer: config.issuer,
+    audience: ADMIN_SSO_AUDIENCE,
+    algorithms: ["RS256"],
+    clockTolerance: 30,
+  };
+
+  if (config.publicKey) {
+    const { payload } = await jwtVerify(
+      assertion,
+      await getStaticPublicKey(config.publicKey),
+      options
+    );
+    return payload as Record<string, unknown>;
+  }
+
+  const { payload } = await jwtVerify(
+    assertion,
+    getRemoteJwks(config.jwksUrl),
+    options
+  );
+  return payload as Record<string, unknown>;
+}
+
+async function verifyLegacyHs256Assertion(
+  assertion: string,
+  config: AdminSsoConfig
+): Promise<Record<string, unknown>> {
+  if (!config.legacySecret) {
+    throw new Error("legacy HS256 secret not configured");
+  }
+  const { payload } = await jwtVerify(
+    assertion,
+    new TextEncoder().encode(config.legacySecret),
+    {
+      issuer: config.issuer,
+      audience: ADMIN_SSO_AUDIENCE,
+      algorithms: ["HS256"],
+      clockTolerance: 30,
+    }
+  );
+  return payload as Record<string, unknown>;
+}
+
+function getUnverifiedJwtAlg(token: string): string | null {
+  const header = token.split(".")[0];
+  if (!header) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(header, "base64url").toString("utf8")) as {
+      alg?: unknown;
+    };
+    return typeof parsed.alg === "string" ? parsed.alg : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * 校验主站断言。调用方必须先完成 code 换票。
+ * 默认 RS256（JWKS/静态公钥）；仅迁移窗口允许显式回退旧 HS256。
+ * 仅当 token 头部声明 HS256 时才走回退，防止 RS256 校验失败被降级。
  */
 export async function verifyAdminSsoAssertion(
   assertion: string,
   config: AdminSsoConfig
 ): Promise<AdminSsoClaims> {
   let payload: Record<string, unknown>;
-  try {
-    const result = await jwtVerify(
-      assertion,
-      new TextEncoder().encode(config.secret),
-      {
-        issuer: config.issuer,
-        audience: ADMIN_SSO_AUDIENCE,
-        algorithms: ["HS256"],
-        clockTolerance: 30,
-      }
-    );
-    payload = result.payload as Record<string, unknown>;
-  } catch {
-    throw new AdminSsoError("INVALID_ASSERTION", "管理员断言无效或已过期", 401);
+  let legacyHs256 = false;
+  const alg = getUnverifiedJwtAlg(assertion);
+
+  if (alg === "RS256") {
+    try {
+      payload = await verifyRs256Assertion(assertion, config);
+    } catch {
+      throw new AdminSsoError("INVALID_ASSERTION", "管理员断言无效或已过期", 401);
+    }
+  } else if (alg === "HS256" && config.allowLegacyHs256 && config.legacySecret) {
+    try {
+      payload = await verifyLegacyHs256Assertion(assertion, config);
+      legacyHs256 = true;
+      logger.warn("[AdminSSO] 正在使用旧 HS256 断言，请尽快切换 RS256/JWKS");
+    } catch {
+      throw new AdminSsoError("INVALID_ASSERTION", "管理员断言无效或已过期", 401);
+    }
+  } else {
+    throw new AdminSsoError("INVALID_ASSERTION", "管理员断言签名算法不受支持", 401);
+  }
+
+  if (!legacyHs256 && payload.token_use !== "admin_sso") {
+    throw new AdminSsoError("INVALID_ASSERTION", "管理员断言类型不正确", 401);
   }
 
   const permissions = Array.isArray(payload.permissions)

@@ -19,14 +19,14 @@ import {
 import { getSessionUser, isSubsiteAccountDisabled } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { markUsageConsumed, reserveUsage, rollbackUsage } from "@/lib/usage-limit";
-import { recordAIUsage } from "@/lib/ai-budget";
 import { hashIP } from "@/lib/privacy";
-import { isManagedUploadPath } from "@/lib/upload-paths";
+import { isManagedUploadPath, isOwnedGuestUploadPath } from "@/lib/upload-paths";
 import { hasConsent } from "@/lib/consent";
 import prisma from "@/lib/prisma";
 import { withDbRetry } from "@/lib/utils";
 import { Prisma } from "@prisma/client";
 import { aiLogger } from "@/lib/logger";
+import { getSharedJson, setSharedJson } from "@/lib/shared-cache";
 
 import { visionQueue } from "@/lib/ai-queue";
 
@@ -70,37 +70,57 @@ const faceAnalysisCache = new Map<string, { result: Record<string, unknown>; at:
 const FACE_CACHE_TTL_MS = 10 * 60 * 1000; // 10分钟过期
 const FACE_CACHE_MAX_SIZE = 50; // 最多缓存 50 条
 
-function buildCacheKey(owner: string, images: VisionImage[], skinState?: string): string {
+function buildCacheKey(
+    owner: string,
+    images: VisionImage[],
+    skinState: string | undefined,
+    provider: string,
+    model: string,
+    systemPrompt: string
+): string {
     const samples = images.map(img => {
         const data = img.data || "";
         return `${img.angle}:${crypto.createHash("sha256").update(data).digest("hex")}`;
     }).join("|");
     const stateSuffix = skinState ? `:${skinState}` : "";
-    return `face:${crypto.createHash("sha256").update(`${owner}|${samples}${stateSuffix}:${VISION_PROMPT_VERSION}`).digest("hex")}`;
+    const promptHash = crypto.createHash("sha256").update(systemPrompt).digest("hex").slice(0, 16);
+    const modelSuffix = `:${provider}:${model}:${promptHash}:${VISION_PROMPT_VERSION}`;
+    return `face:${crypto.createHash("sha256").update(`${owner}|${samples}${stateSuffix}${modelSuffix}`).digest("hex")}`;
 }
 
-function getCachedResult(key: string): Record<string, unknown> | null {
+const FACE_CACHE_PREFIX = "advisor:face-cache:v1:";
+
+async function getCachedResult(key: string): Promise<Record<string, unknown> | null> {
     const entry = faceAnalysisCache.get(key);
-    if (!entry) return null;
-    if (Date.now() - entry.at > FACE_CACHE_TTL_MS) {
+    if (entry) {
+        if (Date.now() - entry.at <= FACE_CACHE_TTL_MS) return entry.result;
         faceAnalysisCache.delete(key);
-        return null;
     }
-    // 清理最老的缓存项
+
+    // 多实例共享缓存（Redis 未配置时 shared-cache 自动回落内存）
+    const shared = await getSharedJson<{ result: Record<string, unknown>; at: number; sessionId: string }>(
+        `${FACE_CACHE_PREFIX}${key}`
+    );
+    if (!shared?.result || Date.now() - shared.at > FACE_CACHE_TTL_MS) return null;
+
+    // 回填本地 L1
     if (faceAnalysisCache.size >= FACE_CACHE_MAX_SIZE) {
-        const oldest = [...faceAnalysisCache.entries()].sort((a, b) => a[1].at - b[1].at)[0];
-        if (oldest) faceAnalysisCache.delete(oldest[0]);
+        const oldest = faceAnalysisCache.keys().next().value;
+        if (oldest !== undefined) faceAnalysisCache.delete(oldest);
     }
-    return entry.result;
+    faceAnalysisCache.set(key, shared);
+    return shared.result;
 }
 
-function setCachedResult(key: string, sessionId: string, result: Record<string, unknown>): void {
+async function setCachedResult(key: string, sessionId: string, result: Record<string, unknown>): Promise<void> {
+    const entry = { result, at: Date.now(), sessionId };
     // Map 无界增长防护：达到上限时删除最旧条目（Map 按插入序迭代，第一个键即最旧）
     if (faceAnalysisCache.size >= FACE_CACHE_MAX_SIZE) {
         const oldest = faceAnalysisCache.keys().next().value;
         if (oldest !== undefined) faceAnalysisCache.delete(oldest);
     }
-    faceAnalysisCache.set(key, { result, at: Date.now(), sessionId });
+    faceAnalysisCache.set(key, entry);
+    await setSharedJson(`${FACE_CACHE_PREFIX}${key}`, entry, Math.floor(FACE_CACHE_TTL_MS / 1000));
 }
 
 export async function POST(request: NextRequest) {
@@ -142,7 +162,7 @@ export async function POST(request: NextRequest) {
 
     try {
         // 0. 检查 AI 开关
-        if (!(await isAIEnabled())) {
+        if (!(await isAIEnabled("vision"))) {
             return apiError(ErrorCode.SERVICE_UNAVAILABLE, "AI 助手当前已暂停服务", 503);
         }
 
@@ -239,10 +259,13 @@ export async function POST(request: NextRequest) {
 
         const existingSession = await prisma.advisorSession.findUnique({
             where: { sessionId: faceSessionId },
-            select: { userId: true, ip: true, completedAt: true, analysisStartedAt: true, analysisResult: true },
+            select: { userId: true, ip: true, completedAt: true, analysisStartedAt: true, analysisResult: true, archivedAt: true },
         });
         if (!existingSession) {
             return apiError(ErrorCode.INTERNAL_ERROR, "会话创建失败，请重试", 500);
+        }
+        if (existingSession.archivedAt) {
+            return apiError(ErrorCode.NOT_FOUND, "报告会话不存在或无权访问", 404);
         }
         if (existingSession.userId && existingSession.userId !== authUser.id) {
             // 不暴露会话存在性
@@ -268,7 +291,7 @@ export async function POST(request: NextRequest) {
         // 文本分析已在进行：不要同时启动视觉，避免报告用的 face 结果与文本结果错位
         if (existingSession.analysisStartedAt && existingSession.analysisStartedAt > fiveMinutesAgo) {
             return NextResponse.json(
-                { status: "analyzing", sessionId: faceSessionId, message: "分析正在进行中，请稍候" },
+                { status: "analyzing", phase: "face_analyzing", sessionId: faceSessionId, message: "分析正在进行中，请稍候" },
                 { status: 202, headers: rateLimitHeaders }
             );
         }
@@ -308,7 +331,7 @@ export async function POST(request: NextRequest) {
                 });
             }
             return NextResponse.json(
-                { status: "analyzing", sessionId: faceSessionId, message: "面部分析正在进行中，请稍候" },
+                { status: "analyzing", phase: "face_analyzing", sessionId: faceSessionId, message: "面部分析正在进行中，请稍候" },
                 { status: 202, headers: rateLimitHeaders }
             );
         }
@@ -357,9 +380,9 @@ export async function POST(request: NextRequest) {
         // 注意：本地上传的 publicUrl 以 /uploads/ 开头，需去掉该前缀再定位到实际文件
         const resolveLocalUploadPath = (imgData: string): string | null => {
             try {
-                // 只允许服务端签发的 guest/ 上传对象，不能读取 products/avatars 等任意文件
-                if (!isManagedUploadPath(imgData)) {
-                    aiLogger.warn(`Blocked non-managed local upload path: ${imgData}`);
+                // 只允许当前用户服务端签发的 guest/ 上传对象，不能读取他人照片或 products/avatars
+                if (!isOwnedGuestUploadPath(imgData, authUser.id)) {
+                    aiLogger.warn(`Blocked non-owned local upload path: ${imgData}`);
                     return null;
                 }
                 let relativePath = imgData.startsWith('/') ? imgData.slice(1) : imgData;
@@ -387,6 +410,22 @@ export async function POST(request: NextRequest) {
             if (imgData.startsWith('http')) {
                 if (!isAllowedRemoteUploadUrl(imgData)) {
                     aiLogger.warn(`Blocked non-managed remote image URL: ${imgData}`);
+                    return null;
+                }
+                if (!isOwnedGuestUploadPath(imgData, authUser.id)) {
+                    aiLogger.warn(`Blocked non-owned remote image URL: ${imgData}`);
+                    return null;
+                }
+                // 远程对象先探测大小，避免把 10MB 原图直接交给 provider（成本/延迟攻击面）
+                try {
+                    const head = await fetch(imgData, { method: "HEAD", signal: AbortSignal.timeout(3000) });
+                    const contentLength = Number(head.headers.get("content-length") || 0);
+                    if (!head.ok || (contentLength > 0 && contentLength > 2 * 1024 * 1024)) {
+                        aiLogger.warn(`Blocked oversized remote image: ${contentLength}`);
+                        return null;
+                    }
+                } catch {
+                    aiLogger.warn(`Blocked unverifiable remote image URL: ${imgData}`);
                     return null;
                 }
                 return imgData;
@@ -427,12 +466,12 @@ export async function POST(request: NextRequest) {
                 return imgData; // Return as is
             }
 
-            // Compression
-            // 首次即使用较激进压缩（512px / quality 70），避免大图触发 400/413 后二次跑 vision 模型
-            if (compress && buffer && sharp) {
+            // Compression：已经足够小的图片不再重编码（客户端已压过一次，重复压缩只会糊掉纹理）。
+            // 大图才压缩，并用 limitInputPixels 防止解压炸弹。
+            if (compress && buffer && sharp && buffer.length > 350 * 1024) {
                 try {
                     aiLogger.info(`Compressing image...`);
-                    buffer = await sharp(buffer)
+                    buffer = await sharp(buffer, { limitInputPixels: 40_000_000 })
                         .resize({ width: 1024, fit: 'inside', withoutEnlargement: true })
                         .jpeg({ quality: 78 })
                         .toBuffer();
@@ -551,7 +590,7 @@ export async function POST(request: NextRequest) {
         const uploadedFaceUrls = rawImageValues
             .filter((value) => typeof value === "string")
             .filter((value) => value.startsWith("http") || value.startsWith("/uploads/") || value.startsWith("uploads/"))
-            .filter((value) => isManagedUploadPath(value));
+            .filter((value) => isOwnedGuestUploadPath(value, authUser.id));
 
         if (validImages.length === 0) {
             // 无有效图片属于预占后早退，需回滚额度并释放租约
@@ -591,24 +630,20 @@ export async function POST(request: NextRequest) {
         let acquired = false;
         try {
             // 3.5 缓存检查：相同图片跳过 AI 调用（必须在队列获取之前，避免浪费槽位）
-            const cacheKey = buildCacheKey(authUser.id, validImages, skinState);
-            const cachedResult = getCachedResult(cacheKey);
+            const cacheKey = buildCacheKey(
+                authUser.id,
+                validImages,
+                skinState,
+                provider,
+                aiSettings.visionModel,
+                systemPrompt
+            );
+            const cachedResult = await getCachedResult(cacheKey);
             if (cachedResult) {
                 aiLogger.info(`[FaceAnalyze] Cache hit, returning cached result`);
-                // 缓存命中也写一条 vision 成功日志：预占已实际扣数，若不记录，
-                // 后续 analyze 失败时 hasSuccessfulFaceAnalysis() 为 false 会全额退还本次额度，
-                // 导致熔断期间可反复免费获取面部结果
-                await recordAIUsage({
-                    provider: "cache",
-                    model: "cache",
-                    requestType: "vision",
-                    sessionId: faceSessionId,
-                    userId: session?.id ?? null,
-                    promptTokens: 0,
-                    completionTokens: 0,
-                    totalTokens: 0,
-                    success: true,
-                });
+                // 缓存命中不写 provider="cache" 的合成 AI 日志（会污染成本/成功率口径、
+                // 并占用用户 AI 调用次数）。persistFaceResult 会写 faceScanCompletedAt，
+                // analyze 端以服务端已持久化的面部结果判断额度是否已产生。
                 try {
                     await persistFaceResult(cachedResult);
                 } catch (persistErr) {
@@ -633,7 +668,7 @@ export async function POST(request: NextRequest) {
             aiLogger.debug(`[Queue] Requesting lock. Stats:`, visionQueue.getStats() as unknown as Record<string, unknown>);
             // 透传 userId 使队列的 maxConcurrentPerUser 生效
             // 队列等待最多 15s：视觉内部超时 70s，合计 85s，留出路由 90s 缓冲
-            await visionQueue.acquire({ timeoutMs: 15_000, signal: abortController.signal, userId: session?.id });
+            await visionQueue.acquire({ timeoutMs: 10_000, signal: abortController.signal, userId: session?.id });
             acquired = true;
             aiLogger.debug(`[Queue] Lock acquired.`);
 
@@ -694,7 +729,7 @@ export async function POST(request: NextRequest) {
                             try {
                                 const base64Data = img.data.split(',')[1];
                                 const buffer = Buffer.from(base64Data, 'base64');
-                                const compressed = await sharp(buffer)
+                                const compressed = await sharp(buffer, { limitInputPixels: 40_000_000 })
                                     .resize({ width: 512, fit: 'inside', withoutEnlargement: true })
                                     .jpeg({ quality: 60 })
                                     .toBuffer();
@@ -749,7 +784,8 @@ export async function POST(request: NextRequest) {
                 await markUsageConsumed(faceSessionId, reservationUserId, reservationLeaseToken);
             }
             // 缓存有效结果（不含 validation 字段的纯结果）
-            setCachedResult(cacheKey, faceSessionId || ip, analysisResult);
+            // 本地 Map 已同步写入；Redis 写入不阻塞响应（多实例最终一致即可）
+            void setCachedResult(cacheKey, faceSessionId || ip, analysisResult);
 
             // 先持久化到会话，再返回；/analyze 只读服务端结果。
             try {
@@ -842,8 +878,8 @@ export async function POST(request: NextRequest) {
                         if (!photoUrl || photoUrl.startsWith("data:")) return;
                         // 只允许删除服务端签发的上传对象（guest/<hash>/<date>/<uuid>.<ext>），
                         // 防止把用户传入的任意 URL 当删除指令（历史漏洞：可删产品图/他人照片）
-                        if (!isManagedUploadPath(photoUrl)) {
-                            aiLogger.warn(`Cleanup skipped non-managed upload path: ${photoUrl}`);
+                        if (!isOwnedGuestUploadPath(photoUrl, authUser.id)) {
+                            aiLogger.warn(`Cleanup skipped non-owned upload path: ${photoUrl}`);
                             return;
                         }
                         if (photoUrl.startsWith("/uploads/") || photoUrl.startsWith("uploads/")) {

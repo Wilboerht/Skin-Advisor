@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { stripConsultantStepLabels } from "./consultant-text";
 import { getConcernLabel as getConcernLabelShared } from "./advisor-labels";
+import type { VisionScoring } from "./vision-scoring";
 
 /**
  * MySkin.Technology 专业皮肤分析类型定义
@@ -67,6 +68,8 @@ export interface FaceAnalysisResult {
     skinAge: {
         estimated: number;
         factors: string[];
+        /** 参考区间（±2 岁），避免把 AI 估计展示成精确值 */
+        range?: [number, number];
     };
     gender?: {
         value: "male" | "female";
@@ -90,6 +93,8 @@ export interface FaceAnalysisResult {
         description: string;
     };
     overallScore: number;
+    /** 评分覆盖率/置信度元信息（v2 起写入；旧数据缺省） */
+    scoring?: VisionScoring;
     summary: string;
     recommendations: string[];
 
@@ -592,16 +597,30 @@ export function sanitizeConsultantText(text: string): string {
     return out;
 }
 
+/** 去掉 AI 自报档位/固定套话/无依据的时效承诺（与统一评分档位和医疗边界口径对齐） */
+export function stripConsultantUnsafeClaims(text: string): string {
+    return text
+        // "色斑 62 分（良好）" → "色斑 62 分"；裸的"（良好）"一并去掉
+        .replace(/(\d{1,3}\s*分)\s*[（(](?:优秀|良好|一般|需关注|较差|差)[）)]/g, "$1")
+        .replace(/[（(](?:优秀|良好|一般|需关注|较差|差)[）)]/g, "")
+        // 轻微问题不应出现"暂不需要就医"套话；中度/重度由 medicalBoundary 字段承载
+        .replace(/暂不需要就医[^。！？]*[。！？]?/g, "")
+        // 禁止无依据的时效承诺（"预计 4-6 周可见明显改善"）
+        .replace(/预计[^。！？]{0,24}(?:周|个月|月)[^。！？]*[。！？]?/g, "")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+}
+
 /** 深度清洗顾问报告的所有文本字段（title/六段推理链/strengths/routineNote/productReasons.reason） */
 export function sanitizeConsultantReport(report: ConsultantReport): ConsultantReport {
     // 步骤标签由卡片 UI 渲染；AI 常在字段开头复述（"直接诱因：…"），落库前剥离避免双重展示
-    const clean = (text: string) => stripConsultantStepLabels(sanitizeConsultantText(text));
+    const clean = (text: string) => stripConsultantUnsafeClaims(stripConsultantStepLabels(sanitizeConsultantText(text)));
     return {
         ...report,
-        overview: sanitizeConsultantText(report.overview),
+        overview: stripConsultantUnsafeClaims(sanitizeConsultantText(report.overview)),
         issues: report.issues.map((issue) => ({
             ...issue,
-            title: sanitizeConsultantText(issue.title),
+            title: stripConsultantUnsafeClaims(sanitizeConsultantText(issue.title)),
             observation: clean(issue.observation),
             directCauses: clean(issue.directCauses),
             indirectCauses: clean(issue.indirectCauses),
@@ -609,11 +628,13 @@ export function sanitizeConsultantReport(report: ConsultantReport): ConsultantRe
             lifestylePlan: clean(issue.lifestylePlan),
             medicalBoundary: clean(issue.medicalBoundary),
         })),
-        strengths: report.strengths.map(sanitizeConsultantText),
-        routineNote: report.routineNote ? sanitizeConsultantText(report.routineNote) : report.routineNote,
+        strengths: report.strengths.map((s) => stripConsultantUnsafeClaims(sanitizeConsultantText(s))),
+        routineNote: report.routineNote
+            ? stripConsultantUnsafeClaims(sanitizeConsultantText(report.routineNote))
+            : report.routineNote,
         productReasons: report.productReasons?.map((p) => ({
             ...p,
-            reason: p.reason ? sanitizeConsultantText(p.reason) : p.reason,
+            reason: p.reason ? stripConsultantUnsafeClaims(sanitizeConsultantText(p.reason)) : p.reason,
         })),
     };
 }

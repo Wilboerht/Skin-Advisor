@@ -17,7 +17,11 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const aiEnabled = await isAIEnabled();
+        const [textEnabled, visionEnabled] = await Promise.all([
+            isAIEnabled("text"),
+            isAIEnabled("vision"),
+        ]);
+        const aiEnabled = textEnabled && visionEnabled;
 
         if (!aiEnabled) {
             return NextResponse.json({

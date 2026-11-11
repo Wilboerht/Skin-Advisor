@@ -151,7 +151,13 @@ ADMIN_SSO_STATUS_URL="http://127.0.0.1:3000/api/admin/sso/status"
 ADMIN_SSO_CLIENT_ID="skin-advisor-admin"
 ADMIN_SSO_CLIENT_SECRET="与主站 ADVISOR_ADMIN_SSO_CLIENT_SECRET 同值"
 ADMIN_SSO_REDIRECT_URI="https://smart.nihplod.cn/api/admin/auth/sso/callback"
-ADMIN_SSO_SECRET="与主站 ADVISOR_ADMIN_SSO_SECRET 同值"
+# 断言默认通过主站 JWKS 验签（与 ADMIN_SSO_TOKEN_URL 同源），无需共享密钥。
+# 可选：显式覆盖 JWKS 地址，或配置离线固定公钥 ADMIN_SSO_PUBLIC_KEY。
+# ADMIN_SSO_JWKS_URL="https://nihplod.cn/api/oauth/jwks"
+#
+# 迁移期回退（主站尚未切换 RS256 时临时启用；切换后删除）：
+# ADMIN_SSO_ALLOW_LEGACY_HS256="true"
+# ADMIN_SSO_SECRET="与主站 ADVISOR_ADMIN_SSO_SECRET 同值"
 ADMIN_SSO_SESSION_TTL_MINUTES="540"
 
 ADMIN_LOCAL_LOGIN_ENABLED="false"

@@ -83,6 +83,7 @@ model AdvisorSession {
   @@index([userId, archivedAt, completedAt]) // 历史列表/趋势：userId + 排除归档 + 完成时间倒序
   @@index([userId, createdAt])   // 每用户超量报告清理：userId + 创建时间
   @@index([ip, completedAt])     // 懒认领：未归属会话按 IP + 完成时间扫描
+  @@index([interactions(ops: JsonbPathOps)], type: Gin)
 }
 
 

@@ -7,6 +7,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
+import { getOrCreateAnalyticsSessionId } from "@/lib/analytics-session";
 
 // 事件类型
 type AnalyticsEvent =
@@ -23,35 +24,9 @@ type AnalyticsEvent =
   | "result_flip"
   | "product_click";
 
-// 会话ID存储键
-const SESSION_ID_KEY = "advisor_session_id";
-
-/**
- * 生成唯一会话ID
- */
-function generateSessionId(): string {
-  const timestamp = Date.now().toString(36);
-  const randomStr = Math.random().toString(36).substring(2, 15);
-  return `${timestamp}-${randomStr}`;
-}
-
-/**
- * 获取或创建会话ID
- */
+// 会话 ID 唯一事实源：与 analyze/face-analyze 共用同一个 UUID，保证漏斗可 join
 function getOrCreateSessionId(): string {
-  if (typeof window === "undefined") return "";
-
-  // 无痕模式 / 禁用存储时 sessionStorage 访问会抛异常，降级为不上报
-  try {
-    let sessionId = sessionStorage.getItem(SESSION_ID_KEY);
-    if (!sessionId) {
-      sessionId = generateSessionId();
-      sessionStorage.setItem(SESSION_ID_KEY, sessionId);
-    }
-    return sessionId;
-  } catch {
-    return "";
-  }
+  return getOrCreateAnalyticsSessionId();
 }
 
 /**

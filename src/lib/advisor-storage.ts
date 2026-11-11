@@ -17,6 +17,9 @@ const STORES = {
 const MAX_STORAGE_AGE_MS = 6 * 60 * 60 * 1000;
 
 let dbInstance: IDBDatabase | null = null;
+// IndexedDB 不可用时的短期内存兜底：只存活于当前页面，不写入 localStorage（避免人脸 base64 持久化）。
+let memoryFaceImages: { front?: string; left?: string; right?: string; chin?: string } | null = null;
+let memoryFaceImagesAt = 0;
 
 /**
  * Initialize and get the database connection
@@ -28,16 +31,41 @@ function getDB(): Promise<IDBDatabase> {
             return;
         }
 
+        let settled = false;
+        const settle = (fn: () => void) => {
+            if (settled) return;
+            settled = true;
+            fn();
+        };
+
+        // 打开 IndexedDB 可能被其它标签页的升级/阻塞卡住：5s 超时后降级，
+        // 避免整个分析流程卡在“正在分析”却从未发出请求。
+        const timeout = setTimeout(() => {
+            settle(() => reject(new Error("IndexedDB open timeout")));
+        }, 5000);
+
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onerror = () => {
+            clearTimeout(timeout);
             console.error("IndexedDB open error:", request.error);
-            reject(request.error);
+            settle(() => reject(request.error));
+        };
+
+        request.onblocked = () => {
+            clearTimeout(timeout);
+            settle(() => reject(new Error("IndexedDB blocked by another tab")));
         };
 
         request.onsuccess = () => {
+            clearTimeout(timeout);
             dbInstance = request.result;
-            resolve(dbInstance);
+            // 其它标签页升级数据库时主动让路，下次调用重新打开
+            dbInstance.onversionchange = () => {
+                try { dbInstance?.close(); } catch { /* ignore */ }
+                dbInstance = null;
+            };
+            settle(() => resolve(dbInstance as IDBDatabase));
         };
 
         request.onupgradeneeded = (event) => {
@@ -117,7 +145,8 @@ export async function getFaceImages(): Promise<{
             request.onsuccess = () => {
                 if (request.result) {
                     if (Date.now() - request.result.timestamp > MAX_STORAGE_AGE_MS) {
-                        // 过期数据视为不存在（由 clearExpiredData 统一清理）
+                        // 读取时即删除，避免用户从不回首页导致过期照片长期残留
+                        try { store.delete("current"); } catch { /* ignore */ }
                         resolve(null);
                     } else {
                         resolve(request.result.images);
@@ -302,51 +331,32 @@ export const advisorStorage = {
             }
         }
 
-        // Fallback to localStorage
-        try {
-            localStorage.setItem("advisor_face_images", JSON.stringify({
-                images,
-                timestamp: Date.now(),
-            }));
-            localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB);
-            return true;
-        } catch {
-            console.error("localStorage save failed too");
-            return false;
-        }
+        // IndexedDB 不可用：只放内存，刷新后需重拍，但不把敏感人脸 base64 持久化到 localStorage
+        memoryFaceImages = images;
+        memoryFaceImagesAt = Date.now();
+        try { localStorage.removeItem("advisor_face_images"); } catch { /* ignore */ }
+        try { localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB); } catch { /* ignore */ }
+        return true;
     },
 
     async getFaceImages(): Promise<{ front?: string; left?: string; right?: string; chin?: string } | null> {
         // Check if we have IndexedDB data
-        if (localStorage.getItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES_IDB) && isIndexedDBAvailable()) {
+        if (isIndexedDBAvailable()) {
             try {
                 const images = await getFaceImages();
                 if (images) return images;
             } catch {
-                console.warn("IndexedDB get failed, trying localStorage");
+                console.warn("IndexedDB get failed, trying memory fallback");
             }
         }
 
-        try {
-            const str = localStorage.getItem("advisor_face_images");
-            if (!str) return null;
-            const stored = JSON.parse(str) as {
-                images?: { front?: string; left?: string; right?: string; chin?: string };
-                timestamp?: unknown;
-            };
-            if (
-                !stored.images ||
-                typeof stored.timestamp !== "number" ||
-                Date.now() - stored.timestamp > MAX_STORAGE_AGE_MS
-            ) {
-                localStorage.removeItem("advisor_face_images");
-                return null;
-            }
-            return stored.images;
-        } catch {
-            console.error("localStorage parse error");
+        if (memoryFaceImages && Date.now() - memoryFaceImagesAt <= MAX_STORAGE_AGE_MS) {
+            return memoryFaceImages;
         }
+        memoryFaceImages = null;
 
+        // 清理历史版本遗留的 localStorage base64（只删不读，避免敏感数据继续留存）
+        try { localStorage.removeItem("advisor_face_images"); } catch { /* ignore */ }
         return null;
     },
 
@@ -423,6 +433,8 @@ export const advisorStorage = {
     },
 
     async clearAll(): Promise<void> {
+        memoryFaceImages = null;
+        memoryFaceImagesAt = 0;
         // Clear IndexedDB
         if (isIndexedDBAvailable()) {
             try {
@@ -450,6 +462,8 @@ export const advisorStorage = {
 
     /** 仅清除人脸照片缓存（保留问卷答案和进度） */
     async clearFaceImages(): Promise<void> {
+        memoryFaceImages = null;
+        memoryFaceImagesAt = 0;
         if (isIndexedDBAvailable()) {
             try {
                 const db = await getDB();

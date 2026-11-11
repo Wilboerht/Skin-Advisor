@@ -5,7 +5,7 @@ import { z } from "zod";
 // 通用验证规则
 // ============================================================================
 
-export const SessionIdSchema = z.string().min(1, "Session ID 不能为空");
+export const SessionIdSchema = z.string().min(1, "Session ID 不能为空").max(64, "Session ID 过长");
 
 // ============================================================================
 // 分析 API 验证规则
@@ -46,29 +46,29 @@ export const AnalyzeRequestSchema = z.object({
         consentedAt: z.string()
     }).nullable().optional(),
 
-    // 问卷答案
+    // 问卷答案（限制单字段/数组长度，防止超大 body 与 prompt 膨胀）
     answers: z.object({
-        skinType: z.string().optional(),
-        primaryConcern: z.union([z.string(), z.array(z.string())]).optional(),
-        ageRange: z.string().optional(),
-        gender: z.string().optional(),
+        skinType: z.string().max(100).optional(),
+        primaryConcern: z.union([z.string().max(500), z.array(z.string().max(100)).max(20)]).optional(),
+        ageRange: z.string().max(50).optional(),
+        gender: z.string().max(20).optional(),
 
-        allergies: z.union([z.string(), z.array(z.string())]).optional(),
-        budget: z.string().optional(),
-        skincareFrequency: z.string().optional(),
-        skincareLevel: z.string().optional(),
-        pregnancy: z.string().optional(),
-        pregnancyStatus: z.string().optional(),
-        medicalBeauty: z.string().optional(),
-        menstrualCycle: z.string().optional(),
-        medicationHistory: z.string().optional(),
-        sleepQuality: z.string().optional(),
-        stressLevel: z.string().optional(),
-        waterIntake: z.string().optional(),
-        exerciseFrequency: z.string().optional(),
-        dietaryHabits: z.string().optional(),
-        sunExposure: z.string().optional(),
-        location: z.string().optional(),
+        allergies: z.union([z.string().max(500), z.array(z.string().max(100)).max(20)]).optional(),
+        budget: z.string().max(50).optional(),
+        skincareFrequency: z.string().max(50).optional(),
+        skincareLevel: z.string().max(50).optional(),
+        pregnancy: z.string().max(20).optional(),
+        pregnancyStatus: z.string().max(20).optional(),
+        medicalBeauty: z.string().max(50).optional(),
+        menstrualCycle: z.string().max(50).optional(),
+        medicationHistory: z.string().max(500).optional(),
+        sleepQuality: z.string().max(50).optional(),
+        stressLevel: z.string().max(50).optional(),
+        waterIntake: z.string().max(50).optional(),
+        exerciseFrequency: z.string().max(50).optional(),
+        dietaryHabits: z.string().max(50).optional(),
+        sunExposure: z.string().max(50).optional(),
+        location: z.string().max(100).optional(),
     }).refine(data => Object.keys(data).length > 0, {
         message: "问卷数据不能为空"
     }),
@@ -163,7 +163,7 @@ export const FaceAnalyzeRequestSchema = z.object({
         z.array(
             z.object({
                 data: z.string().max(MAX_IMAGE_BASE64_CHARS, "单张图片过大，请压缩后重试"),
-                angle: z.string()
+                angle: z.string().max(20)
             })
         ).max(MAX_VISION_IMAGES, `最多上传 ${MAX_VISION_IMAGES} 张照片`),
         // 兼容旧的对象格式 { front: "base64" }

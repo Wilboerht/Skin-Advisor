@@ -49,11 +49,13 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
         } catch { /* ignore */ }
     }, []);
     useEffect(() => {
+        // 减弱动效偏好下不自动轮播，避免持续动画造成不适
+        if (prefersReducedMotion) return;
         const interval = setInterval(() => {
             setPersonaIdx((prev) => (prev + 1) % PERSONAS.length);
         }, 4000);
         return () => clearInterval(interval);
-    }, []);
+    }, [prefersReducedMotion]);
 
     const [stuckTime, setStuckTime] = useState(0);
     const stuckStartRef = useRef<number | null>(null);
@@ -150,7 +152,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                         }}
                         disabled={isExiting}
                         className="absolute top-8 right-4 md:right-12 lg:right-20 z-50 flex items-center gap-1.5 h-9 px-3 rounded-full border border-brand-charcoal/[0.12] text-brand-charcoal/50 transition-colors duration-300 hover:text-brand-charcoal hover:border-brand-charcoal/30 hover:bg-brand-charcoal/[0.03] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                        aria-label="离开此页（分析将在后台继续）"
+                        aria-label="离开此页（回来后可在报告页继续生成）"
                     >
                         <span className="text-[12px] font-light tracking-[0.08em]">
                             {isExiting ? "正在离开..." : "离开此页"}
@@ -287,18 +289,6 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
             {/* 预加载全部派系形象：分析阶段（30s+）并行拉取进浏览器缓存，
                 轮播切换到对应形象时零等待。priority 关闭懒加载，
                 display:none 的 img 浏览器仍会发起请求 */}
-            <div className="hidden" aria-hidden="true">
-                {PERSONAS.map((p) => (
-                    <Image
-                        key={p.key}
-                        src={`/images/character/${p.key}/${p.key}_${gender}.webp`}
-                        alt=""
-                        width={208}
-                        height={240}
-                        priority
-                    />
-                ))}
-            </div>
             </m.div>
         </div>
     );

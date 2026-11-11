@@ -1,21 +1,36 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { getTZoneLabel } from '@/lib/result-utils';
+import { getScoreBand, SCORE_DIRECTION_HINT } from '@/lib/score-bands';
 
 interface Dimension {
   score?: number;
   percentile?: number;
+  confidence?: number;
+  notVisible?: boolean;
+}
+
+export interface ScoreCoverage {
+  scored: number;
+  total: number;
 }
 
 interface ResultCardsProps {
   score?: number;
+  scoreCoverage?: ScoreCoverage;
   skinAge?: number;
+  skinAgeRange?: [number, number];
+  skinAgeFactors?: string[];
   dimensions: Record<string, Dimension | undefined>;
   nickname: string;
-  /** 报告正文（v2 顾问叙事 / v1 各板块渲染结果），由 ReportPage 提供 */
-  comprehensiveReport?: React.ReactNode;
+  dataSource?: "comprehensive" | "questionnaire" | "hybrid";
+}
+
+function getWaterOilBalanceLabel(score: number): string {
+  if (score >= 80) return '平衡';
+  if (score >= 60) return '轻度失衡';
+  return '明显失衡';
 }
 
 const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
@@ -56,23 +71,30 @@ const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: n
   );
 };
 
-// 专业版报告卡：综合评分 / 肌肤年龄 / 油脂分泌 / 皮肤弹性 + comprehensiveReport 正文。
-// 肌智派证书（分享版卡片）已拆分为 ShareCardPage。
+/**
+ * KPI 卡：综合评分 / 肌肤年龄 / 水油平衡 / 皮肤弹性。
+ * 报告正文由 ReportPage 独立渲染（雷达、顾问报告、行动方案等），避免把长内容塞进卡片。
+ */
 export default function ResultCards({
   score,
+  scoreCoverage,
   skinAge,
+  skinAgeRange,
+  skinAgeFactors,
   dimensions,
   nickname,
-  comprehensiveReport,
+  dataSource,
 }: ResultCardsProps) {
-  const tZoneLabel = useMemo(
-    () => dimensions?.waterOil?.score === undefined ? '-' : getTZoneLabel(dimensions.waterOil.score),
-    [dimensions]
-  );
+  const scoreBand = getScoreBand(score);
+  const waterOilScore = dimensions?.waterOil?.score;
+  const waterOilLabel = typeof waterOilScore === 'number' ? getWaterOilBalanceLabel(waterOilScore) : '-';
+  const isQuestionnaireOnly = dataSource === 'questionnaire';
+  const coverageText = scoreCoverage
+    ? `基于 ${scoreCoverage.scored}/${scoreCoverage.total} 个有效维度`
+    : null;
 
   return (
     <div className="w-full flex flex-col gap-6" aria-label={`${nickname || '用户'}的肤质检测结果`}>
-      {/* Professional Version Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -92,11 +114,16 @@ export default function ResultCards({
               <h2 className="text-lg lg:text-2xl font-bold text-brand-espresso mb-2 relative z-10">
                 深度肌肤检测报告
               </h2>
-              <p className="text-[var(--color-brand-cocoa)] text-xs lg:text-xs max-w-xs leading-relaxed mb-4 lg:mb-8 font-medium tracking-wide relative z-10">
-                基于面部影像十维检测与您的问卷数据，全方位解析您的肌肤状态。
+              <p className="text-[var(--color-brand-cocoa)] text-xs lg:text-xs max-w-xs leading-relaxed mb-2 font-medium tracking-wide relative z-10">
+                {isQuestionnaireOnly
+                  ? '本次未进行面部影像分析，报告基于您的问卷回答生成。'
+                  : '基于面部影像十维检测与您的问卷数据，全方位解析您的肌肤状态。'}
+              </p>
+              <p className="text-[11px] text-[var(--color-brand-taupe)] leading-relaxed mb-4 lg:mb-8 relative z-10">
+                {SCORE_DIRECTION_HINT}
+                {coverageText ? ` · ${coverageText}` : ''}
               </p>
             </div>
-
           </div>
 
           {/* Cards Grid: 2x2 on mobile, 4-col on desktop */}
@@ -114,12 +141,22 @@ export default function ResultCards({
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
                 <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
-                <div className="flex items-baseline">
-                  <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
-                    {score === undefined ? '-' : <AnimatedNumber value={score} duration={1.5} />}
-                  </span>
-                  {score !== undefined && (
-                    <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
+                <div className="flex flex-col items-end lg:items-start gap-1">
+                  <div className="flex items-baseline">
+                    <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
+                      {score === undefined ? '-' : <AnimatedNumber value={score} duration={1.5} />}
+                    </span>
+                    {score !== undefined && (
+                      <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
+                    )}
+                  </div>
+                  {scoreBand && (
+                    <span
+                      className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{ color: scoreBand.color, background: scoreBand.background }}
+                    >
+                      {scoreBand.label}
+                    </span>
                   )}
                 </div>
               </div>
@@ -138,18 +175,30 @@ export default function ResultCards({
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
                 <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">肌肤年龄</p>
-                <div className="flex items-baseline">
-                  <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
-                    {skinAge === undefined ? '-' : <AnimatedNumber value={skinAge} duration={1.5} />}
-                  </span>
-                  {skinAge !== undefined && (
-                    <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">岁</span>
+                <div className="flex flex-col items-end lg:items-start gap-1">
+                  <div className="flex items-baseline">
+                    <span className="text-xs lg:text-2xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
+                      {skinAge === undefined ? '-' : <>约 <AnimatedNumber value={skinAge} duration={1.5} /></>}
+                    </span>
+                    {skinAge !== undefined && (
+                      <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">岁</span>
+                    )}
+                  </div>
+                  {skinAgeRange && (
+                    <span className="text-[10px] text-[var(--color-brand-taupe)]">
+                      参考 {skinAgeRange[0]}–{skinAgeRange[1]} 岁
+                    </span>
+                  )}
+                  {skinAgeFactors && skinAgeFactors.length > 0 && (
+                    <span className="hidden lg:block text-[10px] leading-snug text-[var(--color-brand-taupe)] line-clamp-2" title={skinAgeFactors.join('、')}>
+                      依据：{skinAgeFactors.slice(0, 2).join('、')}
+                    </span>
                   )}
                 </div>
               </div>
             </motion.div>
 
-            {/* T-zone Indicator */}
+            {/* Water-oil balance */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -161,14 +210,22 @@ export default function ResultCards({
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">油脂分泌</p>
-                <div className="flex items-baseline">
-                  <span className="text-xs lg:text-xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-tight">{tZoneLabel}</span>
+                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">水油平衡</p>
+                <div className="flex flex-col items-end lg:items-start gap-1">
+                  <div className="flex items-baseline">
+                    <span className="text-xs lg:text-2xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
+                      {typeof waterOilScore === 'number' ? waterOilScore : '-'}
+                    </span>
+                    {typeof waterOilScore === 'number' && (
+                      <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-[var(--color-brand-taupe)]">{waterOilLabel}</span>
                 </div>
               </div>
             </motion.div>
 
-            {/* Last slot: 皮肤弹性（取 firmness 维度，无数据时显示 -） */}
+            {/* Firmness */}
             <div
               className="flex p-3 lg:p-4 rounded-xl lg:rounded-2xl flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
               style={{
@@ -178,19 +235,20 @@ export default function ResultCards({
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
                 <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">皮肤弹性</p>
-                <div className="flex items-baseline">
-                  <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
-                    {dimensions?.firmness?.score === undefined ? '-' : <AnimatedNumber value={dimensions.firmness.score} duration={1.5} />}
-                  </span>
-                  {dimensions?.firmness?.score !== undefined && (
-                    <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
-                  )}
+                <div className="flex flex-col items-end lg:items-start gap-1">
+                  <div className="flex items-baseline">
+                    <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
+                      {dimensions?.firmness?.score === undefined ? '-' : <AnimatedNumber value={dimensions.firmness.score} duration={1.5} />}
+                    </span>
+                    {dimensions?.firmness?.score !== undefined && (
+                      <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {comprehensiveReport}
       </motion.div>
     </div>
   );

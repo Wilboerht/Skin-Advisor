@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import crypto from "crypto";
 import { accountDisabledResponse, apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
@@ -26,6 +26,7 @@ import { hashIP } from "@/lib/privacy";
 import { matchCharacterIP } from "@/lib/result-utils";
 import { isCompletedAnalysisResult } from "@/lib/analysis-result";
 import { getEnvContextFromLocation } from "@/lib/weather-context";
+import { buildSafetyNotes } from "@/lib/report-safety";
 
 import { checkUsageLimit, markUsageConsumed, renewUsageLease, reserveUsage, rollbackUsage, GUEST_REQUIRE_LOGIN_MESSAGE, type ReserveUsageResult } from "@/lib/usage-limit";
 import { aiLogger, logger } from "@/lib/logger";
@@ -166,14 +167,25 @@ function sanitizeReason(reason: string): string {
  */
 async function hasSuccessfulFaceAnalysis(sessionId: string): Promise<boolean> {
     try {
-        const count = await prisma.aIUsageLog.count({
-            where: {
-                sessionId,
-                requestType: "vision",
-                success: true,
-            },
-        });
-        return count > 0;
+        const [count, session] = await Promise.all([
+            prisma.aIUsageLog.count({
+                where: {
+                    sessionId,
+                    requestType: "vision",
+                    success: true,
+                },
+            }),
+            prisma.advisorSession.findUnique({
+                where: { sessionId },
+                select: { faceScanCompletedAt: true, analysisResult: true },
+            }),
+        ]);
+        if (count > 0) return true;
+        // 缓存命中等路径不再写合成 AI 日志：以服务端已持久化的面部结果为准，
+        // 否则 analyze 失败时会误退已产生的面部结果额度。
+        if (session?.faceScanCompletedAt) return true;
+        const persistedFace = (session?.analysisResult as Record<string, unknown> | null)?.faceAnalysis;
+        return !!persistedFace;
     } catch (e) {
         logger.warn(`[analyze] Failed to check face analysis usage for ${sessionId}:`, e);
         // 保守认为已消费，避免免费重试漏洞
@@ -350,6 +362,12 @@ export async function POST(request: NextRequest) {
     let needsPriorLeaseRenewal = false;
 
     try {
+        // 0. 拒绝超大请求体（问卷字段有长度上限，正常请求远小于 1MB）
+        const contentLength = Number(request.headers.get("content-length") || 0);
+        if (contentLength > 1_000_000) {
+            return apiError(ErrorCode.VALIDATION_ERROR, "请求体过大，请精简后重试", 413);
+        }
+
         // 1. 解析请求体（带 guard，malformed JSON 返回 400 而非 500）
         let body: unknown;
         try {
@@ -364,6 +382,9 @@ export async function POST(request: NextRequest) {
             logger.error("Analyze validation error:", JSON.stringify(result.error.flatten(), null, 2));
             return apiError(ErrorCode.VALIDATION_ERROR, "请求参数错误", 400, result.error.flatten().fieldErrors);
         }
+
+        // 内部异步任务标记：用于跳过重复的额度预检（worker 仍会原子预占）
+        const isInternalReportJob = (body as Record<string, unknown>).__reportJob === true;
 
         // faceAnalysis 不再从请求体读取：只使用 /face-analyze 服务端持久化的结果
         const { answers, sessionId, nickname, freeRetry, clientDate, privacyConsent, skinState } = result.data;
@@ -451,9 +472,33 @@ export async function POST(request: NextRequest) {
         if (!isFreeRetryAllowed && sessionId && user) {
             const [priorRecord, priorSession] = await Promise.all([
                 prisma.testRecord.findUnique({ where: { sessionId }, select: { userId: true } }),
-                prisma.advisorSession.findUnique({ where: { sessionId }, select: { completedAt: true } }),
+                prisma.advisorSession.findUnique({
+                    where: { sessionId },
+                    select: {
+                        completedAt: true,
+                        faceScanStartedAt: true,
+                        faceScanCompletedAt: true,
+                        analysisResult: true,
+                    },
+                }),
             ]);
             hasPriorReservation = priorRecord?.userId === user.id && !priorSession?.completedAt;
+
+            // 产品决策：不允许跳过扫脸，任何新报告都必须基于服务端已持久化的面部结果。
+            // 在预占额度前拦截，避免“只填问卷也扣一次”的无效消耗。
+            const persistedFace = (priorSession?.analysisResult as Record<string, unknown> | null)?.faceAnalysis;
+            const hasFace = !!priorSession?.faceScanCompletedAt || !!persistedFace;
+            if (!hasFace) {
+                const faceInProgress = !!priorSession?.faceScanStartedAt
+                    && Date.now() - new Date(priorSession.faceScanStartedAt).getTime() <= 5 * 60 * 1000;
+                if (faceInProgress) {
+                    return NextResponse.json(
+                        { status: "analyzing", phase: "face_analyzing", sessionId, message: "面部分析进行中，请稍候" },
+                        { status: 202, headers: rateLimitHeaders }
+                    );
+                }
+                return apiError("FACE_REQUIRED", "请先完成扫脸分析后再生成报告", 400);
+            }
         }
 
         if (!isFreeRetryAllowed) {
@@ -475,7 +520,8 @@ export async function POST(request: NextRequest) {
                 });
             }
 
-            if (!hasPriorReservation) {
+            // 内部异步任务：原请求已完成额度预检，这里跳过重复查询；reserveUsage 仍会原子校验
+            if (!hasPriorReservation && !isInternalReportJob) {
                 const usageLimit = await checkUsageLimit(request);
                 if (!usageLimit.canTest) {
                     // 游客测肤需登录：返回 401（非 429），前端据此引导登录
@@ -518,6 +564,64 @@ export async function POST(request: NextRequest) {
                 if (process.env.NODE_ENV !== "production") console.log(`[analyze] Returning cached result for completed session ${effectiveSessionId}`);
                 return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
             }
+        }
+
+        // 报告异步任务（REPORT_ASYNC_ENABLED=true 时启用）：
+        // 本请求只做预检并返回 202，真正的生成通过 after() 在本机另起一次正常 analyze 请求，
+        // 复用同一套完整流程（不复制生成代码）。__reportJob 防止递归。
+        if (process.env.REPORT_ASYNC_ENABLED === "true"
+            && !isFreeRetryAllowed
+            && !isInternalReportJob
+            && effectiveSessionId) {
+            const jobSessionId = effectiveSessionId;
+            const port = process.env.PORT || "3002";
+            const target = process.env.REPORT_JOB_URL || `http://127.0.0.1:${port}/api/advisor/analyze`;
+            const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://smart.nihplod.cn";
+            const cookie = request.headers.get("cookie") || "";
+            const forwardedFor = request.headers.get("x-forwarded-for");
+            const realIp = request.headers.get("x-real-ip");
+            const userAgent = request.headers.get("user-agent");
+            const jobBody = { ...(body as Record<string, unknown>), __reportJob: true, async: false };
+
+            // 只负责“点火”，不 await 自请求：after 回调不应占用原路由的 maxDuration，
+            // 否则自请求可能被原请求的超时截断。fetch 的 open handle 会继续跑完。
+            after(() => {
+                const headers = new Headers({
+                    "content-type": "application/json",
+                    origin: siteOrigin,
+                    referer: `${siteOrigin}/result`,
+                });
+                if (cookie) headers.set("cookie", cookie);
+                if (forwardedFor) headers.set("x-forwarded-for", forwardedFor);
+                if (realIp) headers.set("x-real-ip", realIp);
+                if (userAgent) headers.set("user-agent", userAgent);
+
+                void fetch(target, {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify(jobBody),
+                    signal: AbortSignal.timeout(90_000),
+                }).then(async (res) => {
+                    if (!res.ok) {
+                        const text = await res.text().catch(() => "");
+                        logger.error("[analyze] async report job failed", {
+                            status: res.status,
+                            sessionId: jobSessionId,
+                            body: text.slice(0, 200),
+                        });
+                    }
+                }).catch((error) => {
+                    logger.error("[analyze] async report job request error", {
+                        error: String(error),
+                        sessionId: jobSessionId,
+                    });
+                });
+            });
+
+            return NextResponse.json(
+                { status: "analyzing", phase: "text_analyzing", sessionId: jobSessionId, async: true },
+                { status: 202, headers: rateLimitHeaders }
+            );
         }
 
         if (!isFreeRetryAllowed) {
@@ -608,7 +712,12 @@ export async function POST(request: NextRequest) {
                 && !session.faceScanCompletedAt
                 && session.faceScanStartedAt > staleAnalysisBefore
             ) {
-                return { status: 'analyzing' as const };
+                return { status: 'analyzing' as const, phase: 'face_analyzing' as const };
+            }
+
+            // 强制扫脸：没有服务端面部结果不得生成报告（避免纯问卷报告冒充测肤报告）。
+            if (!serverFace) {
+                return { status: 'face_required' as const };
             }
 
             // 再次检查是否已完成（可能刚刚完成）。免费重试需要重新跑 AI，不走缓存。
@@ -649,7 +758,7 @@ export async function POST(request: NextRequest) {
                 && !!session?.analysisStartedAt
                 && new Date(session.analysisStartedAt).getTime() > new Date(session.completedAt).getTime();
             if (session?.analysisStartedAt && (!session?.completedAt || retryInProgress)) {
-                return { status: 'analyzing' as const };
+                return { status: 'analyzing' as const, phase: 'text_analyzing' as const };
             }
 
             const consentFields = privacyConsent ? {
@@ -693,7 +802,13 @@ export async function POST(request: NextRequest) {
             if (claimed.count === 0) {
                 const after = await tx.advisorSession.findUnique({
                     where: { sessionId: effectiveSessionId },
-                    select: { analysisStartedAt: true, analysisResult: true, userId: true },
+                    select: {
+                        analysisStartedAt: true,
+                        analysisResult: true,
+                        userId: true,
+                        faceScanStartedAt: true,
+                        faceScanCompletedAt: true,
+                    },
                 });
                 if (
                     !isFreeRetryAllowed
@@ -702,7 +817,11 @@ export async function POST(request: NextRequest) {
                 ) {
                     return { status: 'completed' as const, result: after?.analysisResult };
                 }
-                return { status: 'analyzing' as const };
+                const afterFace = (after?.analysisResult as Record<string, unknown> | null)?.faceAnalysis;
+                const phase = !afterFace && after?.faceScanStartedAt && !after?.faceScanCompletedAt
+                    ? 'face_analyzing' as const
+                    : 'text_analyzing' as const;
+                return { status: 'analyzing' as const, phase };
             }
 
             return { status: 'started' as const, faceAnalysis: serverFace ?? null };
@@ -727,6 +846,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
         }
 
+        if (lockResult.status === 'face_required') {
+            // 无面部结果不得生成报告；若本请求已预占额度，立即退还。
+            if (reservedResult && !reservedResult.alreadyReserved) {
+                await rollbackUsage(request, effectiveSessionId, reservationUserId, reservedResult.leaseToken);
+            }
+            return apiError("FACE_REQUIRED", "请先完成扫脸分析后再生成报告", 400);
+        }
+
         if (lockResult.status === 'free_retry_used') {
             const response = apiError(ErrorCode.RATE_LIMITED, "免费重试已使用，每个会话仅限一次", 429);
             Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
@@ -739,7 +866,12 @@ export async function POST(request: NextRequest) {
 
         if (lockResult.status === 'analyzing') {
             return NextResponse.json(
-                { status: "analyzing", sessionId: effectiveSessionId, message: "分析正在进行中，请稍候" },
+                {
+                    status: "analyzing",
+                    phase: lockResult.phase ?? "text_analyzing",
+                    sessionId: effectiveSessionId,
+                    message: "分析正在进行中，请稍候",
+                },
                 { status: 202, headers: rateLimitHeaders }
             );
         }
@@ -866,6 +998,7 @@ export async function POST(request: NextRequest) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 skinConditions: (faceAnalysis as any).skinConditions,
             } as Partial<FaceAnalysisResult> : undefined,
+            scoring: faceAnalysis?.scoring,
             products: candidateProducts,
             skinState,
             personaContent
@@ -911,7 +1044,7 @@ export async function POST(request: NextRequest) {
             // 透传 userId 使队列的 maxConcurrentPerUser 生效
             // 队列等待计入总预算：最多等 30s，给文本 AI 留出约 50s
             // （原默认 60s 会让生成阶段只剩 25-30s，必然撞 85s 路由超时）
-            await analysisQueue.acquire({ timeoutMs: 30_000, signal: abortController.signal, userId: user?.id });
+            await analysisQueue.acquire({ timeoutMs: 15_000, signal: abortController.signal, userId: user?.id });
             queueAcquired = true;
 
             // 记录队列状态到响应头
@@ -961,8 +1094,8 @@ export async function POST(request: NextRequest) {
                 aiLogger.warn("AI report parse failed, retrying once with repair instruction", {
                     error: reason,
                     elapsedMs,
-                    aiOutputHead: rawAiOutput.slice(0, 300),
-                    aiOutputTail: rawAiOutput.slice(-200),
+                    aiOutputLength: rawAiOutput.length,
+                    aiOutputHash: crypto.createHash("sha256").update(rawAiOutput).digest("hex").slice(0, 16),
                 });
                 const repairPrompt = `${userPrompt}\n\n【格式修复】上一次输出无法解析（${isSchemaIssue ? "字段结构不符合上述 JSON 要求" : "不是合法 JSON 或输出被截断"}）。请严格按上述 JSON 结构重新输出完整结果：不要 Markdown 代码块、不要任何解释文字，确保所有字段完整且 JSON 正确闭合。`;
                 const repairText = await generateText(
@@ -1049,7 +1182,10 @@ export async function POST(request: NextRequest) {
             aiLogger.warn(`AI generation failed [${errorCategory}] (v2-only, report will fail)`, {
                 error: err.message,
                 ...(["AI_JSON_PARSE", "AI_SCHEMA_INVALID"].includes(errorCategory) && rawAiOutput
-                    ? { aiOutputHead: rawAiOutput.slice(0, 300), aiOutputTail: rawAiOutput.slice(-200) }
+                    ? {
+                        aiOutputLength: rawAiOutput.length,
+                        aiOutputHash: crypto.createHash("sha256").update(rawAiOutput).digest("hex").slice(0, 16),
+                    }
                     : {}),
             });
 
@@ -1158,6 +1294,23 @@ export async function POST(request: NextRequest) {
         const consultantObservations = consultantReport.issues.map((i) => i.observation);
         const consultantLifestylePlans = consultantReport.issues.map((i) => i.lifestylePlan);
 
+        // 安全与成分摘要：确定性生成，不额外调用 AI；只向客户端下发可公开展示的结论。
+        const safetyNotes = buildSafetyNotes({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            allergies: (answers as any).allergies,
+            pregnancyStatus: pregnancyRaw,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            medicationHistory: (answers as any).medicationHistory,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            medicalBeauty: (answers as any).medicalBeauty,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            skincareLevel: (answers as any).skincareLevel,
+            products: finalProducts.map((product) => ({
+                keyIngredients: (product as { keyIngredients?: string[] | null }).keyIngredients ?? null,
+            })),
+            issues: consultantReport.issues,
+        });
+
         const standardizedResult = {
             skinProfile: {
                 type: finalSkinType,
@@ -1186,6 +1339,7 @@ export async function POST(request: NextRequest) {
             reportVersion: 2,
             promptVersion: CONSULTANT_PROMPT_VERSION,
             consultantReport,
+            safetyNotes,
         };
 
         // 清理 AI 输出中的潜在危险内容（存储型 XSS 防护）
@@ -1244,7 +1398,7 @@ export async function POST(request: NextRequest) {
             // ====== 护肤日记自动生成：测肤完成后写入/更新当日条目 ======
             // 失败不影响分析响应；仅真实面部分析（faceAnalysis 存在）生成，
             // 纯问卷模式没有分数，不写测肤日记
-            const overallScore = (finalFaceAnalysis as Record<string, unknown> | null)?.overallScore;
+            const overallScore = finalFaceAnalysis?.overallScore;
             if (user?.id && clientDate && faceAnalysis && typeof overallScore === "number") {
                 upsertAutoDiaryEntry({
                     userId: user.id,

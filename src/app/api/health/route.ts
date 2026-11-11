@@ -51,8 +51,11 @@ export async function GET(req: NextRequest) {
 
     // 2. AI 服务状态
     try {
-        const aiEnabled = await isAIEnabled();
-        checks.ai = aiEnabled ? "ok" : "disabled";
+        const [textEnabled, visionEnabled] = await Promise.all([
+            isAIEnabled("text"),
+            isAIEnabled("vision"),
+        ]);
+        checks.ai = textEnabled && visionEnabled ? "ok" : textEnabled || visionEnabled ? "degraded" : "disabled";
     } catch {
         checks.ai = "error";
     }

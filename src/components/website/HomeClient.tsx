@@ -11,8 +11,7 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
-import { hasPrivacyConsent } from "@/components/advisor/PrivacyConsent";
-import { CONSENT_VERSION } from "@/lib/consent-constants";
+import { hasPrivacyConsent, savePrivacyConsent } from "@/lib/consent-storage";
 import { recordClientConsent } from "@/lib/consent-client";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
@@ -254,6 +253,8 @@ export default function HomeClient() {
     // 服务端命中已完成缓存后直接返回上一份报告。
     safeStorage.remove(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS);
+    // 新测试重置拍摄状态，避免沿用上一次的“带妆/防晒”选择
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_SKIN_STATE);
     // 预处理图可能尚未被异步 clearFaceImages 清掉，先同步移除，防止新测试复用旧照片
     safeStorage.remove("advisor_processed_images");
     try {
@@ -347,10 +348,7 @@ export default function HomeClient() {
     }
 
     // Record privacy consent from the legal step（登录用户同样会看到 legal 屏）
-    safeStorage.set(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT, JSON.stringify({
-        version: CONSENT_VERSION,
-        consentedAt: new Date().toISOString()
-    }));
+    savePrivacyConsent();
     if (user?.id) void recordClientConsent();
     setPrivacyConsentPresent(true);
 
