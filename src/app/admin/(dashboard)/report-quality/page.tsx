@@ -26,6 +26,10 @@ export default async function ReportQualityPage() {
     let avgFindings = 0;
     let avgIssues = 0;
     let avgCoverage = 0;
+    let avgQueue = 0;
+    let avgText = 0;
+    let avgProduct = 0;
+    let avgPersist = 0;
     let bySource: Array<{ narrativeSource: string; _count: { id: number } }> = [];
     let recentFallbacks: Array<{
         sessionId: string;
@@ -47,6 +51,10 @@ export default async function ReportQualityPage() {
                     diagnosisFindingCount: true,
                     issueCount: true,
                     coverageScored: true,
+                    queueWaitMs: true,
+                    textGenerationMs: true,
+                    productSelectionMs: true,
+                    persistMs: true,
                 },
             }),
             prisma.reportQualityLog.groupBy({
@@ -75,6 +83,10 @@ export default async function ReportQualityPage() {
         avgFindings = Math.round((aggregate._avg.diagnosisFindingCount ?? 0) * 10) / 10;
         avgIssues = Math.round((aggregate._avg.issueCount ?? 0) * 10) / 10;
         avgCoverage = Math.round((aggregate._avg.coverageScored ?? 0) * 10) / 10;
+        avgQueue = Math.round(aggregate._avg.queueWaitMs ?? 0);
+        avgText = Math.round(aggregate._avg.textGenerationMs ?? 0);
+        avgProduct = Math.round(aggregate._avg.productSelectionMs ?? 0);
+        avgPersist = Math.round(aggregate._avg.persistMs ?? 0);
         bySource = sourceGroups;
         recentFallbacks = fallbacks;
     } catch (error) {
@@ -86,6 +98,10 @@ export default async function ReportQualityPage() {
         { label: "AI 文案", value: pct(total - fallback, total) },
         { label: "规则兜底", value: pct(fallback, total) },
         { label: "平均耗时", value: avgDuration > 0 ? `${(avgDuration / 1000).toFixed(1)}s` : "—" },
+        { label: "平均队列", value: avgQueue > 0 ? `${(avgQueue / 1000).toFixed(1)}s` : "—" },
+        { label: "平均文本", value: avgText > 0 ? `${(avgText / 1000).toFixed(1)}s` : "—" },
+        { label: "平均产品", value: avgProduct > 0 ? `${(avgProduct / 1000).toFixed(1)}s` : "—" },
+        { label: "平均落库", value: avgPersist > 0 ? `${(avgPersist / 1000).toFixed(2)}s` : "—" },
         { label: "平均 findings", value: avgFindings > 0 ? String(avgFindings) : "—" },
         { label: "平均 issues", value: avgIssues > 0 ? String(avgIssues) : "—" },
         { label: "平均有效维度", value: avgCoverage > 0 ? String(avgCoverage) : "—" },
@@ -100,7 +116,7 @@ export default async function ReportQualityPage() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
                 {stats.map((stat) => (
                     <div key={stat.label} className="rounded-xl border border-brand-charcoal/10 bg-white p-4">
                         <p className="text-[11px] text-brand-charcoal/50">{stat.label}</p>

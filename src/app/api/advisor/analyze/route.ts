@@ -343,6 +343,14 @@ export async function POST(request: NextRequest) {
     // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
     const abortController = new AbortController();
     const requestStartedAt = Date.now();
+    // 阶段耗时：用于定位用户主要等待在队列、文本、产品还是落库
+    const stageTimings = {
+        queueWaitMs: 0,
+        textGenerationMs: 0,
+        productSelectionMs: 0,
+        safetyMs: 0,
+        persistMs: 0,
+    };
     // 区分“服务端 85s 超时”与“客户端主动断开”：前者可重试/退款，后者不能
     let serverTimedOut = false;
     // 比 maxDuration(90s) 少 5s：保证平台杀进程前有机会走 catch/finally 清理
@@ -950,6 +958,16 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 6, personaKey, envContext);
 
+        // 产品推荐与文本 AI 并行：算法推荐不依赖 AI 文案，提前启动可缩短总耗时
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const algorithmRecsPromise = recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey, envContext)
+            .catch((error) => {
+                logger.warn("[Analyze] algorithm product recommendations failed (non-fatal)", {
+                    error: String(error),
+                });
+                return [] as ProductRecommendation[];
+            });
+
         // 派系护肤方案骨架（result-content.json 的 m4 早晚节奏 + m7 护肤公式），
         // 注入 prompt 让 AI 在既定方案上做个性化微调，而非从零编写
         const personaContent = ((): PersonaRoutineContext | undefined => {
@@ -1071,13 +1089,16 @@ export async function POST(request: NextRequest) {
         try {
             // 内层 try：AI 文案失败时降级为规则模板报告，不阻断整个报告生成。
             // 客户端取消/服务端超时仍上抛，由外层 catch 走取消/超时语义。
+            let textStartedAt = 0;
             try {
             // P3: 请求队列处理 - 申请令牌（防止并发过高打爆 LLM API）
             // 透传 userId 使队列的 maxConcurrentPerUser 生效
             // 队列等待计入总预算：最多等 30s，给文本 AI 留出约 50s
             // （原默认 60s 会让生成阶段只剩 25-30s，必然撞 85s 路由超时）
+            const queueStartedAt = Date.now();
             await analysisQueue.acquire({ timeoutMs: 15_000, signal: abortController.signal, userId: user?.id });
             queueAcquired = true;
+            stageTimings.queueWaitMs = Date.now() - queueStartedAt;
 
             // 记录队列状态到响应头
             const queueStats = analysisQueue.getStats();
@@ -1097,6 +1118,7 @@ export async function POST(request: NextRequest) {
 
             // 队列等待已消耗预算：给文本模型传剩余时间，避免内层 80s 超时晚于路由 85s abort
             const remainingTextBudgetMs = () => Math.max(5_000, 85_000 - (Date.now() - requestStartedAt) - 5_000);
+            textStartedAt = Date.now();
             rawAiOutput = await generateText(
                 systemPrompt,
                 userPrompt,
@@ -1199,6 +1221,9 @@ export async function POST(request: NextRequest) {
                 consultantReport = fallbackReport;
                 narrativeSource = "fallback";
                 fallbackReason = "NARRATIVE_MISMATCH";
+            }
+            if (textStartedAt > 0) {
+                stageTimings.textGenerationMs = Date.now() - textStartedAt;
             }
         } catch (e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));
@@ -1309,9 +1334,9 @@ export async function POST(request: NextRequest) {
         // 7. 补全产品详情 — 返回最多3个产品（AI精选 + 算法补足）
         let finalProducts: ProductRecommendation[] = [];
 
-        // 预先用算法生成3个带推荐理由的候选（用于兜底和补充）
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey, envContext);
+        // 产品推荐已在文本 AI 期间并行启动；此处只等待结果并完成 AI 推荐映射
+        const productSelectionStartedAt = Date.now();
+        const algorithmRecs = await algorithmRecsPromise;
 
         type AiProductItem = {
             id?: string | number;
@@ -1367,6 +1392,7 @@ export async function POST(request: NextRequest) {
             images: p.images ? p.images.map(normalizeImagePath).filter(Boolean) : null,
             reason: sanitizeReason(p.reason)
         }));
+        stageTimings.productSelectionMs = Date.now() - productSelectionStartedAt;
 
         // 8. Construct Final Standardized Result (Matching ComprehensiveResult Interface)
 
@@ -1385,6 +1411,7 @@ export async function POST(request: NextRequest) {
         const consultantLifestylePlans = consultantReport.issues.map((i) => i.lifestylePlan);
 
         // 安全与成分摘要：确定性生成，不额外调用 AI；只向客户端下发可公开展示的结论。
+        const safetyStartedAt = Date.now();
         const safetyNotes = buildSafetyNotes({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             allergies: (answers as any).allergies,
@@ -1400,6 +1427,7 @@ export async function POST(request: NextRequest) {
             })),
             issues: consultantReport.issues,
         });
+        stageTimings.safetyMs = Date.now() - safetyStartedAt;
 
         const analyzedAtIso = new Date().toISOString();
         // ReportV3：AI 成功/规则兜底都走同一编译器；同时保留 v2 顶层字段
@@ -1472,6 +1500,7 @@ export async function POST(request: NextRequest) {
             };
 
             const completedAt = new Date();
+            const persistStartedAt = Date.now();
             try {
                 await withDbRetry(async () => {
                     await prisma.advisorSession.update({
@@ -1490,6 +1519,7 @@ export async function POST(request: NextRequest) {
                         },
                     });
                 });
+                stageTimings.persistMs = Date.now() - persistStartedAt;
             } catch (txErr) {
                 logger.error("Failed to persist final analysis result:", txErr);
                 await clearAnalysisStartedAt(effectiveSessionId);
@@ -1549,11 +1579,21 @@ export async function POST(request: NextRequest) {
                     lowConfidenceCount: scoring?.lowConfidenceDimensions.length ?? 0,
                     notVisibleCount: scoring?.notVisibleDimensions.length ?? 0,
                     durationMs: Date.now() - requestStartedAt,
+                    queueWaitMs: stageTimings.queueWaitMs,
+                    textGenerationMs: stageTimings.textGenerationMs,
+                    productSelectionMs: stageTimings.productSelectionMs,
+                    safetyMs: stageTimings.safetyMs,
+                    persistMs: stageTimings.persistMs,
                 };
                 await prisma.reportQualityLog.upsert({
                     where: { sessionId: effectiveSessionId },
                     update: qualityData,
                     create: qualityData,
+                });
+                aiLogger.info("[AnalyzeTiming]", {
+                    sessionId: effectiveSessionId,
+                    ...stageTimings,
+                    totalMs: qualityData.durationMs,
                 });
             } catch (qualityErr) {
                 logger.warn("[ReportQualityLog] upsert failed", {
