@@ -16,6 +16,8 @@ interface ProductRecommendationSectionProps {
     onProductClick?: (productId: string) => void;
     className?: string;
     centered?: boolean;
+    /** 报告会话 ID：用于 product_detail_open / purchase_click 漏斗埋点 */
+    sessionId?: string;
 }
 
 export function ProductRecommendationSection({
@@ -24,7 +26,8 @@ export function ProductRecommendationSection({
     faceAnalysis,
     onProductClick,
     className,
-    centered = false
+    centered = false,
+    sessionId,
 }: ProductRecommendationSectionProps) {
     const [processedProducts, setProcessedProducts] = useState<ProductCardData[]>([]);
     const [selectedProduct, setSelectedProduct] = useState<ProductCardData | null>(null);
@@ -32,6 +35,15 @@ export function ProductRecommendationSection({
     const scrollRef = useRef<HTMLDivElement>(null);
     const hasCentered = useRef(false);
     const prevProductsRef = useRef<ProductCardData[]>([]);
+
+    const trackEvent = (event: "product_detail_open" | "purchase_click", data: Record<string, unknown>) => {
+        if (!sessionId) return;
+        fetch("/api/advisor/analytics/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId, event, data }),
+        }).catch(() => { /* analytics must not block UI */ });
+    };
 
     // 当产品列表变化时重置居中状态
     useEffect(() => {
@@ -118,7 +130,7 @@ export function ProductRecommendationSection({
     }
 
     return (
-        <section id="product-recommendation" className={cn("relative w-full scroll-mt-24", className)}>
+        <section id="product-recommendation" className={cn("relative w-full scroll-mt-32", className)}>
             {/* 标题：上方留白对齐"趋势对比→专业版报告"的视觉间距（卡片内边距 + 模块 gap 的同等量级） */}
             <m.div
                 initial={{ opacity: 0, y: 20 }}
@@ -180,7 +192,11 @@ export function ProductRecommendationSection({
                                         product={product}
                                         index={index}
                                         onProductClick={onProductClick}
-                                        onViewDetail={centered ? (p) => { setSelectedProduct(p); setIsModalOpen(true); } : undefined}
+                                        onViewDetail={centered ? (p) => {
+                                            trackEvent("product_detail_open", { productId: p.id, productName: p.name });
+                                            setSelectedProduct(p);
+                                            setIsModalOpen(true);
+                                        } : undefined}
                                         variant={centered ? "compact" : "default"}
                                     />
                                 </div>
@@ -200,6 +216,11 @@ export function ProductRecommendationSection({
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 product={selectedProduct}
+                onPurchaseClick={(link) => trackEvent("purchase_click", {
+                    productId: selectedProduct?.id,
+                    productName: selectedProduct?.name,
+                    ...link,
+                })}
             />
         </section>
     );

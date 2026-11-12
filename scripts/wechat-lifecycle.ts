@@ -15,10 +15,24 @@
  * 使用: npx tsx scripts/wechat-lifecycle.ts [--dry-run] [--stage=day1|day3|day7|season]
  */
 
+import { config } from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { getSeason, getSeasonLabel, type Season } from "../src/lib/weather-context";
 
-const prisma = new PrismaClient();
+config({ path: ".env.production" });
+config({ path: ".env" });
+
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+    throw new Error("DATABASE_URL is not set (.env.production / .env)");
+}
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { Pool } = require("pg");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { PrismaPg } = require("@prisma/adapter-pg");
+const prisma = new PrismaClient({
+    adapter: new PrismaPg(new Pool({ connectionString: databaseUrl })),
+});
 
 // ==================== 配置 ====================
 
@@ -102,7 +116,7 @@ async function sendDay1Messages() {
         },
         select: {
             userId: true,
-            id: true,
+            sessionId: true,
             analysisResult: true,
             user: { select: { name: true } },
         },
@@ -114,7 +128,7 @@ async function sendDay1Messages() {
     for (const session of sessions) {
         if (!session.userId) continue;
 
-        const reportUrl = `${BASE_URL}/reports/${session.id}`;
+        const reportUrl = `${BASE_URL}/reports/${session.sessionId}`;
         const result = session.analysisResult as Record<string, unknown> | null;
         // 综合分实际存放在 faceAnalysis.overallScore；旧实现误读顶层 overallScore，导致消息里永远是“未知”
         const faceAnalysis = result?.faceAnalysis as { overallScore?: unknown } | undefined;
@@ -154,7 +168,7 @@ async function sendDay3Messages() {
         },
         select: {
             userId: true,
-            id: true,
+            sessionId: true,
             analysisResult: true,
             user: { select: { name: true } },
         },
@@ -219,7 +233,7 @@ async function sendDay7Messages() {
         },
         select: {
             userId: true,
-            id: true,
+            sessionId: true,
             user: { select: { name: true } },
         },
         take: 500,
@@ -230,7 +244,7 @@ async function sendDay7Messages() {
     for (const session of sessions) {
         if (!session.userId) continue;
 
-        const feedbackUrl = `${BASE_URL}/reports/${session.id}`;
+        const feedbackUrl = `${BASE_URL}/reports/${session.sessionId}`;
 
         if (DRY_RUN) {
             console.log(`  [DRY RUN] 发送评价邀请: userId=${session.userId}`);

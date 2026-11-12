@@ -130,7 +130,8 @@ export function appendTrackingParams(url: string, params: {
 export function openAffiliateLink(
     url: string,
     productId: string,
-    platform: string
+    platform: string,
+    sessionId?: string
 ): void {
     const trackedUrl = appendTrackingParams(url, {
         source: 'myskin_today',
@@ -138,19 +139,19 @@ export function openAffiliateLink(
         productId
     });
 
-    // 记录点击事件 (异步，不阻塞)
-    fetch('/api/advisor/analytics/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            event: 'product_click',
-            properties: {
-                productId,
-                platform,
-                url: trackedUrl
-            }
-        })
-    }).catch(() => {/* ignore */ });
+    // 记录点击事件 (异步，不阻塞)；字段必须与 analytics API 的
+    // { sessionId, event, data } 契约一致，否则请求会被 400 丢弃。
+    if (sessionId) {
+        fetch('/api/advisor/analytics/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId,
+                event: 'purchase_click',
+                data: { productId, platform, url: trackedUrl },
+            })
+        }).catch(() => {/* ignore */ });
+    }
 
     // 新窗口打开
     window.open(trackedUrl, '_blank', 'noopener,noreferrer');

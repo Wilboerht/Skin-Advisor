@@ -1,11 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mocks = vi.hoisted(() => ({ findMany: vi.fn(), assessmentFindMany: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+    findMany: vi.fn(),
+    assessmentFindMany: vi.fn(),
+    sessionCount: vi.fn(),
+    assessmentCount: vi.fn(),
+}));
 
 vi.mock("@/lib/prisma", () => ({
     default: {
-        advisorSession: { findMany: mocks.findMany },
-        skinAssessment: { findMany: mocks.assessmentFindMany },
+        advisorSession: { findMany: mocks.findMany, count: mocks.sessionCount },
+        skinAssessment: { findMany: mocks.assessmentFindMany, count: mocks.assessmentCount },
     },
 }));
 
@@ -20,7 +25,11 @@ describe("getSkinTrends - 趋势序列", () => {
     beforeEach(() => {
         mocks.findMany.mockReset();
         mocks.assessmentFindMany.mockReset();
+        mocks.sessionCount.mockReset();
+        mocks.assessmentCount.mockReset();
         mocks.assessmentFindMany.mockResolvedValue([]);
+        mocks.assessmentCount.mockResolvedValue(0);
+        mocks.sessionCount.mockResolvedValue(2);
     });
 
     it("texture 由区域均值派生，缺失维度输出 null（不伪造 0 分）", async () => {
@@ -70,6 +79,10 @@ describe("getSkinTrends - SkinAssessment 汇总表", () => {
     beforeEach(() => {
         mocks.findMany.mockReset();
         mocks.assessmentFindMany.mockReset();
+        mocks.sessionCount.mockReset();
+        mocks.assessmentCount.mockReset();
+        mocks.sessionCount.mockResolvedValue(2);
+        mocks.assessmentCount.mockResolvedValue(2);
     });
 
     it("优先读汇总表，返回十维 + metrics + 区域趋势", async () => {

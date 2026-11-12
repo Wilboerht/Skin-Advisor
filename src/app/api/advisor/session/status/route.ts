@@ -7,6 +7,7 @@ import { hashIP } from "@/lib/privacy";
 import { isCompletedAnalysisResult, normalizeAnalysisResult } from "@/lib/analysis-result";
 import { deriveSessionPhase, phaseToStatus } from "@/lib/session-phase";
 import { logger } from "@/lib/logger";
+import { SessionIdSchema } from "@/lib/schemas";
 
 export const maxDuration = 10;
 
@@ -34,14 +35,15 @@ export async function GET(request: NextRequest) {
 
         // 2. 解析 sessionId
         const { searchParams } = new URL(request.url);
-        const sessionId = searchParams.get("sessionId");
-
-        if (!sessionId) {
+        const sessionIdParam = searchParams.get("sessionId");
+        const parsedSessionId = SessionIdSchema.safeParse(sessionIdParam);
+        if (!parsedSessionId.success) {
             return NextResponse.json(
-                { error: "缺少 sessionId 参数" },
+                { error: "缺少或无效的 sessionId 参数" },
                 { status: 400, headers: rateLimitHeaders }
             );
         }
+        const sessionId = parsedSessionId.data;
 
         // 3. 查询 session
         const session = await prisma.advisorSession.findUnique({

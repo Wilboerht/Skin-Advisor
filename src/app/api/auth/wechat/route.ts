@@ -54,17 +54,21 @@ export async function GET(req: NextRequest) {
 
         const callbackBase = siteUrl.replace(/\/$/, "");
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+        const nonce = crypto.randomUUID();
         const officialUrl = new URL("/api/auth/wechat", officialApiUrl);
         officialUrl.searchParams.set("redirect", redirect);
         officialUrl.searchParams.set("callback", callbackBase);
         officialUrl.searchParams.set("mode", "redirect");
+        // 标准 OAuth state：官网若原样回传，回调可校验 nonce 与本次登录意图绑定；
+        // 未回传时仍由 cookie 存在性 + Referer 来源校验兜底。
+        officialUrl.searchParams.set("state", `advisor_${nonce}`);
 
         const response = NextResponse.redirect(officialUrl.toString(), 302);
         // 浏览器绑定：回调必须携带同一浏览器发起登录时写入的 nonce。
         // 官网自己的 nonce 只覆盖官网域，无法阻止攻击者把 exchange token 回调 URL 转发给受害者。
         response.cookies.set(
             WECHAT_OAUTH_NONCE_COOKIE_NAME,
-            crypto.randomUUID(),
+            nonce,
             WECHAT_OAUTH_NONCE_COOKIE_OPTIONS
         );
         return response;

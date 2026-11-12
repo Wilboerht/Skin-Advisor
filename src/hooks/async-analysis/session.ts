@@ -53,7 +53,10 @@ export async function checkSessionStatus(
         });
         if (res.status === 404) {
             const data = await res.json().catch(() => ({}));
-            return { status: 'not_found', sessionId, error: data.error || '会话不存在' };
+            const message = typeof data.error === 'string'
+                ? data.error
+                : data.error?.message || data.message || '会话不存在';
+            return { status: 'not_found', sessionId, error: message };
         }
         if (res.status === 401) {
             return { status: 'unauthorized', sessionId, error: '登录状态已失效' };

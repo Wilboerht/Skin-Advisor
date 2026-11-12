@@ -14,6 +14,7 @@ interface PrivacyConsentProps {
 
 export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
     const [agreed, setAgreed] = useState(false);
+    const [sensitiveAgreed, setSensitiveAgreed] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
     const { openLegalDoc } = useLegalDocModal();
 
@@ -51,7 +52,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         <div>
                             <h3 className="text-sm font-medium text-[#1A1A1A]">数据收集范围</h3>
                             <p className="mt-1 text-xs text-[#5E5E5E] leading-relaxed">
-                                我们收集您的面部照片（仅用于 AI 分析，不用于其他目的）、问卷答案、设备信息（用于优化体验）以及分析结果。
+                                我们收集您的面部照片（仅用于 AI 分析，不用于其他目的）、问卷答案、设备信息（用于优化体验）、根据 IP 推断的省/市级粗略位置（用于地域化建议与统计）以及分析结果。
                             </p>
                         </div>
                     </div>
@@ -144,17 +145,30 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         </span>
                     </label>
 
+                    {/* 敏感个人信息单独同意：不能与隐私政策/服务条款合并为一个勾选 */}
+                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#5E5E5E] leading-relaxed">
+                        <input
+                            type="checkbox"
+                            checked={sensitiveAgreed}
+                            onChange={(e) => setSensitiveAgreed(e.target.checked)}
+                            className="mt-0.5 h-4 w-4 shrink-0 accent-[#3D4430]"
+                        />
+                        <span>
+                            我单独同意处理我的敏感个人信息（面部照片、肤质与健康状况），仅用于本次 AI 肤质分析与报告生成。
+                        </span>
+                    </label>
+
                     <button
                         onClick={async () => {
-                            if (!agreed) return;
+                            if (!agreed || !sensitiveAgreed) return;
                             savePrivacyConsent();
                             await recordClientConsent();
                             onConsent();
                         }}
-                        disabled={!agreed}
+                        disabled={!agreed || !sensitiveAgreed}
                         className={cn(
                             "w-full py-3.5 rounded-xl text-sm font-medium tracking-wide transition-all duration-300",
-                            agreed
+                            agreed && sensitiveAgreed
                                 ? "bg-[#1A1A1A] text-white hover:bg-[#333] shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                                 : "bg-[#1A1A1A]/10 text-[#1A1A1A]/30 cursor-not-allowed"
                         )}

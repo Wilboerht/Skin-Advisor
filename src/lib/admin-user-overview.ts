@@ -93,7 +93,9 @@ export async function getAdminUserOverview(
                     sessionId: true,
                     createdAt: true,
                     completedAt: true,
-                    analysisResult: true,
+                    skinAssessment: {
+                        select: { overallScore: true, skinTypeLabel: true, persona: true },
+                    },
                 },
             }),
             prisma.diaryEntry.findMany({
@@ -108,6 +110,20 @@ export async function getAdminUserOverview(
                 },
             }),
         ]);
+
+    // 回填完成前汇总表可能缺失：只为缺失的会话补读完整 JSON，避免列表全量解析
+    const missingAssessmentIds = recentSessions
+        .filter((session) => !session.skinAssessment)
+        .map((session) => session.sessionId);
+    const fallbackSessions = missingAssessmentIds.length > 0
+        ? await prisma.advisorSession.findMany({
+            where: { sessionId: { in: missingAssessmentIds } },
+            select: { sessionId: true, analysisResult: true },
+        })
+        : [];
+    const fallbackById = new Map(
+        fallbackSessions.map((session) => [session.sessionId, session.analysisResult])
+    );
 
     const lastActiveAt = latestDate([
         recentSessions[0]?.createdAt,
@@ -130,7 +146,12 @@ export async function getAdminUserOverview(
             diaryEntries: diaryCount,
         },
         recentSessions: recentSessions.map((session) => {
-            const lite = extractSessionLite(session.analysisResult);
+            const lite = session.skinAssessment
+                ? {
+                    score: session.skinAssessment.overallScore,
+                    typeLabel: session.skinAssessment.skinTypeLabel,
+                }
+                : extractSessionLite(fallbackById.get(session.sessionId));
             return {
                 sessionId: session.sessionId,
                 createdAt: session.createdAt.toISOString(),

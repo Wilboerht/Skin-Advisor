@@ -51,6 +51,9 @@ export const STORAGE_KEYS = {
     // 地理位置授权（sessionStorage）
     LOCATION_CONSENT: 'locationConsent',
 
+    // 本机测肤数据归属账号（用于共享设备切换账号时清理上一位用户的数据）
+    ADVISOR_CLIENT_OWNER: 'advisor_client_owner',
+
     // 认证重定向（sessionStorage）
     AUTH_REDIRECT: 'auth_redirect',
     ADVISOR_REF_SOURCE: 'advisor_ref_source',

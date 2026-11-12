@@ -51,17 +51,24 @@ export async function GET(request: NextRequest) {
         const start = new Date(todayStartUtc - RETEST_DAYS * DAY_MS);
         const end = new Date(start.getTime() + DAY_MS);
 
-        // 直接在 SQL 内按时间窗口筛选 + 排除禁用用户，避免对全量会话做 groupBy
+        // 先取每个用户的“最后一次已完成测肤”，再判断该锚点是否落在 30 天窗口内。
+        // 不能先按窗口过滤再 MAX：30 天前测过、昨天又测的用户会被错误命中。
         const dueUsers = await prisma.$queryRaw<Array<{ userId: string; lastTestAt: Date }>>`
-            SELECT s."userId", MAX(s."completedAt") AS "lastTestAt"
-            FROM "AdvisorSession" s
-            JOIN "User" u ON u."id" = s."userId"
-            WHERE s."userId" IS NOT NULL
-              AND s."completedAt" >= ${start}
-              AND s."completedAt" < ${end}
-              AND u."role" <> ${UserRole.DISABLED}
-            GROUP BY s."userId"
-            ORDER BY "lastTestAt" DESC
+            SELECT latest."userId", latest."lastTestAt"
+            FROM (
+                SELECT DISTINCT ON (s."userId")
+                    s."userId",
+                    s."completedAt" AS "lastTestAt"
+                FROM "AdvisorSession" s
+                JOIN "User" u ON u."id" = s."userId"
+                WHERE s."userId" IS NOT NULL
+                  AND s."completedAt" IS NOT NULL
+                  AND u."role" <> ${UserRole.DISABLED}
+                ORDER BY s."userId", s."completedAt" DESC
+            ) latest
+            WHERE latest."lastTestAt" >= ${start}
+              AND latest."lastTestAt" < ${end}
+            ORDER BY latest."lastTestAt" DESC
             LIMIT ${MAX_DUE_USERS + 1}
         `;
 

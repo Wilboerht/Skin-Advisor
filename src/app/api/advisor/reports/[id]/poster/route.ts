@@ -50,7 +50,15 @@ export async function POST(
             return NextResponse.json({ error: "缺少报告参数" }, { status: 400 });
         }
 
-        const parsed = BodySchema.safeParse(await request.json().catch(() => ({})));
+        const contentLength = Number(request.headers.get("content-length") || 0);
+        if (Number.isFinite(contentLength) && contentLength > 4096) {
+            return NextResponse.json({ error: "请求体过大" }, { status: 413 });
+        }
+        const body = await request.json().catch(() => null);
+        if (!body || typeof body !== "object" || Array.isArray(body)) {
+            return NextResponse.json({ error: "请求体必须是 JSON 对象" }, { status: 400 });
+        }
+        const parsed = BodySchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ error: "参数错误" }, { status: 400 });
         }
@@ -107,7 +115,7 @@ export async function POST(
             headers: {
                 "Content-Type": "image/png",
                 "Content-Disposition": `inline; filename="nihplod-${sessionId}.png"`,
-                "Cache-Control": "private, max-age=60",
+                "Cache-Control": "private, no-store",
             },
         });
     } catch (error) {

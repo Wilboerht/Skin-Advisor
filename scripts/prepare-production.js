@@ -109,6 +109,8 @@ if (!dbUrl.startsWith('postgresql://')) {
 const PLACEHOLDER_PATTERNS = [
   /^your-.*-here$/i,
   /^CHANGE_ME/i,
+  /^change[-_ ]?me/i,
+  /^myskin-admin/i,
   /^123456$/,
   /^password$/i,
   /^admin$/i,
@@ -143,12 +145,24 @@ for (const key of secretVars) {
 }
 
 // 关键签名密钥长度下限：低于 32 字符时熵不足
-for (const key of ['JWT_SECRET', 'ADMIN_SESSION_SECRET', 'IP_HASH_SALT', 'SSO_CLIENT_SECRET', 'SSO_WEBHOOK_SECRET']) {
+for (const key of ['JWT_SECRET', 'ADMIN_SESSION_SECRET', 'IP_HASH_SALT', 'CRON_SECRET', 'SSO_CLIENT_SECRET', 'SSO_WEBHOOK_SECRET']) {
   const value = process.env[key];
   if (value && value.length < 32) {
     console.error(`   ❌ 错误: ${key} 长度至少 32 位（当前 ${value.length}）`);
     hasError = true;
   }
+}
+
+// 反向代理信任跳数必须显式配置：Nginx 直连 3002 时若客户端可绕过代理直连，
+// X-Real-IP 可被伪造，IP 限流/游客归属都会失效。
+const trustedProxyHops = process.env.TRUSTED_PROXY_HOPS;
+if (trustedProxyHops === undefined || trustedProxyHops === '') {
+  console.warn('   ⚠️  警告: TRUSTED_PROXY_HOPS 未设置，默认不信任代理头；若前置 Nginx 需显式设为 1');
+} else if (!/^[0-9]+$/.test(trustedProxyHops) || Number(trustedProxyHops) > 3) {
+  console.error('   ❌ 错误: TRUSTED_PROXY_HOPS 必须是 0-3 的整数');
+  hasError = true;
+} else if (Number(trustedProxyHops) > 0) {
+  console.warn(`   ⚠️  提示: 信任 ${trustedProxyHops} 层代理，请确认应用端口（3002）没有直接暴露到公网`);
 }
 
 // 检查 AI Key：至少配置一个（无 AI Key 会导致分析功能不可用）

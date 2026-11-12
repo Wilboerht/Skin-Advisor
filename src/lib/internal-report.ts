@@ -99,6 +99,12 @@ export function extractReportSummary(
 
     const concerns = result?.skinProfile.concerns;
     const questionnaire = extractQuestionnaireProfile(asRecord(answers));
+    // 内部摘要会进入企业微信/商城侧，默认不透传健康敏感字段；
+    // 如业务确需完整档案，应走单独授权与专用接口。
+    delete questionnaire.allergies;
+    delete questionnaire.pregnancy;
+    delete questionnaire.menstrualCycle;
+    delete questionnaire.medicalBeauty;
     const dataSource = result?.dataSource ??
         (typeof record?.dataSource === "string" ? record.dataSource : undefined);
 

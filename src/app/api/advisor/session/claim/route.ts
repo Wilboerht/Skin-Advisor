@@ -7,6 +7,7 @@ import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
 import { logger } from "@/lib/logger";
 import { upsertAutoDiaryEntry } from "@/lib/diary";
+import { SessionIdSchema } from "@/lib/schemas";
 
 /**
  * 补建日记的日期口径：客户端未携带本地日历日（body.dateStr）时，
@@ -48,10 +49,12 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json().catch(() => null);
-        const sessionId = body && typeof body === "object" ? (body as { sessionId?: unknown }).sessionId : null;
-        if (!sessionId || typeof sessionId !== "string") {
-            return NextResponse.json({ error: "Missing sessionId" }, { status: 400, headers: rateLimitHeaders });
+        const rawSessionId = body && typeof body === "object" ? (body as { sessionId?: unknown }).sessionId : null;
+        const parsedSessionId = SessionIdSchema.safeParse(rawSessionId);
+        if (!parsedSessionId.success) {
+            return NextResponse.json({ error: "Missing or invalid sessionId" }, { status: 400, headers: rateLimitHeaders });
         }
+        const sessionId = parsedSessionId.data;
 
         // 归属校验：未被认领的游客会话，仅允许同 IP（哈希比对，与 analyze 写入一致）认领，
         // 防止知道他人 sessionId 的用户把别人的游客报告绑到自己账号；无 IP 的历史会话默认不可认领。

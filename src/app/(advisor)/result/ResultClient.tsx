@@ -251,7 +251,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         }
     }, [result, effectiveUserId, authInitialized, id, initialData, isMock]);
 
-    const [userNickname, setUserNickname] = useState<string>(user?.name || "您");
+    const [userNickname, setUserNickname] = useState<string>(() => {
+        const stored = initialData?.result?.nickname;
+        if (typeof stored === "string" && stored.trim() && stored !== "护肤达人") return stored;
+        return user?.name || "您";
+    });
 
     // 昵称兜底同步：UserProvider 异步返回（user 后到达）或报告落库昵称存在时，替换占位"您"
     useEffect(() => {
@@ -721,13 +725,16 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                 // 保留恢复逻辑但不设置不再使用的 state
                 await advisorStorage.getFaceImages();
 
-                // Restore Nickname
-                const storedNickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME);
-                if (storedNickname) {
-                    setUserNickname(storedNickname);
-                } else if (user?.name) {
-                    // 未填写过昵称的已登录用户，回退到官网昵称
-                    setUserNickname(user.name);
+                // Restore Nickname：历史报告必须使用该次测肤快照昵称，
+                // 不能读 localStorage（那是当前账号/最近一次测肤的昵称）。
+                if (!isHistoricalReport) {
+                    const storedNickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME);
+                    if (storedNickname) {
+                        setUserNickname(storedNickname);
+                    } else if (user?.name) {
+                        // 未填写过昵称的已登录用户，回退到官网昵称
+                        setUserNickname(user.name);
+                    }
                 }
 
                 // Restore Gender（独立 effect 已负责恢复，这里不再重复设置）
@@ -844,7 +851,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         };
 
         loadClientData().finally(() => setClientDataLoaded(true));
-    }, [initialData, router, searchParams, user, toast]);
+    }, [initialData, router, searchParams, user, toast, isHistoricalReport]);
 
     // result_view 埋点：等首次数据恢复（clientDataLoaded）且游客端"上一次摘要"恢复完成后
     // 再上报，保证 cohort 标记（首测/派系变化）不因时序竞争而缺失；mock 会话不上报
@@ -1319,7 +1326,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     <AnalyzingOverlay
                         key="analyzing-overlay"
                         progress={analysisState.progress}
-                        onCancel={() => navPush('/questions?edit=true')}
+                        onCancel={() => navPush('/')}
                         queuePosition={analysisState.queuePosition}
                         queueWaitSeconds={analysisState.queueWaitSeconds}
                         onShowSkinTypes={() => setShowSkinTypesModal(true)}
@@ -1534,6 +1541,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             }
                                         }}
                                         centered
+                                        sessionId={sessionId}
                                     />
 
                                     {/* 专属护肤顾问服务：按会员等级展示对应内容（未登录/普通会员/银卡及以上） */}

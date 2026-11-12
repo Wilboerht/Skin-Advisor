@@ -40,7 +40,8 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
             process.exit(1);
         }
         const user = userRes.rows[0];
-        console.log(`目标用户: id=${user.id} phone=${user.phoneNumber || "-"} name=${user.name || "-"}`);
+        const phoneMasked = user.phoneNumber ? `${String(user.phoneNumber).slice(0, 3)}****` : "-";
+        console.log(`目标用户: id=${user.id} phone=${phoneMasked} name=${user.name ? "[REDACTED]" : "-"}`);
 
         const conditions = [`"userId" IS NULL`];
         const params = [];

@@ -98,6 +98,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     if (gen !== sessionGenRef.current) {
                         return;
                     }
+                    // 先同步 owner 标记，避免子组件 effect 先于 Provider effect 读取本地数据时
+                    // 把本账号刚写入的照片/结果误判为“无主”而删除。
+                    try {
+                        if (nextUser?.id) {
+                            localStorage.setItem(STORAGE_KEYS.ADVISOR_CLIENT_OWNER, nextUser.id);
+                        }
+                        // 无用户时不在这里删除 owner：保留上一位用户的标记，
+                        // 让下方账号隔离 effect 能识别并清理残留数据。
+                    } catch { /* ignore */ }
                     // 内容无变化时不更新引用：/api/auth/me 每次返回新对象，
                     // 若直接 setUser 会引发全站消费组件（含已打开的弹层）无谓重渲染/数据重置
                     setUser((prev) => {
@@ -133,6 +142,45 @@ export function UserProvider({ children }: { children: ReactNode }) {
             inflightRef.current = null;
         }
     }, []);
+
+    // 共享设备账号隔离：账号变化（A→B、退出后登录、异常崩溃后 B 登录）时，
+    // 立即清掉上一位用户的问卷/人脸/结果/同意记录，避免跨账号串数据。
+    // 首次加载不清理（可能是同一用户刷新页面），但会校验本机数据归属标记。
+    const lastUserIdRef = useRef<string | null | undefined>(undefined);
+    useEffect(() => {
+        if (loading) return;
+        const nextId = user?.id ?? null;
+        const prevId = lastUserIdRef.current;
+        if (prevId === nextId) return;
+        lastUserIdRef.current = nextId;
+
+        let shouldClear = prevId !== undefined;
+        if (!shouldClear) {
+            // 首次加载：本机数据归属标记与当前账号不一致，说明是上一位用户残留
+            try {
+                const owner = localStorage.getItem(STORAGE_KEYS.ADVISOR_CLIENT_OWNER);
+                shouldClear = !nextId ? !!owner : !!owner && owner !== nextId;
+            } catch { /* ignore */ }
+        }
+
+        void (async () => {
+            if (shouldClear) {
+                await advisorStorage.clearAll();
+            }
+            try {
+                for (const key of [
+                    STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID,
+                    STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT,
+                    STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK,
+                    STORAGE_KEYS.LOCATION_CONSENT,
+                ]) {
+                    sessionStorage.removeItem(key);
+                }
+                if (nextId) localStorage.setItem(STORAGE_KEYS.ADVISOR_CLIENT_OWNER, nextId);
+                else localStorage.removeItem(STORAGE_KEYS.ADVISOR_CLIENT_OWNER);
+            } catch { /* ignore */ }
+        })();
+    }, [user, loading]);
 
     useEffect(() => {
         loadUser();

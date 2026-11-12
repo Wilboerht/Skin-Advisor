@@ -52,6 +52,7 @@ export interface SkinAssessmentData {
         description?: string;
     }>;
     findings: SkinAssessmentFinding[];
+    reportVersion: number | null;
     promptVersion: string | null;
     engineVersion: string | null;
     model: string | null;
@@ -178,6 +179,7 @@ export function buildSkinAssessment({
         zones: buildZones(faceAnalysis),
         conditions: buildConditions(faceAnalysis),
         findings: buildFindings(result),
+        reportVersion: typeof raw.reportVersion === "number" ? raw.reportVersion : null,
         promptVersion: typeof raw.promptVersion === "string" ? raw.promptVersion : null,
         engineVersion: result.reportV3?.engineVersion ?? null,
         model: result.reportV3?.meta.model ?? null,

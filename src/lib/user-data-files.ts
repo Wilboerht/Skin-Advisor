@@ -105,13 +105,19 @@ async function deleteLocalFacePrefix(prefix: string): Promise<number> {
     return 1;
 }
 
-export async function deleteUserFaceUploads(sessionIds: string[]): Promise<number> {
-    const uniqueIds = [...new Set(sessionIds)];
+export async function deleteUserFaceUploads(userId: string, legacySessionIds: string[] = []): Promise<number> {
+    // 新上传路径按登录用户 ID 哈希（oss/sign 的 rawId = signedInUser.id）；
+    // 旧数据可能仍按 sessionId 哈希，调用方传入 legacySessionIds 做兼容清理。
+    const ownerHashes = new Set<string>();
+    ownerHashes.add(createHash("sha256").update(userId).digest("hex").slice(0, 16));
+    for (const sessionId of legacySessionIds) {
+        ownerHashes.add(createHash("sha256").update(sessionId).digest("hex").slice(0, 16));
+    }
+
+    const prefixes = [...ownerHashes].map((hash) => `guest/${hash}/`);
     let deleted = 0;
-    for (let index = 0; index < uniqueIds.length; index += 10) {
-        const counts = await Promise.all(uniqueIds.slice(index, index + 10).map(async (sessionId) => {
-            const ownerHash = createHash("sha256").update(sessionId).digest("hex").slice(0, 16);
-            const prefix = `guest/${ownerHash}/`;
+    for (let index = 0; index < prefixes.length; index += 10) {
+        const counts = await Promise.all(prefixes.slice(index, index + 10).map(async (prefix) => {
             const [localCount, ossCount] = await Promise.all([
                 deleteLocalFacePrefix(prefix),
                 deleteOSSPrefix(prefix),

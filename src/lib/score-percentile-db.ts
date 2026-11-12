@@ -13,7 +13,7 @@
  * 前端不展示具体排名，绝不编造“超过 X%”。
  */
 import prisma from "@/lib/prisma";
-import { buildDistribution, type ScoreDistribution } from "@/lib/score-percentile";
+import { buildDistribution, MIN_PERCENTILE_SAMPLE_SIZE, type ScoreDistribution } from "@/lib/score-percentile";
 import { getSharedJson, setSharedJson } from "@/lib/shared-cache";
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -28,6 +28,36 @@ let cache: DistributionCache | null = null;
 let refreshPromise: Promise<ScoreDistribution> | null = null;
 
 async function loadDistribution(): Promise<ScoreDistribution> {
+    // 优先读 SkinAssessment 汇总表（同样的“每用户最近一次”口径，但不解析大 JSON）。
+    // 回填完成前样本可能不足，低于最小样本时继续走旧 JSON，避免百分位突然失真。
+    const assessmentRows = await prisma.$queryRaw<Array<{ score: number; count: number }>>`
+        WITH latest AS (
+            SELECT DISTINCT ON ("userId")
+                   ROUND("overallScore")::int AS score,
+                   "completedAt" AS ordered_at
+            FROM "SkinAssessment"
+            WHERE "userId" IS NOT NULL
+              AND "overallScore" IS NOT NULL
+              AND "overallScore" > 0
+            ORDER BY "userId", "completedAt" DESC
+        )
+        SELECT score, COUNT(*)::int AS count
+        FROM latest
+        GROUP BY score
+        ORDER BY score
+    `;
+    const assessmentTotal = assessmentRows.reduce((sum, row) => sum + row.count, 0);
+    if (assessmentTotal >= MIN_PERCENTILE_SAMPLE_SIZE) {
+        // 回填只完成一部分时汇总表会低估样本；覆盖全部已完成会话后再切换口径
+        const [assessmentCount, completedCount] = await Promise.all([
+            prisma.skinAssessment.count(),
+            prisma.advisorSession.count({ where: { completedAt: { not: null } } }),
+        ]);
+        if (assessmentCount >= completedCount) {
+            return buildDistribution(assessmentRows);
+        }
+    }
+
     // 正则先保证可安全转 numeric（源码里 \\ 转义后 SQL 实际收到 \.）：桶按显示分数四舍五入取整
     const rows = await prisma.$queryRaw<Array<{ score: number; count: number }>>`
         WITH latest AS (

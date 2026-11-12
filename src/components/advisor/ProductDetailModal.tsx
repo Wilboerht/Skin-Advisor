@@ -18,9 +18,10 @@ interface ProductDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     product: ProductCardData | null;
+    onPurchaseClick?: (link: { platform: string; platformKey: string; url: string }) => void;
 }
 
-export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailModalProps) {
+export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }: ProductDetailModalProps) {
     const [mounted, setMounted] = useState(false);
     const [openAccordion, setOpenAccordion] = useState<string | null>(null);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -422,6 +423,11 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                                     href={link.url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
+                                                    onClick={() => onPurchaseClick?.({
+                                                        platform: link.platform,
+                                                        platformKey: link.platformKey,
+                                                        url: link.url || "",
+                                                    })}
                                                     aria-label={`前往${link.platform}购买`}
                                                     className="flex items-center gap-1.5 transition-opacity hover:opacity-60"
                                                 >

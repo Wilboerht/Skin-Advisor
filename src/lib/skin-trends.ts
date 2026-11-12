@@ -200,11 +200,24 @@ async function getLegacyTrends(userId: string): Promise<SkinTrends | null> {
     return { dates, scores, dimensions: dimensionsRecord, metrics };
 }
 
+/** 汇总表是否已覆盖全部已完成会话；未覆盖时继续读旧 JSON，避免回填完成前旧历史“消失” */
+async function hasFullAssessmentCoverage(userId: string): Promise<boolean> {
+    const [assessmentCount, completedCount] = await Promise.all([
+        prisma.skinAssessment.count({ where: { userId } }),
+        prisma.advisorSession.count({
+            where: { userId, completedAt: { not: null } },
+        }),
+    ]);
+    return assessmentCount >= completedCount;
+}
+
 /** 返回 null 表示有效样本不足 2 次（前端走解锁引导） */
 export async function getSkinTrends(userId: string): Promise<SkinTrends | null> {
     try {
-        const fromAssessments = await getAssessmentTrends(userId);
-        if (fromAssessments) return fromAssessments;
+        if (await hasFullAssessmentCoverage(userId)) {
+            const fromAssessments = await getAssessmentTrends(userId);
+            if (fromAssessments) return fromAssessments;
+        }
     } catch (error) {
         // 汇总表迁移/数据库抖动时回退旧 JSON，保证趋势不因新表缺失而整块不可用
         console.warn("[skin-trends] SkinAssessment query failed, falling back to analysisResult", error);

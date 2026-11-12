@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getScoreDistribution } from "@/lib/score-percentile-db";
 import { MIN_PERCENTILE_SAMPLE_SIZE, percentileFromDistribution } from "@/lib/score-percentile";
+import { getClientIP, rateLimit } from "@/lib/ratelimit";
 
 /**
  * 综合评分真实百分位：按「每个用户最近一次含真实视觉评分的测肤」聚合。
  * 聚合与缓存实现见 lib/score-percentile-db.ts（内部客服报告接口共用同一口径）。
  */
 export async function GET(request: NextRequest) {
+    const ipLimit = await rateLimit(`score-percentile-ip-${getClientIP(request)}`, "default", {
+        maxRequests: 60,
+        windowMs: 60_000,
+    });
+    if (!ipLimit.success) {
+        return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+    }
     const rawParam = request.nextUrl.searchParams.get("score");
     // Number(null) === 0：缺少参数时不能静默按 0 分计算百分位
     if (rawParam == null || rawParam.trim() === "") {

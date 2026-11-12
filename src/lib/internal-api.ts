@@ -394,6 +394,10 @@ export async function authorizeInternalRequest(
 
   // bearer-advisor-secret
   const secret = process.env.ADVISOR_INTERNAL_SECRET;
+  if (secret && (secret.length < 32 || /^(change|your-|admin|password)/i.test(secret))) {
+    logger.error("[InternalApi] ADVISOR_INTERNAL_SECRET 過短或仍是占位值，拒絕 legacy Bearer 鑑權");
+    return { ok: false, mode: "legacy", reason: "weak_advisor_secret", status: 500 };
+  }
   if (!secret) {
     if (process.env.NODE_ENV !== "production") {
       // 开发环境仅放行本机请求（避免 dev 完全裸奔）

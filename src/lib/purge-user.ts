@@ -13,6 +13,7 @@ export interface PurgeUserResult {
     diaryEntries: number;
     advisorSessions: number;
     productFeedbacks: number;
+    reportQualityLogs: number;
     aiUsageLogs: number;
     localUser: boolean;
     deletedAvatarFiles: number;
@@ -29,16 +30,25 @@ export async function purgeUserData(userId: string): Promise<PurgeUserResult> {
         select: { sessionId: true },
     });
 
+    const sessionIds = sessions.map((session) => session.sessionId);
     const deletedAvatarFiles = await deleteUserAvatar(user?.avatarUrl, userId);
-    const deletedFaceUploads = await deleteUserFaceUploads(
-        sessions.map((session) => session.sessionId)
-    );
+    const deletedFaceUploads = await deleteUserFaceUploads(userId, sessionIds);
 
-    const [testRecords, diaryEntries, productFeedbacks, advisorSessions, aiUsageLogs, localUser] =
+    const [testRecords, diaryEntries, productFeedbacks, reportQualityLogs, advisorSessions, aiUsageLogs, localUser] =
         await prisma.$transaction([
             prisma.testRecord.deleteMany({ where: { userId } }),
             prisma.diaryEntry.deleteMany({ where: { userId } }),
             prisma.productFeedback.deleteMany({ where: { userId } }),
+            // 质量日志没有用户外键；按 userId + sessionId 双条件清理，
+            // 避免匿名/历史行在删除会话后残留。
+            prisma.reportQualityLog.deleteMany({
+                where: {
+                    OR: [
+                        { userId },
+                        ...(sessionIds.length > 0 ? [{ sessionId: { in: sessionIds } }] : []),
+                    ],
+                },
+            }),
             prisma.advisorSession.deleteMany({ where: { userId } }),
             // 匿名化而非删除：保留成本审计（token/费用无 PII）
             prisma.aIUsageLog.updateMany({ where: { userId }, data: { userId: null } }),
@@ -51,6 +61,7 @@ export async function purgeUserData(userId: string): Promise<PurgeUserResult> {
         diaryEntries: diaryEntries.count,
         advisorSessions: advisorSessions.count,
         productFeedbacks: productFeedbacks.count,
+        reportQualityLogs: reportQualityLogs.count,
         aiUsageLogs: aiUsageLogs.count,
         localUser: localUser.count > 0,
         deletedAvatarFiles,

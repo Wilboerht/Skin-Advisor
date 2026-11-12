@@ -102,7 +102,7 @@ export default function ShareCardPage({
     const characterReady = gender === "male" || gender === "female";
     // 性别未就绪时禁止保存：避免男性用户拿到 female 兜底形象。
     // 百分位是附加信息，不阻塞保存；未就绪时证书不叠加排名即可。
-    const posterDisabled = isPosterLoading || !characterReady;
+    const posterDisabled = isPosterLoading;
     const lowPercentile = typeof percentile === "number" && percentile < 40;
     const formattedDate = (() => {
         if (!testDate) return null;
@@ -217,7 +217,12 @@ export default function ShareCardPage({
                     <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-3">
                         {factionIntro || summary || "详细分析见下方报告。"}
                     </p>
-                    {lowPercentile && (
+            {!characterReady && (
+                <p className="mt-1 text-center text-[10px] leading-relaxed tracking-[0.02em] text-[#22364B]/45">
+                    该报告未记录性别，证书将使用默认形象
+                </p>
+            )}
+            {lowPercentile && (
                         <p className="mt-2 max-w-[210px] text-[9.5px] leading-[1.7] tracking-[0.02em] text-[#6B7B8C]/85">
                             肌肤状态会随作息、换季和激素波动变化，本次评分仅代表拍摄当时；建议把它作为护理起点，4 周后复测对比。
                         </p>
@@ -334,6 +339,11 @@ export default function ShareCardPage({
                         )}
                         {isPosterLoading ? "生成中..." : "保存证书"}
                     </button>
+                    {!characterReady && (
+                        <p className="text-center text-[10px] leading-relaxed text-[#22364B]/50">
+                            该报告未记录性别，证书将使用默认形象
+                        </p>
+                    )}
                     {onGift && (
                         <button
                             type="button"

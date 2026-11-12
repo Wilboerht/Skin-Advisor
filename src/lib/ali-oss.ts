@@ -171,6 +171,40 @@ export async function deleteOSSFiles(urls: string[]) {
 }
 
 
+/**
+ * 清理 guest/ 下超过保留期的人脸照片对象（按 OSS lastModified 判断）。
+ * 只允许 guest/ 前缀，避免误删 avatars/ 或 products/ 永久资产。
+ */
+export async function deleteExpiredOSSGuestFiles(cutoff: Date): Promise<number> {
+    if (!ossClient) return 0;
+
+    const cutoffMs = cutoff.getTime();
+    let deleted = 0;
+    let marker: string | undefined;
+    do {
+        const result = await ossClient.list({
+            prefix: "guest/",
+            marker,
+            "max-keys": 1000,
+        });
+        const expired = (result.objects || [])
+            .filter((item: { name?: string; lastModified?: string }) => {
+                if (!item.name || !item.lastModified) return false;
+                const modified = Date.parse(item.lastModified);
+                return Number.isFinite(modified) && modified < cutoffMs;
+            })
+            .map((item: { name?: string }) => item.name)
+            .filter((name: string | undefined): name is string => typeof name === "string" && name.length > 0);
+        if (expired.length > 0) {
+            await deleteOSSFiles(expired);
+            deleted += expired.length;
+        }
+        marker = result.isTruncated ? result.nextMarker : undefined;
+    } while (marker);
+
+    return deleted;
+}
+
 export async function deleteOSSPrefix(prefix: string): Promise<number> {
     if (!ossClient || !/^guest\/[0-9a-f]{16}\/$/i.test(prefix)) return 0;
 

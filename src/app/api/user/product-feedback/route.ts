@@ -154,13 +154,13 @@ export async function GET(request: NextRequest) {
                     where: { productId },
                     orderBy: { createdAt: "desc" },
                     take: 10,
+                    // 公开聚合只返回评分/是否回购等非自由文本字段；
+                    // note/skinFeel/effect 可能包含孕期、用药、过敏等健康信息，
+                    // 仅在本人历史（userId 分支）返回。
                     select: {
                         id: true,
                         rating: true,
-                        skinFeel: true,
-                        effect: true,
                         repurchase: true,
-                        note: true,
                         createdAt: true,
                     },
                 }),

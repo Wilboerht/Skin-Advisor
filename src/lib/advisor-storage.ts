@@ -21,6 +21,15 @@ let dbInstance: IDBDatabase | null = null;
 let memoryFaceImages: { front?: string; left?: string; right?: string; chin?: string } | null = null;
 let memoryFaceImagesAt = 0;
 
+/** 当前账号 ID：写入 IndexedDB 时打标记，读取时拒绝跨账号数据 */
+function currentOwnerId(): string {
+    try {
+        return localStorage.getItem(STORAGE_KEYS.ADVISOR_CLIENT_OWNER) || "";
+    } catch {
+        return "";
+    }
+}
+
 /**
  * Initialize and get the database connection
  */
@@ -112,6 +121,7 @@ export async function saveFaceImages(images: {
                 id: "current",
                 images,
                 timestamp: Date.now(),
+                ownerId: currentOwnerId(),
             });
 
             request.onsuccess = () => resolve(true);
@@ -144,6 +154,18 @@ export async function getFaceImages(): Promise<{
 
             request.onsuccess = () => {
                 if (request.result) {
+                    const owner = currentOwnerId();
+                    if (!owner) {
+                        // 登录态尚未同步完成：不读取也不删除，等 owner 标记写入后再判断
+                        resolve(null);
+                        return;
+                    }
+                    if (request.result.ownerId !== owner) {
+                        // 旧版本无 ownerId 的记录也视为不可复用，按敏感数据删除
+                        try { store.delete("current"); } catch { /* ignore */ }
+                        resolve(null);
+                        return;
+                    }
                     if (Date.now() - request.result.timestamp > MAX_STORAGE_AGE_MS) {
                         // 读取时即删除，避免用户从不回首页导致过期照片长期残留
                         try { store.delete("current"); } catch { /* ignore */ }
@@ -180,6 +202,7 @@ export async function saveResult(result: unknown): Promise<boolean> {
                 id: "current",
                 result,
                 timestamp: Date.now(),
+                ownerId: currentOwnerId(),
             });
 
             request.onsuccess = () => resolve(true);
@@ -207,6 +230,16 @@ export async function getResult(): Promise<unknown | null> {
 
             request.onsuccess = () => {
                 if (request.result) {
+                    const owner = currentOwnerId();
+                    if (!owner) {
+                        resolve(null);
+                        return;
+                    }
+                    if (request.result.ownerId !== owner) {
+                        try { store.delete("current"); } catch { /* ignore */ }
+                        resolve(null);
+                        return;
+                    }
                     if (Date.now() - request.result.timestamp > MAX_STORAGE_AGE_MS) {
                         resolve(null);
                     } else {
@@ -375,7 +408,11 @@ export const advisorStorage = {
         }
 
         try {
-            localStorage.setItem("advisor_result", JSON.stringify(result));
+            localStorage.setItem("advisor_result", JSON.stringify({
+                result,
+                ownerId: currentOwnerId(),
+                timestamp: Date.now(),
+            }));
             localStorage.removeItem("advisor_result_idb");
             return true;
         } catch {
@@ -396,7 +433,23 @@ export const advisorStorage = {
 
         try {
             const str = localStorage.getItem("advisor_result");
-            if (str) return JSON.parse(str);
+            if (!str) return null;
+            const parsed = JSON.parse(str) as {
+                result?: Record<string, unknown>;
+                ownerId?: string;
+                timestamp?: number;
+            };
+            const owner = currentOwnerId();
+            // 旧版直接存 result 的缓存无法判断归属；有登录账号时一律丢弃
+            if (!owner || !parsed.result || parsed.ownerId !== owner) {
+                localStorage.removeItem("advisor_result");
+                return null;
+            }
+            if (typeof parsed.timestamp === "number" && Date.now() - parsed.timestamp > MAX_STORAGE_AGE_MS) {
+                localStorage.removeItem("advisor_result");
+                return null;
+            }
+            return parsed.result;
         } catch {
             console.error("localStorage parse error");
         }
@@ -409,6 +462,7 @@ export const advisorStorage = {
             localStorage.setItem("advisor_processed_images", JSON.stringify({
                 images,
                 timestamp: Date.now(),
+                ownerId: currentOwnerId(),
             }));
             return true;
         } catch (e) {
@@ -422,7 +476,9 @@ export const advisorStorage = {
             const str = localStorage.getItem("advisor_processed_images");
             if (!str) return null;
             const data = JSON.parse(str);
-            if (Date.now() - data.timestamp > MAX_STORAGE_AGE_MS) {
+            const owner = currentOwnerId();
+            if (!owner) return null;
+            if (data.ownerId !== owner || Date.now() - data.timestamp > MAX_STORAGE_AGE_MS) {
                 localStorage.removeItem("advisor_processed_images");
                 return null;
             }
@@ -458,6 +514,16 @@ export const advisorStorage = {
         legacyKeys.forEach((key) => {
             try { localStorage.removeItem(key); } catch { /* ignore */ }
         });
+        // 动态 key（claimed_<sessionId> 等）不在 STORAGE_KEYS 常量里；
+        // 共享设备切换账号时必须一并清理，避免下一位用户继承认领标记。
+        try {
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith("claimed_") || key.startsWith("advisor_"))) {
+                    localStorage.removeItem(key);
+                }
+            }
+        } catch { /* ignore */ }
     },
 
     /** 仅清除人脸照片缓存（保留问卷答案和进度） */

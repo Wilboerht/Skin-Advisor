@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkUsageLimit } from "@/lib/usage-limit";
+import { getClientIP, rateLimit } from "@/lib/ratelimit";
 
 // GET: 检查是否可以测试（复用 checkUsageLimit 保证与 analyze API 逻辑一致）
 // 额度按登录态判定，不再接收 cookieId/fingerprint 等游客标识参数
 export async function GET(request: NextRequest) {
     try {
+        const ipLimit = await rateLimit(`test-limit-ip-${getClientIP(request)}`, "default", {
+            maxRequests: 60,
+            windowMs: 60_000,
+        });
+        if (!ipLimit.success) {
+            return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+        }
         const limit = await checkUsageLimit(request);
 
         return NextResponse.json({

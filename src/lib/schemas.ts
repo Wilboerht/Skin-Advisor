@@ -5,7 +5,12 @@ import { z } from "zod";
 // 通用验证规则
 // ============================================================================
 
-export const SessionIdSchema = z.string().min(1, "Session ID 不能为空").max(64, "Session ID 过长");
+// 前端使用 UUID 或 8-128 位字母数字/连字符 ID；统一约束，避免 analyze 能写入
+// 而 view/feedback/status 路由无法读取的“孤儿 sessionId”。
+export const SessionIdSchema = z
+    .string()
+    .trim()
+    .regex(/^[0-9A-Za-z-]{8,128}$/, "Session ID 格式不正确");
 
 // ============================================================================
 // 分析 API 验证规则
@@ -157,7 +162,7 @@ const MAX_IMAGE_BASE64_CHARS = 1_500_000; // 约 1.1MB 原始数据
 const MAX_VISION_IMAGES = 4;
 
 export const FaceAnalyzeRequestSchema = z.object({
-    sessionId: z.string().uuid().optional(), // 业务会话 ID，用于复用额度
+    sessionId: SessionIdSchema.optional(), // 业务会话 ID，用于复用额度
     images: z.union([
         // 支持新的数组格式 [{ data: "base64", angle: "front" }]
         z.array(

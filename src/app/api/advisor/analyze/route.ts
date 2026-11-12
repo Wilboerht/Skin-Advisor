@@ -1501,105 +1501,95 @@ export async function POST(request: NextRequest) {
 
             const completedAt = new Date();
             const persistStartedAt = Date.now();
+            const assessment = user?.id
+                ? buildSkinAssessment({
+                    sessionId: effectiveSessionId,
+                    userId: user.id,
+                    completedAt,
+                    rawResult: mergedResult,
+                    faceAnalysis,
+                })
+                : null;
+            const assessmentData = assessment ? {
+                ...assessment,
+                dimensions: assessment.dimensions as unknown as Prisma.InputJsonValue,
+                zones: assessment.zones as unknown as Prisma.InputJsonValue,
+                conditions: assessment.conditions as unknown as Prisma.InputJsonValue,
+                findings: assessment.findings as unknown as Prisma.InputJsonValue,
+                lowConfidence: assessment.lowConfidence as unknown as Prisma.InputJsonValue,
+                notVisible: assessment.notVisible as unknown as Prisma.InputJsonValue,
+            } : null;
+            const scoring = faceAnalysis?.scoring;
+            const qualityBase = {
+                sessionId: effectiveSessionId,
+                userId: user?.id ?? null,
+                narrativeSource,
+                fallbackReason: fallbackReason ?? null,
+                promptVersion: CONSULTANT_PROMPT_VERSION,
+                model: routedTextModel || settings.model,
+                diagnosisFindingCount: diagnosis.findings.length,
+                issueCount: consultantReport.issues.length,
+                coverageScored: scoring?.scoredDimensions ?? 0,
+                coverageTotal: scoring?.totalDimensions ?? 10,
+                lowConfidenceCount: scoring?.lowConfidenceDimensions.length ?? 0,
+                notVisibleCount: scoring?.notVisibleDimensions.length ?? 0,
+                queueWaitMs: stageTimings.queueWaitMs,
+                textGenerationMs: stageTimings.textGenerationMs,
+                productSelectionMs: stageTimings.productSelectionMs,
+                safetyMs: stageTimings.safetyMs,
+            };
+
             try {
+                // 报告、趋势汇总、质量指标同一事务落库：任一失败整体回滚，
+                // 避免“报告成功但趋势/质量缺失”的静默不一致。
                 await withDbRetry(async () => {
-                    await prisma.advisorSession.update({
-                        where: { sessionId: effectiveSessionId },
-                        data: {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            analysisResult: mergedResult as any,
-                            analysisSource: faceAnalysis ? "hybrid" : "text",
-                            analysisStartedAt: null,
-                            completedAt,
-                            expiresAt,
-                            province: geoLocation?.region,
-                            city: geoLocation?.city,
-                            userAgent,
-                            ...parseUserAgent(userAgent),
-                        },
+                    await prisma.$transaction(async (tx) => {
+                        await tx.advisorSession.update({
+                            where: { sessionId: effectiveSessionId },
+                            data: {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                analysisResult: mergedResult as any,
+                                analysisSource: faceAnalysis ? "hybrid" : "text",
+                                analysisStartedAt: null,
+                                completedAt,
+                                expiresAt,
+                                province: geoLocation?.region,
+                                city: geoLocation?.city,
+                                userAgent,
+                                ...parseUserAgent(userAgent),
+                            },
+                        });
+                        if (assessmentData) {
+                            await tx.skinAssessment.upsert({
+                                where: { sessionId: effectiveSessionId },
+                                update: assessmentData,
+                                create: assessmentData,
+                            });
+                        }
+                        const qualityData = {
+                            ...qualityBase,
+                            durationMs: Date.now() - requestStartedAt,
+                            persistMs: Date.now() - persistStartedAt,
+                        };
+                        await tx.reportQualityLog.upsert({
+                            where: { sessionId: effectiveSessionId },
+                            update: qualityData,
+                            create: qualityData,
+                        });
                     });
                 });
                 stageTimings.persistMs = Date.now() - persistStartedAt;
+                aiLogger.info("[AnalyzeTiming]", {
+                    sessionId: effectiveSessionId,
+                    ...stageTimings,
+                    totalMs: Date.now() - requestStartedAt,
+                });
             } catch (txErr) {
                 logger.error("Failed to persist final analysis result:", txErr);
                 await clearAnalysisStartedAt(effectiveSessionId);
                 const response = apiError(ErrorCode.SERVICE_UNAVAILABLE, "分析结果保存未成功，请重试", 503, "DATABASE_PERSISTENCE_ERROR");
                 Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
                 return response;
-            }
-
-            // 汇总表写入失败不影响报告返回；趋势/统计缺失时由回填脚本或下一次测肤恢复
-            if (user?.id) {
-                try {
-                    const assessment = buildSkinAssessment({
-                        sessionId: effectiveSessionId,
-                        userId: user.id,
-                        completedAt,
-                        rawResult: mergedResult,
-                        faceAnalysis,
-                    });
-                    if (assessment) {
-                        const data = {
-                            ...assessment,
-                            dimensions: assessment.dimensions as unknown as Prisma.InputJsonValue,
-                            zones: assessment.zones as unknown as Prisma.InputJsonValue,
-                            conditions: assessment.conditions as unknown as Prisma.InputJsonValue,
-                            findings: assessment.findings as unknown as Prisma.InputJsonValue,
-                            lowConfidence: assessment.lowConfidence as unknown as Prisma.InputJsonValue,
-                            notVisible: assessment.notVisible as unknown as Prisma.InputJsonValue,
-                        };
-                        await prisma.skinAssessment.upsert({
-                            where: { sessionId: effectiveSessionId },
-                            update: data,
-                            create: data,
-                        });
-                    }
-                } catch (assessmentErr) {
-                    logger.warn("[SkinAssessment] upsert failed", {
-                        sessionId: effectiveSessionId,
-                        error: String(assessmentErr),
-                    });
-                }
-            }
-
-            // 报告质量指标：失败不影响报告返回；供 /admin/report-quality 看板
-            try {
-                const scoring = faceAnalysis?.scoring;
-                const qualityData = {
-                    sessionId: effectiveSessionId,
-                    userId: user?.id ?? null,
-                    narrativeSource,
-                    fallbackReason: fallbackReason ?? null,
-                    promptVersion: CONSULTANT_PROMPT_VERSION,
-                    model: routedTextModel || settings.model,
-                    diagnosisFindingCount: diagnosis.findings.length,
-                    issueCount: consultantReport.issues.length,
-                    coverageScored: scoring?.scoredDimensions ?? 0,
-                    coverageTotal: scoring?.totalDimensions ?? 10,
-                    lowConfidenceCount: scoring?.lowConfidenceDimensions.length ?? 0,
-                    notVisibleCount: scoring?.notVisibleDimensions.length ?? 0,
-                    durationMs: Date.now() - requestStartedAt,
-                    queueWaitMs: stageTimings.queueWaitMs,
-                    textGenerationMs: stageTimings.textGenerationMs,
-                    productSelectionMs: stageTimings.productSelectionMs,
-                    safetyMs: stageTimings.safetyMs,
-                    persistMs: stageTimings.persistMs,
-                };
-                await prisma.reportQualityLog.upsert({
-                    where: { sessionId: effectiveSessionId },
-                    update: qualityData,
-                    create: qualityData,
-                });
-                aiLogger.info("[AnalyzeTiming]", {
-                    sessionId: effectiveSessionId,
-                    ...stageTimings,
-                    totalMs: qualityData.durationMs,
-                });
-            } catch (qualityErr) {
-                logger.warn("[ReportQualityLog] upsert failed", {
-                    sessionId: effectiveSessionId,
-                    error: String(qualityErr),
-                });
             }
 
             // 分析成功落库：把预占标记为 consumed，后续失败路径不得再回滚本次额度

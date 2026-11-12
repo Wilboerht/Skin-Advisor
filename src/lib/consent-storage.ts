@@ -9,6 +9,22 @@ import { CONSENT_VERSION } from "@/lib/consent-constants";
 export interface LocalPrivacyConsent {
     version?: string;
     consentedAt?: string;
+    /** 本机同意记录归属账号；账号变化后旧记录不得复用 */
+    ownerId?: string;
+}
+
+function currentOwnerId(): string {
+    try {
+        return localStorage.getItem(STORAGE_KEYS.ADVISOR_CLIENT_OWNER) || "";
+    } catch {
+        return "";
+    }
+}
+
+function matchesOwner(data: LocalPrivacyConsent): boolean {
+    const owner = currentOwnerId();
+    // 旧版本记录没有 ownerId：有当前账号标记时视为不可复用，强制重新同意
+    return !!owner && data.ownerId === owner;
 }
 
 export function hasPrivacyConsent(): boolean {
@@ -17,7 +33,7 @@ export function hasPrivacyConsent(): boolean {
         const raw = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
         if (!raw) return false;
         const data = JSON.parse(raw) as LocalPrivacyConsent;
-        return data.version === CONSENT_VERSION && !!data.consentedAt;
+        return data.version === CONSENT_VERSION && !!data.consentedAt && matchesOwner(data);
     } catch {
         return false;
     }
@@ -28,7 +44,8 @@ export function getPrivacyConsentPayload(): LocalPrivacyConsent | null {
     try {
         const raw = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
         if (!raw) return null;
-        return JSON.parse(raw) as LocalPrivacyConsent;
+        const data = JSON.parse(raw) as LocalPrivacyConsent;
+        return matchesOwner(data) ? data : null;
     } catch {
         return null;
     }
@@ -40,6 +57,7 @@ export function savePrivacyConsent(): LocalPrivacyConsent | null {
     const payload: LocalPrivacyConsent = {
         version: CONSENT_VERSION,
         consentedAt: new Date().toISOString(),
+        ownerId: currentOwnerId(),
     };
     try {
         localStorage.setItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT, JSON.stringify(payload));

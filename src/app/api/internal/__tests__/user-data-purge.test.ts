@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   testRecordDeleteMany: vi.fn(),
   diaryDeleteMany: vi.fn(),
   feedbackDeleteMany: vi.fn(),
+  qualityDeleteMany: vi.fn(),
   sessionDeleteMany: vi.fn(),
   sessionFindMany: vi.fn(),
   aiUsageUpdateMany: vi.fn(),
@@ -40,6 +41,7 @@ vi.mock("@/lib/prisma", () => ({
     testRecord: { deleteMany: mocks.testRecordDeleteMany },
     diaryEntry: { deleteMany: mocks.diaryDeleteMany },
     productFeedback: { deleteMany: mocks.feedbackDeleteMany },
+    reportQualityLog: { deleteMany: mocks.qualityDeleteMany },
     advisorSession: { deleteMany: mocks.sessionDeleteMany, findMany: mocks.sessionFindMany },
     aIUsageLog: { updateMany: mocks.aiUsageUpdateMany },
     user: { deleteMany: mocks.userDeleteMany, findUnique: mocks.userFindUnique },
@@ -74,6 +76,7 @@ function stubCounts(t: number, d: number, f: number, s: number, a: number, u: nu
   mocks.testRecordDeleteMany.mockResolvedValue({ count: t });
   mocks.diaryDeleteMany.mockResolvedValue({ count: d });
   mocks.feedbackDeleteMany.mockResolvedValue({ count: f });
+  mocks.qualityDeleteMany.mockResolvedValue({ count: 0 });
   mocks.sessionDeleteMany.mockResolvedValue({ count: s });
   mocks.aiUsageUpdateMany.mockResolvedValue({ count: a });
   mocks.userDeleteMany.mockResolvedValue({ count: u });
@@ -114,6 +117,7 @@ describe("POST /api/internal/user-data/purge 数据处置", () => {
     mocks.sessionFindMany.mockResolvedValue([{ sessionId: "session-1" }, { sessionId: "session-2" }]);
     mocks.deleteUserAvatar.mockResolvedValue(1);
     mocks.deleteUserFaceUploads.mockResolvedValue(2);
+    mocks.qualityDeleteMany.mockResolvedValue({ count: 2 });
     const res = await POST(fakeReq(`${PURGE_URL}?userId=${USER}`));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
@@ -124,6 +128,7 @@ describe("POST /api/internal/user-data/purge 数据处置", () => {
         diaryEntries: 3,
         advisorSessions: 5,
         productFeedbacks: 1,
+        reportQualityLogs: 2,
         aiUsageLogs: 4,
         localUser: true,
         deletedAvatarFiles: 1,
@@ -140,7 +145,7 @@ describe("POST /api/internal/user-data/purge 数据处置", () => {
     expect(mocks.aiUsageUpdateMany).toHaveBeenCalledWith({ where: { userId: USER }, data: { userId: null } });
     expect(mocks.userDeleteMany).toHaveBeenCalledWith({ where: { id: USER } });
     expect(mocks.deleteUserAvatar).toHaveBeenCalledWith("/uploads/avatars/avatar.jpg", USER);
-    expect(mocks.deleteUserFaceUploads).toHaveBeenCalledWith(["session-1", "session-2"]);
+    expect(mocks.deleteUserFaceUploads).toHaveBeenCalledWith(USER, ["session-1", "session-2"]);
     // 单事务包裹
     expect(mocks.transaction).toHaveBeenCalledTimes(1);
     // 审计日志：userId + 各表计数，无 PII
@@ -162,6 +167,7 @@ describe("POST /api/internal/user-data/purge 数据处置", () => {
         diaryEntries: 0,
         advisorSessions: 0,
         productFeedbacks: 0,
+        reportQualityLogs: 0,
         aiUsageLogs: 0,
         localUser: false,
         deletedAvatarFiles: 0,

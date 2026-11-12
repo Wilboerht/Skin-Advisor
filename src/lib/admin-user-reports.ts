@@ -107,16 +107,44 @@ export async function listAdminUserReports(
                 createdAt: true,
                 completedAt: true,
                 expiresAt: true,
-                analysisResult: true,
+                skinAssessment: {
+                    select: {
+                        overallScore: true,
+                        skinTypeLabel: true,
+                        persona: true,
+                        reportVersion: true,
+                        dataSource: true,
+                    },
+                },
             },
         }),
         prisma.advisorSession.count({ where }),
     ]);
 
+    const missingAssessmentIds = sessions
+        .filter((session) => !session.skinAssessment)
+        .map((session) => session.sessionId);
+    const fallbackSessions = missingAssessmentIds.length > 0
+        ? await prisma.advisorSession.findMany({
+            where: { sessionId: { in: missingAssessmentIds } },
+            select: { sessionId: true, analysisResult: true },
+        })
+        : [];
+    const fallbackById = new Map(
+        fallbackSessions.map((session) => [session.sessionId, session.analysisResult])
+    );
+
     return {
         reports: sessions.map((session) => {
-            const raw = readRecord(session.analysisResult);
-            const lite = extractSessionLite(session.analysisResult);
+            const fallbackRaw = fallbackById.get(session.sessionId);
+            const raw = readRecord(fallbackRaw);
+            const lite = session.skinAssessment
+                ? {
+                    score: session.skinAssessment.overallScore,
+                    typeLabel: session.skinAssessment.skinTypeLabel,
+                    persona: session.skinAssessment.persona,
+                }
+                : extractSessionLite(fallbackRaw);
             return {
                 sessionId: session.sessionId,
                 createdAt: session.createdAt.toISOString(),
@@ -125,8 +153,8 @@ export async function listAdminUserReports(
                 skinTypeLabel: lite.typeLabel,
                 persona: lite.persona,
                 personaLabel: personaLabel(lite.persona),
-                reportVersion: readReportVersion(raw),
-                dataSource: readDataSource(raw),
+                reportVersion: session.skinAssessment?.reportVersion ?? readReportVersion(raw),
+                dataSource: session.skinAssessment?.dataSource ?? readDataSource(raw),
                 expired: isExpired(session.expiresAt),
             };
         }),

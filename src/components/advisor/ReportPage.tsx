@@ -104,7 +104,11 @@ export default function ReportPage({
         .filter(Boolean)
         .join("、") || undefined;
     const skinConditions = faceAnalysis?.skinConditions ?? [];
-    const reportNav = REPORT_NAV.filter((item) => item.href !== "#report-diagnosis" || isV2Report);
+    const reportNav = REPORT_NAV.filter((item) => {
+        if (item.href === "#report-diagnosis" && !isV2Report) return false;
+        if (item.href === "#product-recommendation" && (result.products?.length ?? 0) === 0) return false;
+        return true;
+    });
 
     // 复测重点：取本次分数最低的 2 个有效维度（不含不可见维度）
     const retestFocus = Object.entries(faceAnalysis?.dimensions ?? {})
@@ -161,7 +165,7 @@ export default function ReportPage({
 
     return (
         <div className="flex flex-col gap-8 lg:gap-10">
-            <nav aria-label="报告导航" className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-2 rounded-xl bg-[#FDFBF7]/90 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-[#FDFBF7]/70">
+            <nav aria-label="报告导航" className="sticky top-[calc(var(--result-topbar-h,76px)+env(safe-area-inset-top,0px))] z-20 -mx-1 flex flex-wrap gap-2 rounded-xl bg-[#FDFBF7]/90 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-[#FDFBF7]/70">
                 {reportNav.map((item) => (
                     <a
                         key={item.href}
@@ -174,7 +178,7 @@ export default function ReportPage({
             </nav>
 
             {/* 1. 结论与评分：报告头、结论摘要、趋势对比、核心指标 */}
-            <div id="report-conclusion" className="flex scroll-mt-24 flex-col gap-6 lg:gap-8">
+            <div id="report-conclusion" className="flex scroll-mt-32 flex-col gap-6 lg:gap-8">
                 <ReportMeta result={result} faceAnalysis={faceAnalysis} />
                 <ReportSummary result={result} />
                 {previousSummary && (
@@ -200,7 +204,7 @@ export default function ReportPage({
             </div>
 
             {/* 2. 检测证据：十维总览、可见皮肤表现、区域皮肤地图集中展示 */}
-            <section id="report-evidence" aria-label="检测证据" className="flex scroll-mt-24 flex-col gap-6 lg:gap-8">
+            <section id="report-evidence" aria-label="检测证据" className="flex scroll-mt-32 flex-col gap-6 lg:gap-8">
                 {faceAnalysis?.dimensions && (
                     <section aria-labelledby="dimension-overview-title">
                         <h4 id="dimension-overview-title" className="mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2 text-base font-medium text-[var(--color-brand-espresso)]">
@@ -311,7 +315,7 @@ export default function ReportPage({
 
             {/* 3. 逐问题诊断：完整的观察 → 诱因 → 方案 → 就医边界 */}
             {isV2Report && result.consultantReport && (
-                <section id="report-diagnosis" aria-label="逐问题诊断" className="scroll-mt-24">
+                <section id="report-diagnosis" aria-label="逐问题诊断" className="scroll-mt-32">
                     <ConsultantReport
                         report={result.consultantReport}
                         dimensions={faceAnalysis?.dimensions as Record<string, { score?: number; grade?: string; details?: string; confidence?: number; notVisible?: boolean } | undefined> | undefined}
@@ -322,7 +326,7 @@ export default function ReportPage({
             )}
 
             {/* 4. 每日方案：唯一的 AM/PM 行动表（派系骨架 + 产品落点 + AI 微调） */}
-            <section id="report-routine" aria-label="每日方案" className="scroll-mt-24">
+            <section id="report-routine" aria-label="每日方案" className="scroll-mt-32">
                 <RoutinePlan
                     plan={routinePlan}
                     routineNote={result.consultantReport?.routineNote}
@@ -331,7 +335,7 @@ export default function ReportPage({
             </section>
 
             {/* 5. 安全与复测 */}
-            <section id="report-safety" aria-label="安全与复测" className="flex scroll-mt-24 flex-col gap-6 lg:gap-8">
+            <section id="report-safety" aria-label="安全与复测" className="flex scroll-mt-32 flex-col gap-6 lg:gap-8">
                 <SafetyPanel notes={result.safetyNotes} issues={result.consultantReport?.issues} />
 
                 <ReportFeedback sessionId={sessionId} />

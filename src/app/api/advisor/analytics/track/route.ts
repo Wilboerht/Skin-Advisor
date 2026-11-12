@@ -13,9 +13,14 @@ import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
 import { logger } from "@/lib/logger";
+import { SessionIdSchema } from "@/lib/schemas";
 
 /** interactions 追加上限：达到后丢弃新事件，防止单行 JSON 无限膨胀 */
 const INTERACTIONS_MAX_ENTRIES = 500;
+/** 单个事件 data 序列化后的字节上限，防止超大 JSON 污染单行记录 */
+const MAX_EVENT_DATA_BYTES = 4000;
+/** 请求体上限（content-length 预检，避免先解析超大 body） */
+const MAX_REQUEST_BYTES = 16 * 1024;
 
 /**
  * 原子追加一条 interaction 到 AdvisorSession.interactions。
@@ -23,18 +28,30 @@ const INTERACTIONS_MAX_ENTRIES = 500;
  * 原实现"findUnique 读出数组 → push → 整列 upsert"在并发事件下会互相覆盖丢数据；
  * 改为数据库侧 jsonb `||` 原子追加。会话不存在时补建（与旧行为一致，createMany 幂等）。
  */
-async function appendInteraction(sessionId: string, entry: Record<string, unknown>): Promise<void> {
+async function appendInteraction(
+    sessionId: string,
+    entry: Record<string, unknown>,
+    owner: { userId: string; ip: string }
+): Promise<void> {
     const payload = JSON.stringify([entry]);
     const affected = await prisma.$executeRaw`
         UPDATE "AdvisorSession"
         SET "interactions" = COALESCE("interactions", '[]'::jsonb) || ${payload}::jsonb
         WHERE "sessionId" = ${sessionId}
+          AND ("userId" IS NULL OR "userId" = ${owner.userId})
           AND jsonb_array_length(COALESCE("interactions", '[]'::jsonb)) < ${INTERACTIONS_MAX_ENTRIES}
     `;
     if (affected === 0) {
-        // 会话不存在（事件先于 session_start 到达）或已达长度上限：补建/丢弃
+        // 会话不存在（事件先于 session_start 到达）或已达长度上限：补建/丢弃。
+        // 补建时必须写入 userId/ip，否则该行永远无法被 session_start 绑定，
+        // 会形成“无主会话”并让后续 claim/限流归属失效。
         const created = await prisma.advisorSession.createMany({
-            data: [{ sessionId, interactions: [entry] as unknown as Prisma.InputJsonValue }],
+            data: [{
+                sessionId,
+                userId: owner.userId,
+                ip: owner.ip,
+                interactions: [entry] as unknown as Prisma.InputJsonValue,
+            }],
             skipDuplicates: true,
         });
         if (created.count === 0) {
@@ -45,7 +62,7 @@ async function appendInteraction(sessionId: string, entry: Record<string, unknow
 
 // 事件类型定义
 const EventSchema = z.object({
-    sessionId: z.string().min(1, "会话ID必填"),
+    sessionId: SessionIdSchema,
     event: z.enum([
         "session_start",           // 会话开始（进入欢迎页）
         "questionnaire_start",     // 开始答题
@@ -74,7 +91,7 @@ const EventSchema = z.object({
         "poster_save",             // 保存海报
     ]),
     data: z.record(z.string(), z.unknown()).optional(), // 附加数据
-    timestamp: z.string().optional(),
+    timestamp: z.string().max(64).optional(),
 });
 
 // 获取客户端信息
@@ -134,7 +151,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: "Rate limit exceeded" }, { status: 429 });
         }
 
-        const body = await request.json();
+        const contentLength = Number(request.headers.get("content-length") || 0);
+        if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
+            return NextResponse.json({ success: false, error: "Payload too large" }, { status: 413 });
+        }
+
+        const body = await request.json().catch(() => null);
         const result = EventSchema.safeParse(body);
 
         if (!result.success) {
@@ -142,6 +164,11 @@ export async function POST(request: NextRequest) {
                 { success: false, error: { message: "参数错误", details: result.error.issues } },
                 { status: 400 }
             );
+        }
+
+        const dataBytes = Buffer.byteLength(JSON.stringify(result.data.data ?? {}), "utf8");
+        if (dataBytes > MAX_EVENT_DATA_BYTES) {
+            return NextResponse.json({ success: false, error: "Event data too large" }, { status: 413 });
         }
 
         // 只有已登录用户才保存追踪数据到数据库
@@ -154,15 +181,20 @@ export async function POST(request: NextRequest) {
         const { sessionId, event, data } = result.data;
         const clientInfo = getClientInfo(request);
         const now = new Date();
+        const append = (entry: Record<string, unknown>) =>
+            appendInteraction(sessionId, entry, { userId: user.id, ip: clientInfo.ip });
 
         // 归属守卫：已归属他人的会话不允许写入任何事件，否则可污染/劫持他人数据。
         // session_start 例外（它负责"绑定归属"，在下面单独做条件校验）。
         if (event !== "session_start") {
             const owner = await prisma.advisorSession.findUnique({
                 where: { sessionId },
-                select: { userId: true },
+                select: { userId: true, ip: true },
             });
             if (owner?.userId && owner.userId !== user.id) {
+                return NextResponse.json({ success: true });
+            }
+            if (owner && !owner.userId && owner.ip && owner.ip !== clientInfo.ip) {
                 return NextResponse.json({ success: true });
             }
         }
@@ -212,6 +244,7 @@ export async function POST(request: NextRequest) {
                     where: { sessionId },
                     create: {
                         sessionId,
+                        userId: user.id,
                         questionnaireStartedAt: now,
                         userAgent: clientInfo.userAgent,
                         ip: clientInfo.ip,
@@ -220,7 +253,7 @@ export async function POST(request: NextRequest) {
                         browser: clientInfo.browser,
                         os: clientInfo.os,
                     },
-                    update: { questionnaireStartedAt: now },
+                    update: { questionnaireStartedAt: now, userId: user.id },
                 });
                 break;
             }
@@ -230,6 +263,7 @@ export async function POST(request: NextRequest) {
                     where: { sessionId },
                     create: {
                         sessionId,
+                        userId: user.id,
                         questionnaireCompletedAt: now,
                         userAgent: clientInfo.userAgent,
                         ip: clientInfo.ip,
@@ -240,6 +274,7 @@ export async function POST(request: NextRequest) {
                     },
                     update: {
                         questionnaireCompletedAt: now,
+                        userId: user.id,
                     },
                 });
                 break;
@@ -248,13 +283,13 @@ export async function POST(request: NextRequest) {
             case "face_scan_start": {
                 // 只记交互，不写 faceScanStartedAt：该字段由 face-analyze 的 AI claim 使用，
                 // 埋点提前写入会让 claim 误判“已有面部分析在跑”。
-                await appendInteraction(sessionId, { type: "face_scan_start", at: now.toISOString() });
+                await append({ type: "face_scan_start", at: now.toISOString() });
                 break;
             }
 
             case "face_scan_complete": {
                 // 只记拍摄完成交互；AI 面部结果完成由 face-analyze 写 faceScanCompletedAt
-                await appendInteraction(sessionId, { type: "face_scan_complete", at: now.toISOString() });
+                await append({ type: "face_scan_complete", at: now.toISOString() });
                 break;
             }
 
@@ -263,13 +298,13 @@ export async function POST(request: NextRequest) {
                 const step = typeof data?.step === "string" ? data.step : null;
                 if (!step) break;
                 const mode = typeof data?.mode === "string" ? data.mode : "auto";
-                await appendInteraction(sessionId, { type: "face_scan_step", step, mode, at: now.toISOString() });
+                await append({ type: "face_scan_step", step, mode, at: now.toISOString() });
                 break;
             }
 
             case "analysis_start": {
                 // 只记交互；analysisStartedAt 由 analyze 路由 claim 写入，避免抢先占用导致 claim 失败
-                await appendInteraction(sessionId, { type: "analysis_start", at: now.toISOString() });
+                await append({ type: "analysis_start", at: now.toISOString() });
                 break;
             }
 
@@ -279,6 +314,7 @@ export async function POST(request: NextRequest) {
                     where: { sessionId },
                     create: {
                         sessionId,
+                        userId: user.id,
                         analysisCompletedAt: now,
                         userAgent: clientInfo.userAgent,
                         ip: clientInfo.ip,
@@ -289,6 +325,7 @@ export async function POST(request: NextRequest) {
                     },
                     update: {
                         analysisCompletedAt: now,
+                        userId: user.id,
                     },
                 });
                 break;
@@ -299,7 +336,7 @@ export async function POST(request: NextRequest) {
                 // 额外记入 interactions 供统计；resultViewedAt 照常更新（该事件可能先于
                 // 基础 result_view 到达——前端弹窗效果声明在前，先收到的是这一条）
                 if (data?.genderMismatch === true) {
-                    await appendInteraction(sessionId, {
+                    await append({
                         type: "result_view",
                         genderMismatch: true,
                         at: now.toISOString(),
@@ -311,9 +348,11 @@ export async function POST(request: NextRequest) {
                     where: { sessionId },
                     update: {
                         resultViewedAt: now,
+                        userId: user.id,
                     },
                     create: {
                         sessionId,
+                        userId: user.id,
                         startedAt: now,
                         resultViewedAt: now,
                         userAgent: clientInfo.userAgent,
@@ -344,7 +383,7 @@ export async function POST(request: NextRequest) {
                 const productId = typeof data?.productId === "string" ? data.productId : null;
                 const productName = typeof data?.productName === "string" ? data.productName : null;
                 if (productId) {
-                    await appendInteraction(sessionId, {
+                    await append({
                         type: "product_click",
                         productId,
                         productName,
@@ -359,7 +398,7 @@ export async function POST(request: NextRequest) {
                 // 供"封面→报告转化率 + 首测/派系变化 cohort"统计）
                 const page = typeof data?.page === "string" ? data.page : null;
                 if (!page) break;
-                await appendInteraction(sessionId, {
+                await append({
                     type: "result_flip",
                     page,
                     firstTest: data?.firstTest === true,
@@ -382,7 +421,7 @@ export async function POST(request: NextRequest) {
             case "trend_view":
             case "feedback_submit":
             case "poster_save": {
-                await appendInteraction(sessionId, {
+                await append({
                     type: event,
                     data: data || {},
                     at: now.toISOString(),

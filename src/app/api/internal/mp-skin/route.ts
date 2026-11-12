@@ -86,8 +86,8 @@ export async function GET(request: NextRequest) {
             archivedAt: null, // 冷层归档摘要对用户不可见
         };
 
-        const [recentSessions, total] = await Promise.all([
-            // 取足够覆盖首页展示的量：最新 5 条用于趋势，历史第 1 页最多 20 条
+        const [recentSessions, historySessions, total] = await Promise.all([
+            // 最新 5 条完整报告：仅用于 latest 摘要与趋势
             prisma.advisorSession.findMany({
                 where: historyWhere,
                 orderBy: { completedAt: "desc" },
@@ -98,7 +98,21 @@ export async function GET(request: NextRequest) {
                     answers: true,
                     analysisResult: true,
                 },
-                take: Math.max(5, (page - 1) * pageSize + pageSize),
+                take: 5,
+            }),
+            // 历史页只读汇总表，避免深分页把完整 analysisResult 全部拉出
+            prisma.advisorSession.findMany({
+                where: historyWhere,
+                orderBy: { completedAt: "desc" },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+                select: {
+                    sessionId: true,
+                    completedAt: true,
+                    skinAssessment: {
+                        select: { overallScore: true, skinTypeLabel: true },
+                    },
+                },
             }),
             prisma.advisorSession.count({ where: historyWhere }),
         ]);
@@ -161,17 +175,35 @@ export async function GET(request: NextRequest) {
             : null;
 
         // ===== 历史分页（轻量字段） =====
-        const historyItems = recentSessions
-            .slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize)
-            .map(s => {
-                const summary = extractReportSummary(s.analysisResult, s.sessionId, s.answers);
+        const missingAssessmentIds = historySessions
+            .filter((session) => !session.skinAssessment)
+            .map((session) => session.sessionId);
+        const fallbackHistory = missingAssessmentIds.length > 0
+            ? await prisma.advisorSession.findMany({
+                where: { sessionId: { in: missingAssessmentIds } },
+                select: { sessionId: true, analysisResult: true },
+            })
+            : [];
+        const fallbackById = new Map(
+            fallbackHistory.map((session) => [session.sessionId, session.analysisResult])
+        );
+        const historyItems = historySessions.map(s => {
+            if (s.skinAssessment) {
                 return {
                     sessionId: s.sessionId,
                     completedAt: s.completedAt?.toISOString() ?? null,
-                    overallScore: summary.found ? summary.overallScore ?? null : null,
-                    skinTypeLabel: summary.found ? summary.skinTypeLabel ?? null : null,
+                    overallScore: s.skinAssessment.overallScore,
+                    skinTypeLabel: s.skinAssessment.skinTypeLabel,
                 };
-            });
+            }
+            const summary = extractReportSummary(fallbackById.get(s.sessionId), s.sessionId);
+            return {
+                sessionId: s.sessionId,
+                completedAt: s.completedAt?.toISOString() ?? null,
+                overallScore: summary.found ? summary.overallScore ?? null : null,
+                skinTypeLabel: summary.found ? summary.skinTypeLabel ?? null : null,
+            };
+        });
 
         return NextResponse.json({
             linked: true,

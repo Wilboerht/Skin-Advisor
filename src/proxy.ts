@@ -137,6 +137,15 @@ export async function proxy(request: NextRequest) {
     // fetch 跨域跟随重定向必失败（应得 401）。API 的鉴权由各 route handler
     // 内的 getSessionUser 完成，返回标准 401 JSON；下方 CSRF/Admin 检查照常执行。
     const isApiPath = pathname.startsWith("/api/");
+
+    // 管理端/内部接口统一请求体上限：这些接口只传结构化 JSON，
+    // 2MB 足够覆盖商品同步等批量数据，防止超大 body 拖垮进程。
+    if (pathname.startsWith("/api/admin") || pathname.startsWith("/api/internal")) {
+        const contentLength = Number(request.headers.get("content-length") || 0);
+        if (Number.isFinite(contentLength) && contentLength > 2 * 1024 * 1024) {
+            return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+        }
+    }
     // 微信登录用户：持有有效本地 JWT（__Host-auth_token）但无 SSO Cookie
     //（主站微信 exchange 流程不在主站域种会话 Cookie），被 SDK middleware
     // 302 到主站会落到登录页、流程断裂，因此携带有效本地会话时跳过 SSO 检查。

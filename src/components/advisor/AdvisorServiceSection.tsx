@@ -41,7 +41,7 @@ export function AdvisorServiceSection({ onLogin, className }: AdvisorServiceSect
     const service = LEVEL_SERVICE[level] ?? LEVEL_SERVICE.SILVER;
 
     return (
-        <section id="advisor-service" className={cn("relative w-full scroll-mt-24", className)}>
+        <section id="advisor-service" className={cn("relative w-full scroll-mt-32", className)}>
             <m.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}

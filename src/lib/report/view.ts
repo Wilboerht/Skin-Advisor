@@ -13,7 +13,7 @@ import type { ComprehensiveResult } from "@/lib/analysis-result";
 import { DIMENSION_LABELS, DIMENSION_ORDER } from "@/lib/advisor-labels";
 import { buildRoutinePlan } from "@/lib/routine-plan";
 import { getScoreBandLabel, isAttentionScore } from "@/lib/score-bands";
-import type { ReportProduct, ReportV3, ReportView, ReportViewDimension, ReportViewFinding, ReportViewZone } from "./types";
+import type { ReportProduct, ReportSeverity, ReportV3, ReportView, ReportViewDimension, ReportViewFinding, ReportViewSummaryCard, ReportViewZone } from "./types";
 import { REPORT_VIEW_VERSION } from "./types";
 
 const ZONE_LABELS: Record<string, string> = {
@@ -204,6 +204,42 @@ export interface BuildReportViewInput {
     result: ComprehensiveResult;
     faceAnalysis: FaceAnalysisResult | null;
     sessionId?: string;
+}
+
+export function buildReportSummaryCard({
+    result,
+    faceAnalysis,
+    sessionId,
+    completedAt,
+}: BuildReportViewInput & { completedAt?: string }): ReportViewSummaryCard {
+    const reportV3 = result.reportV3;
+    const firstFinding = reportV3?.findings?.[0];
+    const firstIssue = result.consultantReport?.issues?.[0];
+    const rawSeverity = firstFinding?.severity ?? firstIssue?.severity;
+    const severity: ReportSeverity = rawSeverity === "moderate" || rawSeverity === "severe"
+        ? rawSeverity
+        : "mild";
+    const topTitle = firstFinding?.title ?? firstIssue?.title;
+
+    return {
+        sessionId: sessionId ?? "",
+        completedAt,
+        overallScore: faceAnalysis?.overallScore,
+        skinTypeLabel: result.skinProfile.typeLabel,
+        skinAge: result.skinProfile.skinAge ?? faceAnalysis?.skinAge?.estimated,
+        persona: result.persona,
+        reportVersion: typeof result.reportVersion === "number"
+            ? result.reportVersion
+            : (reportV3 ? 3 : result.consultantReport ? 2 : 1),
+        viewVersion: REPORT_VIEW_VERSION,
+        ...(topTitle ? {
+            topFinding: {
+                title: topTitle,
+                severity,
+                severityLabel: SEVERITY_LABELS[severity],
+            },
+        } : {}),
+    };
 }
 
 export function buildReportView({ result, faceAnalysis, sessionId }: BuildReportViewInput): ReportView {

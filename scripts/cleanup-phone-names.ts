@@ -59,7 +59,8 @@ async function main() {
 
         console.log(`发现 ${affected.length} 条脏昵称记录：`);
         for (const u of affected) {
-            console.log(`  - user ${u.id}: name=${u.name} phoneNumber=${u.phoneNumber ?? "null"}`);
+            const phoneMasked = u.phoneNumber ? `${u.phoneNumber.slice(0, 3)}****` : "null";
+            console.log(`  - user ${u.id}: name=[PHONE_LIKE] phoneNumber=${phoneMasked}`);
         }
 
         if (dryRun) {

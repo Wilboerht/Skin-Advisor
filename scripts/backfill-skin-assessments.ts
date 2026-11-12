@@ -6,10 +6,27 @@
  *   npx tsx scripts/backfill-skin-assessments.ts --dry-run
  */
 
+import { config } from "dotenv";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { buildSkinAssessment } from "../src/lib/report/assessment";
 
-const prisma = new PrismaClient();
+// 先加载生产/本地 env，再实例化 Prisma（Prisma 7 需要显式 driver adapter）
+config({ path: ".env.production" });
+config({ path: ".env" });
+
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+    throw new Error("DATABASE_URL is not set (.env.production / .env)");
+}
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { Pool } = require("pg");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { PrismaPg } = require("@prisma/adapter-pg");
+const prisma = new PrismaClient({
+    adapter: new PrismaPg(new Pool({ connectionString: databaseUrl })),
+});
+
 const DRY_RUN = process.argv.includes("--dry-run");
 const BATCH = 200;
 
@@ -24,7 +41,7 @@ async function main() {
             where: {
                 userId: { not: null },
                 completedAt: { not: null },
-                archivedAt: null,
+                // 包含冷层摘要：历史趋势覆盖不能只回填热层，否则统计口径会缺口
                 analysisResult: { not: Prisma.DbNull },
             },
             orderBy: { id: "asc" },
@@ -69,11 +86,17 @@ async function main() {
                     lowConfidence: assessment.lowConfidence as unknown as Prisma.InputJsonValue,
                     notVisible: assessment.notVisible as unknown as Prisma.InputJsonValue,
                 };
-                await prisma.skinAssessment.upsert({
-                    where: { sessionId: row.sessionId },
-                    update: data,
-                    create: data,
-                });
+                try {
+                    await prisma.skinAssessment.upsert({
+                        where: { sessionId: row.sessionId },
+                        update: data,
+                        create: data,
+                    });
+                } catch (error) {
+                    skipped += 1;
+                    console.error(`[backfill] failed sessionId=${row.sessionId}`, error);
+                    continue;
+                }
             }
             written += 1;
         }

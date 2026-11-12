@@ -129,6 +129,28 @@ export async function GET(req: NextRequest) {
         return buildErrorRedirect("MISSING_OAUTH_STATE", "登录会话已失效，请重新发起微信登录");
     }
 
+    // 官网若原样回传我们写入的 advisor_<nonce> state，必须与 cookie nonce 一致；
+    // 若官网回传的是自己的 state（不带 advisor_ 前缀），不阻塞登录，由 Referer 兜底。
+    const oauthState = searchParams.get("state");
+    if (oauthState && oauthState.startsWith("advisor_") && oauthState !== `advisor_${oauthNonce}`) {
+        return buildErrorRedirect("INVALID_OAUTH_STATE", "登录状态校验失败，请重新发起微信登录");
+    }
+
+    // Referer 兜底：正常链路来自官网回调页或本站落地页；跨站链接/邮件直开会被拒绝。
+    // 若浏览器/隐私策略剥离 Referer，则退回 nonce cookie 校验。
+    const referer = req.headers.get("referer");
+    if (referer) {
+        try {
+            const refererOrigin = new URL(referer).origin;
+            const officialOrigin = new URL(process.env.OFFICIAL_API_URL || "https://nihplod.cn").origin;
+            if (refererOrigin !== officialOrigin && refererOrigin !== siteOrigin) {
+                return buildErrorRedirect("UNTRUSTED_REFERER", "登录来源校验失败，请重新发起微信登录");
+            }
+        } catch {
+            return buildErrorRedirect("UNTRUSTED_REFERER", "登录来源校验失败，请重新发起微信登录");
+        }
+    }
+
     try {
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
         const path = "/api/v1/internal/wechat/exchange";

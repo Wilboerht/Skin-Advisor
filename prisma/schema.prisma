@@ -32,7 +32,7 @@ model AdvisorSession {
   faceScanSkipped Boolean   @default(false)
   
   // ===== 分析结果 =====
-  analysisSource  String?   // ai | fallback
+  analysisSource  String?   // hybrid | text
   analysisResult  Json?     // 分析结果快照
   interactions    Json?     // 用户交互记录 (如点击产品)
   
@@ -63,8 +63,11 @@ model AdvisorSession {
 
   // 报告纠错反馈（维度/问题/整份报告“准确/不准确”）
   reportFeedbacks ReportFeedback[]
-  // 趋势/百分位汇总（每份完成报告一条）
-  skinAssessment SkinAssessment?
+    // 趋势/百分位汇总（每份完成报告一条）
+    skinAssessment SkinAssessment?
+    // 报告质量指标（每份完成报告一条）
+    reportQualityLog ReportQualityLog?
+
 
   createdAt       DateTime  @default(now())
 
@@ -228,9 +231,10 @@ model User {
   reminderSettings  ReminderSettings?
   testRecords       TestRecord[]
   refreshTokens     RefreshToken[]
-  productFeedbacks  ProductFeedback[]
-  reportFeedbacks   ReportFeedback[]
-  skinAssessments   SkinAssessment[]
+    productFeedbacks  ProductFeedback[]
+    reportFeedbacks   ReportFeedback[]
+    skinAssessments   SkinAssessment[]
+    reportQualityLogs ReportQualityLog[]
   diaryEntries      DiaryEntry[]
   consentRecords    ConsentRecord[]
   statusWebhookEvents StatusWebhookEvent[]
@@ -517,9 +521,11 @@ model SkinAssessment {
   notVisible       Json?
   dimensions       Json
   zones            Json?
-  conditions       Json?
-  findings         Json?
-  promptVersion    String?
+    conditions       Json?
+    findings         Json?
+    /** 生成该报告时的 ReportV2/V3 版本，供列表/管理端不解析大 JSON 读取 */
+    reportVersion    Int?
+    promptVersion    String?
   engineVersion    String?
   model            String?
   dataSource       String?
@@ -557,6 +563,10 @@ model ReportQualityLog {
   persistMs             Int?
   createdAt             DateTime @default(now())
 
+  user    User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session AdvisorSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@index([userId, createdAt])
   @@index([createdAt])
   @@index([narrativeSource, createdAt])
 }

@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { buildArchivedSummary } from "@/lib/session-archive";
 import { cleanupOrphanProductAssets } from "@/lib/product-assets";
+import { deleteExpiredOSSGuestFiles } from "@/lib/ali-oss";
 import { DATA_RETENTION, coldSummaryCutoff } from "@/lib/data-retention";
 
 export const maxDuration = 60;
@@ -258,13 +259,16 @@ export async function GET(request: NextRequest) {
             sessionId: string;
             analysisResult: Prisma.JsonValue | null;
             answers: Prisma.JsonValue | null;
+            completedAt: Date;
+            analysisStartedAt: Date | null;
         }>>`
-            SELECT "sessionId", "analysisResult", "answers"
+            SELECT "sessionId", "analysisResult", "answers", "completedAt", "analysisStartedAt"
             FROM (
                 SELECT s."sessionId",
                        s."analysisResult",
                        s."answers",
                        s."completedAt",
+                       s."analysisStartedAt",
                        u."membershipLevel",
                        ROW_NUMBER() OVER (PARTITION BY s."userId" ORDER BY s."completedAt" DESC) as rn
                 FROM "AdvisorSession" s
@@ -283,9 +287,20 @@ export async function GET(request: NextRequest) {
         for (const row of archivable) {
             try {
                 const summary = buildArchivedSummary(row.analysisResult, row.answers);
-                await prisma.advisorSession.update({
-                    where: { sessionId: row.sessionId },
-                    data: {
+                // 条件更新：读取候选后若免费重试已开始（analysisStartedAt > completedAt）
+                // 或新报告已覆盖（completedAt 变化），本次归档必须放弃，避免覆盖新结果。
+                const [updated] = await prisma.$transaction([
+                    prisma.advisorSession.updateMany({
+                        where: {
+                            sessionId: row.sessionId,
+                            archivedAt: null,
+                            completedAt: row.completedAt,
+                            OR: [
+                                { analysisStartedAt: null },
+                                { analysisStartedAt: { lte: row.completedAt } },
+                            ],
+                        },
+                        data: {
                         analysisResult: summary as unknown as Prisma.InputJsonValue,
                         answers: Prisma.DbNull,
                         interactions: Prisma.DbNull,
@@ -303,9 +318,29 @@ export async function GET(request: NextRequest) {
                         refSource: null,
                         resultShared: false,
                         shareMethod: null,
-                        archivedAt: new Date(now),
-                    },
-                });
+                            archivedAt: new Date(now),
+                        },
+                    }),
+                    // 冷层只保留统计口径（综合分/肤质/派系/覆盖度），
+                    // 删除十维明细、区域指标、问题标签等可还原健康细节的字段。
+                    prisma.skinAssessment.updateMany({
+                        where: { sessionId: row.sessionId },
+                        data: {
+                            dimensions: {},
+                            zones: Prisma.DbNull,
+                            conditions: Prisma.DbNull,
+                            findings: Prisma.DbNull,
+                            lowConfidence: Prisma.DbNull,
+                            notVisible: Prisma.DbNull,
+                        },
+                    }),
+                ]);
+                if (updated.count === 0) {
+                    logger.warn("[Cleanup] Archive skipped: session changed during archive", {
+                        sessionId: row.sessionId,
+                    });
+                    continue;
+                }
                 stats.archived++;
             } catch (archiveErr) {
                 // 单行失败不阻塞整体任务，下一轮 cron 重试
@@ -326,6 +361,8 @@ export async function GET(request: NextRequest) {
                 LEFT JOIN "User" u ON u."id" = s."userId"
                 WHERE s."userId" IS NOT NULL
                   AND s."completedAt" IS NOT NULL
+                  -- 免费重试进行中不参与“超量删除”，避免删掉正在生成的新报告
+                  AND (s."analysisStartedAt" IS NULL OR s."analysisStartedAt" <= s."completedAt")
             ) t
             WHERE t.rn > ${MAX_USER_REPORTS}
             ORDER BY t."createdAt" ASC
@@ -354,6 +391,12 @@ export async function GET(request: NextRequest) {
         const aiLogCutoff = new Date(now - 35 * 24 * 60 * 60 * 1000);
         const deletedAiLogs = await prisma.aIUsageLog.deleteMany({
             where: { createdAt: { lt: aiLogCutoff } },
+        });
+
+        // ===== 5.1 清理过期报告质量日志（保留 365 天，与完整报告保留期一致）=====
+        const qualityLogCutoff = new Date(now - 365 * 24 * 60 * 60 * 1000);
+        const deletedQualityLogs = await prisma.reportQualityLog.deleteMany({
+            where: { createdAt: { lt: qualityLogCutoff } },
         });
 
         // ===== 6. 清理过期管理审计日志（保留 180 天）=====
@@ -422,6 +465,16 @@ export async function GET(request: NextRequest) {
             await cleanDir(uploadDir, true, fileCutoff);
         } catch { /* upload dir may not exist */ }
 
+        // 9.0 OSS 人脸照片同样按 24 小时保留；本地清理覆盖不到直传 OSS 的对象
+        let deletedGuestOssFiles = 0;
+        try {
+            deletedGuestOssFiles = await deleteExpiredOSSGuestFiles(new Date(now - 24 * 60 * 60 * 1000));
+        } catch (ossErr) {
+            logger.error("[Cleanup] OSS guest file cleanup failed", {
+                error: ossErr instanceof Error ? ossErr.message : String(ossErr),
+            });
+        }
+
         // ===== 9.1 清理 products/ 下无产品/无可见报告引用的孤儿图片 =====
         let deletedProductFiles = 0;
         try {
@@ -473,11 +526,13 @@ export async function GET(request: NextRequest) {
             stats: {
                 ...stats,
                 aiLogs: deletedAiLogs.count,
+                qualityLogs: deletedQualityLogs.count,
                 auditLogs: deletedAuditLogs.count,
                 instances: deletedInstances.count,
                 refreshTokens: deletedRefreshTokens.count,
                 files: deletedFiles,
                 guestFiles: deletedGuestFiles,
+                guestOssFiles: deletedGuestOssFiles,
                 productFiles: deletedProductFiles,
                 orphanReservations: deletedOrphanReservations,
             },

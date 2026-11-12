@@ -152,7 +152,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                         }}
                         disabled={isExiting}
                         className="absolute top-8 right-4 md:right-12 lg:right-20 z-50 flex items-center gap-1.5 h-9 px-3 rounded-full border border-brand-charcoal/[0.12] text-brand-charcoal/50 transition-colors duration-300 hover:text-brand-charcoal hover:border-brand-charcoal/30 hover:bg-brand-charcoal/[0.03] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                        aria-label="离开此页（回来后可在报告页继续生成）"
+                        aria-label="离开此页（分析会在服务器继续，稍后可从历史报告查看）"
                     >
                         <span className="text-[12px] font-light tracking-[0.08em]">
                             {isExiting ? "正在离开..." : "离开此页"}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ADVISOR_WECOM_LINK } from "@/lib/advisor-report-text";
 import { getSessionUser } from "@/lib/sso-auth";
 import prisma from "@/lib/prisma";
+import { getClientIP, rateLimit } from "@/lib/ratelimit";
 
 const SESSION_ID_RE = /^[0-9A-Za-z-]{8,128}$/;
 
@@ -13,6 +14,13 @@ const SESSION_ID_RE = /^[0-9A-Za-z-]{8,128}$/;
  * 失败时回退到静态 kfid 链接（无场景参数，客服侧退化为手动复制粘贴流程）。
  */
 export async function GET(request: NextRequest) {
+    const ipLimit = await rateLimit(`kf-link-ip-${getClientIP(request)}`, "default", {
+        maxRequests: 30,
+        windowMs: 60_000,
+    });
+    if (!ipLimit.success) {
+        return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+    }
     const sessionId = request.nextUrl.searchParams.get("sessionId") || "";
     const fallback = NextResponse.json({ url: ADVISOR_WECOM_LINK, fallback: true });
 

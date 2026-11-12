@@ -45,7 +45,8 @@ async function main() {
 
     console.log(`发现 ${affected.length} 条掩码手机号记录：`);
     for (const u of affected) {
-        console.log(`  - user ${u.id}: ${u.phoneNumber}`);
+        const masked = u.phoneNumber ? `${u.phoneNumber.slice(0, 3)}****` : "null";
+        console.log(`  - user ${u.id}: ${masked}`);
     }
 
     const result = await prisma.user.updateMany({
