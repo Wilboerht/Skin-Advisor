@@ -1,10 +1,13 @@
 "use client";
 
 import { AlertTriangle, FlaskConical, ShieldCheck, Stethoscope, Sun, TestTube } from "lucide-react";
+import type { ConsultantIssue } from "@/lib/advisor-utils";
 import type { SafetyNotes } from "@/lib/report-safety";
 
 interface SafetyPanelProps {
     notes?: SafetyNotes;
+    /** 报告中的问题卡：中度/重度的就医边界已在问题卡内展示，这里不再重复 */
+    issues?: ConsultantIssue[];
 }
 
 function Section({
@@ -39,14 +42,20 @@ function Section({
  * 安全与成分：过敏/孕期排除项、活性成分、叠加禁忌、建立耐受、防晒、就医边界。
  * 数据由服务端确定性生成，不展示原始过敏史/孕期字段。
  */
-export function SafetyPanel({ notes }: SafetyPanelProps) {
+export function SafetyPanel({ notes, issues = [] }: SafetyPanelProps) {
     if (!notes) return null;
+    const hasIssueBoundary = issues.some(
+        (issue) => (issue.severity === "moderate" || issue.severity === "severe")
+            && !!issue.medicalBoundary?.trim()
+    );
+    // 中度/重度的就医边界已经在问题卡内展示；只在没有具体边界时展示通用就医提示，避免重复
+    const doctorItems = hasIssueBoundary ? [] : notes.whenToSeeDoctor;
     const hasAny = notes.excluded.length > 0
         || notes.actives.length > 0
         || notes.conflicts.length > 0
         || !!notes.patchTest
         || !!notes.sunProtection
-        || notes.whenToSeeDoctor.length > 0;
+        || doctorItems.length > 0;
     if (!hasAny) return null;
 
     return (
@@ -83,7 +92,7 @@ export function SafetyPanel({ notes }: SafetyPanelProps) {
                 <Section
                     icon={<Stethoscope className="h-3.5 w-3.5 text-[#c45a4a]" strokeWidth={1.8} />}
                     title="什么时候需要看医生"
-                    items={notes.whenToSeeDoctor}
+                    items={doctorItems}
                 />
             </div>
         </section>

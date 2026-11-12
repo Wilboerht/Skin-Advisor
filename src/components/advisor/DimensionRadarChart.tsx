@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { ChevronDown } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import {
     PolarAngleAxis,
@@ -14,9 +15,12 @@ import { useMounted } from "@/hooks/use-mounted";
 import type { SkinDimensions } from "@/lib/advisor-labels";
 import { DIMENSION_DESCRIPTIONS, DIMENSION_LABELS, DIMENSION_ORDER, SCORE_DIRECTION_HINT } from "@/lib/advisor-labels";
 import { ATTENTION_SCORE_THRESHOLD, getScoreBand, isAttentionScore } from "@/lib/score-bands";
+import { ReportFeedbackButton } from "./ReportFeedbackButton";
 
 interface DimensionRadarChartProps {
     dimensions: SkinDimensions;
+    /** 报告会话 ID：维度判读纠错 */
+    sessionId?: string;
 }
 
 function AlertTick(props: {
@@ -46,9 +50,9 @@ function AlertTick(props: {
  * 十维评分雷达图：报告页数据总览。
  * - 不可见维度不参与雷达图；低置信维度在明细中标注；
  * - 统一“低于 70 需关注”阈值；
- * - 提供文字明细，避免只能看形状读不出分数。
+ * - 提供文字明细，可展开查看 AI 的视觉判读依据与 acne 子分。
  */
-export function DimensionRadarChart({ dimensions }: DimensionRadarChartProps) {
+export function DimensionRadarChart({ dimensions, sessionId }: DimensionRadarChartProps) {
     const mounted = useMounted();
     const reduceMotion = useReducedMotion();
 
@@ -62,6 +66,9 @@ export function DimensionRadarChart({ dimensions }: DimensionRadarChartProps) {
                 score: typeof dim?.score === "number" ? dim.score : undefined,
                 confidence: typeof dim?.confidence === "number" ? dim.confidence : undefined,
                 notVisible: dim?.notVisible === true,
+                details: typeof dim?.details === "string" && dim.details.trim() ? dim.details.trim() : undefined,
+                blackheads: typeof dim?.blackheads === "number" ? dim.blackheads : undefined,
+                pimples: typeof dim?.pimples === "number" ? dim.pimples : undefined,
             };
         }),
         [dimensions]
@@ -115,17 +122,18 @@ export function DimensionRadarChart({ dimensions }: DimensionRadarChartProps) {
                 </ResponsiveContainer>
             </div>
 
-            {/* 文字明细：让用户能读到每个维度的分数/档位，而不是只看形状 */}
+            {/* 文字明细：分数/档位 + 可展开的 AI 视觉判读与 acne 子分 */}
             <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2" aria-label="十维评分明细">
                 {allRows.map((row) => {
                     const band = getScoreBand(row.score);
                     const lowConfidence = typeof row.confidence === "number" && row.confidence < 0.5;
-                    return (
-                        <li
-                            key={row.key}
-                            title={row.description}
-                            className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-brand-espresso)]/10 bg-white/60 px-3 py-2"
-                        >
+                    const hasExtra = !row.notVisible && (
+                        !!row.details
+                        || (row.key === "acne" && (row.blackheads !== undefined || row.pimples !== undefined))
+                    );
+
+                    const summaryContent = (
+                        <>
                             <span className="text-[12px] text-[var(--color-brand-espresso)]">{row.label}</span>
                             <span className="flex items-center gap-1.5 text-[11px]">
                                 {row.notVisible ? (
@@ -151,6 +159,45 @@ export function DimensionRadarChart({ dimensions }: DimensionRadarChartProps) {
                                     </>
                                 )}
                             </span>
+                        </>
+                    );
+
+                    return (
+                        <li
+                            key={row.key}
+                            title={row.description}
+                            className="rounded-lg border border-[var(--color-brand-espresso)]/10 bg-white/60"
+                        >
+                            {hasExtra ? (
+                                <details className="group">
+                                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
+                                        {summaryContent}
+                                        <ChevronDown
+                                            className="h-3.5 w-3.5 shrink-0 text-[var(--color-brand-taupe)] transition-transform group-open:rotate-180"
+                                            strokeWidth={1.8}
+                                        />
+                                    </summary>
+                                    <div className="border-t border-dashed border-[var(--color-brand-espresso)]/10 px-3 py-2 text-[11px] leading-relaxed text-[var(--color-brand-cocoa)]">
+                                        {row.details && <p>{row.details}</p>}
+                                        {row.key === "acne" && (row.blackheads !== undefined || row.pimples !== undefined) && (
+                                            <p className={row.details ? "mt-1.5" : undefined}>
+                                                黑头/闭口 {row.blackheads ?? "—"} 分 · 炎性痘痘 {row.pimples ?? "—"} 分
+                                            </p>
+                                        )}
+                                        <div className="mt-1.5 flex justify-end">
+                                            <ReportFeedbackButton
+                                                sessionId={sessionId}
+                                                targetType="dimension"
+                                                targetKey={row.key}
+                                            />
+                                        </div>
+                                    </div>
+                                </details>
+                            ) : (
+                                <div className="flex items-center justify-between gap-3 px-3 py-2">
+                                    {summaryContent}
+                                </div>
+                            )}
                         </li>
                     );
                 })}

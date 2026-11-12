@@ -208,10 +208,18 @@ export async function POST(request: NextRequest) {
         }
 
         // 图片数量硬上限：4 个角度（正脸/左侧/右侧/下巴）。
-        // 2026-10 起前端只发正脸 1 张，此处保留 4 作为兼容上限。
-        // 超出即认定为攻击行为，直接拒绝并记录日志。
+        // 2026-10 起 H5/小程序均为四角度拍摄、只发正脸 1 张；此处保留 4 作为旧客户端兼容上限。
+        // 新客户端可带 imageUsage=front_only，服务端强制只接受正脸单图。
         const MAX_FACE_IMAGES = 4;
-        const imageCount = Array.isArray(result.data.images) ? result.data.images.length : 0;
+        const imageCount = (() => {
+            const images = result.data.images;
+            if (Array.isArray(images)) return images.length;
+            if (images && typeof images === "object") {
+                const obj = images as { front?: string; left?: string; right?: string; chin?: string };
+                return [obj.front, obj.left, obj.right, obj.chin].filter(Boolean).length;
+            }
+            return result.data.image ? 1 : 0;
+        })();
         if (imageCount > MAX_FACE_IMAGES) {
             aiLogger.warn(`[Security] Face analysis attack detected: ${imageCount} images from IP ${hashIP(ip)}`, {
                 imageCount,
@@ -219,6 +227,24 @@ export async function POST(request: NextRequest) {
                 sessionId: result.data.sessionId,
             });
             return apiError(ErrorCode.VALIDATION_ERROR, "请求异常，请重新操作", 400);
+        }
+        if (result.data.imageUsage === "front_only") {
+            const images = result.data.images;
+            const hasNonFront = Array.isArray(images)
+                ? images.length !== 1 || images[0]?.angle !== "front"
+                : images && typeof images === "object"
+                    ? !!(images as { left?: string; right?: string; chin?: string }).left
+                        || !!(images as { right?: string }).right
+                        || !!(images as { chin?: string }).chin
+                        || !(images as { front?: string }).front
+                    : false;
+            if (hasNonFront) {
+                aiLogger.warn("[Security] front_only face analysis received non-front image", {
+                    sessionId: result.data.sessionId,
+                    imageCount,
+                });
+                return apiError(ErrorCode.VALIDATION_ERROR, "本次分析仅支持正脸照片", 400);
+            }
         }
 
         // 1.5 每日用量上限预占（复用业务 sessionId，避免与 analyze 重复扣费）

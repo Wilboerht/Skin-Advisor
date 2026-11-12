@@ -61,6 +61,11 @@ model AdvisorSession {
   userId          String?
   user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  // 报告纠错反馈（维度/问题/整份报告“准确/不准确”）
+  reportFeedbacks ReportFeedback[]
+  // 趋势/百分位汇总（每份完成报告一条）
+  skinAssessment SkinAssessment?
+
   createdAt       DateTime  @default(now())
 
   // ===== 隐私同意 =====
@@ -224,6 +229,8 @@ model User {
   testRecords       TestRecord[]
   refreshTokens     RefreshToken[]
   productFeedbacks  ProductFeedback[]
+  reportFeedbacks   ReportFeedback[]
+  skinAssessments   SkinAssessment[]
   diaryEntries      DiaryEntry[]
   consentRecords    ConsentRecord[]
   statusWebhookEvents StatusWebhookEvent[]
@@ -472,4 +479,56 @@ model StatusWebhookEvent {
 
   @@index([userId, eventAt])
   @@index([createdAt])
+}
+
+// ����������� �� �û���ά��/����/���ݱ�����׼ȷ�ȣ��������������� prompt ����
+model ReportFeedback {
+  id         String   @id @default(cuid())
+  sessionId  String
+  userId     String
+  targetType String   // dimension | finding | report
+  targetKey  String   // waterOil / issue-1 / report
+  verdict    String   // accurate | inaccurate | unsure
+  note       String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session AdvisorSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@unique([userId, sessionId, targetType, targetKey])
+  @@index([sessionId])
+  @@index([userId, createdAt])
+}
+
+// ������ֻ��� �� ����/�ٷ�λ/��̨ͳ�ƵĲ�ѯ�㣨analysisResult ��������������ʵԴ��
+model SkinAssessment {
+  id               String   @id @default(cuid())
+  sessionId        String   @unique
+  userId           String
+  completedAt      DateTime
+  overallScore     Int?
+  skinAge          Int?
+  skinType         String?
+  skinTypeLabel    String?
+  persona          String?
+  coverageScored   Int      @default(0)
+  coverageTotal    Int      @default(0)
+  lowConfidence    Json?
+  notVisible       Json?
+  dimensions       Json
+  zones            Json?
+  conditions       Json?
+  findings         Json?
+  promptVersion    String?
+  engineVersion    String?
+  model            String?
+  dataSource       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session AdvisorSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+  @@index([completedAt])
 }

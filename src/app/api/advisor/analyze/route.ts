@@ -27,12 +27,18 @@ import { matchCharacterIP } from "@/lib/result-utils";
 import { isCompletedAnalysisResult } from "@/lib/analysis-result";
 import { getEnvContextFromLocation } from "@/lib/weather-context";
 import { buildSafetyNotes } from "@/lib/report-safety";
+import { buildDiagnosis, narrativeMatchesDiagnosis } from "@/lib/report/diagnosis";
+import { buildFallbackConsultantReport } from "@/lib/report/fallback";
+import { compileReportV3 } from "@/lib/report/compile";
+import { buildSkinAssessment } from "@/lib/report/assessment";
+import type { ReportNarrativeSource } from "@/lib/report/types";
 
 import { checkUsageLimit, markUsageConsumed, renewUsageLease, reserveUsage, rollbackUsage, GUEST_REQUIRE_LOGIN_MESSAGE, type ReserveUsageResult } from "@/lib/usage-limit";
 import { aiLogger, logger } from "@/lib/logger";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import DOMPurify from 'isomorphic-dompurify';
 import { parseUserAgent } from "@/lib/user-agent-parser";
+import { Prisma } from "@prisma/client";
 
 const WECHAT_TEMPLATE_CIRCUIT_KEY = "official-wechat-template";
 const WECHAT_TEMPLATE_MAX_RETRIES = 3;
@@ -928,6 +934,11 @@ export async function POST(request: NextRequest) {
         // FETCH PRODUCTS (Candidate Selection / RAG Lite)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const concerns = identifyConcerns(enrichedAnswers as any, faceAnalysis as any);
+        // 确定性诊断：AI 成功时用于证据补齐，AI 失败时直接生成规则版报告
+        const diagnosis = buildDiagnosis({
+            faceAnalysis,
+            answers: answers as Record<string, unknown>,
+        });
         // Determine persona via matchCharacterIP (8-pie system)
         const personaKey = matchCharacterIP({
             score: faceAnalysis?.overallScore ?? 0,
@@ -1001,7 +1012,19 @@ export async function POST(request: NextRequest) {
             scoring: faceAnalysis?.scoring,
             products: candidateProducts,
             skinState,
-            personaContent
+            personaContent,
+            diagnosisFindings: diagnosis.findings.map((finding) => ({
+                id: finding.id,
+                title: finding.title,
+                severity: finding.severity,
+                score: finding.score,
+                relatedDimensions: finding.evidenceRefs
+                    .filter((ref) => ref.type === "dimension")
+                    .map((ref) => ref.key),
+                evidence: finding.evidenceRefs.map((ref) =>
+                    `${ref.label || ref.key}${typeof ref.score === "number" ? ` ${ref.score} 分` : ""}`
+                ),
+            })),
         });
 
         // 顾问叙事报告（Report v2）：面诊口吻 + 推理链 + 证据驱动，统一由一个模型产出全部文案
@@ -1019,6 +1042,9 @@ export async function POST(request: NextRequest) {
         // 解析失败时记录 AI 原始输出片段，便于定位模型返回了什么（截断/字段不符/非 JSON）
         let rawAiOutput: string | undefined;
         let queueAcquired = false;
+        // ReportV3：区分 AI 文案与规则兜底；兜底原因写入 reportV3.meta 供质量看板
+        let narrativeSource: ReportNarrativeSource = "ai";
+        let fallbackReason: string | undefined;
 
         // 孕期状态（含"不确定"按谨慎处理）：用于报告文本的孕期禁忌成分硬校验
         const pregnancyRaw = (answers.pregnancy ?? answers.pregnancyStatus) as string | undefined;
@@ -1040,6 +1066,9 @@ export async function POST(request: NextRequest) {
             return report;
         };
         try {
+            // 内层 try：AI 文案失败时降级为规则模板报告，不阻断整个报告生成。
+            // 客户端取消/服务端超时仍上抛，由外层 catch 走取消/超时语义。
+            try {
             // P3: 请求队列处理 - 申请令牌（防止并发过高打爆 LLM API）
             // 透传 userId 使队列的 maxConcurrentPerUser 生效
             // 队列等待计入总预算：最多等 30s，给文本 AI 留出约 50s
@@ -1109,6 +1138,62 @@ export async function POST(request: NextRequest) {
                 );
                 rawAiOutput = repairText;
                 consultantReport = finalizeConsultantReport(repairText);
+            }
+            } catch (aiErr: unknown) {
+                const err = aiErr instanceof Error ? aiErr : new Error(String(aiErr));
+                // 客户端取消 / 服务端超时不走兜底：前者用户已离开，后者外层有明确重试语义
+                if (err.message?.includes("cancelled") || err.name === "AbortError") {
+                    throw err;
+                }
+                const errorCategory = err.message?.includes("AI response schema validation failed")
+                    ? "AI_SCHEMA_INVALID" : err.message?.includes("Failed to extract valid JSON")
+                    ? "AI_JSON_PARSE" : err.message?.includes("401") || err.message?.includes("403")
+                    ? "AI_AUTH" : err.message?.includes("429")
+                    ? "AI_RATE_LIMIT" : err.message?.includes("timeout") || err.message?.includes("ETIMEDOUT")
+                    ? "AI_TIMEOUT" : "AI_UNKNOWN";
+                aiLogger.warn(`[ReportV3] AI narrative failed [${errorCategory}], using rule fallback`, {
+                    error: err.message.slice(0, 300),
+                    ...(["AI_JSON_PARSE", "AI_SCHEMA_INVALID"].includes(errorCategory) && rawAiOutput
+                        ? {
+                            aiOutputLength: rawAiOutput.length,
+                            aiOutputHash: crypto.createHash("sha256").update(rawAiOutput).digest("hex").slice(0, 16),
+                        }
+                        : {}),
+                });
+                const fallbackReport = buildFallbackConsultantReport({
+                    faceAnalysis,
+                    answers: answers as Record<string, unknown>,
+                    diagnosis,
+                });
+                // 兜底文本也走同一成分/孕期硬校验，避免规则模板绕过安全约束
+                enforceConsultantReportIngredients(fallbackReport, {
+                    pregnancy: pregnancyCautious,
+                    allergies: (answers as { allergies?: string | string[] }).allergies,
+                });
+                consultantReport = fallbackReport;
+                narrativeSource = "fallback";
+                fallbackReason = errorCategory + ": " + err.message.slice(0, 240);
+            }
+
+            // 规则诊断优先：AI 叙述未覆盖规则生成的重点问题时，降级为规则报告，
+            // 避免 AI 漏报或凭空新增问题导致报告与评分证据不一致。
+            if (consultantReport && !narrativeMatchesDiagnosis(consultantReport, diagnosis)) {
+                aiLogger.warn("[ReportV3] AI narrative does not match deterministic diagnosis, using fallback", {
+                    diagnosisFindings: diagnosis.findings.length,
+                    aiIssues: consultantReport.issues.length,
+                });
+                const fallbackReport = buildFallbackConsultantReport({
+                    faceAnalysis,
+                    answers: answers as Record<string, unknown>,
+                    diagnosis,
+                });
+                enforceConsultantReportIngredients(fallbackReport, {
+                    pregnancy: pregnancyCautious,
+                    allergies: (answers as { allergies?: string | string[] }).allergies,
+                });
+                consultantReport = fallbackReport;
+                narrativeSource = "fallback";
+                fallbackReason = "NARRATIVE_MISMATCH";
             }
         } catch (e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));
@@ -1311,6 +1396,22 @@ export async function POST(request: NextRequest) {
             issues: consultantReport.issues,
         });
 
+        const analyzedAtIso = new Date().toISOString();
+        // ReportV3：AI 成功/规则兜底都走同一编译器；同时保留 v2 顶层字段
+        const reportV3 = compileReportV3({
+            faceAnalysis,
+            consultantReport,
+            products: finalProducts,
+            safetyNotes,
+            persona: personaKey,
+            narrativeSource,
+            fallbackReason,
+            promptVersion: CONSULTANT_PROMPT_VERSION,
+            model: settings.model,
+            dataSource: faceAnalysis ? "hybrid" : "questionnaire",
+            analyzedAt: analyzedAtIso,
+        });
+
         const standardizedResult = {
             skinProfile: {
                 type: finalSkinType,
@@ -1334,12 +1435,13 @@ export async function POST(request: NextRequest) {
             // 昵称优先用客户端填写值；未填时回退到服务端会话里的用户昵称（主站资料），
             // 避免客户端 localStorage 为空时报告昵称退化为"您"
             nickname: nickname || user?.name || "护肤达人", // Include user nickname for sharing
-            analyzedAt: new Date().toISOString(), // 证书/报告展示用（随结果持久化，游客流程也可用）
+            analyzedAt: analyzedAtIso, // 证书/报告展示用（随结果持久化，游客流程也可用）
             skinState: typeof skinState === "string" ? skinState : undefined, // 拍摄时肌肤状态（引导页确认后随请求上传；扫脸失败也保留用户声明，历史报告可追溯）
-            reportVersion: 2,
+            reportVersion: 3,
             promptVersion: CONSULTANT_PROMPT_VERSION,
             consultantReport,
             safetyNotes,
+            reportV3,
         };
 
         // 清理 AI 输出中的潜在危险内容（存储型 XSS 防护）
@@ -1364,6 +1466,7 @@ export async function POST(request: NextRequest) {
                 ...(isFreeRetryAllowed ? { freeRetryUsed: true } : {}),
             };
 
+            const completedAt = new Date();
             try {
                 await withDbRetry(async () => {
                     await prisma.advisorSession.update({
@@ -1373,7 +1476,7 @@ export async function POST(request: NextRequest) {
                             analysisResult: mergedResult as any,
                             analysisSource: faceAnalysis ? "hybrid" : "text",
                             analysisStartedAt: null,
-                            completedAt: new Date(),
+                            completedAt,
                             expiresAt,
                             province: geoLocation?.region,
                             city: geoLocation?.city,
@@ -1388,6 +1491,40 @@ export async function POST(request: NextRequest) {
                 const response = apiError(ErrorCode.SERVICE_UNAVAILABLE, "分析结果保存未成功，请重试", 503, "DATABASE_PERSISTENCE_ERROR");
                 Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
                 return response;
+            }
+
+            // 汇总表写入失败不影响报告返回；趋势/统计缺失时由回填脚本或下一次测肤恢复
+            if (user?.id) {
+                try {
+                    const assessment = buildSkinAssessment({
+                        sessionId: effectiveSessionId,
+                        userId: user.id,
+                        completedAt,
+                        rawResult: mergedResult,
+                        faceAnalysis,
+                    });
+                    if (assessment) {
+                        const data = {
+                            ...assessment,
+                            dimensions: assessment.dimensions as unknown as Prisma.InputJsonValue,
+                            zones: assessment.zones as unknown as Prisma.InputJsonValue,
+                            conditions: assessment.conditions as unknown as Prisma.InputJsonValue,
+                            findings: assessment.findings as unknown as Prisma.InputJsonValue,
+                            lowConfidence: assessment.lowConfidence as unknown as Prisma.InputJsonValue,
+                            notVisible: assessment.notVisible as unknown as Prisma.InputJsonValue,
+                        };
+                        await prisma.skinAssessment.upsert({
+                            where: { sessionId: effectiveSessionId },
+                            update: data,
+                            create: data,
+                        });
+                    }
+                } catch (assessmentErr) {
+                    logger.warn("[SkinAssessment] upsert failed", {
+                        sessionId: effectiveSessionId,
+                        error: String(assessmentErr),
+                    });
+                }
             }
 
             // 分析成功落库：把预占标记为 consumed，后续失败路径不得再回滚本次额度

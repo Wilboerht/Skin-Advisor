@@ -9,8 +9,8 @@
 import { useCallback, useRef } from "react";
 import { getOrCreateAnalyticsSessionId } from "@/lib/analytics-session";
 
-// 事件类型
-type AnalyticsEvent =
+// 事件类型（与服务端 EventSchema 保持同步）
+export type AnalyticsEvent =
   | "session_start"
   | "questionnaire_start"
   | "questionnaire_complete"
@@ -22,7 +22,19 @@ type AnalyticsEvent =
   | "result_view"
   | "result_share"
   | "result_flip"
-  | "product_click";
+  | "product_click"
+  | "report_section_view"
+  | "issue_expand"
+  | "dimension_expand"
+  | "product_detail_open"
+  | "purchase_click"
+  | "advisor_click"
+  | "copy_summary"
+  | "certificate_download"
+  | "retest_click"
+  | "trend_view"
+  | "feedback_submit"
+  | "poster_save";
 
 // 会话 ID 唯一事实源：与 analyze/face-analyze 共用同一个 UUID，保证漏斗可 join
 function getOrCreateSessionId(): string {
@@ -190,6 +202,11 @@ export function useAdvisorAnalytics() {
     sendTrackEvent("product_click", { productId, productName });
   }, []);
 
+  // 通用事件（ReportV3 后链路事件：区块曝光、展开、购买、咨询、复测等）
+  const trackEvent = useCallback((event: AnalyticsEvent, data?: Record<string, unknown>) => {
+    sendTrackEvent(event, data);
+  }, []);
+
   return {
     initSession,
     trackQuestionnaireStart,
@@ -203,6 +220,7 @@ export function useAdvisorAnalytics() {
     trackResultShare,
     trackResultFlip,
     trackProductClick,
+    trackEvent,
     getSessionId,
   };
 }

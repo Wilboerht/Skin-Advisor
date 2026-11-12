@@ -175,6 +175,8 @@ export const FaceAnalyzeRequestSchema = z.object({
         })
     ]).optional(),
     image: z.string().max(MAX_IMAGE_BASE64_CHARS, "单张图片过大，请压缩后重试").optional(), // 兼容旧版单图
+    // 分析图片用途：front_only = 四角度拍摄但只允许正脸进入 AI；缺省按旧客户端兼容
+    imageUsage: z.enum(["front_only", "multi"]).optional(),
     skinState: z.string().max(30).optional(), // 拍摄时肌肤状态（bare/sunscreen/washed/light_makeup/heavy_makeup）
     // 性别不一致免费重试：复用已完成会话的服务端面部结果，不重复调用视觉模型
     freeRetry: z.boolean().optional(),

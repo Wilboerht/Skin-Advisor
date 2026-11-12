@@ -649,7 +649,13 @@ export function useAsyncAnalysis() {
                             const faceRes = await fetchWithRetry("/api/advisor/face-analyze", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ sessionId, images: visionImages, skinState }),
+                                body: JSON.stringify({
+                                    sessionId,
+                                    images: visionImages,
+                                    skinState,
+                                    // 四角度仅用于拍摄引导；进入 AI 的只有正脸单图
+                                    imageUsage: "front_only",
+                                }),
                                 signal: faceAnalyzeAbort.signal
                             }, { retries: 0 });
 

@@ -2,13 +2,20 @@
 
 import { useId } from "react";
 
+export interface TrendMetric {
+  key: string;
+  label: string;
+  values: (number | null)[];
+}
+
 export interface TrendsData {
   dates: string[];
   scores: number[];
+  metrics?: TrendMetric[];
 }
 
 /** 肌肤变化图（纯 SVG，无图表库依赖）：平滑曲线 + 渐变面积 + 网格刻度 + 最新评分摘要 */
-export function TrendChart({ trends, totalTests }: { trends: TrendsData; totalTests?: number }) {
+export function TrendChart({ trends, totalTests, label = "综合评分" }: { trends: TrendsData; totalTests?: number; label?: string }) {
   // 实例级唯一 ID，避免同页多图表实例的渐变 defs 互相覆盖
   const gradientId = `trendArea-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const W = 640;
@@ -96,7 +103,7 @@ export function TrendChart({ trends, totalTests }: { trends: TrendsData; totalTe
       <div className="flex items-end justify-between mb-3">
         <div>
           <p className="text-[12px] tracking-[0.15em] text-brand-charcoal/60 font-light mb-1">
-            最新综合评分
+            最新{label}
           </p>
           <p className="text-3xl md:text-4xl font-serif font-light text-brand-charcoal leading-none">
             {latest}

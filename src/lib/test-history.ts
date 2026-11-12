@@ -12,11 +12,17 @@
  */
 import prisma from "@/lib/prisma";
 import { extractSessionLite } from "@/lib/session-lite";
+import { normalizeAnalysisResult } from "@/lib/analysis-result";
+import type { FaceAnalysisResult } from "@/lib/advisor-utils";
+import { buildReportView } from "@/lib/report/view";
+import type { ReportViewSummaryCard } from "@/lib/report/types";
 
 export interface TestHistoryQuery {
     page: number;
     limit: number;
     lite: boolean;
+    /** 返回跨端 ReportView 摘要（小程序历史/档案用）；优先级高于 lite */
+    view?: boolean;
     before: Date | null;
 }
 
@@ -31,7 +37,7 @@ export async function getTestHistory(
     userId: string,
     query: TestHistoryQuery
 ): Promise<{ history: unknown[]; pagination: TestHistoryPagination }> {
-    const { page, limit, lite, before } = query;
+    const { page, limit, lite, view: viewMode, before } = query;
     const skip = (page - 1) * limit;
     const beforeValid = before && !Number.isNaN(before.getTime()) ? before : null;
 
@@ -63,20 +69,50 @@ export async function getTestHistory(
         }),
     ]);
 
-    const payload = lite
+    const payload = viewMode
         ? history.map((s) => {
-            const { score, typeLabel, persona } = extractSessionLite(s.analysisResult);
+            const raw = (s.analysisResult || {}) as Record<string, unknown>;
+            const result = normalizeAnalysisResult(raw);
+            if (!result) {
+                return { sessionId: s.sessionId, completedAt: s.completedAt, view: null };
+            }
+            const faceAnalysis = (raw.faceAnalysis as FaceAnalysisResult | null) || null;
+            const view = buildReportView({ result, faceAnalysis, sessionId: s.sessionId });
+            const summary: ReportViewSummaryCard = {
+                sessionId: s.sessionId,
+                completedAt: s.completedAt?.toISOString(),
+                overallScore: view.meta.overallScore,
+                skinTypeLabel: view.meta.skinTypeLabel,
+                skinAge: view.meta.skinAge,
+                persona: view.meta.persona,
+                reportVersion: view.meta.reportVersion,
+                viewVersion: view.meta.viewVersion,
+                topFinding: view.summary.topFinding ? {
+                    title: view.summary.topFinding.title,
+                    severity: view.summary.topFinding.severity,
+                    severityLabel: view.summary.topFinding.severityLabel,
+                } : undefined,
+            };
             return {
                 sessionId: s.sessionId,
                 completedAt: s.completedAt,
-                analysisResult: {
-                    ...(score != null ? { faceAnalysis: { overallScore: score } } : {}),
-                    ...(typeLabel ? { skinProfile: { typeLabel } } : {}),
-                    ...(persona ? { persona } : {}),
-                },
+                view: summary,
             };
         })
-        : history;
+        : lite
+            ? history.map((s) => {
+                const { score, typeLabel, persona } = extractSessionLite(s.analysisResult);
+                return {
+                    sessionId: s.sessionId,
+                    completedAt: s.completedAt,
+                    analysisResult: {
+                        ...(score != null ? { faceAnalysis: { overallScore: score } } : {}),
+                        ...(typeLabel ? { skinProfile: { typeLabel } } : {}),
+                        ...(persona ? { persona } : {}),
+                    },
+                };
+            })
+            : history;
 
     return {
         history: payload,

@@ -36,6 +36,8 @@ export async function GET(req: NextRequest) {
         const pageSize = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "10", 10) || 10));
         // lite=1：只回传时间线/列表所需字段（score + 肤质标签），裁剪掉产品推荐等大 JSON，节省带宽
         const lite = searchParams.get("lite") === "1";
+        // view=1：返回跨端 ReportView 摘要（小程序历史/档案），优先级高于 lite
+        const view = searchParams.get("view") === "1";
         // before=<ISO 时间>：游标分页（只取该完成时间之前的记录），追加式"加载更早"专用
         const beforeRaw = searchParams.get("before");
         const before = beforeRaw ? new Date(beforeRaw) : null;
@@ -44,6 +46,7 @@ export async function GET(req: NextRequest) {
             page,
             limit: pageSize,
             lite,
+            view,
             before,
         });
 

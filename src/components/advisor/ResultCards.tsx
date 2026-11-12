@@ -4,33 +4,17 @@ import { useState, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { getScoreBand, SCORE_DIRECTION_HINT } from '@/lib/score-bands';
 
-interface Dimension {
-  score?: number;
-  percentile?: number;
-  confidence?: number;
-  notVisible?: boolean;
-}
-
-export interface ScoreCoverage {
-  scored: number;
-  total: number;
-}
-
 interface ResultCardsProps {
   score?: number;
-  scoreCoverage?: ScoreCoverage;
   skinAge?: number;
   skinAgeRange?: [number, number];
   skinAgeFactors?: string[];
-  dimensions: Record<string, Dimension | undefined>;
+  /** 问卷/面部分析得出的肤质标签 */
+  skinTypeLabel?: string;
+  /** 本次主要关注点（问卷 concerns 映射后的中文标签） */
+  concernsLabel?: string;
   nickname: string;
   dataSource?: "comprehensive" | "questionnaire" | "hybrid";
-}
-
-function getWaterOilBalanceLabel(score: number): string {
-  if (score >= 80) return '平衡';
-  if (score >= 60) return '轻度失衡';
-  return '明显失衡';
 }
 
 const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
@@ -72,26 +56,21 @@ const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: n
 };
 
 /**
- * KPI 卡：综合评分 / 肌肤年龄 / 水油平衡 / 皮肤弹性。
- * 报告正文由 ReportPage 独立渲染（雷达、顾问报告、行动方案等），避免把长内容塞进卡片。
+ * KPI 卡：综合评分 / 肌肤年龄 / 肤质类型 / 主要关注。
+ * 十维明细由 DimensionRadarChart 承载，这里只保留不重复的摘要指标。
  */
 export default function ResultCards({
   score,
-  scoreCoverage,
   skinAge,
   skinAgeRange,
   skinAgeFactors,
-  dimensions,
+  skinTypeLabel,
+  concernsLabel,
   nickname,
   dataSource,
 }: ResultCardsProps) {
   const scoreBand = getScoreBand(score);
-  const waterOilScore = dimensions?.waterOil?.score;
-  const waterOilLabel = typeof waterOilScore === 'number' ? getWaterOilBalanceLabel(waterOilScore) : '-';
   const isQuestionnaireOnly = dataSource === 'questionnaire';
-  const coverageText = scoreCoverage
-    ? `基于 ${scoreCoverage.scored}/${scoreCoverage.total} 个有效维度`
-    : null;
 
   return (
     <div className="w-full flex flex-col gap-6" aria-label={`${nickname || '用户'}的肤质检测结果`}>
@@ -121,7 +100,6 @@ export default function ResultCards({
               </p>
               <p className="text-[11px] text-[var(--color-brand-taupe)] leading-relaxed mb-4 lg:mb-8 relative z-10">
                 {SCORE_DIRECTION_HINT}
-                {coverageText ? ` · ${coverageText}` : ''}
               </p>
             </div>
           </div>
@@ -198,7 +176,7 @@ export default function ResultCards({
               </div>
             </motion.div>
 
-            {/* Water-oil balance */}
+            {/* Skin Type */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -210,22 +188,14 @@ export default function ResultCards({
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">水油平衡</p>
-                <div className="flex flex-col items-end lg:items-start gap-1">
-                  <div className="flex items-baseline">
-                    <span className="text-xs lg:text-2xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
-                      {typeof waterOilScore === 'number' ? waterOilScore : '-'}
-                    </span>
-                    {typeof waterOilScore === 'number' && (
-                      <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
-                    )}
-                  </div>
-                  <span className="text-[10px] text-[var(--color-brand-taupe)]">{waterOilLabel}</span>
-                </div>
+                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">肤质类型</p>
+                <p className="text-xs lg:text-lg font-bold leading-snug text-right lg:text-left text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] line-clamp-2">
+                  {skinTypeLabel || '-'}
+                </p>
               </div>
             </motion.div>
 
-            {/* Firmness */}
+            {/* Main Concern */}
             <div
               className="flex p-3 lg:p-4 rounded-xl lg:rounded-2xl flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
               style={{
@@ -234,17 +204,10 @@ export default function ResultCards({
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">皮肤弹性</p>
-                <div className="flex flex-col items-end lg:items-start gap-1">
-                  <div className="flex items-baseline">
-                    <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
-                      {dimensions?.firmness?.score === undefined ? '-' : <AnimatedNumber value={dimensions.firmness.score} duration={1.5} />}
-                    </span>
-                    {dimensions?.firmness?.score !== undefined && (
-                      <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
-                    )}
-                  </div>
-                </div>
+                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">主要关注</p>
+                <p className="text-xs lg:text-lg font-bold leading-snug text-right lg:text-left text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] line-clamp-2">
+                  {concernsLabel || '暂无重点'}
+                </p>
               </div>
             </div>
           </div>

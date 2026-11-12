@@ -6,6 +6,7 @@
 import type { ConsultantReport } from "@/lib/advisor-utils";
 import type { ProductPurchaseLink } from "@/lib/product-links";
 import type { SafetyNotes } from "@/lib/report-safety";
+import type { ReportV3 } from "@/lib/report/types";
 
 /**
  * 上一次测肤摘要（趋势对比板块数据源）。
@@ -72,6 +73,8 @@ export interface ComprehensiveResult {
     consultantReport?: ConsultantReport;
     /** 安全与成分摘要（v2 起确定性生成；历史记录缺省） */
     safetyNotes?: SafetyNotes;
+    /** ReportV3 领域模型（v3 起写入；历史 v1/v2 记录缺省） */
+    reportV3?: ReportV3;
 }
 
 function normalizeDataSource(
@@ -130,6 +133,14 @@ function normalizeSafetyNotes(raw: unknown): SafetyNotes | undefined {
     return hasContent ? notes : undefined;
 }
 
+function normalizeReportV3(raw: unknown): ReportV3 | undefined {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+    const record = raw as Record<string, unknown>;
+    // 只接受明确 v3 schema 的对象；旧字段/脏数据不误判
+    if (record.schemaVersion !== 3) return undefined;
+    return record as unknown as ReportV3;
+}
+
 function normalizeConsultantReport(raw: unknown): ConsultantReport | undefined {
     if (!raw || typeof raw !== "object") return undefined;
     const record = raw as Record<string, unknown>;
@@ -164,7 +175,9 @@ function normalizeConsultantReport(raw: unknown): ConsultantReport | undefined {
 export function isCompletedAnalysisResult(raw: unknown): boolean {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return false;
     const record = raw as Record<string, unknown>;
-    if (record.reportVersion === 2) return true;
+    // v2/v3：reportVersion 为数字时统一按 >=2 兼容，避免未来版本再次被误判为未完成
+    if (typeof record.reportVersion === "number" && record.reportVersion >= 2) return true;
+    if (record.reportV3 != null && typeof record.reportV3 === "object") return true;
     if (record.consultantReport != null && typeof record.consultantReport === "object") return true;
     // 旧 v1 报告：没有 reportVersion，但有肤质/分析主体
     return record.skinProfile != null || record.skinAnalysis != null || record.analysis != null;
@@ -213,5 +226,6 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
         freeRetryUsed: record.freeRetryUsed === true ? true : undefined,
         consultantReport: normalizeConsultantReport(record.consultantReport),
         safetyNotes: normalizeSafetyNotes(record.safetyNotes),
+        reportV3: normalizeReportV3(record.reportV3),
     };
 }

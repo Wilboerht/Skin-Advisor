@@ -152,7 +152,8 @@ function registeredIncompleteSql(nowDate: Date, fallback: Date): Prisma.Sql {
         AND (
             "analysisResult" IS NULL
             OR (
-                COALESCE("analysisResult"->>'reportVersion', '') <> '2'
+                COALESCE("analysisResult"->>'reportVersion', '') !~ '^[2-9][0-9]*$'
+                AND "analysisResult"->>'reportV3' IS NULL
                 AND "analysisResult"->>'consultantReport' IS NULL
                 AND "analysisResult"->>'skinProfile' IS NULL
                 AND "analysisResult"->>'skinAnalysis' IS NULL
@@ -231,7 +232,8 @@ export async function GET(request: NextRequest) {
                   AND (
                     "analysisResult" IS NULL
                     OR (
-                      COALESCE("analysisResult"->>'reportVersion', '') <> '2'
+                      COALESCE("analysisResult"->>'reportVersion', '') !~ '^[2-9][0-9]*$'
+                      AND "analysisResult"->>'reportV3' IS NULL
                       AND "analysisResult"->>'consultantReport' IS NULL
                       AND "analysisResult"->>'skinProfile' IS NULL
                       AND "analysisResult"->>'skinAnalysis' IS NULL

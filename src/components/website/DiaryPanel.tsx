@@ -18,9 +18,10 @@ import { useAuth } from "@/hooks/useAuth";
 import type { HistorySession } from "@/components/website/TestHistoryList";
 import { TestHistoryList } from "@/components/website/TestHistoryList";
 import { DiaryTimeline, STATE_META, type DiaryEntry } from "@/components/website/DiaryTimeline";
-import { TrendChart, type TrendsData } from "@/components/website/TrendChart";
+import { TrendChart, type TrendsData, type TrendMetric } from "@/components/website/TrendChart";
 import { CheckInTrend } from "@/components/website/CheckInTrend";
 import { CheckInModal } from "@/components/website/CheckInModal";
+import { ProductFeedbackSection } from "@/components/website/ProductFeedbackSection";
 import { PanelShell } from "@/components/website/user-center/PanelShell";
 import { useToast } from "@/components/ui/Toast";
 import { fetchWithCsrf, fetchWithTimeout } from "@/lib/fetch-client";
@@ -179,17 +180,38 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
   // 图看趋势、时间线看明细——单日多次对长期趋势是噪声，且避免 X 轴出现重复日期/等距失真
   const aggregatedTrends = useMemo<TrendsData | null>(() => {
     if (!trends || !Array.isArray(trends.dates) || !Array.isArray(trends.scores)) return null;
-    const byDay = new Map<string, { date: string; score: number }>();
+    const metricDefinitions: TrendMetric[] = trends.metrics && trends.metrics.length > 0
+      ? trends.metrics
+      : [{ key: "overall", label: "综合评分", values: trends.scores }];
+    const byDay = new Map<string, {
+      date: string;
+      score: number;
+      metricValues: Record<string, number | null>;
+    }>();
     for (let i = 0; i < trends.dates.length; i++) {
       const day = localDateStr(new Date(trends.dates[i]));
-      byDay.set(day, { date: trends.dates[i], score: trends.scores[i] });
+      const metricValues: Record<string, number | null> = {};
+      for (const metric of metricDefinitions) {
+        const value = metric.values[i];
+        metricValues[metric.key] = typeof value === "number" ? value : null;
+      }
+      byDay.set(day, { date: trends.dates[i], score: trends.scores[i], metricValues });
     }
     const days = Array.from(byDay.values()).slice(-90); // 保留最近 90 天，供时间窗切换
     // 聚合后不足两个"天"无法构成趋势（如当天连测两次）→ 视为无趋势，走解锁引导
     if (days.length < 2) return null;
-    return { dates: days.map((d) => d.date), scores: days.map((d) => d.score) };
+    return {
+      dates: days.map((d) => d.date),
+      scores: days.map((d) => d.score),
+      metrics: metricDefinitions.map((metric) => ({
+        ...metric,
+        values: days.map((d) => d.metricValues[metric.key] ?? null),
+      })),
+    };
   }, [trends]);
 
+  // 图表指标：综合评分 / 十维 / 细腻度；旧接口没有 metrics 时保持综合评分
+  const [trendMetric, setTrendMetric] = useState("overall");
   // 图表时间窗：近 7 天 / 近 30 天 / 近 90 天（默认 30 天）
   const [trendRange, setTrendRange] = useState<7 | 30 | 90>(30);
   // 时间窗截止时刻：渲染期禁止调用 Date.now 等非纯函数（react-hooks/purity），
@@ -203,15 +225,25 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
     setRangeCutoff(daysAgoCutoff(r));
   };
 
+  const trendMetricOptions = aggregatedTrends?.metrics ?? [];
+  const selectedTrendMetric = trendMetricOptions.find((metric) => metric.key === trendMetric)
+    ?? trendMetricOptions[0];
+  const trendMetricLabel = selectedTrendMetric?.label ?? "综合评分";
+
   // 按时间窗过滤后的趋势数据；窗口内测肤日不足 2 天 → null（该窗口无趋势可看）
   const rangeTrends = useMemo<TrendsData | null>(() => {
     if (!aggregatedTrends || rangeCutoff === null) return null;
     const idx = aggregatedTrends.dates.findIndex((d) => new Date(d).getTime() >= rangeCutoff);
     if (idx === -1) return null;
     const dates = aggregatedTrends.dates.slice(idx);
-    const scores = aggregatedTrends.scores.slice(idx);
-    return dates.length >= 2 ? { dates, scores } : null;
-  }, [aggregatedTrends, rangeCutoff]);
+    const values = (selectedTrendMetric?.values ?? aggregatedTrends.scores).slice(idx);
+    const points = dates
+      .map((date, index) => ({ date, score: values[index] }))
+      .filter((point): point is { date: string; score: number } => typeof point.score === "number");
+    return points.length >= 2
+      ? { dates: points.map((point) => point.date), scores: points.map((point) => point.score) }
+      : null;
+  }, [aggregatedTrends, rangeCutoff, selectedTrendMetric]);
 
   // 切换视图时内容区回到顶部
   useEffect(() => {
@@ -710,6 +742,26 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                         </div>
                       </div>
 
+                      {aggregatedTrends && trendMetricOptions.length > 1 && (
+                        <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="趋势指标">
+                          {trendMetricOptions.map((metric) => (
+                            <button
+                              key={metric.key}
+                              type="button"
+                              onClick={() => setTrendMetric(metric.key)}
+                              aria-pressed={selectedTrendMetric?.key === metric.key}
+                              className={`inline-flex h-7 items-center rounded-full border px-2.5 text-[11px] transition-colors cursor-pointer ${
+                                selectedTrendMetric?.key === metric.key
+                                  ? "border-[var(--color-brand-cocoa)]/30 bg-[var(--color-brand-cocoa)]/[0.08] text-[var(--color-brand-cocoa)] font-medium"
+                                  : "border-brand-charcoal/10 bg-white/60 text-brand-charcoal/55 hover:text-brand-charcoal"
+                              }`}
+                            >
+                              {metric.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
                       {/* 趋势区：与时间轴同风格的极简平铺（无卡片外壳，靠留白组织） */}
                       {!trendsLoaded || !entriesLoaded ? (
                         <div className="animate-pulse">
@@ -744,7 +796,7 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                           {rangeCutoff === null ? (
                             <div className="h-32" />
                           ) : rangeTrends ? (
-                            <TrendChart trends={rangeTrends} totalTests={summary?.testCount} />
+                            <TrendChart trends={rangeTrends} totalTests={summary?.testCount} label={trendMetricLabel} />
                           ) : (
                             /* 无趋势占位：撑满图表区高度（与 TrendChart 的 viewBox 比例一致），避免切换时间窗时布局跳动 */
                             <div className="flex w-full aspect-[640/216] items-center justify-center text-center">
@@ -780,6 +832,8 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                           </button>
                         </div>
                       )}
+
+                      <ProductFeedbackSection />
 
                       {/* 打卡记录：与测肤趋势语义分离的独立子区块（色带 + 连续性统计）。
                           列数跟随实际项数（最长连续为 0 时不占列）。

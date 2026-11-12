@@ -2,19 +2,21 @@
 
 import { useState, type ReactNode } from "react";
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
-import { ChevronDown, Eye, HelpCircle, Sparkles, Stethoscope, Sun, Moon, HeartHandshake } from "lucide-react";
+import { ChevronDown, Eye, HelpCircle, Sparkles, Stethoscope, HeartHandshake } from "lucide-react";
 import type { ConsultantReport, ConsultantIssue } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS } from "@/lib/advisor-labels";
 import { stripConsultantStepLabels, splitConsultantSentences } from "@/lib/consultant-text";
 import { getSkinTypeByIpKey } from "@/lib/result-content";
 import { cn } from "@/lib/utils";
+import { ReportFeedbackButton } from "./ReportFeedbackButton";
 
 /**
  * ConsultantReport — 顾问叙事报告（Report v2）渲染组件
  *
  * 与 v1 板块陈列的区别：以"诊断卡"为单位组织内容，每张卡是一条完整推理链：
  * 我看到的（证据）→ 为什么（直接/间接诱因）→ 怎么办（护理/生活）→ 就医边界。
- * issues 由 AI 按证据动态生成，数量 0-4，不做预设问题框架。
+ * issues 由 AI 按证据动态生成，数量 0-3，不做预设问题框架。
+ * 总评由 ReportSummary 承载、每日方案由 RoutinePlan 承载，本组件只负责诊断与优势，避免重复。
  */
 
 const SEVERITY_META: Record<ConsultantIssue["severity"], { label: string; badge: string; bar: string }> = {
@@ -102,6 +104,8 @@ interface ConsultantReportProps {
     dimensions?: Record<string, DimensionLike | undefined>;
     /** 派系 route key（result.persona），用于取派系早晚方案/护肤公式/优势解析 */
     personaRoute?: string;
+    /** 报告会话 ID：问题卡“哪里不准”反馈用 */
+    sessionId?: string;
 }
 
 function SectionTitle({ children, en, action }: { children: ReactNode; en?: string; action?: ReactNode }) {
@@ -116,7 +120,7 @@ function SectionTitle({ children, en, action }: { children: ReactNode; en?: stri
     );
 }
 
-function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
+function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index, sessionId }: {
     issue: ConsultantIssue;
     dimensions?: ConsultantReportProps["dimensions"];
     /** 是否展开（支持同时展开多张，由父组件控制） */
@@ -126,6 +130,8 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
     bodyId: string;
     /** 卡片序号（1 起），用于卡头编号 */
     index: number;
+    /** 报告会话 ID（纠错反馈） */
+    sessionId?: string;
 }) {
     const meta = SEVERITY_META[issue.severity] ?? SEVERITY_META.mild;
     const isSevere = issue.severity === "severe";
@@ -298,6 +304,14 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index }: {
                                     </span>
                                 </p>
                             ))}
+
+                            <div className="flex justify-end">
+                                <ReportFeedbackButton
+                                    sessionId={sessionId}
+                                    targetType="finding"
+                                    targetKey={`issue-${index + 1}`}
+                                />
+                            </div>
                         </div>
                     </m.div>
                 )}
@@ -320,10 +334,8 @@ function StepLabel({ children, emphasize = false }: { children: ReactNode; empha
 
 const NEGATIVE_STRENGTH_PATTERN = /(受损|敏感|升高|明显|风险|较差|失衡|堵塞|泛红|干燥|痘|斑|纹|脆弱|炎症|应激|问题|不足)/;
 
-export function ConsultantReport({ report, dimensions, personaRoute }: ConsultantReportProps) {
+export function ConsultantReport({ report, dimensions, personaRoute, sessionId }: ConsultantReportProps) {
     const personaData = personaRoute ? getSkinTypeByIpKey(personaRoute) : undefined;
-    const hasRoutine = personaData?.m4 && (personaData.m4.morning || personaData.m4.night);
-    const hasFormula = !!personaData?.m7?.formulaCore;
     const safeAdvantage = personaData?.m5?.advantages?.find(
         (advantage) => !NEGATIVE_STRENGTH_PATTERN.test(advantage.title)
     );
@@ -345,14 +357,6 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
 
     return (
         <div className="space-y-10 lg:space-y-12">
-            {/* 开场总判断 */}
-            <section>
-                <SectionTitle en="Advisor Summary">顾问总评</SectionTitle>
-                <p className="text-sm lg:text-[15px] leading-[1.9] text-[var(--color-brand-espresso)]">
-                    {report.overview}
-                </p>
-            </section>
-
             {/* 逐问题诊断卡 */}
             <section>
                 <SectionTitle
@@ -380,6 +384,7 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
                                 onToggle={() => toggleIssue(idx)}
                                 bodyId={`issue-body-${idx}`}
                                 index={idx}
+                                sessionId={sessionId}
                             />
                         ))}
                     </div>
@@ -389,44 +394,6 @@ export function ConsultantReport({ report, dimensions, personaRoute }: Consultan
                     </p>
                 )}
             </section>
-
-            {/* 每日方案：派系骨架（晨间/夜间 + 一句话护肤公式）；routineNote 与 m7 suggestions 已下线 */}
-            {(hasRoutine || hasFormula) && (
-                <section>
-                    <SectionTitle en="Daily Routine">你的每日方案{personaData ? `：${personaData.typeName}` : ""}</SectionTitle>
-                    {hasRoutine && (
-                        <div className="grid gap-3 lg:grid-cols-2">
-                            {personaData!.m4.morning && (
-                                <div className="rounded-xl border border-brand-charcoal/[0.08] bg-white/80 p-5">
-                                    <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 mb-2">
-                                        <Sun className="w-3.5 h-3.5" strokeWidth={1.8} />
-                                        晨间
-                                    </p>
-                                    <p className="text-sm leading-[1.85] text-brand-charcoal/80">{personaData!.m4.morning}</p>
-                                </div>
-                            )}
-                            {personaData!.m4.night && (
-                                <div className="rounded-xl border border-brand-charcoal/[0.08] bg-white/80 p-5">
-                                    <p className="flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/50 mb-2">
-                                        <Moon className="w-3.5 h-3.5" strokeWidth={1.8} />
-                                        夜间
-                                    </p>
-                                    <p className="text-sm leading-[1.85] text-brand-charcoal/80">{personaData!.m4.night}</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    {/* 节奏备注：派系文案的周期护理/禁忌提示（如敏敏状态暂停酸类），作卡片脚注保留 */}
-                    {hasRoutine && personaData!.m4.note && (
-                        <p className="mt-2.5 text-xs leading-[1.8] text-[var(--color-brand-taupe)]">{personaData!.m4.note}</p>
-                    )}
-                    {hasFormula && (
-                        <p className="mt-4 text-sm font-medium text-[var(--color-brand-espresso)]">
-                            护肤公式：{personaData!.m7.formulaCore}
-                        </p>
-                    )}
-                </section>
-            )}
 
             {/* 优势：AI 如实肯定；AI 未生成时回退派系优势解析第一条兜底，不再两份并排 */}
             {(strengths.length > 0 || hasAdvantages) && (

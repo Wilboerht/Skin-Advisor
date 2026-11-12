@@ -116,8 +116,10 @@ async function sendDay1Messages() {
 
         const reportUrl = `${BASE_URL}/reports/${session.id}`;
         const result = session.analysisResult as Record<string, unknown> | null;
-        const score = result && typeof result === "object" && "overallScore" in result
-            ? (result as { overallScore: number }).overallScore
+        // 综合分实际存放在 faceAnalysis.overallScore；旧实现误读顶层 overallScore，导致消息里永远是“未知”
+        const faceAnalysis = result?.faceAnalysis as { overallScore?: unknown } | undefined;
+        const score = typeof faceAnalysis?.overallScore === "number"
+            ? faceAnalysis.overallScore
             : undefined;
 
         if (DRY_RUN) {

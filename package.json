@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=6144 next dev --webpack",
     "build": "next build --webpack",
+    "backfill:skin-assessments": "tsx scripts/backfill-skin-assessments.ts",
     "postbuild": "node scripts/copy-standalone-assets.js",
     "start": "node .next/standalone/server.js",
     "lint": "eslint --max-warnings=0",

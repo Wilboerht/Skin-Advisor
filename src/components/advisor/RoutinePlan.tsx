@@ -61,6 +61,9 @@ export function RoutinePlan({ plan, routineNote, issues }: RoutinePlanProps) {
             <h4 className="mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2 text-base font-medium text-[var(--color-brand-espresso)]">
                 你的每日方案 <span className="text-xs lg:text-base">（Daily Routine）</span>
             </h4>
+            <p className="mb-3 -mt-1 text-[11px] leading-relaxed text-[var(--color-brand-taupe)]">
+                按派系骨架与推荐产品生成；问题卡中的护理方案是针对性说明，实际执行顺序以本表为准。
+            </p>
 
             {plan ? (
                 <div className="grid gap-3 lg:grid-cols-2">

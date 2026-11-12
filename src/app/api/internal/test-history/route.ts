@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
         const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
         const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "10", 10) || 10));
         const lite = searchParams.get("lite") === "1";
+        const view = searchParams.get("view") === "1";
         const beforeRaw = searchParams.get("before");
         const before = beforeRaw ? new Date(beforeRaw) : null;
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
             await claimGuestSessionsFromClientIp(guard.userId, searchParams.get("clientIp"));
         }
 
-        const result = await getTestHistory(guard.userId, { page, limit, lite, before });
+        const result = await getTestHistory(guard.userId, { page, limit, lite, view, before });
         return NextResponse.json(result);
     } catch (error) {
         logger.error("[internal/test-history] fetch failed", { error: String(error) });

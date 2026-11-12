@@ -29,8 +29,7 @@ export function ReportSummary({ result }: ReportSummaryProps) {
     const report = result.consultantReport;
     const topIssue = report?.issues?.[0];
     const overview = report?.overview || result.analysis.summary || "本次报告已生成，请查看下方详细分析。";
-    const nextStep = report?.routineNote
-        || (topIssue?.skincarePlan ? firstSentence(topIssue.skincarePlan) : "")
+    const nextStep = (topIssue?.skincarePlan ? firstSentence(topIssue.skincarePlan) : "")
         || "先按下方每日方案完成基础清洁、保湿与防晒，4 周后复测对比。";
 
     return (
@@ -41,7 +40,7 @@ export function ReportSummary({ result }: ReportSummaryProps) {
                         <Sparkles className="h-3.5 w-3.5" strokeWidth={1.8} />
                         整体底子
                     </p>
-                    <p className="text-[13px] lg:text-sm leading-[1.8] text-[var(--color-brand-espresso)] line-clamp-4">
+                    <p className="text-[13px] lg:text-sm leading-[1.8] text-[var(--color-brand-espresso)]">
                         {overview}
                     </p>
                 </div>

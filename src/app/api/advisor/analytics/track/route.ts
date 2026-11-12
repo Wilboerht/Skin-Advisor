@@ -59,6 +59,19 @@ const EventSchema = z.object({
         "result_share",            // 分享结果
         "result_flip",             // 两页版式：封面/报告页切换（含首测 cohort 标记）
         "product_click",           // 点击产品
+        // ReportV3 / 后链路事件（H5 + 小程序共用）
+        "report_section_view",     // 报告区块曝光
+        "issue_expand",            // 展开问题卡
+        "dimension_expand",        // 展开维度判读
+        "product_detail_open",     // 打开产品详情
+        "purchase_click",          // 点击购买渠道
+        "advisor_click",           // 点击咨询顾问
+        "copy_summary",            // 复制报告摘要
+        "certificate_download",    // 保存证书
+        "retest_click",            // 点击复测
+        "trend_view",              // 查看趋势
+        "feedback_submit",         // 提交反馈
+        "poster_save",             // 保存海报
     ]),
     data: z.record(z.string(), z.unknown()).optional(), // 附加数据
     timestamp: z.string().optional(),
@@ -351,6 +364,27 @@ export async function POST(request: NextRequest) {
                     page,
                     firstTest: data?.firstTest === true,
                     personaChanged: data?.personaChanged === true,
+                    at: now.toISOString(),
+                });
+                break;
+            }
+
+            // ReportV3 后链路事件：统一追加到 interactions，data 嵌套保存，避免覆盖 type/at
+            case "report_section_view":
+            case "issue_expand":
+            case "dimension_expand":
+            case "product_detail_open":
+            case "purchase_click":
+            case "advisor_click":
+            case "copy_summary":
+            case "certificate_download":
+            case "retest_click":
+            case "trend_view":
+            case "feedback_submit":
+            case "poster_save": {
+                await appendInteraction(sessionId, {
+                    type: event,
+                    data: data || {},
                     at: now.toISOString(),
                 });
                 break;
