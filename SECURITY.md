@@ -31,6 +31,14 @@
 - **文件**：`src/lib/wechat.ts`（已删除）
 - **修复**：该模块无人引用且将 `appSecret` 放在 URL query 中，已直接删除。
 
+### 1.6 四角度拍摄、仅正脸进入 AI
+- **文件**：`src/hooks/useAsyncAnalysis.ts`、`src/app/api/advisor/face-analyze/route.ts`、小程序 `pages/capture`
+- **约束**：
+  - 四角度拍摄只用于姿态引导；侧脸/下巴在端侧即时删除，不入库、不上传。
+  - H5/小程序请求显式携带 `imageUsage: "front_only"`；服务端该模式下只接受 1 张 `angle=front`。
+  - 人脸图片不写入数据库；如使用上传 URL，分析完成后立即删除本地/OSS 文件。
+  - `ReportView` 只包含评分、区域、问题与建议，不包含过敏史、孕期、用药等问卷敏感字段。
+
 ## 2. 生产部署前必须手动完成
 
 ### 2.1 替换 `.env.production` 中的占位值

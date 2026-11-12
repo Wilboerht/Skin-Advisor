@@ -532,3 +532,31 @@ model SkinAssessment {
   @@index([userId, completedAt])
   @@index([completedAt])
 }
+
+// ��������ָ�� �� ÿ�� analyze �ɹ�д�룬����̨�����������ع�
+model ReportQualityLog {
+  id                    String   @id @default(cuid())
+  sessionId             String   @unique
+  userId                String?
+  narrativeSource       String   // ai | fallback
+  fallbackReason        String?
+  promptVersion         String?
+  model                 String?
+  diagnosisFindingCount Int      @default(0)
+  issueCount            Int      @default(0)
+  coverageScored        Int      @default(0)
+  coverageTotal         Int      @default(0)
+  lowConfidenceCount    Int      @default(0)
+  notVisibleCount       Int      @default(0)
+  durationMs            Int?
+  // 阶段耗时（毫秒）：用于定位用户到底卡在队列、文本、产品还是落库
+  queueWaitMs           Int?
+  textGenerationMs      Int?
+  productSelectionMs    Int?
+  safetyMs              Int?
+  persistMs             Int?
+  createdAt             DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([narrativeSource, createdAt])
+}

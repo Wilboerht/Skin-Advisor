@@ -33,7 +33,7 @@ export function ReportSummary({ result }: ReportSummaryProps) {
         || "先按下方每日方案完成基础清洁、保湿与防晒，4 周后复测对比。";
 
     return (
-        <section className="rounded-2xl border border-[var(--color-brand-espresso)]/12 bg-gradient-to-br from-[#FBF8F3] to-[#F5F0E7] p-5 lg:p-6" aria-label="报告结论摘要">
+        <section className="rounded-2xl border border-[var(--color-brand-espresso)]/12 bg-gradient-to-br from-[var(--color-report-paper)] to-[var(--color-report-paper-deep)] p-5 lg:p-6" aria-label="报告结论摘要">
             <div className="grid gap-4 lg:grid-cols-3">
                 <div className="flex flex-col gap-1.5">
                     <p className="inline-flex items-center gap-1.5 text-[11px] font-medium tracking-[0.08em] text-[var(--color-brand-taupe)]">

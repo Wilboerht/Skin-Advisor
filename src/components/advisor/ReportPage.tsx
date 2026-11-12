@@ -6,6 +6,7 @@ import ResultCards from "./ResultCards";
 import ComparisonCard from "./ComparisonCard";
 import { ConsultantReport } from "./ConsultantReport";
 import { DimensionRadarChart } from "./DimensionRadarChart";
+import { ZoneHeatmap } from "./ZoneHeatmap";
 import { ReportMeta } from "./ReportMeta";
 import { ReportSummary } from "./ReportSummary";
 import { RoutinePlan } from "./RoutinePlan";
@@ -54,6 +55,8 @@ const REPORT_NAV = [
     { href: "#report-diagnosis", label: "问题诊断" },
     { href: "#report-routine", label: "每日方案" },
     { href: "#report-safety", label: "安全与复测" },
+    { href: "#product-recommendation", label: "产品推荐" },
+    { href: "#advisor-service", label: "顾问服务" },
 ] as const;
 
 /** 区域是否有实质问题：任一数值指标低于统一关注阈值；无数值数据时按 condition 兜底 */
@@ -158,7 +161,7 @@ export default function ReportPage({
 
     return (
         <div className="flex flex-col gap-8 lg:gap-10">
-            <nav aria-label="报告导航" className="flex flex-wrap gap-2">
+            <nav aria-label="报告导航" className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-2 rounded-xl bg-[#FDFBF7]/90 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-[#FDFBF7]/70">
                 {reportNav.map((item) => (
                     <a
                         key={item.href}
@@ -209,6 +212,15 @@ export default function ReportPage({
                             </p>
                         )}
                         <DimensionRadarChart dimensions={faceAnalysis.dimensions} sessionId={sessionId} />
+                    </section>
+                )}
+
+                {faceAnalysis?.zoneAnalysis && (
+                    <section aria-labelledby="zone-heatmap-title">
+                        <h4 id="zone-heatmap-title" className="mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2 text-base font-medium text-[var(--color-brand-espresso)]">
+                            区域状态示意 <span className="text-xs lg:text-base">（Zone Map）</span>
+                        </h4>
+                        <ZoneHeatmap zoneAnalysis={faceAnalysis.zoneAnalysis} />
                     </section>
                 )}
 
@@ -328,7 +340,7 @@ export default function ReportPage({
                     <h4 id="retest-title" className="mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2 text-base font-medium text-[var(--color-brand-espresso)]">
                         复测计划 <span className="text-xs lg:text-base">（Next Test）</span>
                     </h4>
-                    <div className="flex flex-col gap-3 rounded-2xl border border-[var(--color-brand-espresso)]/12 bg-[#FBF8F3] p-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-3 rounded-2xl border border-[var(--color-brand-espresso)]/12 bg-[var(--color-report-paper)] p-5 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <p className="text-sm font-medium text-[var(--color-brand-espresso)]">建议 4 周后复测</p>
                             <p className="mt-1 text-[12px] leading-relaxed text-[var(--color-brand-cocoa)]">
@@ -365,7 +377,7 @@ export default function ReportPage({
                         <h4 className="mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2 text-base font-medium text-[var(--color-brand-espresso)]">
                             报告已升级 <span className="text-xs lg:text-base">（Report Upgraded）</span>
                         </h4>
-                        <div className="rounded-xl border border-dashed border-[#C9A86C]/40 bg-gradient-to-br from-[#FBF8F3] to-[var(--color-brand-cream)] p-6 text-center">
+                        <div className="rounded-xl border border-dashed border-[var(--color-report-gold)]/40 bg-gradient-to-br from-[var(--color-report-paper)] to-[var(--color-brand-cream)] p-6 text-center">
                             <p className="mb-2 text-sm leading-relaxed text-[var(--color-brand-cocoa)]">
                                 这份报告由旧版分析生成。重新测肤即可获得新版顾问报告：逐问题推理、每日护理方案与产品落点。
                             </p>

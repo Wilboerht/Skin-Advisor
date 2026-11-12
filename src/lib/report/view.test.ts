@@ -155,3 +155,18 @@ describe("buildReportView", () => {
         expect(view.next.retestFocus).toEqual(["屏障耐受度"]);
     });
 });
+
+describe("buildReportView privacy", () => {
+    it("跨端 View 不包含问卷敏感字段", () => {
+        const view = buildReportView({
+            result: makeResult(),
+            faceAnalysis: makeFaceAnalysis(),
+            sessionId: "sess-privacy",
+        });
+        const serialized = JSON.stringify(view);
+        expect(serialized).not.toContain("allergies");
+        expect(serialized).not.toContain("pregnancy");
+        expect(serialized).not.toContain("menstrualCycle");
+        expect(serialized).not.toContain("medicationHistory");
+    });
+});

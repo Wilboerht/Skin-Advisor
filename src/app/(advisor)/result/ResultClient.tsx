@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useRef, useMemo, Suspense } from "rea
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { ArrowUp, House, AlertCircle, Sparkles, X, ScanFace, Info } from "lucide-react";
+import { ArrowUp, House, AlertCircle, X, ScanFace, Info } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -14,9 +14,7 @@ import { useToast } from "@/components/ui/Toast";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { normalizeAnalysisResult, type ComprehensiveResult, type PreviousTestSummary } from "@/lib/analysis-result";
 import { matchCharacterIP } from "@/lib/result-utils";
-import { isMobileDevice, isWeChatBrowser } from "@/lib/share-device";
-import { sanitizeFilename } from "@/lib/poster-utils";
-import { certImageUrl, renderCertImage, type CertVariant } from "@/lib/cert-image";
+import { certImageUrl } from "@/lib/cert-image";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import type { SessionUser } from "@/lib/auth";
@@ -25,11 +23,12 @@ import UserBadge from "@/components/advisor/UserBadge";
 import { GenderMismatchModal, PosterSaveModal } from "@/components/advisor/result-modals";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
-import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
-import { SKIN_STATE_LABELS, isMakeupState } from "@/lib/skin-state";
+import { isMakeupState } from "@/lib/skin-state";
+import { ResultFooter, ResultHeader } from "@/components/advisor/result-chrome";
 import { useLazyOpen } from "@/hooks/use-lazy-open";
+import { useCertPoster } from "@/hooks/use-cert-poster";
 
 // 首屏包体优化：完整报告 / 产品推荐只在"翻到报告页"后才需要，改为动态加载。
 // loading 骨架：分包下载期间先占位，避免翻页/首屏出现空白。
@@ -99,142 +98,6 @@ interface ResultClientProps {
     /** 本次报告之前最近一次已完成测肤的摘要（登录用户由 /reports/:id 服务端传入；null = 确认为首次测肤）。
      *  undefined = 游客路径（ResultClient 从 localStorage 恢复）。 */
     previousSummary?: PreviousTestSummary | null;
-}
-
-// --- Poster image helpers ---
-
-/** Blob 转 dataURL：微信 iOS 长按保存对 dataURL 兼容性优于 blob URL，且无需管理 objectURL 生命周期 */
-async function blobToDataUrl(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            if (typeof reader.result === "string") resolve(reader.result);
-            else reject(new Error("读取海报图片失败"));
-        };
-        reader.onerror = () => reject(reader.error ?? new Error("读取海报图片失败"));
-        reader.readAsDataURL(blob);
-    });
-}
-
-// 两页切换 tab：样式对齐主站用户中心「安全中心」的分段标签（胶囊容器 + 选中浅底）
-const RESULT_PAGE_TABS = [
-    { index: 0 as const, label: "测肤证书" },
-    { index: 1 as const, label: "完整报告" },
-];
-
-function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; onSwitchPage: (idx: 0 | 1) => void }) {
-    return (
-        <div
-            role="tablist"
-            aria-label="报告页面切换"
-            className="inline-flex rounded-full border border-stone-200 bg-white/40 p-1"
-        >
-            {RESULT_PAGE_TABS.map(({ index, label }) => (
-                <button
-                    key={label}
-                    id={`result-tab-${index}`}
-                    role="tab"
-                    aria-selected={pageIndex === index}
-                    aria-controls={`result-panel-${index}`}
-                    tabIndex={pageIndex === index ? 0 : -1}
-                    onClick={() => { if (pageIndex !== index) onSwitchPage(index); }}
-                    onKeyDown={(e) => {
-                        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-                        e.preventDefault();
-                        const next = e.key === "ArrowRight" ? 1 : 0;
-                        onSwitchPage(next as 0 | 1);
-                        requestAnimationFrame(() => {
-                            document.getElementById(`result-tab-${next}`)?.focus();
-                        });
-                    }}
-                    className={`rounded-full px-4 py-2 text-xs transition-colors active:opacity-70 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-charcoal)]/40 focus-visible:ring-offset-1 ${
-                        pageIndex === index
-                            ? "bg-[var(--color-brand-charcoal)]/10 font-medium text-[var(--color-brand-charcoal)]"
-                            : "text-stone-500 hover:text-stone-800"
-                    }`}
-                >
-                    {label}
-                </button>
-            ))}
-        </div>
-    );
-}
-
-// 两页版式共享页脚：第一行 = 版权 + 备案链接，第二行 = AI 声明（证书面/报告面共用）
-// simple 变体（证书面桌面端）：不要备案链接，版权与 AI 声明合并为一行
-function ResultFooter({ simple = false }: { simple?: boolean }) {
-    if (simple) {
-        return (
-            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
-                <span suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
-                <span aria-hidden="true" className="hidden sm:inline">|</span>
-                <p>*AI 图像分析结果仅供参考，不构成医疗诊断、治疗建议或处方</p>
-            </div>
-        );
-    }
-    return (
-        <div className="text-center flex flex-col items-center gap-2">
-            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
-                <span suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
-                <span aria-hidden="true" className="hidden sm:inline">|</span>
-                <a
-                    href="https://beian.miit.gov.cn/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="transition-colors hover:text-brand-charcoal/70"
-                >
-                    沪ICP备2026014764号-1
-                </a>
-                <span aria-hidden="true" className="hidden sm:inline">|</span>
-                <a
-                    href="http://www.beian.gov.cn/portal/registerSystemInfo"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 transition-colors hover:text-brand-charcoal/70"
-                >
-                    <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
-                    <span>沪公网安备31010702010178号</span>
-                </a>
-            </div>
-            <p className="text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
-                *AI 图像分析结果仅供参考，不构成医疗诊断、治疗建议或处方。如有皮肤疾病或健康问题，请咨询专业皮肤科医生。
-            </p>
-        </div>
-    );
-}
-
-// 两页版式共享页头：归属标题 + 拍摄时肌肤状态标签 + 两页切换 tab（logo 已上移到固定顶部栏）
-function ResultHeader({
-    nickname,
-    skinStateValue,
-    pageIndex,
-    onSwitchPage,
-}: {
-    nickname: string;
-    skinStateValue?: string | null;
-    pageIndex: 0 | 1;
-    onSwitchPage: (idx: 0 | 1) => void;
-}) {
-    const skinStateLabel = skinStateValue ? SKIN_STATE_LABELS[skinStateValue] : undefined;
-
-    return (
-        // 顶部间距：固定顶栏（76/84px）下缘到标题的初始留白，比原 pt-6/8 各加大 16px
-        <div className="w-full flex flex-col items-center pt-10 lg:pt-12 pb-4 lg:pb-5">
-            {/* 状态标签属于标题一体：紧跟标题文字同行参与布局（整体居中） */}
-            <h1 className="mt-0 mb-4 lg:mb-5 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex flex-wrap items-center justify-center gap-2.5">
-                <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
-                {nickname} 的专属肌智派在线测肤报告
-                {skinStateLabel && (
-                    <span className="inline-flex h-[22px] px-2 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-[11px] font-bold text-[var(--color-brand-cocoa)] whitespace-nowrap">
-                        {skinStateLabel}
-                    </span>
-                )}
-            </h1>
-            {/* 两页切换 tab：与标题、与下方卡片保持同一间距
-                （标题 mb-4/5 == 页头 pb-4/5，tab 自身不再带下边距） */}
-            <ResultPageTabs pageIndex={pageIndex} onSwitchPage={onSwitchPage} />
-        </div>
-    );
 }
 
 // Wrapper component with Suspense for useSearchParams
@@ -453,20 +316,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // New State for interactivity
 
-    const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
-    const [posterError, setPosterError] = useState<string | null>(null);
-    // 微信内嵌浏览器无法可靠触发下载，生成后改用「长按/右键保存」引导弹窗
-    const [savedPosterForSave, setSavedPosterForSave] = useState<string | null>(null);
-    // 弹窗图片 URL 的 ref 镜像：替换/卸载时同步释放 objectURL（dataURL 无需释放）
-    const savedPosterForSaveRef = useRef<string | null>(null);
-    const setSavedPosterUrl = useCallback((url: string | null) => {
-        const prev = savedPosterForSaveRef.current;
-        if (prev && prev !== url && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
-        savedPosterForSaveRef.current = url;
-        setSavedPosterForSave(url);
-    }, []);
-    // 保存弹窗形态：微信移动端=长按保存；微信桌面端=右键另存
-    const [posterSaveIsDesktop, setPosterSaveIsDesktop] = useState(false);
     // 肌智派送好礼弹窗：结果页原地打开，避免跳首页丢失当前报告上下文
     const [showGiftModal, setShowGiftModal] = useState(false);
     const shouldRenderGiftModal = useLazyOpen(showGiftModal);
@@ -548,11 +397,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     useEffect(() => {
         try { setDismissValidationWarning(sessionStorage.getItem('advisor_dismiss_validation') === 'true'); } catch { /* ignore */ }
     }, []);
-    // 保存动作进行中的同步守卫：state 更新有异步窗口，双击时 isGeneratingPoster 可能仍为 false
-    const posterBusyRef = useRef(false);
-    // 微信保存弹窗「已保存，关闭」埋点一次性 latch：退出动画期间重复点击不重复上报（P3）
-    const savedPosterTrackedRef = useRef(false);
-
     // 原"超越全国 X% 用户"固定公式伪统计已下线（v2 报告与分享海报不再使用）；
     // 封面证书卡改为展示 /api/advisor/score-percentile 的真实聚合百分位（见 scorePercentile）
 
@@ -568,17 +412,18 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         skincareFrequency: ipSkincareFrequency,
     }).key;
 
-    // 证书下载版式：qr 标准版（含二维码）/ noqr 分享版（无二维码）；记忆用户上次选择
-    const [certVariant, setCertVariant] = useState<CertVariant>("qr");
-    const [showCertVariantPicker, setShowCertVariantPicker] = useState(false);
-    // 版式选择弹层懒挂载：点保存才可能打开，打开过保持挂载以保留退场动画
-    const shouldRenderCertVariantPicker = useLazyOpen(showCertVariantPicker);
-    useEffect(() => {
-        try {
-            const saved = localStorage.getItem(STORAGE_KEYS.ADVISOR_CERT_VARIANT);
-            if (saved === "qr" || saved === "noqr") setCertVariant(saved);
-        } catch { /* ignore */ }
-    }, []);
+    const certPoster = useCertPoster({
+        sessionId,
+        isMock,
+        nickname: userNickname,
+        persona: certPersonaKey,
+        gender: socialGender,
+        overallScore: faceAnalysis?.overallScore,
+        percentile: scorePercentile,
+        percentileSampleSize,
+        analyzedAt: certDate,
+        onShared: () => trackResultShare("image"),
+    });
 
     // ===== 两页版式（证书封面 + 报告正文）与趋势对比 =====
 
@@ -1015,140 +860,6 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // --- Environment Data Integration ---
     // REMOVED: Weather component has been disabled per user request
 
-    // Actions
-    // Save result as image for sharing (image generation in progress)
-
-    /** 触发保存/分享（文件名清洗见 poster-utils.sanitizeFilename）；返回 false 表示用户在系统分享面板取消，不应计入分享埋点 */
-    async function triggerDownload(blob: Blob, filename: string): Promise<boolean> {
-        const blobUrl = URL.createObjectURL(blob);
-        const file = new File([blob], filename, { type: "image/png" });
-
-        // 仅在移动设备上尝试系统原生分享；PC 端（含触屏 Windows 笔记本）navigator.share 打开面板后通常无法真正保存文件
-        const isMobile = isMobileDevice(navigator.userAgent, navigator.maxTouchPoints);
-        // canShare 个别环境会抛异常：整体包 try，异常按"不支持"处理直接降级下载（P5）
-        let canShareFiles = false;
-        try {
-            canShareFiles = typeof navigator.share === "function" &&
-                typeof navigator.canShare === "function" &&
-                navigator.canShare({ files: [file] });
-        } catch {
-            canShareFiles = false;
-        }
-
-        if (isMobile && canShareFiles) {
-            try {
-                await navigator.share({
-                    title: "我的肌智派证书",
-                    files: [file],
-                });
-                URL.revokeObjectURL(blobUrl);
-                return true;
-            } catch (err) {
-                // 用户主动取消系统分享：视为放弃保存，不再触发下载兜底，避免"点了取消反而下载"
-                const cancelled = typeof err === "object" && err !== null && (err as { name?: unknown }).name === "AbortError";
-                if (cancelled) {
-                    URL.revokeObjectURL(blobUrl);
-                    return false;
-                }
-                console.log("navigator.share failed, fallback to download", err);
-            }
-        }
-
-        // 兜底下载（桌面/不支持分享的移动端）：浏览器无"下载完成"确认 API，
-        // 埋点口径 = 已触发下载（click 后即返回 true）；补一个轻提示让用户明确已开始下载（P4）
-        const link = document.createElement("a");
-        link.download = filename;
-        link.href = blobUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-        toast.success("证书已开始下载");
-        return true;
-    }
-
-    // 「保存测肤证书」：canvas 合成派系×性别成品证书，叠加评分(仅标准版)/百分位/派系建议。
-    // 不再有 DOM 截图的空白/超时问题；底图在进页后已空闲预载，保存通常即时完成
-    const handleSavePoster = async (variant: CertVariant) => {
-        if (posterBusyRef.current) return;
-        posterBusyRef.current = true;
-        try {
-            setIsGeneratingPoster(true);
-            setPosterError(null);
-
-            const advice = skinTypes.find(t => t.ipKey === certPersonaKey)?.m7.suggestions?.slice(0, 2).map((s) => s.title);
-
-            const blob = await renderCertImage({
-                persona: certPersonaKey,
-                gender: socialGender,
-                variant,
-                score: faceAnalysis?.overallScore,
-                percentile: scorePercentile,
-                sampleSize: percentileSampleSize,
-                advice,
-                nickname: userNickname,
-                testDate: certDate,
-                reportId: sessionId,
-            });
-
-            // 微信内置浏览器（移动端与桌面端）：<a download> 与 navigator.share(files) 均不可靠，
-            // 改为展示证书图片保存：移动端引导长按、桌面端引导右键另存
-            if (typeof navigator !== "undefined" && isWeChatBrowser(navigator.userAgent)) {
-                setPosterSaveIsDesktop(!isMobileDevice(navigator.userAgent, navigator.maxTouchPoints));
-                // 新一轮弹窗重置埋点 latch（退出动画期间重复点「已保存，关闭」只计一次，P3）
-                savedPosterTrackedRef.current = false;
-                // 微信 iOS 长按保存对 dataURL 兼容性更好；转换失败再退回 objectURL（由 setSavedPosterUrl 统一管理释放）
-                try {
-                    setSavedPosterUrl(await blobToDataUrl(blob));
-                } catch {
-                    setSavedPosterUrl(URL.createObjectURL(blob));
-                }
-                // 埋点不在生成时上报：等用户在保存弹窗里点「已保存，关闭」再计入（见下方 onSaved）
-                return;
-            }
-
-            const safeName = sanitizeFilename(userNickname || "用户");
-            const saved = await triggerDownload(blob, `${safeName}的肌智派证书${variant === "noqr" ? "-小红书" : ""}.png`);
-            // 埋点口径：真正触发下载/分享才计入；用户在系统分享面板取消返回 false
-            if (saved && !isMock) trackResultShare("image");
-        } catch (error) {
-            console.error("证书生成失败:", error);
-            setPosterError("证书生成遇到问题，请稍后重试。");
-        } finally {
-            posterBusyRef.current = false;
-            setIsGeneratingPoster(false);
-        }
-    };
-
-    // 「保存测肤证书」入口：先弹版式选择（标准版含二维码 / 分享版无二维码）
-    const handleRequestSavePoster = () => {
-        setShowCertVariantPicker(true);
-    };
-
-    // 用户在版式选择弹层中点选：记忆选择并按该版式保存
-    const handlePickCertVariant = (variant: CertVariant) => {
-        setShowCertVariantPicker(false);
-        setCertVariant(variant);
-        try { localStorage.setItem(STORAGE_KEYS.ADVISOR_CERT_VARIANT, variant); } catch { /* ignore */ }
-        void handleSavePoster(variant);
-    };
-
-    const closePosterSaveModal = () => {
-        setSavedPosterUrl(null);
-    };
-
-    // 弹窗打开时直接离开页面的兜底：卸载时释放 objectURL（dataURL 无需释放）
-    useEffect(() => () => {
-        const url = savedPosterForSaveRef.current;
-        if (url && url.startsWith("blob:")) URL.revokeObjectURL(url);
-    }, []);
-
-    // 海报错误提示自动消失（6s），避免旧错误常驻遮挡；用户也可点关闭按钮立即清除
-    useEffect(() => {
-        if (!posterError) return;
-        const timer = setTimeout(() => setPosterError(null), 6000);
-        return () => clearTimeout(timer);
-    }, [posterError]);
 
     // --- Auto-Claim Session ---
     // Automatically link guest-initiated session to user account once logged in
@@ -1707,8 +1418,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             gender={socialGender}
                                             summary={result?.analysis?.summary}
                                             concerns={result?.skinProfile?.concerns}
-                                            onDownloadPoster={handleRequestSavePoster}
-                                            isPosterLoading={isGeneratingPoster}
+                                            onDownloadPoster={certPoster.handleRequestSavePoster}
+                                            isPosterLoading={certPoster.isGeneratingPoster}
                                             isPercentileLoading={percentileLoading}
                                             onOpenReport={handleFlipToReport}
                                             onReTest={handleReTest}
@@ -1857,15 +1568,15 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         )}
                     </AnimatePresence>
 
-                    {posterError && (
+                    {certPoster.posterError && (
                         <div
                             role="alert"
                             className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg"
                         >
-                            <span>{posterError}</span>
+                            <span>{certPoster.posterError}</span>
                             <button
                                 type="button"
-                                onClick={() => setPosterError(null)}
+                                onClick={certPoster.clearPosterError}
                                 aria-label="关闭提示"
                                 className="shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
                             >
@@ -1874,28 +1585,23 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                         </div>
                     )}
                     {/* 证书版式选择：标准版（含二维码）/ 分享版（无二维码），点选即生成 */}
-                    {shouldRenderCertVariantPicker && (
+                    {certPoster.shouldRenderCertVariantPicker && (
                         <CertVariantPicker
-                            isOpen={showCertVariantPicker}
+                            isOpen={certPoster.showCertVariantPicker}
                             persona={certPersonaKey}
                             gender={socialGender}
-                            selectedId={certVariant}
-                            onSelect={handlePickCertVariant}
-                            onClose={() => setShowCertVariantPicker(false)}
+                            selectedId={certPoster.certVariant}
+                            onSelect={certPoster.handlePickCertVariant}
+                            onClose={certPoster.closeCertVariantPicker}
                         />
                     )}
 
                     {/* 微信内嵌浏览器海报保存兜底：移动端长按 / 桌面端右键另存；点「已保存，关闭」才计分享埋点 */}
                     <PosterSaveModal
-                        imageUrl={savedPosterForSave}
-                        variant={posterSaveIsDesktop ? "desktop" : "mobile"}
-                        onClose={closePosterSaveModal}
-                        onSaved={() => {
-                            // 一次性 latch：退出动画期间按钮仍可点，防重复上报（P3）
-                            if (isMock || savedPosterTrackedRef.current) return;
-                            savedPosterTrackedRef.current = true;
-                            trackResultShare("image");
-                        }}
+                        imageUrl={certPoster.savedPosterForSave}
+                        variant={certPoster.posterSaveIsDesktop ? "desktop" : "mobile"}
+                        onClose={certPoster.closePosterSaveModal}
+                        onSaved={certPoster.markPosterSaved}
                     />
 
                     {/* 肌智派送好礼活动弹窗：结果页原地打开（懒挂载，首次点开才加载分包） */}

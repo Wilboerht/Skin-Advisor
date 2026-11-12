@@ -29,6 +29,7 @@ import { getEnvContextFromLocation } from "@/lib/weather-context";
 import { buildSafetyNotes } from "@/lib/report-safety";
 import { buildDiagnosis, narrativeMatchesDiagnosis } from "@/lib/report/diagnosis";
 import { buildFallbackConsultantReport } from "@/lib/report/fallback";
+import { selectRoutedTextModel } from "@/lib/report/model-routing";
 import { compileReportV3 } from "@/lib/report/compile";
 import { buildSkinAssessment } from "@/lib/report/assessment";
 import type { ReportNarrativeSource } from "@/lib/report/types";
@@ -1035,6 +1036,8 @@ export async function POST(request: NextRequest) {
         // 且可能与 settings.model 错位（env 是 qwen 但 DB model 是 deepseek 系）
         const settings = await getAISettings();
         const provider = settings.provider;
+        const textRouting = selectRoutedTextModel(provider, diagnosis.findings);
+        const routedTextModel = textRouting.model;
 
         // v2-only：AI 失败不再降级为 v1 规则报告。
         // 解析失败先做一次 JSON 修复重试；仍失败则返回可重试错误（同 session 重试不再扣次）
@@ -1101,7 +1104,8 @@ export async function POST(request: NextRequest) {
                 abortController.signal,
                 user?.id,
                 effectiveSessionId,
-                remainingTextBudgetMs()
+                remainingTextBudgetMs(),
+                routedTextModel
             );
             try {
                 consultantReport = finalizeConsultantReport(rawAiOutput);
@@ -1134,7 +1138,8 @@ export async function POST(request: NextRequest) {
                     abortController.signal,
                     user?.id,
                     effectiveSessionId,
-                    remainingTextBudgetMs()
+                    remainingTextBudgetMs(),
+                    routedTextModel
                 );
                 rawAiOutput = repairText;
                 consultantReport = finalizeConsultantReport(repairText);
@@ -1407,7 +1412,7 @@ export async function POST(request: NextRequest) {
             narrativeSource,
             fallbackReason,
             promptVersion: CONSULTANT_PROMPT_VERSION,
-            model: settings.model,
+            model: routedTextModel || settings.model,
             dataSource: faceAnalysis ? "hybrid" : "questionnaire",
             analyzedAt: analyzedAtIso,
         });
@@ -1525,6 +1530,36 @@ export async function POST(request: NextRequest) {
                         error: String(assessmentErr),
                     });
                 }
+            }
+
+            // 报告质量指标：失败不影响报告返回；供 /admin/report-quality 看板
+            try {
+                const scoring = faceAnalysis?.scoring;
+                const qualityData = {
+                    sessionId: effectiveSessionId,
+                    userId: user?.id ?? null,
+                    narrativeSource,
+                    fallbackReason: fallbackReason ?? null,
+                    promptVersion: CONSULTANT_PROMPT_VERSION,
+                    model: routedTextModel || settings.model,
+                    diagnosisFindingCount: diagnosis.findings.length,
+                    issueCount: consultantReport.issues.length,
+                    coverageScored: scoring?.scoredDimensions ?? 0,
+                    coverageTotal: scoring?.totalDimensions ?? 10,
+                    lowConfidenceCount: scoring?.lowConfidenceDimensions.length ?? 0,
+                    notVisibleCount: scoring?.notVisibleDimensions.length ?? 0,
+                    durationMs: Date.now() - requestStartedAt,
+                };
+                await prisma.reportQualityLog.upsert({
+                    where: { sessionId: effectiveSessionId },
+                    update: qualityData,
+                    create: qualityData,
+                });
+            } catch (qualityErr) {
+                logger.warn("[ReportQualityLog] upsert failed", {
+                    sessionId: effectiveSessionId,
+                    error: String(qualityErr),
+                });
             }
 
             // 分析成功落库：把预占标记为 consumed，后续失败路径不得再回滚本次额度

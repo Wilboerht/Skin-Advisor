@@ -34,7 +34,9 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN addgroup -S nodejs -g 1001 && adduser -S nextjs -u 1001
+# 服务端证书海报（sharp/SVG）需要中文字体
+RUN apk add --no-cache font-noto-cjk \
+    && addgroup -S nodejs -g 1001 && adduser -S nextjs -u 1001
 
 # postbuild 已把 public/、.next/static 复制进 standalone
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

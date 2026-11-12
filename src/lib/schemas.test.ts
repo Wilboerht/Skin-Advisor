@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { AnalyzeRequestSchema } from "./schemas";
+import { AnalyzeRequestSchema, FaceAnalyzeRequestSchema } from "./schemas";
 
 describe("AnalyzeRequestSchema - 面部分析字段透传", () => {
     it("acne 子分 blackheads/pimples 不被 zod 剥离（v2 证据链依赖）", () => {
@@ -31,5 +31,24 @@ describe("AnalyzeRequestSchema - 面部分析字段透传", () => {
             faceAnalysis: { dimensions: { acne: { score: 120 } } },
         });
         expect(parsed.faceAnalysis?.dimensions?.acne?.score).toBe(100);
+    });
+});
+
+describe("FaceAnalyzeRequestSchema - 只传正脸契约", () => {
+    it("接受 front_only + 单张正脸", () => {
+        const parsed = FaceAnalyzeRequestSchema.parse({
+            sessionId: "123e4567-e89b-12d3-a456-426614174000",
+            images: [{ data: "data:image/jpeg;base64,abc", angle: "front" }],
+            imageUsage: "front_only",
+        });
+        expect(parsed.imageUsage).toBe("front_only");
+    });
+
+    it("拒绝未知的 imageUsage", () => {
+        const result = FaceAnalyzeRequestSchema.safeParse({
+            images: [{ data: "data:image/jpeg;base64,abc", angle: "front" }],
+            imageUsage: "all_angles",
+        });
+        expect(result.success).toBe(false);
     });
 });

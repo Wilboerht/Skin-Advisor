@@ -372,7 +372,9 @@ export async function generateText(
     signal?: AbortSignal,
     userId?: string | null,
     sessionId?: string | null,
-    timeoutMs?: number
+    timeoutMs?: number,
+    /** 模型路由覆盖（仅对主 provider 生效；白名单校验失败时回退配置模型） */
+    modelOverride?: string
 ): Promise<string> {
     // 如果外部 signal 已 abort，直接抛出
     if (signal?.aborted) {
@@ -381,9 +383,13 @@ export async function generateText(
 
     const settings = await getAISettings();
     const primaryProvider = preferredProvider || settings.provider || "qwen";
-    const primaryModel = primaryProvider === settings.provider
-        ? settings.model
-        : getModelForProvider(primaryProvider);
+    const routedModel = modelOverride && isAllowedAIModel(primaryProvider, modelOverride)
+        ? modelOverride
+        : null;
+    const primaryModel = routedModel
+        || (primaryProvider === settings.provider
+            ? settings.model
+            : getModelForProvider(primaryProvider));
 
     // 模型感知预算预估：按实际模型与 maxTokens 预估，避免 qwen-max 等高价模型
     // 仍按 ¥0.10 预占导致并发时突破日预算。

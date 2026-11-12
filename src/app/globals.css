@@ -61,6 +61,14 @@
   --color-brand-cocoa: #5c4937;
   --color-brand-taupe: #8c7a6b;
   --color-brand-cream: #F5F2ED;
+  /* 报告页专用：纸张/金色/警示/成功（避免组件里散落 hex） */
+  --color-report-paper: #FBF8F3;
+  --color-report-paper-deep: #F5F0E7;
+  --color-report-gold: #C9A86C;
+  --color-report-muted: #F1ECE3;
+  --color-report-warning: #b06a3b;
+  --color-report-danger: #c45a4a;
+  --color-report-success: #3d7a4d;
   /* 语义色（护肤档案 / 时间线 / 打卡共用） */
   --color-brand-cocoa-dark: #4a3a2c; /* 可可实心按钮 hover */
   --color-brand-danger: #D44C47;     /* 负向状态（很差 / 删除） */

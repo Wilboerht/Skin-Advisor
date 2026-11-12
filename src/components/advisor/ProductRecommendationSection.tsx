@@ -118,7 +118,7 @@ export function ProductRecommendationSection({
     }
 
     return (
-        <section className={cn("relative w-full", className)}>
+        <section id="product-recommendation" className={cn("relative w-full scroll-mt-24", className)}>
             {/* 标题：上方留白对齐"趋势对比→专业版报告"的视觉间距（卡片内边距 + 模块 gap 的同等量级） */}
             <m.div
                 initial={{ opacity: 0, y: 20 }}

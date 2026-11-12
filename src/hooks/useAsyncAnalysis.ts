@@ -2,7 +2,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAdvisorAnalytics } from './useAdvisorAnalytics';
 import { useAuth } from './useAuth';
-import { fetchWithCsrf } from '@/lib/fetch-client';
 import { preprocessFaceImage } from '@/lib/image-processing';
 import { useToast } from '@/components/ui/Toast';
 
@@ -11,12 +10,27 @@ import { ensureClientConsent } from '@/lib/consent-client';
 import { STORAGE_KEYS, ANALYZING_SESSION_TTL_MS } from '@/lib/storage-keys';
 import { localDateStr } from '@/lib/local-date';
 import {
-    parseFailedAnalysisRetry,
-    serializeFailedAnalysisRetry,
     fingerprintAnswers,
     canReuseFailedAnalysis,
-    type FailedAnalysisRetry,
 } from '@/lib/failed-analysis-retry';
+import { fetchWithRetry, getServerErrorMessage } from './async-analysis/http';
+import {
+    checkSessionStatus,
+    pollSessionResult,
+    waitForFaceCompleted,
+    SessionRecoveryError,
+} from './async-analysis/session';
+import {
+    acquireAnalysisLock,
+    clearAnalyzingSessionMarkers,
+    clearFailedAnalysisRetry,
+    readFailedAnalysisRetry,
+    releaseAnalysisLock,
+    writeFailedAnalysisRetry,
+} from './async-analysis/storage';
+
+export type { SessionStatusResponse } from './async-analysis/session';
+export { getAnalysisLock } from './async-analysis/storage';
 
 export interface AsyncAnalysisState {
     status: 'idle' | 'preparing' | 'analyzing_face' | 'analyzing_skin' | 'completed' | 'error';
@@ -26,208 +40,7 @@ export interface AsyncAnalysisState {
     queueWaitSeconds?: number;
 }
 
-export interface SessionStatusResponse {
-    status: 'pending' | 'analyzing' | 'completed' | 'not_found' | 'forbidden' | 'unauthorized' | 'rate_limited' | 'transient_error';
-    /** 服务端阶段：决定恢复时是否只需续跑文本分析 */
-    phase?: 'pending' | 'face_analyzing' | 'face_completed' | 'text_analyzing' | 'completed';
-    sessionId: string;
-    result?: Record<string, unknown> | null;
-    rawResult?: Record<string, unknown> | null;
-    error?: string;
-    /** 429 时服务端 Retry-After 的毫秒值（未提供则用默认退避） */
-    retryAfterMs?: number;
-}
 
-/** 会话恢复的确定性失败（区别于 429/5xx/网络抖动等可重试错误） */
-class SessionRecoveryError extends Error {
-    constructor(
-        public readonly reason: 'not_found' | 'forbidden' | 'unauthorized' | 'timeout',
-        message: string
-    ) {
-        super(message);
-        this.name = 'SessionRecoveryError';
-    }
-}
-
-function parseRetryAfterMs(res: Response): number | undefined {
-    const raw = res.headers.get('retry-after');
-    if (!raw) return undefined;
-    const seconds = Number(raw);
-    if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
-    const date = Date.parse(raw);
-    if (Number.isFinite(date)) return Math.max(0, date - Date.now());
-    return undefined;
-}
-
-function clearAnalyzingSessionMarkers(): void {
-    try {
-        sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
-        sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
-        localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
-    } catch { /* ignore */ }
-}
-
-// 覆盖视觉 95s + 文本 85s + 队列/网络开销；过短会让刷新后的恢复流程与在途分析并发。
-const ANALYSIS_LOCK_TTL_MS = 300 * 1000;
-
-// 失败重试暂存的读写包装：纯逻辑（指纹/TTL/形状校验）在 lib/failed-analysis-retry.ts
-function readFailedAnalysisRetry(): FailedAnalysisRetry | null {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS);
-        if (!raw) return null;
-        const parsed = parseFailedAnalysisRetry(raw);
-        // 过期/损坏/旧版本无指纹的记录直接清掉，避免残留误导后续判断
-        if (!parsed) {
-            localStorage.removeItem(STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS);
-            return null;
-        }
-        return parsed;
-    } catch {
-        return null;
-    }
-}
-
-function writeFailedAnalysisRetry(sessionId: string, fingerprint: string): void {
-    try {
-        localStorage.setItem(
-            STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS,
-            serializeFailedAnalysisRetry({ sessionId, startedAt: Date.now(), fingerprint })
-        );
-    } catch { /* ignore */ }
-}
-
-function clearFailedAnalysisRetry(): void {
-    try { localStorage.removeItem(STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS); } catch { /* ignore */ }
-}
-
-function acquireAnalysisLock(sessionId: string): boolean {
-    try {
-        const existing = sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
-        const existingData = existing ? JSON.parse(existing) as { sessionId: string; startedAt: number } : null;
-        if (existingData && existingData.sessionId !== sessionId && (Date.now() - existingData.startedAt) < ANALYSIS_LOCK_TTL_MS) {
-            return false;
-        }
-        sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK, JSON.stringify({ sessionId, startedAt: Date.now() }));
-        return true;
-    } catch (e) {
-        console.warn('sessionStorage access failed', e);
-        return true; // 若无法写入锁，不阻塞分析流程
-    }
-}
-
-function releaseAnalysisLock(): void {
-    try {
-        sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
-    } catch (e) {
-        console.warn('sessionStorage access failed', e);
-    }
-}
-
-export function getAnalysisLock(): { sessionId: string; startedAt: number } | null {
-    try {
-        const existing = sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
-        if (!existing) return null;
-        const data = JSON.parse(existing) as { sessionId: string; startedAt: number };
-        if (Date.now() - data.startedAt >= ANALYSIS_LOCK_TTL_MS) {
-            sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
-            return null;
-        }
-        return data;
-    } catch (e) {
-        console.warn('sessionStorage access failed', e);
-        return null;
-    }
-}
-
-interface FetchWithRetryOptions {
-    retries?: number;
-    backoff?: number;
-    /** 是否允许在 5xx 服务端错误时重试；AI 调用应设为 false，避免单次失败放大为多次 AI 扣费 */
-    retryOnServerError?: boolean;
-}
-
-// 统一解析服务端错误响应（兼容扁平 { error: string } 与官网 { error: { code, message } } 格式）
-function getServerErrorMessage(errorData: Record<string, unknown>, fallback: string): string {
-    if (typeof errorData.message === 'string') return errorData.message;
-    if (typeof errorData.error === 'string') return errorData.error;
-    if (errorData.error && typeof errorData.error === 'object') {
-        const nested = errorData.error as Record<string, unknown>;
-        if (typeof nested.message === 'string') {
-            // 附带具体原因（如图片验证失败的具体理由：距离过远/遮挡等），帮助用户定位问题
-            if (typeof nested.details === 'string' && nested.details.length > 0) {
-                return `${nested.message}：${nested.details}`;
-            }
-            return nested.message;
-        }
-        return JSON.stringify(errorData.error);
-    }
-    if (Object.keys(errorData).length > 0) return JSON.stringify(errorData);
-    return fallback;
-}
-
-/** 标记"绝不重试"错误的哨兵属性（配额/5xx 透传文案后无法再用 message 前缀判定） */
-type NoRetryError = Error & { noRetry?: boolean };
-
-function throwNoRetry(message: string): never {
-    const error = new Error(message) as NoRetryError;
-    error.noRetry = true;
-    throw error;
-}
-
-// Helper for auto-retry
-async function fetchWithRetry(
-    url: string,
-    options: RequestInit,
-    { retries = 1, backoff = 1000, retryOnServerError = false }: FetchWithRetryOptions = {}
-): Promise<Response> {
-    try {
-        const res = await fetchWithCsrf(url, options);
-        // 429 is a business logic rejection (usage limit), do NOT retry
-        if (!res.ok && res.status === 429) {
-            const errorData = await res.json().catch(() => ({}));
-            throwNoRetry(getServerErrorMessage(errorData, '您已达到测试次数上限'));
-        }
-        // 默认不在 5xx 时重试；调用方可显式开启（仅用于幂等、非 AI 调用）
-        if (!res.ok && res.status >= 500) {
-            if (retryOnServerError) {
-                throw new Error(`Request failed: ${res.status}`);
-            }
-            // 不重试时优先透传服务端错误文案（如"报告生成失败，请点击重试"），
-            // 避免用户只看到 "Request failed: 503"；文案透传后必须用哨兵标记禁止重试
-            const errorData = await res.json().catch(() => ({}));
-            throwNoRetry(getServerErrorMessage(errorData, `服务暂时不可用（${res.status}），请稍后重试`));
-        }
-        return res;
-    } catch (err: unknown) {
-        const error = err instanceof Error ? err : new Error(String(err));
-        // Do NOT retry on AbortError (user cancelled or timeout)
-        if (error.name === 'AbortError' || options.signal?.aborted) {
-            throw error;
-        }
-        // 显式标记不重试（429 / 5xx 服务端文案透传）
-        if ((error as NoRetryError).noRetry) {
-            throw error;
-        }
-        // Do NOT retry usage-limit errors (429，兼容旧文案判定)
-        if (error.message?.includes('测试次数上限') || error.message?.includes('测试上限')) {
-            throw error;
-        }
-        // 5xx 错误且未开启 retryOnServerError 时直接抛出
-        if (error.message?.includes('Request failed: 5') && !retryOnServerError) {
-            throw error;
-        }
-        if (retries > 0) {
-            console.log(`Retrying ${url}... (${retries} attempts left)`);
-            await new Promise(r => setTimeout(r, backoff));
-            // Check again before retry in case signal was aborted during backoff
-            if (options.signal?.aborted) {
-                throw new Error('Request aborted');
-            }
-            return fetchWithRetry(url, options, { retries: retries - 1, backoff: backoff * 1.5, retryOnServerError });
-        }
-        throw err;
-    }
-}
 
 export function useAsyncAnalysis() {
     const [analysisState, setAnalysisState] = useState<AsyncAnalysisState>({
@@ -246,150 +59,6 @@ export function useAsyncAnalysis() {
         activeAnalysisAbortRef.current?.abort();
         activeAnalysisAbortRef.current = null;
     }, []);
-
-    // --- Session recovery helpers ---
-
-    const checkSessionStatus = useCallback(async (
-        sessionId: string,
-        signal?: AbortSignal
-    ): Promise<SessionStatusResponse> => {
-        // 单次状态查询 10s 超时：网络挂起时不能把整条恢复链路无限拖住
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10_000);
-        const onOuterAbort = () => controller.abort();
-        signal?.addEventListener('abort', onOuterAbort, { once: true });
-
-        try {
-            const res = await fetch(`/api/advisor/session/status?sessionId=${encodeURIComponent(sessionId)}`, {
-                cache: 'no-store',
-                signal: controller.signal,
-            });
-            if (res.status === 404) {
-                const data = await res.json().catch(() => ({}));
-                return { status: 'not_found', sessionId, error: data.error || '会话不存在' };
-            }
-            if (res.status === 401) {
-                return { status: 'unauthorized', sessionId, error: '登录状态已失效' };
-            }
-            if (res.status === 403) {
-                return { status: 'forbidden', sessionId, error: '无权访问该会话' };
-            }
-            if (res.status === 429) {
-                return {
-                    status: 'rate_limited',
-                    sessionId,
-                    retryAfterMs: parseRetryAfterMs(res),
-                    error: '请求过于频繁',
-                };
-            }
-            if (!res.ok) {
-                return { status: 'transient_error', sessionId, error: `HTTP ${res.status}` };
-            }
-            return await res.json();
-        } catch (e: unknown) {
-            // 调用方主动取消（页面卸载/用户离开）：向上抛，避免被误判为瞬时故障
-            if (signal?.aborted) throw e;
-            const err = e instanceof Error ? e : new Error(String(e));
-            return { status: 'transient_error', sessionId, error: err.message };
-        } finally {
-            clearTimeout(timeoutId);
-            signal?.removeEventListener('abort', onOuterAbort);
-        }
-    }, []);
-
-    const pollSessionResult = useCallback(async (
-        sessionId: string,
-        options?: {
-            intervalMs?: number;
-            maxAttempts?: number;
-            onProgress?: (attempt: number) => void;
-            signal?: AbortSignal;
-        }
-    ): Promise<SessionStatusResponse> => {
-        // 60 × 3s = 180s 总轮询时长，与客户端 fetch 180s 超时对齐
-        // （服务端 maxDuration=90s + 最长 60s 队列等待 + 视觉阶段，临界慢分析不应在完成前被判超时）
-        const { intervalMs = 3000, maxAttempts = 60 } = options || {};
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            if (options?.signal?.aborted) {
-                throw new Error('已取消等待');
-            }
-            const status = await checkSessionStatus(sessionId, options?.signal);
-
-            if (status.status === 'completed') {
-                return status;
-            }
-            if (status.status === 'not_found') {
-                // 确定性不存在：交给调用方决定是否重建会话。不要在这里静默新建。
-                throw new SessionRecoveryError('not_found', status.error || '会话不存在');
-            }
-            if (status.status === 'forbidden') {
-                throw new SessionRecoveryError('forbidden', status.error || '无权访问该会话');
-            }
-            if (status.status === 'unauthorized') {
-                throw new SessionRecoveryError('unauthorized', status.error || '登录状态已失效');
-            }
-
-            // pending / analyzing / rate_limited / transient_error：继续等待。
-            // 429/5xx/网络抖动不能当成"会话不存在"，否则会触发重复分析/重复扣次。
-            if (attempt < maxAttempts - 1) {
-                options?.onProgress?.(attempt + 1);
-                const waitMs = status.status === 'rate_limited'
-                    ? Math.max(intervalMs, status.retryAfterMs ?? intervalMs)
-                    : intervalMs;
-                await new Promise<void>(resolve => {
-                    if (options?.signal?.aborted) {
-                        resolve();
-                        return;
-                    }
-                    const cleanup = () => {
-                        options?.signal?.removeEventListener('abort', onAbort);
-                    };
-                    const onAbort = () => {
-                        clearTimeout(timeoutId);
-                        cleanup();
-                        resolve();
-                    };
-                    const timeoutId = setTimeout(() => {
-                        cleanup();
-                        resolve();
-                    }, waitMs);
-                    options?.signal?.addEventListener('abort', onAbort, { once: true });
-                });
-            }
-        }
-        throw new SessionRecoveryError('timeout', '分析结果准备时间有点长，请稍后重试。');
-    }, [checkSessionStatus]);
-
-    /**
-     * face-analyze 返回 202 时，等待面部阶段完成（不等到整份报告完成）。
-     * 随后 analyze 会用服务端已持久化的 faceAnalysis 继续文本阶段。
-     */
-    const waitForFaceCompleted = useCallback(async (
-        sessionId: string,
-        signal?: AbortSignal
-    ): Promise<{ completedResult?: Record<string, unknown>; faceReady: boolean }> => {
-        const deadline = Date.now() + 120_000;
-        while (Date.now() < deadline) {
-            if (signal?.aborted) throw new Error('已取消等待');
-            const status = await checkSessionStatus(sessionId, signal);
-            if (status.status === 'completed' && status.rawResult) {
-                return { completedResult: status.rawResult, faceReady: true };
-            }
-            if (status.phase === 'face_completed' || status.phase === 'text_analyzing') {
-                return { faceReady: true };
-            }
-            if (status.status === 'not_found') {
-                // face-analyze 会 upsert 会话占位行；短暂 not_found 多为请求尚未落库，继续等。
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-                continue;
-            }
-            if (status.status === 'forbidden' || status.status === 'unauthorized') {
-                throw new Error(status.status === 'unauthorized' ? '登录状态已失效，请重新登录。' : '无权访问该会话。');
-            }
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-        }
-        throw new Error('面部分析时间较长，请稍后重试。');
-    }, [checkSessionStatus]);
 
     const runAnalysis = useCallback(async () => {
         // 并发保护：防止双击或重渲染导致多个分析流程竞争
@@ -898,7 +567,7 @@ export function useAsyncAnalysis() {
                 }
             }
         }
-    }, [trackAnalysisStart, trackAnalysisComplete, pollSessionResult, waitForFaceCompleted, user, toast]);
+    }, [trackAnalysisStart, trackAnalysisComplete, user, toast]);
 
     // Fake progress animation to fill the gaps between milestones
     useEffect(() => {
@@ -1117,7 +786,7 @@ export function useAsyncAnalysis() {
             isRunningRef.current = false;
             releaseAnalysisLock();
         }
-    }, [checkSessionStatus, pollSessionResult, waitForFaceCompleted, user]);
+    }, [user]);
 
     // Mock 模式：纯前端模拟进度，不调用任何 API，用于本地预览 AnalyzingOverlay / 结果页 UI
     const mockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);

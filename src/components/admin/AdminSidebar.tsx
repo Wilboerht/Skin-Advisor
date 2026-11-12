@@ -31,6 +31,7 @@ const BASE_MENU_ITEMS = [
     { href: "/admin/products", label: "产品管理", icon: Package },
     { href: "/admin/recommendation-rules", label: "推荐规则", icon: Wand2 },
     { href: "/admin/ai-costs", label: "AI成本", icon: BarChart3 },
+    { href: "/admin/report-quality", label: "报告质量", icon: Activity },
     { href: "/admin/users", label: "用户管理", icon: Users },
     { href: "/admin/audit-logs", label: "安全审计", icon: Shield },
 ];

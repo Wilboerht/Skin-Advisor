@@ -443,17 +443,41 @@ export function buildConsultantPrompt(params: {
     forehead: "额头", tZone: "T区", leftCheek: "左脸颊",
     rightCheek: "右脸颊", eyeArea: "眼周", jawline: "下颌线",
   };
-  const zoneContext = params.faceAnalysis?.zoneAnalysis
-    ? wrapUserData("zoneAnalysis", sanitizePromptInput(JSON.stringify(
-        Object.fromEntries(
-          Object.entries(params.faceAnalysis.zoneAnalysis as unknown as Record<string, unknown>)
-            .map(([k, v]) => [ZONE_LABELS[k] || k, v])
-        )
-      )))
+  const ZONE_SCORE_LABELS: Record<string, string> = {
+    oil: "水油", texture: "细腻度", wrinkles: "无纹度", spots: "无斑度",
+    redness: "无泛红", darkCircles: "眼周", firmness: "紧致度", contour: "轮廓",
+  };
+  // 只注入区域条件/建议 + 低于 70 分的指标，避免整段 zoneAnalysis JSON 进入 prompt
+  const compactZones = params.faceAnalysis?.zoneAnalysis
+    ? Object.entries(params.faceAnalysis.zoneAnalysis as unknown as Record<string, Record<string, unknown>>)
+        .map(([key, zone]) => {
+          const lowScores = Object.entries(ZONE_SCORE_LABELS)
+            .map(([scoreKey, label]) => {
+              const value = zone?.[scoreKey];
+              return typeof value === "number" && value < 70 ? `${label} ${Math.round(value)}` : "";
+            })
+            .filter(Boolean);
+          return {
+            area: ZONE_LABELS[key] || key,
+            condition: typeof zone?.condition === "string" ? zone.condition : "",
+            advice: typeof zone?.advice === "string" ? zone.advice : "",
+            lowScores,
+          };
+        })
+        .filter((zone) => zone.condition || zone.advice || zone.lowScores.length > 0)
+    : [];
+  const zoneContext = compactZones.length > 0
+    ? wrapUserData("zoneAnalysis", sanitizePromptInput(JSON.stringify(compactZones)))
     : "无";
 
   const skinConditionsContext = params.faceAnalysis?.skinConditions?.length
-    ? wrapUserData("skinConditions", sanitizePromptInput(JSON.stringify(params.faceAnalysis.skinConditions)))
+    ? wrapUserData("skinConditions", sanitizePromptInput(JSON.stringify(
+        params.faceAnalysis.skinConditions.slice(0, 5).map((condition) => ({
+          condition: condition.condition,
+          severity: condition.severity,
+          area: condition.area,
+        }))
+      )))
     : "无";
 
   const personaContext = params.personaContent ? `

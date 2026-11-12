@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Star, X } from "lucide-react";
 import { fetchWithCsrf, fetchWithTimeout } from "@/lib/fetch-client";
 import { useToast } from "@/components/ui/Toast";
+import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 
 interface PendingItem {
     sessionId: string;
@@ -36,6 +37,7 @@ const SKIN_FEEL_OPTIONS = [
  */
 export function ProductFeedbackSection() {
     const toast = useToast();
+    const { trackEvent } = useAdvisorAnalytics();
     const [items, setItems] = useState<PendingItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -105,6 +107,11 @@ export function ProductFeedbackSection() {
                 const data = await res.json().catch(() => ({}));
                 throw new Error((data as { error?: string }).error || "提交失败，请稍后重试");
             }
+            trackEvent("feedback_submit", {
+                targetType: "product",
+                productId: selected.productId,
+                rating,
+            });
             setItems((prev) => prev.filter((item) => !(
                 item.productId === selected.productId && item.sessionId === selected.sessionId
             )));
@@ -154,7 +161,7 @@ export function ProductFeedbackSection() {
 
             {selected && (
                 <div className="fixed inset-0 z-[100100] flex items-end justify-center bg-black/25 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="product-feedback-form-title">
-                    <div className="w-full max-w-md rounded-2xl bg-[#FDFBF7] p-5 shadow-xl">
+                    <div className="w-full max-w-md rounded-2xl bg-[var(--color-report-paper)] p-5 shadow-xl">
                         <div className="mb-3 flex items-start justify-between gap-3">
                             <div>
                                 <h4 id="product-feedback-form-title" className="text-[15px] font-medium text-[var(--color-brand-espresso)]">
@@ -180,7 +187,7 @@ export function ProductFeedbackSection() {
                                             className="rounded p-0.5"
                                         >
                                             <Star
-                                                className={`h-6 w-6 ${value <= rating ? "fill-[#C9A86C] text-[#C9A86C]" : "text-brand-charcoal/20"}`}
+                                                className={`h-6 w-6 ${value <= rating ? "fill-[var(--color-report-gold)] text-[var(--color-report-gold)]" : "text-brand-charcoal/20"}`}
                                                 strokeWidth={1.5}
                                             />
                                         </button>
