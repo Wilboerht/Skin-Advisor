@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
 import { buildContentSecurityPolicy } from "./src/lib/security-headers";
 
+// 部署版本号：每次构建唯一（可用 NEXT_DEPLOYMENT_ID / GIT_COMMIT_SHA 指定）。
+// 发布后仍停留在旧页面的客户端导航到新实例时，Next 检测到版本不一致会整页刷新，
+// 避免继续请求已被新构建删除的 chunk（ChunkLoadError / 白屏）。
+const deploymentId =
+  process.env.NEXT_DEPLOYMENT_ID ||
+  process.env.GIT_COMMIT_SHA ||
+  `build-${Date.now().toString(36)}`;
+
 const nextConfig: NextConfig = {
+  deploymentId,
   webpack: (config) => {
     config.module ??= { rules: [] };
     config.module.rules ??= [];
