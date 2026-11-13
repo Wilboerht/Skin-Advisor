@@ -593,6 +593,7 @@ export async function POST(request: NextRequest) {
             const target = process.env.REPORT_JOB_URL || `http://127.0.0.1:${port}/api/advisor/analyze`;
             const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://smart.nihplod.cn";
             const cookie = request.headers.get("cookie") || "";
+            const authorization = request.headers.get("authorization") || "";
             const forwardedFor = request.headers.get("x-forwarded-for");
             const realIp = request.headers.get("x-real-ip");
             const userAgent = request.headers.get("user-agent");
@@ -607,6 +608,9 @@ export async function POST(request: NextRequest) {
                     referer: `${siteOrigin}/result`,
                 });
                 if (cookie) headers.set("cookie", cookie);
+                // 小程序/移动端只有 Bearer，没有浏览器 Cookie；异步自请求必须透传，
+                // 否则后台任务拿不到用户身份，报告永远不会完成。
+                if (authorization) headers.set("authorization", authorization);
                 if (forwardedFor) headers.set("x-forwarded-for", forwardedFor);
                 if (realIp) headers.set("x-real-ip", realIp);
                 if (userAgent) headers.set("user-agent", userAgent);

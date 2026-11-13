@@ -95,7 +95,12 @@ export async function GET(
             return NextResponse.json({ summary }, { headers: rateLimitHeaders });
         }
 
-        const view = buildReportView({ result, faceAnalysis, sessionId });
+        const view = buildReportView({
+            result,
+            faceAnalysis,
+            sessionId,
+            completedAt: session.completedAt.toISOString(),
+        });
         return NextResponse.json({ view }, { headers: rateLimitHeaders });
     } catch (error) {
         logger.error("[reports/view] failed", { error: String(error) });

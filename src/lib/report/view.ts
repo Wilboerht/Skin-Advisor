@@ -204,6 +204,8 @@ export interface BuildReportViewInput {
     result: ComprehensiveResult;
     faceAnalysis: FaceAnalysisResult | null;
     sessionId?: string;
+    /** 历史报告缺少 result.analyzedAt 时的兜底时间（通常取 session.completedAt） */
+    completedAt?: string;
 }
 
 export function buildReportSummaryCard({
@@ -213,7 +215,10 @@ export function buildReportSummaryCard({
     completedAt,
 }: BuildReportViewInput & { completedAt?: string }): ReportViewSummaryCard {
     const reportV3 = result.reportV3;
-    const firstFinding = reportV3?.findings?.[0];
+    const preferredId = reportV3?.summary.topFindingIds?.[0];
+    const firstFinding = (preferredId
+        ? reportV3?.findings?.find((finding) => finding.id === preferredId)
+        : undefined) ?? reportV3?.findings?.[0];
     const firstIssue = result.consultantReport?.issues?.[0];
     const rawSeverity = firstFinding?.severity ?? firstIssue?.severity;
     const severity: ReportSeverity = rawSeverity === "moderate" || rawSeverity === "severe"
@@ -242,7 +247,7 @@ export function buildReportSummaryCard({
     };
 }
 
-export function buildReportView({ result, faceAnalysis, sessionId }: BuildReportViewInput): ReportView {
+export function buildReportView({ result, faceAnalysis, sessionId, completedAt }: BuildReportViewInput): ReportView {
     const reportV3 = result.reportV3;
     const dimensions = buildDimensions(faceAnalysis);
     const findings = buildFindings(result, reportV3);
@@ -285,7 +290,10 @@ export function buildReportView({ result, faceAnalysis, sessionId }: BuildReport
         })();
 
     const topIssue = result.consultantReport?.issues?.[0];
-    const topFinding = findings[0] ?? (topIssue ? {
+    const preferredTopFinding = (reportV3?.summary.topFindingIds ?? [])
+        .map((id) => findings.find((finding) => finding.id === id))
+        .find((finding) => !!finding);
+    const topFinding = preferredTopFinding ?? findings[0] ?? (topIssue ? {
         id: "issue-1",
         title: topIssue.title,
         severity: topIssue.severity,
@@ -309,7 +317,7 @@ export function buildReportView({ result, faceAnalysis, sessionId }: BuildReport
                 ? result.reportVersion
                 : (reportV3 ? 3 : result.consultantReport ? 2 : 1),
             viewVersion: REPORT_VIEW_VERSION,
-            analyzedAt: result.analyzedAt,
+            analyzedAt: result.analyzedAt || completedAt,
             dataSource: result.dataSource,
             nickname: result.nickname,
             persona: result.persona,

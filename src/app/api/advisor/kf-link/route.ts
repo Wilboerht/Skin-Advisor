@@ -44,14 +44,15 @@ export async function GET(request: NextRequest) {
     const internalKey = process.env.INTERNAL_API_KEY;
 
     try {
-        const resp = await fetch(
-            `${base}/api/kf-link?session_id=${encodeURIComponent(sessionId)}`,
-            {
-                headers: internalKey ? { "x-internal-key": internalKey } : {},
-                signal: AbortSignal.timeout(5000),
-                cache: "no-store",
-            }
-        );
+        const resp = await fetch(`${base}/api/kf-link`, {
+            headers: {
+                ...(internalKey ? { "x-internal-key": internalKey } : {}),
+                // sessionId 是报告凭证：走请求头，避免进入 Nginx/Cloudflare 访问日志
+                "x-session-id": sessionId,
+            },
+            signal: AbortSignal.timeout(5000),
+            cache: "no-store",
+        });
         if (!resp.ok) throw new Error(`kf-link upstream ${resp.status}`);
         const data = await resp.json();
         if (!data?.url) throw new Error("kf-link upstream empty url");

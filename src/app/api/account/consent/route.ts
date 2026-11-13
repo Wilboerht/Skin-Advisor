@@ -11,7 +11,7 @@ import {
     revokeConsent,
     type ConsentScope,
 } from "@/lib/consent";
-import { CONSENT_VERSION, isConsentScope } from "@/lib/consent-constants";
+import { CONSENT_COMPATIBLE_VERSIONS, isConsentScope } from "@/lib/consent-constants";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (record.agreed !== true) {
         return apiError(ErrorCode.VALIDATION_ERROR, "请先确认授权", 400);
     }
-    if (version !== CONSENT_VERSION) {
+    if (!(CONSENT_COMPATIBLE_VERSIONS as readonly string[]).includes(version)) {
         return apiError(ErrorCode.CONFLICT, "授权版本已更新，请刷新后重试", 409);
     }
     if (scopes.length === 0) {
