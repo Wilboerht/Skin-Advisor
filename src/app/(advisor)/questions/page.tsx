@@ -16,7 +16,13 @@ import { useUser } from "@/components/auth/UserProvider";
 import { cn } from "@/lib/utils";
 import { scheduleFaceModelPreload } from "@/lib/face-models";
 import { hasPrivacyConsent } from "@/lib/consent-storage";
-import { getOrCreateAnalyticsSessionId } from "@/lib/analytics-session";
+import {
+    getOrCreateAnalyticsSessionId,
+    rotateAnalyticsSessionId,
+    setAnalyticsSessionId,
+} from "@/lib/analytics-session";
+import { canReuseFailedAnalysis, fingerprintAnswers } from "@/lib/failed-analysis-retry";
+import { clearFailedAnalysisRetry, readFailedAnalysisRetry } from "@/hooks/async-analysis/storage";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useNavPush } from "@/hooks/use-nav-push";
@@ -57,6 +63,8 @@ export default function QuestionsPage() {
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const { trackQuestionnaireStart, trackQuestionnaireComplete } = useAdvisorAnalytics();
     const hasTrackedStart = useRef(false);
+    // 每个挂载周期最多轮换一次埋点会话，避免返回性别页重复确认时把同一份问卷拆到两个会话
+    const analyticsRotatedRef = useRef(false);
     // 是否从本地恢复了真实进度（答案/性别）。恢复的用户点击确认不算"新开始"，避免重复上报
     const resumedProgressRef = useRef(false);
 
@@ -477,6 +485,25 @@ export default function QuestionsPage() {
         // 面部识别模型改为空闲时预加载：face-api/TF.js 的解析编译是主线程长任务，
         // 同步启动会卡住紧随其后的"上一题"/"退出"点击（交互优先于预加载）
         scheduleFaceModelPreload();
+        // 新测试开始时轮换埋点会话（分析与埋点共用 UUID）。同一标签页内沿用上一次测试的
+        // UUID 会让结果页恢复、face-analyze、analyze 命中上一份已完成报告。
+        // 仅当本标签页的埋点会话确实已产出过报告时轮换：首次测试保留 session_start
+        // 写入的渠道归因（UTM/referrer）；分析续跑/免费重试保持同一会话。
+        if (!analyticsRotatedRef.current) {
+            analyticsRotatedRef.current = true;
+            let shouldRotate = false;
+            try {
+                const hasAnalyzingMarker = !!sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
+                const isFreeRetry = safeStorage.get(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
+                const lastCompletedSessionId = sessionStorage.getItem(STORAGE_KEYS.ADVISOR_LAST_COMPLETED_SESSION);
+                const analyticsSessionId = getOrCreateAnalyticsSessionId();
+                shouldRotate = !hasAnalyzingMarker
+                    && !isFreeRetry
+                    && !!lastCompletedSessionId
+                    && lastCompletedSessionId === analyticsSessionId;
+            } catch { /* ignore */ }
+            if (shouldRotate) rotateAnalyticsSessionId();
+        }
         // 追踪问卷开始（从确认性别开始算）；恢复进度的用户不算新开始，避免重复上报
         if (!hasTrackedStart.current && !resumedProgressRef.current) {
             trackQuestionnaireStart();
@@ -613,17 +640,35 @@ export default function QuestionsPage() {
             sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
             sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
         } catch { /* ignore */ }
-        trackQuestionnaireComplete(finalAnswers);
-        // 让分析流程复用埋点 UUID：face-analyze / analyze / 漏斗事件落到同一条会话
-        const analyticsSessionId = getOrCreateAnalyticsSessionId();
-        if (analyticsSessionId) {
+
+        // 性别不一致免费重试：复用已存的面部结果，跳过 face-scan/视觉 AI，直接进入 analyze。
+        const isFreeRetry = safeStorage.get(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
+
+        // 决定本次分析会话：免费重试 / 同问卷失败重试必须回到原会话（服务端幂等不重复扣次）；
+        // 其它情况使用本轮轮换出的埋点会话，避免同一标签页的新测试命中上一份已完成报告。
+        let analysisSessionId = getOrCreateAnalyticsSessionId();
+        if (isFreeRetry) {
+            analysisSessionId = safeStorage.get(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID) || analysisSessionId;
+        } else {
+            const failedRetry = readFailedAnalysisRetry();
+            const fingerprint = fingerprintAnswers(JSON.stringify(finalAnswers));
+            if (canReuseFailedAnalysis(failedRetry, fingerprint)) {
+                analysisSessionId = failedRetry!.sessionId;
+            } else if (failedRetry) {
+                // 问卷已变化：不复用旧失败会话，按新测试处理
+                clearFailedAnalysisRetry();
+                analysisSessionId = crypto.randomUUID();
+            }
+        }
+        if (analysisSessionId) {
+            // 让分析流程与埋点复用同一 sessionId：face-analyze / analyze / 漏斗事件落到同一条会话
+            setAnalyticsSessionId(analysisSessionId);
             try {
-                sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID, analyticsSessionId);
+                sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID, analysisSessionId);
                 sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT, String(Date.now()));
             } catch { /* ignore */ }
         }
-        // 性别不一致免费重试：复用已存的面部结果，跳过 face-scan/视觉 AI，直接进入 analyze。
-        const isFreeRetry = safeStorage.get(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
+        trackQuestionnaireComplete(finalAnswers);
         navPush(isFreeRetry ? "/result?status=analyzing" : "/face-scan");
     };
 

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { advisorStorage } from '@/lib/advisor-storage';
+import { ANALYTICS_SESSION_KEY } from '@/lib/analytics-session';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
 import { getModalHistory } from '@/lib/modal-history';
 import { SESSION_EXPIRED_EVENT, fetchWithCsrf } from '@/lib/fetch-client';
@@ -166,16 +167,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
         void (async () => {
             if (shouldClear) {
                 await advisorStorage.clearAll();
+                // 账号切换必须同时作废本标签页的埋点/分析会话，否则下一位用户会沿用
+                // 上一位用户的 sessionId（服务端归属校验会直接 404）。
+                // 仅账号切换时清理：普通刷新要保留分析中标记，结果页才能续跑而不是重开分析。
+                try {
+                    for (const key of [
+                        STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID,
+                        STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT,
+                        STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK,
+                        STORAGE_KEYS.LOCATION_CONSENT,
+                        ANALYTICS_SESSION_KEY,
+                    ]) {
+                        sessionStorage.removeItem(key);
+                    }
+                } catch { /* ignore */ }
             }
             try {
-                for (const key of [
-                    STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID,
-                    STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT,
-                    STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK,
-                    STORAGE_KEYS.LOCATION_CONSENT,
-                ]) {
-                    sessionStorage.removeItem(key);
-                }
                 if (nextId) localStorage.setItem(STORAGE_KEYS.ADVISOR_CLIENT_OWNER, nextId);
                 else localStorage.removeItem(STORAGE_KEYS.ADVISOR_CLIENT_OWNER);
             } catch { /* ignore */ }
@@ -316,6 +323,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT,
                 STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK,
                 STORAGE_KEYS.LOCATION_CONSENT,
+                // 埋点/分析共用会话：登出后必须作废，避免下一位登录用户复用到旧账号的会话
+                ANALYTICS_SESSION_KEY,
             ];
             for (const key of sessionKeys) {
                 try { sessionStorage.removeItem(key); } catch { /* ignore */ }

@@ -29,3 +29,26 @@ export function getOrCreateAnalyticsSessionId(): string {
         return "";
     }
 }
+
+/** 把埋点会话指向指定 sessionId（分析会话复用时保持两边一致） */
+export function setAnalyticsSessionId(sessionId: string): void {
+    if (typeof window === "undefined" || !sessionId) return;
+    try {
+        sessionStorage.setItem(ANALYTICS_SESSION_KEY, sessionId);
+    } catch {
+        /* ignore */
+    }
+}
+
+/**
+ * 开始新一次测肤时轮换埋点会话。
+ *
+ * 分析会话复用埋点 UUID：若同一标签页内一直沿用上一次测试的 UUID，
+ * 新测试会在结果页恢复 / face-analyze / analyze 处命中上一份已完成报告。
+ */
+export function rotateAnalyticsSessionId(): string {
+    if (typeof window === "undefined") return "";
+    const created = newSessionId();
+    setAnalyticsSessionId(created);
+    return created;
+}

@@ -12,11 +12,19 @@ import {
 // 覆盖视觉 95s + 文本 85s + 队列/网络开销；过短会让刷新后的恢复流程与在途分析并发。
 const ANALYSIS_LOCK_TTL_MS = 300 * 1000;
 
-export function clearAnalyzingSessionMarkers(): void {
+/**
+ * 清理"分析中"标记。
+ * 传入 completedSessionId 表示本次分析已成功出报告：记录下来，供下一次新测试
+ * 判断当前埋点会话是否已被消耗，从而轮换出新的分析会话。
+ */
+export function clearAnalyzingSessionMarkers(completedSessionId?: string): void {
     try {
         sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
         sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
+        if (completedSessionId) {
+            sessionStorage.setItem(STORAGE_KEYS.ADVISOR_LAST_COMPLETED_SESSION, completedSessionId);
+        }
     } catch { /* ignore */ }
 }
 

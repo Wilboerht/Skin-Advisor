@@ -33,6 +33,9 @@ export const STORAGE_KEYS = {
     // 分析中会话（防止刷新页面重复生成 sessionId 导致重复扣费）
     ADVISOR_ANALYZING_SESSION_ID: 'advisor_analyzing_session_id',
     ADVISOR_ANALYZING_STARTED_AT: 'advisor_analyzing_started_at',
+    // 本标签页最近一次成功出报告的 sessionId（sessionStorage）：
+    // 下一次问卷提交前据此轮换埋点/分析会话，避免新测试命中上一份已完成报告
+    ADVISOR_LAST_COMPLETED_SESSION: 'advisor_last_completed_session',
     // localStorage 持久备份（sessionStorage 在关闭标签页后丢失，
     // 重新打开 /result?status=analyzing 时可从 localStorage 恢复会话 ID）
     ADVISOR_ANALYZING_SESSION_LOCAL: 'advisor_analyzing_session_local',

@@ -563,7 +563,7 @@ export function useAsyncAnalysis() {
                 releaseAnalysisLock();
                 if (analysisSucceeded) {
                     clearFailedAnalysisRetry();
-                    clearAnalyzingSessionMarkers();
+                    clearAnalyzingSessionMarkers(activeSessionId ?? undefined);
                 }
             }
         }
@@ -701,7 +701,17 @@ export function useAsyncAnalysis() {
             }
 
             if (statusRes.status === 'completed' && statusRes.rawResult) {
-                clearAnalyzingSessionMarkers();
+                // 免费重试：服务端在重试开始前会保留旧报告，只有 freeRetryUsed 才是本次重试结果。
+                // 否则直接展示旧报告会让免费重试“看起来没发生”，必须交给调用方启动重试。
+                let freeRetryForSession = false;
+                try {
+                    freeRetryForSession = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true"
+                        && localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID) === sessionId;
+                } catch { /* ignore */ }
+                if (freeRetryForSession && statusRes.rawResult.freeRetryUsed !== true) {
+                    return { status: 'not_found' };
+                }
+                clearAnalyzingSessionMarkers(sessionId);
                 setAnalysisState({ status: 'completed', progress: 100, error: null });
                 return { status: 'completed', result: statusRes.rawResult, sessionId };
             }
@@ -723,31 +733,35 @@ export function useAsyncAnalysis() {
             // - face_analyzing：只等面部阶段完成，再补跑文本；
             // - face_completed：直接补跑文本；
             // - text_analyzing / 老服务端 analyzing：继续轮询；
-            // - pending：没有扫脸结果，明确要求返回拍摄（不降级为纯问卷）。
+            // - pending：服务端尚无扫脸记录（埋点建行或上次失败释放了 claim），
+            //   回退到全新分析，由 runAnalysis 带着本地照片重走 face-analyze。
             if (statusRes.phase === 'face_analyzing') {
                 const wait = await waitForFaceCompleted(sessionId, signal);
                 if (wait.completedResult) {
-                    clearAnalyzingSessionMarkers();
+                    clearAnalyzingSessionMarkers(sessionId);
                     setAnalysisState({ status: 'completed', progress: 100, error: null });
                     return { status: 'completed', result: wait.completedResult, sessionId };
                 }
                 const result = await launchTextAnalysis();
                 if (result) {
-                    clearAnalyzingSessionMarkers();
+                    clearAnalyzingSessionMarkers(sessionId);
                     setAnalysisState({ status: 'completed', progress: 100, error: null });
                     return { status: 'completed', result, sessionId };
                 }
             } else if (statusRes.phase === 'face_completed') {
                 const result = await launchTextAnalysis();
                 if (result) {
-                    clearAnalyzingSessionMarkers();
+                    clearAnalyzingSessionMarkers(sessionId);
                     setAnalysisState({ status: 'completed', progress: 100, error: null });
                     return { status: 'completed', result, sessionId };
                 }
             } else if (statusRes.phase === 'pending') {
-                const message = '尚未完成扫脸拍摄，请返回扫脸页完成拍摄后再试。';
-                setAnalysisState({ status: 'error', progress: 0, error: message });
-                return { status: 'error', message };
+                // pending 只表示服务端没有扫脸分析记录，不代表用户没拍摄：
+                // 会话行可能先由埋点（session_start / questionnaire_complete）创建，
+                // 也可能是上次面部阶段失败后释放了 claim；照片仍只存在于浏览器本地。
+                // 因此回退到全新分析（复用同一 sessionId），由 runAnalysis 带着本地照片
+                // 重新走 face-analyze；本地确实没有照片时会给出“请先完成扫脸拍摄”的提示。
+                return { status: 'not_found' };
             }
 
             // text_analyzing / rate_limited / transient_error / 老服务端无 phase：统一轮询。
@@ -759,7 +773,7 @@ export function useAsyncAnalysis() {
                 signal
             });
             if (pollResult.status === 'completed' && pollResult.rawResult) {
-                clearAnalyzingSessionMarkers();
+                clearAnalyzingSessionMarkers(sessionId);
                 setAnalysisState({ status: 'completed', progress: 100, error: null });
                 return { status: 'completed', result: pollResult.rawResult, sessionId };
             }
@@ -776,6 +790,16 @@ export function useAsyncAnalysis() {
             const isDefinitive = e instanceof SessionRecoveryError && e.reason === 'not_found';
             if (isDefinitive) {
                 return { status: 'not_found' };
+            }
+            // 超时/网络等可重试失败：暂存本次会话，供错误页“重试分析”复用同一 sessionId。
+            // 否则重试会新建会话，既有 TestRecord 预占被浪费，用户可能被重复扣次。
+            const isAuthFailure = e instanceof SessionRecoveryError
+                && (e.reason === 'forbidden' || e.reason === 'unauthorized');
+            if (!isAuthFailure) {
+                try {
+                    const answersStr = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
+                    if (answersStr) writeFailedAnalysisRetry(sessionId, fingerprintAnswers(answersStr));
+                } catch { /* ignore */ }
             }
             const message = e instanceof SessionRecoveryError && e.reason === 'timeout'
                 ? '分析结果准备时间有点长，请稍后重试。'
