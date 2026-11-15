@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { m } from "framer-motion";
 import { Venus, Mars, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,16 +23,22 @@ export function GenderSelection({ onSelect, selectedGender, title = "开始之�
         { value: "female" as const, label: "女性", Icon: Venus },
         { value: "male" as const, label: "男性", Icon: Mars },
     ];
+    const optionRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+    const [highlighted, setHighlighted] = useState<"female" | "male">(selectedGender ?? "female");
 
-    // radiogroup 键盘行为：方向键切换选项（与卡片单击等价，两选项页面直接前进）
+    useEffect(() => {
+        if (selectedGender) setHighlighted(selectedGender);
+    }, [selectedGender]);
+
+    // radiogroup 键盘行为：方向键只移动焦点/高亮，Enter/Space 才确认并进入问卷
     const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-        if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-            event.preventDefault();
-            onSelect("female");
-        } else if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-            event.preventDefault();
-            onSelect("male");
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowUp" && event.key !== "ArrowRight" && event.key !== "ArrowDown") {
+            return;
         }
+        event.preventDefault();
+        const next = event.key === "ArrowLeft" || event.key === "ArrowUp" ? "female" : "male";
+        setHighlighted(next);
+        optionRefs.current[next]?.focus();
     };
 
     return (
@@ -67,6 +73,7 @@ export function GenderSelection({ onSelect, selectedGender, title = "开始之�
                 {/* 容器用 div 承载标题等内容；点击/ARIA/焦点由覆盖层 button 承担 */}
                 {options.map(({ value, label, Icon }) => {
                     const isSelected = selectedGender === value;
+                    const isHighlighted = highlighted === value;
                     return (
                         <m.div
                             key={value}
@@ -75,10 +82,12 @@ export function GenderSelection({ onSelect, selectedGender, title = "开始之�
                                 "group relative flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-4 rounded-2xl border bg-white px-5 sm:px-8 py-5 sm:py-9 text-left sm:text-center transition-all duration-300",
                                 isSelected
                                     ? "border-brand-charcoal/40 bg-brand-charcoal/[0.02] shadow-[0_8px_24px_rgba(0,38,62,0.06)]"
-                                    : "border-[var(--color-brand-espresso)]/[0.10] hover:border-[var(--color-brand-espresso)]/[0.20] hover:shadow-[0_8px_24px_rgba(61,47,37,0.06)]"
+                                    : "border-[var(--color-brand-espresso)]/[0.10] hover:border-[var(--color-brand-espresso)]/[0.20] hover:shadow-[0_8px_24px_rgba(61,47,37,0.06)]",
+                                isHighlighted && !isSelected && "ring-1 ring-brand-charcoal/15"
                             )}
                         >
                             <m.button
+                                ref={(el) => { optionRefs.current[value] = el; }}
                                 type="button"
                                 onClick={() => onSelect(value)}
                                 whileTap={{ scale: 0.98 }}

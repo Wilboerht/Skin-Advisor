@@ -23,6 +23,7 @@ export interface HistoryAnalysisResult {
 export interface HistorySession {
   sessionId: string;
   completedAt: string;
+  expiresAt?: string | null;
   analysisResult?: HistoryAnalysisResult;
 }
 
@@ -40,6 +41,8 @@ interface TestHistoryListProps {
   onPageChange?: (page: number) => void;
   /** 每次数据加载完成后回调 */
   onDataChange?: (sessions: HistorySession[], total: number) => void;
+  /** 401 登录态过期：由父级关闭弹层并打开登录引导 */
+  onRequestLogin?: () => void;
 }
 
 function formatDay(dateStr: string) {
@@ -54,11 +57,15 @@ export function TestHistoryList({
   initialPage,
   onPageChange,
   onDataChange,
+  onRequestLogin,
 }: TestHistoryListProps) {
   const hasInitial = !!initialSessions && initialSessions.length > 0;
   const [history, setHistory] = useState<HistorySession[]>(initialSessions ?? []);
   const [loading, setLoading] = useState(!hasInitial);
   const [error, setError] = useState(false);
+  const [authExpired, setAuthExpired] = useState(false);
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => setNow(Date.now()), []);
   const [page, setPage] = useState(initialPage ?? 1);
   const [totalPages, setTotalPages] = useState(initialTotal > 0 ? Math.ceil(initialTotal / pageSize) : 0);
   const [total, setTotal] = useState(initialTotal);
@@ -72,10 +79,15 @@ export function TestHistoryList({
     busyRef.current = true;
     setLoading(true);
     setError(false);
+    setAuthExpired(false);
     try {
       const res = await fetch(`/api/advisor/history?page=${page}&limit=${pageSize}&lite=1`, {
         signal: AbortSignal.timeout(8000),
       });
+      if (res.status === 401) {
+        if (seq === requestSeqRef.current) setAuthExpired(true);
+        return;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (seq !== requestSeqRef.current) return; // 已被更新的请求取代，丢弃本次结果
@@ -134,6 +146,17 @@ export function TestHistoryList({
             </div>
           ))}
         </div>
+      ) : authExpired ? (
+        <div className="h-48 flex flex-col items-center justify-center gap-4">
+          <p className="text-[13px] text-brand-charcoal/60">登录状态已过期，请重新登录后查看</p>
+          <button
+            type="button"
+            onClick={() => onRequestLogin?.()}
+            className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[var(--color-brand-cocoa)] border border-brand-espresso/20 hover:border-brand-espresso/50 hover:bg-brand-espresso/[0.04] transition-all duration-300"
+          >
+            重新登录
+          </button>
+        </div>
       ) : error ? (
         <div className="h-48 flex flex-col items-center justify-center gap-4">
           <p className="text-[13px] text-brand-charcoal/60">测肤记录加载失败，请检查网络后重试</p>
@@ -185,6 +208,8 @@ export function TestHistoryList({
             // 分数颜色分级：与时间线状态点同一套语义色（great/good/normal/bad/terrible），扫读口径一致
             const scoreState =
               typeof score === "number" && score > 0 ? scoreToSkinState(score) : null;
+            const isExpired =
+              !!session.expiresAt && now !== null && new Date(session.expiresAt).getTime() < now;
 
             return (
               <div key={session.sessionId}>
@@ -206,6 +231,11 @@ export function TestHistoryList({
                   </span>
                   <span className="flex-1 min-w-0 truncate text-[13px] text-brand-charcoal/85">
                     {skinType || "肌肤分析"}
+                    {isExpired && (
+                      <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-normal text-amber-700">
+                        已过期
+                      </span>
+                    )}
                   </span>
                   <span
                     className="shrink-0 inline-flex items-baseline text-[13px] font-medium tabular-nums"
@@ -237,7 +267,7 @@ export function TestHistoryList({
               setPage((p) => Math.max(1, p - 1));
             }}
             disabled={page <= 1 || loading}
-            className="inline-flex items-center gap-1 h-8 px-3.5 rounded-full border border-brand-espresso/20 text-[12px] text-brand-charcoal/60 transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center gap-1 h-10 px-3.5 rounded-full border border-brand-espresso/20 text-[12px] text-brand-charcoal/60 transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
             上一页
@@ -254,7 +284,7 @@ export function TestHistoryList({
               setPage((p) => Math.min(totalPages, p + 1));
             }}
             disabled={page >= totalPages || loading}
-            className="inline-flex items-center gap-1 h-8 px-3.5 rounded-full border border-brand-espresso/20 text-[12px] text-brand-charcoal/60 transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center gap-1 h-10 px-3.5 rounded-full border border-brand-espresso/20 text-[12px] text-brand-charcoal/60 transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             下一页
             <ChevronRight className="w-3.5 h-3.5" />

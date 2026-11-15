@@ -8,28 +8,14 @@ import { withAdminAuth, requireRole, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import {
-    MAX_NAME_LENGTH,
-    MAX_CATEGORY_LENGTH,
-    MAX_PRICE_LENGTH,
-    MAX_DESCRIPTION_LENGTH,
-    MAX_HOW_TO_USE_LENGTH,
-    MAX_ORIGIN_LENGTH,
-    MAX_CAPACITY_LENGTH,
-    MAX_IMAGE_URL_LENGTH,
-    MAX_AFFILIATE_URL_LENGTH,
-    MAX_IMAGE_COUNT,
     MAX_TAG_ITEM_LENGTH,
     MAX_TAG_ARRAY_LENGTH,
-    AFFILIATE_PLATFORM_KEYS,
-    validateImageUrl,
     recommendReasonsSchema,
-    purchaseLinksSchema,
 } from "@/types/product";
-import { buildAffiliateLinks, normalizeProductPurchaseLinks } from "@/lib/product-links";
 import { deleteUnreferencedProductAssets, productImageRefs } from "@/lib/product-assets";
 import { logger } from "@/lib/logger";
 
-/** 已绑定主站的产品：这些基础字段只能由主站同步，子站管理端忽略写入 */
+/** 基础字段只能由主站同步，子站管理端一律忽略写入 */
 const SYNCED_SHARED_FIELDS = [
     "name",
     "category",
@@ -83,29 +69,17 @@ export const PUT = withAdminAuth(async (
 
     try {
         const { id } = await params;
-        const existingMeta = await prisma.product.findUnique({
-            where: { id },
-            select: { sourceProductId: true },
-        });
-        if (!existingMeta) {
-            return apiError(ErrorCode.NOT_FOUND, "Product not found", 404);
-        }
-
         const body = (await request.json()) as Record<string, unknown>;
-        // 已绑定主站的产品：基础字段只读，服务端直接忽略，避免绕过前端覆盖同步数据
-        if (existingMeta.sourceProductId) {
-            for (const field of SYNCED_SHARED_FIELDS) {
-                delete body[field];
-            }
+        // 基础信息只由主站同步写入，任何产品的 PUT 都忽略这些字段
+        for (const field of SYNCED_SHARED_FIELDS) {
+            delete body[field];
         }
         const clientInfo = getClientInfo(request);
 
-        // Build update data — only include fields that are explicitly provided
+        // Build update data — only include sub-site fields that are explicitly provided
         const allowedFields = [
-            'name', 'category', 'image', 'images', 'price', 'description',
             'keyIngredients', 'suitableSkinTypes', 'benefits', 'negativeFor',
-            'active', 'featured', 'howToUse', 'origin', 'capacity',
-            'affiliateLinks', 'purchaseLinks', 'recommendReasons'
+            'active', 'featured', 'recommendReasons'
         ];
 
         const updateData: Record<string, unknown> = {};
@@ -117,90 +91,6 @@ export const PUT = withAdminAuth(async (
 
         if (Object.keys(updateData).length === 0) {
             return apiError(ErrorCode.VALIDATION_ERROR, "No valid fields to update", 400);
-        }
-
-        // Validate string fields
-        if (updateData.name !== undefined && (typeof updateData.name !== "string" || updateData.name.trim().length === 0 || updateData.name.length > MAX_NAME_LENGTH)) {
-            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid name (max ${MAX_NAME_LENGTH} chars)`, 400);
-        }
-        if (updateData.category !== undefined && (typeof updateData.category !== "string" || updateData.category.trim().length === 0 || updateData.category.length > MAX_CATEGORY_LENGTH)) {
-            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid category (max ${MAX_CATEGORY_LENGTH} chars)`, 400);
-        }
-        if (updateData.image !== undefined && (typeof updateData.image !== "string" || updateData.image.length > MAX_IMAGE_URL_LENGTH)) {
-            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid image URL (max ${MAX_IMAGE_URL_LENGTH} chars)`, 400);
-        }
-        if (updateData.image !== undefined) {
-            const imageError = validateImageUrl(updateData.image as string);
-            if (imageError) return apiError(ErrorCode.VALIDATION_ERROR, imageError, 400);
-        }
-
-        // description 字段在 schema 中为 String（非 null），拒绝 null 值
-        if (updateData.description === null) {
-            return apiError(ErrorCode.VALIDATION_ERROR, "Description cannot be null", 400);
-        }
-        if (updateData.description !== undefined && updateData.description !== null && (typeof updateData.description !== "string" || updateData.description.trim().length === 0 || updateData.description.length > MAX_DESCRIPTION_LENGTH)) {
-            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid description (required when provided, max ${MAX_DESCRIPTION_LENGTH} chars)`, 400);
-        }
-
-        // price 字段在 schema 中为 String（非 null），拒绝 null 值
-        if (updateData.price === null) {
-            return apiError(ErrorCode.VALIDATION_ERROR, "Price cannot be null", 400);
-        }
-        if (updateData.price !== undefined && (typeof updateData.price !== "string" || updateData.price.trim().length === 0 || updateData.price.length > MAX_PRICE_LENGTH)) {
-            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid price (required when provided, max ${MAX_PRICE_LENGTH} chars)`, 400);
-        }
-
-        // howToUse 字段在 schema 中为 String?，校验类型与长度
-        if (updateData.howToUse === null) {
-            updateData.howToUse = null;
-        } else if (updateData.howToUse !== undefined) {
-            if (typeof updateData.howToUse !== "string" || updateData.howToUse.length > MAX_HOW_TO_USE_LENGTH) {
-                return apiError(ErrorCode.VALIDATION_ERROR, `Invalid howToUse (must be a string, max ${MAX_HOW_TO_USE_LENGTH} chars)`, 400);
-            }
-        }
-
-        if (updateData.origin === null) {
-            updateData.origin = null;
-        } else if (updateData.origin !== undefined) {
-            if (typeof updateData.origin !== "string" || updateData.origin.length > MAX_ORIGIN_LENGTH) {
-                return apiError(ErrorCode.VALIDATION_ERROR, `Invalid origin (must be a string, max ${MAX_ORIGIN_LENGTH} chars)`, 400);
-            }
-        }
-
-        if (updateData.capacity === null) {
-            updateData.capacity = null;
-        } else if (updateData.capacity !== undefined) {
-            if (typeof updateData.capacity !== "string" || updateData.capacity.length > MAX_CAPACITY_LENGTH) {
-                return apiError(ErrorCode.VALIDATION_ERROR, `Invalid capacity (must be a string, max ${MAX_CAPACITY_LENGTH} chars)`, 400);
-            }
-        }
-
-        // Validate array fields
-        if (updateData.images !== undefined && updateData.images !== null) {
-            if (!Array.isArray(updateData.images) || updateData.images.length > MAX_IMAGE_COUNT) {
-                return apiError(ErrorCode.VALIDATION_ERROR, `images must be an array with at most ${MAX_IMAGE_COUNT} items`, 400);
-            }
-            if (!updateData.images.every((img: unknown) => typeof img === "string" && (img as string).length <= MAX_IMAGE_URL_LENGTH)) {
-                return apiError(ErrorCode.VALIDATION_ERROR, `Each image must be a string URL (max ${MAX_IMAGE_URL_LENGTH} chars)`, 400);
-            }
-            for (const img of updateData.images) {
-                const imgStr = img as string;
-                const isAbsolute = /^https?:\/\//.test(imgStr);
-                const isRelative = imgStr.startsWith("/");
-                if (!isAbsolute && !isRelative) {
-                    return apiError(ErrorCode.VALIDATION_ERROR, `Invalid image URL format: "${imgStr}" (must be absolute URL or relative path starting with /)`, 400);
-                }
-                if (isAbsolute) {
-                    try {
-                        const imgUrl = new URL(imgStr);
-                        if (!['http:', 'https:'].includes(imgUrl.protocol)) {
-                            return apiError(ErrorCode.VALIDATION_ERROR, "Invalid image URL scheme (must be http or https)", 400);
-                        }
-                    } catch {
-                        return apiError(ErrorCode.VALIDATION_ERROR, "Invalid image URL format", 400);
-                    }
-                }
-            }
         }
 
         // Validate JSON string array fields（这些字段在 schema 中非空，只允许省略，不允许 null）
@@ -231,69 +121,12 @@ export const PUT = withAdminAuth(async (
             }
         }
 
-        // Validate affiliateLinks only when the client is still using the legacy shape.
-        if (updateData.purchaseLinks === undefined && updateData.affiliateLinks !== undefined && updateData.affiliateLinks !== null) {
-            if (typeof updateData.affiliateLinks !== "object" || Array.isArray(updateData.affiliateLinks)) {
-                return apiError(ErrorCode.VALIDATION_ERROR, "affiliateLinks must be an object", 400);
-            }
-            const links = updateData.affiliateLinks as Record<string, unknown>;
-            for (const key of Object.keys(links)) {
-                if (!AFFILIATE_PLATFORM_KEYS.includes(key as typeof AFFILIATE_PLATFORM_KEYS[number])) {
-                    return apiError(ErrorCode.VALIDATION_ERROR, `affiliateLinks key "${key}" is not allowed`, 400);
-                }
-            }
-            for (const [key, value] of Object.entries(links)) {
-                if (typeof value !== "string" || value.length > MAX_AFFILIATE_URL_LENGTH) {
-                    return apiError(ErrorCode.VALIDATION_ERROR, `Invalid affiliateLinks.${key} (must be a string URL, max ${MAX_AFFILIATE_URL_LENGTH} chars)`, 400);
-                }
-                if (value) {
-                    try {
-                        const url = new URL(value);
-                        if (!['http:', 'https:'].includes(url.protocol)) {
-                            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid affiliateLinks.${key} scheme (must be http or https)`, 400);
-                        }
-                    } catch {
-                        return apiError(ErrorCode.VALIDATION_ERROR, `Invalid affiliateLinks.${key} format`, 400);
-                    }
-                }
-            }
-        }
-
-        if (updateData.purchaseLinks !== undefined) {
-            const parsedLinks = purchaseLinksSchema.safeParse(updateData.purchaseLinks);
-            if (!parsedLinks.success) {
-                return apiError(
-                    ErrorCode.VALIDATION_ERROR,
-                    parsedLinks.error.issues[0]?.message || "Invalid purchaseLinks",
-                    400
-                );
-            }
-            updateData.purchaseLinks = parsedLinks.data?.length ? parsedLinks.data : null;
-            // 新版以 purchaseLinks 为准，忽略客户端直接提交的旧字段，避免双写不一致。
-            updateData.affiliateLinks = buildAffiliateLinks(
-                normalizeProductPurchaseLinks(updateData.purchaseLinks, null)
-            );
-        }
-
         // Validate boolean fields
         if (updateData.active !== undefined) {
             updateData.active = updateData.active === true;
         }
         if (updateData.featured !== undefined) {
             updateData.featured = updateData.featured === true;
-        }
-
-        // Trim string fields before persistence
-        if (typeof updateData.name === "string") updateData.name = updateData.name.trim();
-        if (typeof updateData.category === "string") updateData.category = updateData.category.trim();
-        if (typeof updateData.description === "string") updateData.description = updateData.description.trim();
-        if (typeof updateData.price === "string") updateData.price = updateData.price.trim();
-        if (typeof updateData.howToUse === "string") updateData.howToUse = updateData.howToUse.trim();
-        if (typeof updateData.origin === "string") {
-            updateData.origin = updateData.origin.trim() || null;
-        }
-        if (typeof updateData.capacity === "string") {
-            updateData.capacity = updateData.capacity.trim() || null;
         }
 
         const txResult = await prisma.$transaction(async (tx) => {
@@ -315,7 +148,7 @@ export const PUT = withAdminAuth(async (
                     resourceId: id,
                     details: {
                         oldName: oldProduct.name,
-                        newName: updateData.name || oldProduct.name,
+                        newName: oldProduct.name,
                         changes: Object.keys(updateData)
                     },
                     ip: clientInfo.ip,
@@ -330,15 +163,8 @@ export const PUT = withAdminAuth(async (
             return apiError(ErrorCode.NOT_FOUND, "Product not found", 404);
         }
 
-        // 事务提交后立即失效，避免资产清理/响应前仍读到旧产品列表
+        // 事务提交后立即失效，避免响应前仍读到旧产品列表
         invalidateActiveProductsCache();
-
-        const oldRefs = productImageRefs(txResult.oldProduct.image, txResult.oldProduct.images);
-        const newRefs = new Set(productImageRefs(txResult.product.image, txResult.product.images));
-        await deleteUnreferencedProductAssets(
-            oldRefs.filter((ref) => !newRefs.has(ref)),
-            id
-        );
 
         revalidateTag("admin-stats", "max");
         return NextResponse.json(txResult.product);

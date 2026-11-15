@@ -33,6 +33,8 @@ export interface DiaryEntry {
   note?: string | null;
   /** 测肤自动生成条目的来源会话（可跳转对应报告）；手动打卡为空 */
   sessionId?: string | null;
+  /** manual=手动打卡；auto=测肤自动记录（旧数据可能缺失，回退备注前缀判断） */
+  source?: "manual" | "auto" | string | null;
 }
 
 export const STATE_META: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = {

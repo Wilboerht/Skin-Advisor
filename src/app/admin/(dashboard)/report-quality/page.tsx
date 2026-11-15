@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
-import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -20,78 +19,60 @@ export default async function ReportQualityPage() {
     // eslint-disable-next-line react-hooks/purity
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    let total = 0;
-    let fallback = 0;
-    let avgDuration = 0;
-    let avgFindings = 0;
-    let avgIssues = 0;
-    let avgCoverage = 0;
-    let avgQueue = 0;
-    let avgText = 0;
-    let avgProduct = 0;
-    let avgPersist = 0;
-    let bySource: Array<{ narrativeSource: string; _count: { id: number } }> = [];
-    let recentFallbacks: Array<{
-        sessionId: string;
-        model: string | null;
-        fallbackReason: string | null;
-        diagnosisFindingCount: number;
-        issueCount: number;
-        durationMs: number | null;
-        createdAt: Date;
-    }> = [];
+    const [aggregate, sourceGroups, fallbacks] = await Promise.all([
+        prisma.reportQualityLog.aggregate({
+            where: { createdAt: { gte: since } },
+            _count: { id: true },
+            _avg: {
+                durationMs: true,
+                diagnosisFindingCount: true,
+                issueCount: true,
+                coverageScored: true,
+                queueWaitMs: true,
+                textGenerationMs: true,
+                productSelectionMs: true,
+                persistMs: true,
+            },
+        }),
+        prisma.reportQualityLog.groupBy({
+            by: ["narrativeSource"],
+            where: { createdAt: { gte: since } },
+            _count: { id: true },
+        }),
+        prisma.reportQualityLog.findMany({
+            where: { createdAt: { gte: since }, narrativeSource: "fallback" },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+            select: {
+                sessionId: true,
+                model: true,
+                fallbackReason: true,
+                diagnosisFindingCount: true,
+                issueCount: true,
+                durationMs: true,
+                createdAt: true,
+            },
+        }),
+    ]);
 
-    try {
-        const [aggregate, sourceGroups, fallbacks] = await Promise.all([
-            prisma.reportQualityLog.aggregate({
-                where: { createdAt: { gte: since } },
-                _count: { id: true },
-                _avg: {
-                    durationMs: true,
-                    diagnosisFindingCount: true,
-                    issueCount: true,
-                    coverageScored: true,
-                    queueWaitMs: true,
-                    textGenerationMs: true,
-                    productSelectionMs: true,
-                    persistMs: true,
-                },
-            }),
-            prisma.reportQualityLog.groupBy({
-                by: ["narrativeSource"],
-                where: { createdAt: { gte: since } },
-                _count: { id: true },
-            }),
-            prisma.reportQualityLog.findMany({
-                where: { createdAt: { gte: since }, narrativeSource: "fallback" },
-                orderBy: { createdAt: "desc" },
-                take: 20,
-                select: {
-                    sessionId: true,
-                    model: true,
-                    fallbackReason: true,
-                    diagnosisFindingCount: true,
-                    issueCount: true,
-                    durationMs: true,
-                    createdAt: true,
-                },
-            }),
-        ]);
-        total = aggregate._count.id;
-        fallback = sourceGroups.find((item) => item.narrativeSource === "fallback")?._count.id ?? 0;
-        avgDuration = Math.round(aggregate._avg.durationMs ?? 0);
-        avgFindings = Math.round((aggregate._avg.diagnosisFindingCount ?? 0) * 10) / 10;
-        avgIssues = Math.round((aggregate._avg.issueCount ?? 0) * 10) / 10;
-        avgCoverage = Math.round((aggregate._avg.coverageScored ?? 0) * 10) / 10;
-        avgQueue = Math.round(aggregate._avg.queueWaitMs ?? 0);
-        avgText = Math.round(aggregate._avg.textGenerationMs ?? 0);
-        avgProduct = Math.round(aggregate._avg.productSelectionMs ?? 0);
-        avgPersist = Math.round(aggregate._avg.persistMs ?? 0);
-        bySource = sourceGroups;
-        recentFallbacks = fallbacks;
-    } catch (error) {
-        logger.error("[AdminReportQuality] aggregate failed", { error: String(error) });
-    }
+    const total = aggregate._count.id;
+    const fallback = sourceGroups.find((item) => item.narrativeSource === "fallback")?._count.id ?? 0;
+    const avgDuration = Math.round(aggregate._avg.durationMs ?? 0);
+    const avgFindings = Math.round((aggregate._avg.diagnosisFindingCount ?? 0) * 10) / 10;
+    const avgIssues = Math.round((aggregate._avg.issueCount ?? 0) * 10) / 10;
+    const avgCoverage = Math.round((aggregate._avg.coverageScored ?? 0) * 10) / 10;
+    const avgQueue = Math.round(aggregate._avg.queueWaitMs ?? 0);
+    const avgText = Math.round(aggregate._avg.textGenerationMs ?? 0);
+    const avgProduct = Math.round(aggregate._avg.productSelectionMs ?? 0);
+    const avgPersist = Math.round(aggregate._avg.persistMs ?? 0);
+    const bySource = sourceGroups;
+    const recentFallbacks = fallbacks;
+
+    const narrativeSourceLabel = (value: string) => {
+        if (value === "ai") return "AI 文案";
+        if (value === "fallback") return "规则兜底";
+        return value;
+    };
 
     const stats = [
         { label: "报告总数", value: total.toLocaleString("zh-CN") },
@@ -126,11 +107,11 @@ export default async function ReportQualityPage() {
             </div>
 
             <div className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-6">
-                <h2 className="text-sm font-medium text-brand-charcoal">兜底原因分布</h2>
+                <h2 className="text-sm font-medium text-brand-charcoal">文案来源分布</h2>
                 <div className="mt-3 flex flex-wrap gap-2">
                     {bySource.length > 0 ? bySource.map((item) => (
                         <span key={item.narrativeSource} className="rounded-full border border-brand-charcoal/10 px-3 py-1 text-xs text-brand-charcoal/70">
-                            {item.narrativeSource} · {item._count.id}
+                            {narrativeSourceLabel(item.narrativeSource)} · {item._count.id}
                         </span>
                     )) : <span className="text-sm text-brand-charcoal/45">暂无数据</span>}
                 </div>

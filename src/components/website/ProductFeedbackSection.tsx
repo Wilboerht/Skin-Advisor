@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Star, X } from "lucide-react";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { fetchWithCsrf, fetchWithTimeout } from "@/lib/fetch-client";
 import { useToast } from "@/components/ui/Toast";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -82,6 +85,9 @@ export function ProductFeedbackSection() {
         setSelected(null);
     };
 
+    const feedbackDialogRef = useFocusTrap<HTMLDivElement>(!!selected, closeForm);
+    useModalBackClose(!!selected, closeForm);
+
     const submit = async () => {
         if (!selected || submitting) return;
         if (rating < 1) {
@@ -159,8 +165,8 @@ export function ProductFeedbackSection() {
                 ))}
             </div>
 
-            {selected && (
-                <div className="fixed inset-0 z-[100100] flex items-end justify-center bg-black/25 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="product-feedback-form-title">
+            {selected && createPortal(
+                <div ref={feedbackDialogRef} className="fixed inset-0 z-[100100] flex items-end justify-center bg-black/25 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="product-feedback-form-title">
                     <div className="w-full max-w-md rounded-2xl bg-[var(--color-report-paper)] p-5 shadow-xl">
                         <div className="mb-3 flex items-start justify-between gap-3">
                             <div>
@@ -262,7 +268,8 @@ export function ProductFeedbackSection() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </section>
     );

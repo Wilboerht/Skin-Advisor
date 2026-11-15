@@ -16,7 +16,9 @@
  * 面板首次进入后常驻挂载、以 hidden 切换可见性，草稿在视图间保留。
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAccountBackHandler } from "@/components/website/AccountBackContext";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Archive,
   Bot,
@@ -48,6 +50,7 @@ const CARD_BG_IMAGES: Partial<Record<string, string>> = {
   REGULAR: "/images/membership-card-regular.png",
   SILVER: "/images/membership-card-silver.jpg",
   GOLD: "/images/membership-card-gold.png",
+  ADVANCED: "/images/membership-card-gold.png",
   DIAMOND: "/images/membership-card-diamond.png",
 };
 
@@ -64,6 +67,11 @@ const TIER_CARD_STYLES: Record<string, { card: string; title: string; bar: strin
     bar: "bg-zinc-400",
   },
   GOLD: {
+    card: "border-amber-200/70 bg-gradient-to-br from-amber-50/80 to-stone-50/40",
+    title: "text-amber-800",
+    bar: "bg-amber-400",
+  },
+  ADVANCED: {
     card: "border-amber-200/70 bg-gradient-to-br from-amber-50/80 to-stone-50/40",
     title: "text-amber-800",
     bar: "bg-amber-400",
@@ -144,18 +152,26 @@ interface PointsData {
 type VipView = "main" | "levels" | "spent-form" | "spent-history";
 
 interface VipPanelProps {
+  /** 当前 tab 是否激活（子视图返回栈只在激活时注册） */
+  active?: boolean;
   /** 会话过期（BFF 401）时的登录引导 */
   onRequestLogin: () => void;
   /** 点击会员卡积分 → 切换到积分商城 */
   onNavigateMall: () => void;
 }
 
-export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
+export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipPanelProps) {
   const [vipData, setVipData] = useState<VIPData | null>(null);
   const [pointsData, setPointsData] = useState<PointsData | null>(null);
   const [skinTestUsage, setSkinTestUsage] = useState<SkinTestUsage | null>(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<VipView>("main");
+  const handleSubViewBack = useCallback(() => {
+    if (view === "main") return false;
+    setView("main");
+    return true;
+  }, [view]);
+  useAccountBackHandler(active && view !== "main" ? handleSubViewBack : null, active);
   const [refreshingUsage, setRefreshingUsage] = useState(false);
   const [showChannelTip, setShowChannelTip] = useState(false);
   // 消费补录面板：首次进入后常驻挂载（hidden 切换可见性），保留表单草稿与已传凭证
@@ -645,7 +661,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                               </p>
                               <button
                                 type="button"
-                                onClick={focusSpentForm}
+                                onClick={() => setView("levels")}
                                 className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-charcoal px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80"
                               >
                                 了解会员升级
@@ -654,6 +670,15 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                           )}
                       </div>
                     )}
+                    <div className="mt-4 border-t border-stone-100 pt-3">
+                      <Link
+                        href="/questions"
+                        className="inline-flex items-center gap-1 text-xs text-brand-charcoal/70 transition-colors hover:text-brand-charcoal"
+                      >
+                        去测肤
+                        <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.8} />
+                      </Link>
+                    </div>
                   </div>
                 </div>
 
@@ -735,7 +760,7 @@ export function VipPanel({ onRequestLogin, onNavigateMall }: VipPanelProps) {
                 </button>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-stone-400">
-                会员等级按官方店铺累计消费实时判定，等级永久有效、可升可降。
+                会员等级按官方店铺累计消费实时判定，可升可降；当前权益以当前等级为准。
               </p>
 
               {/* 四档权益一页式对比：当前最清晰，已解锁次之，未解锁去色淡化 */}

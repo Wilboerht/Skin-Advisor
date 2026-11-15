@@ -42,7 +42,7 @@ export async function upsertAutoDiaryEntry({ userId, dateStr, score, skinTypeLab
     // 已有手动打卡时保留用户数据：手动备注或情境标签视为用户手写内容，不覆盖
     const existing = await prisma.diaryEntry.findUnique({
         where: { userId_date: { userId, date } },
-        select: { note: true, tags: true }
+        select: { note: true, tags: true, source: true }
     });
     if (existing) {
         const manual =
@@ -54,7 +54,7 @@ export async function upsertAutoDiaryEntry({ userId, dateStr, score, skinTypeLab
     return prisma.diaryEntry.upsert({
         where: { userId_date: { userId, date } },
         // 仅更新自动生成的字段；tags 保持为空数组（自动记录无情境标签）
-        update: { skinState, note, sessionId: sessionId ?? null },
-        create: { userId, date, skinState, tags: [], note, sessionId: sessionId ?? null }
+        update: { skinState, note, sessionId: sessionId ?? null, source: "auto" },
+        create: { userId, date, skinState, tags: [], note, sessionId: sessionId ?? null, source: "auto" }
     });
 }

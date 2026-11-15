@@ -9,13 +9,14 @@ import { useToast } from "@/components/ui/Toast";
  * 使用方：AccountModal（Dock「我的」）、AuthModal（login/register/forgot_password 的 SSO 引导视图）。
  * 登录动作统一整页跳转 NIHPLOD 账号中心（login()）。
  */
-export function LoginGuide({ onNavigateLogin }: { onNavigateLogin?: () => void }) {
+export function LoginGuide({ onNavigateLogin, onLoginIntent }: { onNavigateLogin?: () => void; onLoginIntent?: () => void }) {
   const { login } = useAuth();
   const toast = useToast();
 
   const handleLogin = () => {
     // 整页跳转到账号中心，弱网下需数秒——先给出即时反馈，避免用户误以为没点上而连点
     toast.info("正在前往 NIHPLOD 账号中心…");
+    onLoginIntent?.();
     onNavigateLogin?.();
     login();
   };

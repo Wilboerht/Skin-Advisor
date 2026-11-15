@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { adminFetch } from "@/lib/admin-fetch";
 import { useState, useEffect, useRef } from "react";
@@ -374,3 +374,4 @@ export default function AdminSidebar() {
         </>
     );
 }
+

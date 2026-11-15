@@ -100,9 +100,9 @@ export default function ShareCardPage({
     // 缺失时才按 skinType/budget/频率匹配，避免封面与证书/正文派系不一致。
     const ipParams: IPMatchParams = { score: score ?? 80, skinType, budget, skincareFrequency, persona };
     const characterReady = gender === "male" || gender === "female";
-    // 性别未就绪时禁止保存：避免男性用户拿到 female 兜底形象。
-    // 百分位是附加信息，不阻塞保存；未就绪时证书不叠加排名即可。
-    const posterDisabled = isPosterLoading;
+    // 海报生成中禁用保存；性别缺失时允许保存默认形象，但在按钮下方明确提示。
+    // 排名最多等待 8 秒；超时后请求结束，允许保存无排名版本，避免图片与页面口径不一致。
+    const posterDisabled = isPosterLoading || isPercentileLoading;
     const lowPercentile = typeof percentile === "number" && percentile < 40;
     const formattedDate = (() => {
         if (!testDate) return null;
@@ -111,7 +111,8 @@ export default function ShareCardPage({
         const pad = (n: number) => String(n).padStart(2, "0");
         return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
     })();
-    const shortReportId = reportId ? reportId.replace(/-/g, "").slice(0, 8).toUpperCase() : null;
+    // 与下载海报的短编号口径一致（后 8 位）
+    const shortReportId = reportId ? reportId.replace(/-/g, "").slice(-8).toUpperCase() : null;
     const characterImage = getCharacterImage({ ...ipParams, gender });
     const characterIp = matchCharacterIP(ipParams);
     const skinTypeName = characterIp.name;
@@ -196,7 +197,7 @@ export default function ShareCardPage({
                 initial={{ opacity: 0, y: reduceMotion ? 0 : 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.5, delay: reduceMotion ? 0 : 0.05 }}
-                className="lg:hidden relative -mx-6 w-[calc(100%_+_3rem)] md:mx-auto md:w-full md:max-w-[480px] h-[560px] overflow-hidden bg-[#F2EDE5]"
+                className="lg:hidden relative -mx-6 w-[calc(100%_+_3rem)] md:mx-auto md:w-full md:max-w-[480px] h-[clamp(480px,72dvh,560px)] overflow-hidden bg-[#F2EDE5]"
             >
                 {/* 下部灰蓝色块：斜切 */}
                 <div
@@ -217,11 +218,6 @@ export default function ShareCardPage({
                     <p className="mt-[16px] max-w-[200px] text-[12.5px] leading-[1.9] tracking-[0.03em] text-[#6B7B8C] line-clamp-3">
                         {factionIntro || summary || "详细分析见下方报告。"}
                     </p>
-            {!characterReady && (
-                <p className="mt-1 text-center text-[10px] leading-relaxed tracking-[0.02em] text-[#22364B]/45">
-                    该报告未记录性别，证书将使用默认形象
-                </p>
-            )}
             {lowPercentile && (
                         <p className="mt-2 max-w-[210px] text-[9.5px] leading-[1.7] tracking-[0.02em] text-[#6B7B8C]/85">
                             肌肤状态会随作息、换季和激素波动变化，本次评分仅代表拍摄当时；建议把它作为护理起点，4 周后复测对比。
@@ -315,6 +311,9 @@ export default function ShareCardPage({
                         height={156}
                         className="w-[104px] h-auto self-start"
                     />
+                    <p className="text-[10px] leading-snug text-[#22364B]/55">
+                        保存证书，分享你的肌肤派系
+                    </p>
                     {onOpenReport && (
                         <button
                             type="button"
@@ -332,12 +331,12 @@ export default function ShareCardPage({
                         aria-busy={posterDisabled}
                         className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#22304E]/10 bg-white px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#22304E]/75 shadow-[2px_3px_0_0_rgba(34,48,78,0.28)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[1px_2px_0_0_rgba(34,48,78,0.28)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        {isPosterLoading ? (
+                        {posterDisabled ? (
                             <Loader2 className="h-[13px] w-[13px] flex-none animate-spin" strokeWidth={2} />
                         ) : (
                             <ImageDown className="h-[13px] w-[13px] flex-none" strokeWidth={1.75} />
                         )}
-                        {isPosterLoading ? "生成中..." : "保存证书"}
+                        {isPosterLoading ? "生成中..." : isPercentileLoading ? "排名计算中..." : "保存证书"}
                     </button>
                     {!characterReady && (
                         <p className="text-center text-[10px] leading-relaxed text-[#22364B]/50">
@@ -403,6 +402,7 @@ export default function ShareCardPage({
                     AI 图像分析，仅供参考，不构成医疗诊断
                     {formattedDate ? ` · 测肤日期 ${formattedDate}` : ""}
                     {shortReportId ? ` · 报告编号 ${shortReportId}` : ""}
+                    {percentile !== null && percentileSampleSize > 0 ? " · 排名按当前平台样本估算" : ""}
                 </div>
             </m.div>
 
@@ -548,7 +548,10 @@ export default function ShareCardPage({
             </m.div>
 
             {/* 卡外操作区：主 CTA 深色实心 + 保存证书描边，并排居中（对齐效果图） */}
-            <m.div {...stagger(0.42)} className="flex items-center justify-center gap-4 mt-6">
+            <p className="mt-6 text-center text-[11px] font-light tracking-[0.06em] text-[#22364B]/50">
+                保存证书，分享你的肌肤派系；完整分析与方案在报告页
+            </p>
+            <m.div {...stagger(0.42)} className="flex items-center justify-center gap-4 mt-3">
                 {onOpenReport && (
                     <button
                         onClick={onOpenReport}
@@ -564,18 +567,45 @@ export default function ShareCardPage({
                     aria-busy={posterDisabled}
                     className="inline-flex min-w-[224px] h-11 px-8 items-center justify-center gap-2 rounded-full border border-[#1D3A5F]/55 text-[#1D3A5F] text-[14px] font-medium tracking-[0.08em] transition-colors duration-200 hover:border-[#1D3A5F] hover:bg-[#1D3A5F]/[0.05] active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D3A5F]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F2EDE5] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                    {isPosterLoading ? (
+                    {posterDisabled ? (
                         <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />
                     ) : (
                         <ImageDown className="w-4 h-4" strokeWidth={1.75} />
                     )}
-                    {isPosterLoading ? "生成中..." : "保存测肤证书"}
+                    {isPosterLoading ? "生成中..." : isPercentileLoading ? "排名计算中..." : "保存测肤证书"}
                 </button>
             </m.div>
+            {onReTest && (
+                <div className="mt-3 text-center">
+                    {reTestBlockedReason ? (
+                        <p className="text-[11px] text-[#22364B]/45">
+                            {reTestBlockedReason === "login"
+                                ? "登录后可重新测试"
+                                : reTestBlockedReason === "lifetime"
+                                    ? "测肤次数已用完"
+                                    : "今日测试次数已用完"}
+                        </p>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => setShowReTestConfirm(true)}
+                            className="text-[12px] text-[#22364B]/50 underline underline-offset-4 transition-colors hover:text-[#22364B]"
+                        >
+                            重新测试
+                        </button>
+                    )}
+                </div>
+            )}
+            {!characterReady && (
+                <p className="mt-2 text-center text-[10px] leading-relaxed tracking-[0.02em] text-[#22364B]/45">
+                    该报告未记录性别，证书将使用默认形象
+                </p>
+            )}
             <p className="mt-4 text-center text-[10px] leading-relaxed tracking-[0.02em] text-[#22364B]/45">
                 AI 图像分析，仅供参考，不构成医疗诊断
                 {formattedDate ? ` · 测肤日期 ${formattedDate}` : ""}
                 {shortReportId ? ` · 报告编号 ${shortReportId}` : ""}
+                {percentile !== null && percentileSampleSize > 0 ? " · 排名按当前平台样本估算" : ""}
             </p>
             {lowPercentile && (
                 <p className="mx-auto mt-1 max-w-[520px] text-center text-[10px] leading-relaxed tracking-[0.02em] text-[#22364B]/45">

@@ -51,7 +51,6 @@ const PUBLIC_CACHE_PAGE_PREFIXES = [
     "/faq",
     "/privacy",
     "/terms",
-    "/services",
     "/preview",
     "/questions",
     "/face-scan",

@@ -150,7 +150,36 @@ function BudgetBar({
     );
 }
 
-function HealthPanel({ health }: { health: AIHealthData | null }) {
+function HealthPanel({
+    health,
+    loading,
+}: {
+    health: AIHealthData | null;
+    loading: boolean;
+}) {
+    if (loading && !health) {
+        return (
+            <PanelCard
+                title="AI 健康"
+                action={<Badge variant="secondary">加载中</Badge>}
+            >
+                <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="space-y-4">
+                        {Array.from({ length: 2 }).map((_, index) => (
+                            <div key={index} className="space-y-2">
+                                <div className="h-3 w-24 animate-pulse rounded bg-brand-charcoal/10" />
+                                <div className="h-1.5 w-full animate-pulse rounded-full bg-brand-charcoal/10" />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="space-y-2">
+                        <div className="h-3 w-16 animate-pulse rounded bg-brand-charcoal/10" />
+                        <div className="h-4 w-32 animate-pulse rounded bg-brand-charcoal/10" />
+                    </div>
+                </div>
+            </PanelCard>
+        );
+    }
     if (!health) {
         return (
             <PanelCard
@@ -257,16 +286,25 @@ export default function AdminAICostsPage() {
     const [data, setData] = useState<AICostData | null>(null);
     const [health, setHealth] = useState<AIHealthData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [healthLoading, setHealthLoading] = useState(true);
     const [error, setError] = useState("");
 
     const fetchHealth = useCallback(async () => {
+        setHealthLoading(true);
         try {
             const res = await adminFetch("/api/admin/ai-health");
-            if (!res.ok) return;
+            if (!res.ok) throw new Error("health request failed");
             const json = await res.json();
-            if (json?.status && Array.isArray(json.circuits)) setHealth(json);
+            if (json?.status && Array.isArray(json.circuits)) {
+                setHealth(json);
+            } else {
+                setHealth(null);
+            }
         } catch {
             // 健康信息失败不阻断成本数据
+            setHealth(null);
+        } finally {
+            setHealthLoading(false);
         }
     }, []);
 
@@ -457,7 +495,7 @@ export default function AdminAICostsPage() {
                 </PanelCard>
             ) : (
                 <>
-                    <HealthPanel health={health} />
+                    <HealthPanel health={health} loading={healthLoading} />
 
                     <PanelCard>
                         {loading ? (

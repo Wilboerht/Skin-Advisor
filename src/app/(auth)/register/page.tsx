@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@/components/auth/UserProvider";
 import { SsoRedirectScreen, SsoCookiesDisabledScreen } from "@/components/auth/SsoRedirectScreen";
+import { isSafeInternalPath } from "@/lib/url-utils";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 export default function RegisterPage() {
     const { register } = useUser();
@@ -13,6 +15,15 @@ export default function RegisterPage() {
         if (typeof navigator !== "undefined" && !navigator.cookieEnabled) {
             setCookiesDisabled(true);
             return;
+        }
+        // /register?redirect=...：与登录页同口径，先保存 SSO 回跳目标。
+        const redirect = new URLSearchParams(window.location.search).get("redirect");
+        if (isSafeInternalPath(redirect)) {
+            try {
+                sessionStorage.setItem(STORAGE_KEYS.AUTH_REDIRECT, redirect);
+            } catch {
+                /* ignore */
+            }
         }
         // Trigger SSO login redirect. Users can register on the central SSO page.
         register();

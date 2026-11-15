@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Edit, ImageOff, Search, Star, Trash2 } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
 import { isSuperAdmin } from "@/lib/permissions";
+import { needsRecommendationConfig } from "@/lib/product-readiness";
 import { useToast } from "@/components/ui/Toast";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -37,6 +38,9 @@ interface Product {
     sourceSyncedAt?: string | null;
     sourceMissingAt?: string | null;
     suitableSkinTypes?: unknown;
+    keyIngredients?: unknown;
+    benefits?: unknown;
+    recommendReasons?: unknown;
 }
 
 interface PaginationData {
@@ -55,7 +59,31 @@ const STATUS_OPTIONS = [
 const SORT_OPTIONS = [
     { value: "createdAt", label: "按创建时间" },
     { value: "name", label: "按名称" },
+    { value: "price", label: "按价格" },
 ];
+
+function SyncStatusBadge({ product }: { product: Product }) {
+    if (!product.sourceProductId) return null;
+    if (product.sourceMissingAt) {
+        return (
+            <Badge variant="danger" size="sm">
+                主站已删除
+            </Badge>
+        );
+    }
+    if (needsRecommendationConfig(product)) {
+        return (
+            <Badge variant="warning" size="sm">
+                待配置
+            </Badge>
+        );
+    }
+    return (
+        <Badge variant="secondary" size="sm">
+            主站同步
+        </Badge>
+    );
+}
 
 export default function ProductsClient({ role }: { role: string }) {
     const router = useRouter();
@@ -70,7 +98,7 @@ export default function ProductsClient({ role }: { role: string }) {
     const category = searchParams.get("category") || "";
     const status = searchParams.get("status") || "all";
     const sort = searchParams.get("sort") || "createdAt";
-    const order = searchParams.get("order") || "desc";
+    const order: "asc" | "desc" = searchParams.get("order") === "asc" ? "asc" : "desc";
 
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<string[]>([]);
@@ -295,6 +323,7 @@ export default function ProductsClient({ role }: { role: string }) {
             key: "name",
             title: "产品名称",
             width: "260px",
+            sortable: true,
             render: (_, product) => (
                 <div className="flex min-w-0 items-center gap-1.5">
                     <Link
@@ -306,22 +335,7 @@ export default function ProductsClient({ role }: { role: string }) {
                     >
                         {product.name}
                     </Link>
-                    {product.sourceProductId ? (
-                        product.sourceMissingAt ? (
-                            <Badge variant="danger" size="sm">
-                                主站已删除
-                            </Badge>
-                        ) : Array.isArray(product.suitableSkinTypes) &&
-                          product.suitableSkinTypes.length === 0 ? (
-                            <Badge variant="warning" size="sm">
-                                待配置
-                            </Badge>
-                        ) : (
-                            <Badge variant="secondary" size="sm">
-                                主站同步
-                            </Badge>
-                        )
-                    ) : null}
+                    <SyncStatusBadge product={product} />
                     {product.featured && (
                         <Star
                             className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400"
@@ -343,6 +357,7 @@ export default function ProductsClient({ role }: { role: string }) {
             key: "price",
             title: "价格",
             width: "100px",
+            sortable: true,
             render: (_, product) => (
                 <span className="text-sm tabular-nums text-brand-charcoal/70">
                     {product.price}
@@ -363,6 +378,7 @@ export default function ProductsClient({ role }: { role: string }) {
             key: "createdAt",
             title: "创建时间",
             width: "120px",
+            sortable: true,
             render: (_, product) => (
                 <span className="whitespace-nowrap text-sm text-brand-charcoal/65">
                     {new Date(product.createdAt).toLocaleDateString("zh-CN")}
@@ -407,7 +423,7 @@ export default function ProductsClient({ role }: { role: string }) {
         <div className="flex flex-col gap-5">
             <PageHeader
                 title="产品管理"
-                description={`管理推荐产品与上架状态${pagination ? ` · 共 ${pagination.total} 个产品` : ""} · 产品基础信息由主站同步；新增/基础信息修改请前往主站`}
+                description={`产品基础信息由主站同步，子站维护推荐属性、上下架与精选${pagination ? ` · 共 ${pagination.total} 个产品` : ""}`}
             />
 
             <PanelCard>
@@ -568,6 +584,11 @@ export default function ProductsClient({ role }: { role: string }) {
                         data={products}
                         loading={loading}
                         rowKey="id"
+                        sortBy={sort}
+                        sortOrder={order}
+                        onSort={(key, nextOrder) =>
+                            updateParams({ sort: key, order: nextOrder })
+                        }
                         emptyText={
                             search ? `没有匹配「${search}」的产品` : "暂无产品"
                         }
@@ -597,6 +618,7 @@ export default function ProductsClient({ role }: { role: string }) {
                                             {product.name}
                                         </p>
                                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                            <SyncStatusBadge product={product} />
                                             <Badge variant="secondary">
                                                 {product.category}
                                             </Badge>
@@ -651,7 +673,7 @@ export default function ProductsClient({ role }: { role: string }) {
                         )}
                     />
 
-                    {pagination && pagination.totalPages > 1 && (
+                    {pagination && (
                         <Pagination
                             page={pagination.page}
                             pageSize={pagination.limit ?? pageSize}

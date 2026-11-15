@@ -16,7 +16,7 @@ interface OnboardingFlowProps {
     setNickname: (nickname: string) => void;
     onNicknameSubmit: () => void;
     isLocating: boolean;
-    onLocationAccept: () => void;
+    onLocationAccept: () => Promise<boolean>;
     onLocationDecline: () => void;
     onSkipLocation: () => void;
     onRegionSelect: (region: string) => void;
@@ -70,6 +70,10 @@ export function OnboardingFlowModal({
     const totalScreens = screens.length;
     const currentScreen = screens[activeIndex];
     const onCloseRef = useRef(onClose);
+    const activeIndexRef = useRef(activeIndex);
+    const currentScreenRef = useRef(currentScreen);
+    const isOpenRef = useRef(isOpen);
+    const finishingRef = useRef(false);
     // 焦点圈定：Tab 在弹层内循环、关闭后焦点归还触发元素（原实现只 focus 容器，Tab 会跑到背景页）
     const modalRef = useFocusTrap<HTMLDivElement>(isOpen);
 
@@ -84,6 +88,11 @@ export function OnboardingFlowModal({
     useEffect(() => {
         onCloseRef.current = onClose;
     }, [onClose]);
+    useEffect(() => {
+        activeIndexRef.current = activeIndex;
+        currentScreenRef.current = currentScreen;
+        isOpenRef.current = isOpen;
+    }, [activeIndex, currentScreen, isOpen]);
 
     // Keyboard support: Escape to close (except on legal step)
     useEffect(() => {
@@ -104,19 +113,25 @@ export function OnboardingFlowModal({
         if (targetScreen === "location" && currentScreen !== "location") {
             setLocationView("main");
         }
+        // 同步更新 ref：定位回包可能在同一事件循环内读到旧索引
+        activeIndexRef.current = index;
+        currentScreenRef.current = targetScreen;
         setActiveIndex(index);
         setMaxVisitedIndex(prev => Math.max(prev, index));
     };
 
-    const goNext = () => goTo(activeIndex + 1);
+    const goNext = () => goTo(activeIndexRef.current + 1);
 
     const finish = () => {
+        if (finishingRef.current) return;
+        finishingRef.current = true;
         onSkipLocation();
     };
 
     /** 最后一屏直接完成，否则进入下一屏（不再按 isLoggedIn 跳过 legal 屏） */
     const advanceOrFinish = () => {
-        if (activeIndex >= totalScreens - 1) {
+        if (finishingRef.current) return;
+        if (activeIndexRef.current >= totalScreens - 1) {
             finish();
         } else {
             goNext();
@@ -132,12 +147,27 @@ export function OnboardingFlowModal({
 
     /* ---- Location handlers ---- */
     const handleLocationAcceptWrapper = async () => {
+        const requestIndex = activeIndexRef.current;
         try {
-            await onLocationAccept();
-            advanceOrFinish();
+            const accepted = await onLocationAccept();
+            if (!accepted) return;
+            // 定位回包可能晚于用户跳过/选择地区/关闭弹窗：只有仍停留在原定位屏才推进
+            if (
+                isOpenRef.current
+                && activeIndexRef.current === requestIndex
+                && currentScreenRef.current === "location"
+            ) {
+                advanceOrFinish();
+            }
         } catch {
-            toast.warning("无法获取位置信息，请手动选择所在地区");
-            setLocationView("region");
+            if (
+                isOpenRef.current
+                && activeIndexRef.current === requestIndex
+                && currentScreenRef.current === "location"
+            ) {
+                toast.warning("无法获取位置信息，请手动选择所在地区");
+                setLocationView("region");
+            }
         }
     };
 
@@ -320,11 +350,11 @@ export function OnboardingFlowModal({
                                         </div>
 
                                         <h3 className="mb-5 text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em]">
-                                            开启定位服务
+                                            定位（可选）
                                         </h3>
 
                                         <p className="mb-7 text-sm md:text-base text-brand-charcoal/75 font-light leading-relaxed tracking-[0.06em] md:tracking-[0.12em]">
-                                            为获得更精准的分析数据，我们需要您授权当前的地理位置信息，结合当地气候情况，生成更个性化的定制化报告。
+                                            授权后可结合当地气候生成更贴合的建议；跳过将使用默认气候参数，不影响完成测肤。
                                         </p>
 
                                         <div className="space-y-4">
@@ -340,7 +370,7 @@ export function OnboardingFlowModal({
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <span>允许访问</span>
+                                                        <span>允许定位</span>
                                                         <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
                                                     </>
                                                 )}
@@ -351,7 +381,7 @@ export function OnboardingFlowModal({
                                                     onClick={handleDecline}
                                                     className="py-2 text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors bg-transparent border-none cursor-pointer"
                                                 >
-                                                    不提供我的位置信息
+                                                    跳过，使用默认气候参数
                                                 </button>
                                             </div>
                                         </div>

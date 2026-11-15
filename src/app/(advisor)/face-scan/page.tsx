@@ -18,7 +18,7 @@ import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useNavPush } from "@/hooks/use-nav-push";
 import { useFaceModels } from "@/hooks/use-face-models";
 import { scheduleFaceModelPreload } from "@/lib/face-models";
-import type { SkinStateValue } from "@/lib/skin-state";
+import { isSkinStateValue, type SkinStateValue } from "@/lib/skin-state";
 
 export default function FaceScanPage() {
     const router = useRouter();
@@ -34,6 +34,7 @@ export default function FaceScanPage() {
 
     const hasTrackedStart = useRef(false);
     const [hasStarted, setHasStarted] = useState(false);
+    const [entryReady, setEntryReady] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(true);
     const [isPreparing, setIsPreparing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,11 +46,25 @@ export default function FaceScanPage() {
     const [gender, setGender] = useState<"female" | "male" | null>(null);
     // 上次选择的肌肤状态：返回修改问卷后再次进入时保留，避免静默重置为素颜
     const [initialSkinState, setInitialSkinState] = useState<SkinStateValue | undefined>(undefined);
+    // 上次分析失败的面部原因（由结果页写入），在引导页提示用户如何调整
+    const [previousFaceError, setPreviousFaceError] = useState<string | null>(null);
     // 面部模型全局状态（唯一事实源）：face-models store 单飞加载，问卷页已触发、这里只订阅
     const { status: faceModelStatus, load: loadFaceModels } = useFaceModels();
 
     // 模态框打开时锁定 body 滚动，防止 iOS 上顶部栏跟随滑动
     useBodyScrollLock({ enabled: isModalOpen || showExitConfirm || storageError });
+
+    // 已开始拍摄后刷新/关闭页面会丢失照片，浏览器级确认。
+    // 提交期间也要保留：动态导入/IndexedDB 写入完成前关闭页面同样会丢图。
+    useEffect(() => {
+        if (!hasStarted) return;
+        const handler = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+            event.returnValue = "";
+        };
+        window.addEventListener("beforeunload", handler);
+        return () => window.removeEventListener("beforeunload", handler);
+    }, [hasStarted]);
     // 弹窗焦点管理 + Escape 关闭
     const exitModalRef = useFocusTrap<HTMLDivElement>(showExitConfirm, () => setShowExitConfirm(false));
     const storageErrorModalRef = useFocusTrap<HTMLDivElement>(storageError);
@@ -70,7 +85,9 @@ export default function FaceScanPage() {
             if (!hasPrivacyConsent()) {
                 const state = await fetchConsentState().catch(() => null);
                 if (cancelled) return;
-                if (!state || state.missing.length > 0) {
+                // 网络异常（state=null）时对已登录用户放行，由后续服务端校验兜底；
+                // 服务端明确返回缺失 scope 时才拦截。
+                if (state && state.missing.length > 0) {
                     toast.warning("请先完成隐私授权");
                     router.replace("/");
                     return;
@@ -94,27 +111,43 @@ export default function FaceScanPage() {
                 router.replace("/questions");
                 return;
             }
+            try {
+                const parsed = JSON.parse(answers);
+                if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+                    throw new Error("invalid answers shape");
+                }
+            } catch {
+                toast.warning("问卷数据异常，请重新填写");
+                router.replace("/questions");
+                return;
+            }
 
             try {
                 const savedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
                 if (savedGender === "female" || savedGender === "male") setGender(savedGender);
                 const savedSkinState = localStorage.getItem(STORAGE_KEYS.ADVISOR_SKIN_STATE);
-                if (savedSkinState) setInitialSkinState(savedSkinState as SkinStateValue);
+                if (isSkinStateValue(savedSkinState)) setInitialSkinState(savedSkinState);
+                const savedFaceError = sessionStorage.getItem(STORAGE_KEYS.ADVISOR_FACE_ERROR);
+                if (savedFaceError) {
+                    setPreviousFaceError(savedFaceError);
+                    sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_ERROR);
+                }
             } catch { /* Storage 不可用时保持默认头像 */ }
 
             if (!hasTrackedStart.current) {
                 trackFaceScanStart();
                 hasTrackedStart.current = true;
             }
+            setEntryReady(true);
         })();
 
         return () => { cancelled = true; };
     }, [trackFaceScanStart, router, toast, isDev, isInitialized, user]);
 
-    // 双保险：isPreparing 全屏遮罩 12 秒兜底关闭，让 FaceCapture 的手动降级尽快可见
+    // 全屏准备遮罩最多 8 秒：之后进入相机，由 FaceCapture 展示模型慢加载提示与手动拍照入口
     useEffect(() => {
         if (!isPreparing) return;
-        const timer = setTimeout(() => setIsPreparing(false), 12000);
+        const timer = setTimeout(() => setIsPreparing(false), 8000);
         return () => clearTimeout(timer);
     }, [isPreparing]);
 
@@ -142,7 +175,7 @@ export default function FaceScanPage() {
         if (missing.length > 0) {
             toast.error("请完成全部角度的拍摄后再继续。");
             setIsSubmitting(false);
-            return;
+            throw new Error("INCOMPLETE_IMAGES");
         }
 
         const { advisorStorage } = await import("@/lib/advisor-storage");
@@ -170,17 +203,30 @@ export default function FaceScanPage() {
         }
 
         trackFaceScanComplete();
-        setIsSubmitting(false);
+        // 保持 isSubmitting=true 直到导航完成，避免确认页在跳转前重新可交互、发生二次提交
         router.push(resultUrl);
         } catch (err) {
             // 捕获动态导入失败（ChunkLoadError）等未预期异常，避免 UI 卡在转圈
             console.error("[FaceScan] handleCaptureComplete failed:", err);
-            const isChunkError = (err as Error)?.name === 'ChunkLoadError' || (err as Error)?.message?.includes('Failed to load chunk');
-            toast.error(isChunkError ? "加载未成功，请刷新后重试。" : "处理未成功，请重试。");
+            const isStorageFull = err instanceof Error && err.message === "STORAGE_FULL";
+            const isIncomplete = err instanceof Error && err.message === "INCOMPLETE_IMAGES";
+            if (!isStorageFull && !isIncomplete) {
+                const isChunkError = (err as Error)?.name === 'ChunkLoadError' || (err as Error)?.message?.includes('Failed to load chunk');
+                toast.error(isChunkError ? "加载未成功，请刷新后重试。" : "处理未成功，请重试。");
+            }
             setIsSubmitting(false);
-            throw err; // 通知 FaceCapture 重置拍摄状态，避免一直卡在“正在分析”
+            throw err; // 通知 FaceCapture 保留确认页/照片，允许重试
         }
     };
+
+    if (!entryReady) {
+        return (
+            <div className="fixed inset-0 z-0 flex flex-col items-center justify-center bg-[#F5F2E9]">
+                <Loader2 className="h-6 w-6 animate-spin text-brand-charcoal/60" />
+                <p className="mt-3 text-[13px] font-light text-brand-charcoal/55">正在检查测肤状态…</p>
+            </div>
+        );
+    }
 
     return (
         <div className="relative h-dvh overflow-hidden w-full bg-[#F5F2E9] flex flex-col items-center">
@@ -188,6 +234,7 @@ export default function FaceScanPage() {
             <header className={`w-full relative flex items-center justify-center pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-brand-charcoal/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
                 <button
                     onClick={() => {
+                        if (isSubmitting) return;
                         if (hasStarted) {
                             setExitTarget("/questions?edit=true");
                             setShowExitConfirm(true);
@@ -195,7 +242,7 @@ export default function FaceScanPage() {
                             navPush("/questions?edit=true");
                         }
                     }}
-                    disabled={isNavigating}
+                    disabled={isNavigating || isSubmitting}
                     className="absolute left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 touch-manipulation active:scale-95 disabled:opacity-40"
                     aria-label="返回"
                 >
@@ -214,10 +261,12 @@ export default function FaceScanPage() {
 
                 <button
                     onClick={() => {
+                        if (isSubmitting) return;
                         setExitTarget("/");
                         setShowExitConfirm(true);
                     }}
-                    className="absolute right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 touch-manipulation active:scale-95"
+                    disabled={isNavigating || isSubmitting}
+                    className="absolute right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 touch-manipulation active:scale-95 disabled:opacity-40"
                     aria-label="退出测试"
                 >
                     <LogOut className="w-5 h-5" strokeWidth={1.5} />
@@ -282,13 +331,13 @@ export default function FaceScanPage() {
                     >
                         <Loader2 className="w-10 h-10 text-[#8B7355] animate-spin mb-8" />
                         <p className="text-brand-charcoal text-xl md:text-2xl font-serif font-light tracking-[0.02em]">正在准备 AI 面部扫描</p>
-                        <p className="text-brand-charcoal/60 text-[13px] md:text-sm mt-3 font-light max-w-xs text-center leading-[1.8] tracking-[0.06em]">首次加载模型需要几秒钟，请稍等</p>
+                        <p className="text-brand-charcoal/60 text-[13px] md:text-sm mt-3 font-light max-w-xs text-center leading-[1.8] tracking-[0.06em]">首次加载模型可能需要 10–30 秒；若加载较慢，可先进入相机使用手动拍照</p>
                         <button
                             type="button"
                             onClick={() => setIsPreparing(false)}
-                            className="mt-6 inline-flex h-10 min-w-[120px] items-center justify-center rounded-full border border-brand-charcoal/20 px-5 text-[13px] font-light tracking-[0.08em] text-brand-charcoal/70 transition-colors hover:bg-brand-charcoal/5"
+                            className="mt-6 inline-flex min-h-[44px] min-w-[160px] items-center justify-center rounded-full border border-brand-charcoal/20 px-5 text-[13px] font-light tracking-[0.08em] text-brand-charcoal/70 transition-colors hover:bg-brand-charcoal/5"
                         >
-                            改用手动拍照
+                            先进入相机
                         </button>
                     </m.div>
                 )}
@@ -411,6 +460,7 @@ export default function FaceScanPage() {
                 isOpen={isModalOpen}
                 gender={gender}
                 initialSkinState={initialSkinState}
+                previousError={previousFaceError}
                 onConfirm={(skinState) => {
                     // 记录拍摄时肌肤状态（供分析条件化与结果页提示）
                     try { localStorage.setItem(STORAGE_KEYS.ADVISOR_SKIN_STATE, skinState); } catch { /* ignore */ }
@@ -419,7 +469,10 @@ export default function FaceScanPage() {
                     // 加载期间给 12s 兜底遮罩与手动拍照入口。
                     if (faceModelStatus !== "ready") {
                         setIsPreparing(true);
-                        void loadFaceModels();
+                        void loadFaceModels().catch((err) => {
+                            console.warn("[FaceScan] face model load failed", err);
+                            setIsPreparing(false);
+                        });
                     }
                     setIsModalOpen(false);
                 }}

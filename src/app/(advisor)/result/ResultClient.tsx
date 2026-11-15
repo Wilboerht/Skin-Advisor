@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { ArrowUp, House, AlertCircle, X, ScanFace, Info } from "lucide-react";
@@ -20,6 +21,7 @@ import { fetchWithCsrf } from "@/lib/fetch-client";
 import type { SessionUser } from "@/lib/auth";
 import ShareCardPage from "@/components/advisor/ShareCardPage";
 import UserBadge from "@/components/advisor/UserBadge";
+import type { AccountTab } from "@/components/website/AccountModal";
 import { GenderMismatchModal, PosterSaveModal } from "@/components/advisor/result-modals";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
@@ -39,6 +41,24 @@ function ReportPanelSkeleton() {
             <div className="h-52 rounded-2xl bg-brand-charcoal/[0.05] animate-pulse" />
             <div className="h-36 rounded-2xl bg-brand-charcoal/[0.04] animate-pulse" />
             <div className="h-36 rounded-2xl bg-brand-charcoal/[0.04] animate-pulse" />
+        </div>
+    );
+}
+
+function ExpiredReportBanner() {
+    return (
+        <div className="w-full bg-[#f5ead9] px-4 py-2.5">
+            <div className="mx-auto flex max-w-[900px] flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-center">
+                <p className="text-[12px] text-[#8c6d3f]">
+                    该报告已超过 90 天有效期，皮肤状态可能已变化，建议重新测试更新档案。
+                </p>
+                <Link
+                    href="/questions?edit=true"
+                    className="inline-flex h-7 items-center justify-center rounded-full bg-[#5c4937] px-3 text-[11px] font-medium text-white"
+                >
+                    重新测试
+                </Link>
+            </div>
         </div>
     );
 }
@@ -98,6 +118,8 @@ interface ResultClientProps {
     /** 本次报告之前最近一次已完成测肤的摘要（登录用户由 /reports/:id 服务端传入；null = 确认为首次测肤）。
      *  undefined = 游客路径（ResultClient 从 localStorage 恢复）。 */
     previousSummary?: PreviousTestSummary | null;
+    /** 历史报告超过有效期：在页面内部展示提示，避免与 100dvh 容器形成双层滚动 */
+    expired?: boolean;
 }
 
 // Wrapper component with Suspense for useSearchParams
@@ -113,7 +135,7 @@ export default function ResultClient(props: ResultClientProps) {
     );
 }
 
-function ResultClientContent({ id, initialData, user: serverUser, previousSummary: serverPreviousSummary }: ResultClientProps) {
+function ResultClientContent({ id, initialData, user: serverUser, previousSummary: serverPreviousSummary, expired = false }: ResultClientProps) {
     const router = useRouter();
     const toast = useToast();
     // 预取首页/问卷路由，避免点击导航按钮时冷导航"点了没反应"；isNavigating 提供即时反馈
@@ -332,6 +354,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     const [reTestBlockedReason, setReTestBlockedReason] = useState<"login" | "daily" | "lifetime" | null>(null);
     // 「护肤档案」入口（趋势对比卡）：递增请求序号，触发 UserBadge 内的账户弹层打开到档案 tab
     const [accountOpenSeq, setAccountOpenSeq] = useState(0);
+    const [accountOpenTab, setAccountOpenTab] = useState<AccountTab>("diary");
     const userId = user?.id;
     useEffect(() => {
         if (isMock) return;
@@ -501,8 +524,18 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 初始页：默认封面（第一面）；URL 带 skipCover=1（历史详情入口）时直达报告页。
     // 注意 searchParams 在 useState 之前已解构，初始化器可直接读取（SSR 安全）
     const [pageIndex, setPageIndex] = useState<0 | 1>(() =>
-        searchParams.get("skipCover") === "1" ? 1 : 0
+        searchParams.get("view") === "report" || searchParams.get("skipCover") === "1" ? 1 : 0
     );
+    // 页面状态写入 URL：刷新/分享后保持证书或报告视图；保留 skipCover 兼容历史链接
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const url = new URL(window.location.href);
+        url.searchParams.delete("skipCover");
+        if (pageIndex === 1) url.searchParams.set("view", "report");
+        else url.searchParams.delete("view");
+        // 保留 Next.js 写入的 history.state，避免前进/后退时丢失路由内部状态
+        window.history.replaceState(window.history.state, "", url.toString());
+    }, [pageIndex]);
     const flippedToReportRef = useRef(false);
     const reportLayerRef = useRef<HTMLDivElement>(null);
     // 尊重系统"减弱动效"偏好：翻页交叉淡入淡出降级为瞬时切换
@@ -912,6 +945,16 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // --- Async Analysis Integration ---
     // searchParams and useAsyncAnalysis are declared at the top of the component
 
+    // 免费重试标记失效后清理，避免用户从浏览器后退回问卷时继续复用同一个无效 session
+    useEffect(() => {
+        if (analysisState.status !== 'error') return;
+        if (analysisState.errorCode !== 'FREE_RETRY_INVALID' && analysisState.errorCode !== 'FREE_RETRY_USED') return;
+        try {
+            localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
+            localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
+        } catch { /* ignore */ }
+    }, [analysisState.status, analysisState.errorCode]);
+
     // Trigger Async Analysis
     const analysisStartedRef = useRef(false);
     const analysisAbortRef = useRef<AbortController | null>(null);
@@ -1189,15 +1232,51 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
     // Error State
     if (analysisState.status === 'error') {
-        // 额度/限流类错误：重拍照片无法解决问题，按钮引导返回首页而非重测
         const errorMessage = analysisState.error || "";
-        const isQuotaError = /测试次数|测试上限|次数已用完|免费重试|限流|明天再试/i.test(errorMessage);
-        // 游客/会话失效触发 401 requireLogin：重试无意义，引导登录
-        const isRequireLogin = /需登录|登录后使用|请先登录/i.test(errorMessage);
-        // 强制扫脸：无面部结果时引导回扫脸页，而不是反复重试文本分析
-        const isFaceRequired = /请先完成扫脸|扫脸.*(未完成|拍摄)|面部分析未完成|FACE_REQUIRED/i.test(errorMessage);
-        // 服务端同意缺失：重试不会成功，需回到首页重新阅读并同意
-        const isConsentRequired = /测肤授权|隐私授权|重新阅读并同意/.test(errorMessage);
+        const errorCode = analysisState.errorCode;
+        const isRequireLogin = errorCode === 'UNAUTHORIZED';
+        const isConsentRequired = errorCode === 'CONSENT_REQUIRED';
+        const isImageValidation = errorCode === 'IMAGE_VALIDATION';
+        const isFaceRequired = errorCode === 'FACE_REQUIRED';
+        const isFreeRetryUsed = errorCode === 'FREE_RETRY_USED';
+        const isFreeRetryInvalid = errorCode === 'FREE_RETRY_INVALID';
+        const isQuotaError = errorCode === 'QUOTA';
+        const isRateLimited = errorCode === 'RATE_LIMITED';
+        const isAiUnavailable = errorCode === 'AI_UNAVAILABLE';
+        const isAnswersMissing = errorCode === 'ANSWERS_MISSING';
+        const isAccountDisabled = errorCode === 'ACCOUNT_DISABLED';
+        const isAnalysisCompleted = errorCode === 'ANALYSIS_COMPLETED';
+        const isNotFound = errorCode === 'NOT_FOUND' || errorCode === 'FORBIDDEN';
+        const isLifetimeQuota = errorMessage.includes('免费测肤次数已用完')
+            || errorMessage.includes('共 10 次')
+            || errorMessage.includes('终身');
+        const errorTitle = isRequireLogin
+            ? "测肤需登录后使用"
+            : isConsentRequired
+                ? "需要重新授权"
+                : isImageValidation
+                    ? "照片未通过校验"
+                    : isFaceRequired
+                        ? "请先完成扫脸拍摄"
+                        : isFreeRetryUsed
+                            ? "免费重试机会已用完"
+                            : isFreeRetryInvalid
+                                ? "免费重试已失效"
+                                : isAccountDisabled
+                                    ? "账号暂时无法测肤"
+                                    : isAnalysisCompleted
+                                        ? "该结果已完成分析"
+                                        : isNotFound
+                                            ? "报告不存在或无权查看"
+                                            : isQuotaError
+                                                ? (isLifetimeQuota ? "测肤次数已用完" : "今日测试次数已用完")
+                                                : isRateLimited
+                                                    ? "当前访问人数较多"
+                                                    : isAiUnavailable
+                                                        ? "AI 服务暂时繁忙"
+                                                        : isAnswersMissing
+                                                            ? "答题数据缺失"
+                                                            : "分析遇到了一些问题";
         return (
             <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
@@ -1206,7 +1285,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">
-                                {isRequireLogin ? "测肤需登录后使用" : isConsentRequired ? "需要重新授权" : isFaceRequired ? "请先完成扫脸拍摄" : isQuotaError ? "今日测试次数已用完" : "分析遇到了一些问题"}
+                                {errorTitle}
                             </h3>
                             <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em]">
                                 {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
@@ -1235,10 +1314,18 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 >
                                     返回首页重新授权
                                 </button>
-                            ) : isFaceRequired ? (
+                            ) : isImageValidation || isFaceRequired ? (
                                 <>
                                     <button
-                                        onClick={() => navPush("/face-scan")}
+                                        onClick={() => {
+                                            try {
+                                                sessionStorage.setItem(
+                                                    STORAGE_KEYS.ADVISOR_FACE_ERROR,
+                                                    analysisState.errorDetails || errorMessage
+                                                );
+                                            } catch { /* ignore */ }
+                                            navPush("/face-scan");
+                                        }}
                                         className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         重新拍摄
@@ -1250,6 +1337,41 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         返回首页
                                     </button>
                                 </>
+                            ) : isFreeRetryUsed ? (
+                                <button
+                                    onClick={() => navPush("/")}
+                                    className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                >
+                                    返回首页
+                                </button>
+                            ) : isFreeRetryInvalid ? (
+                                <button
+                                    onClick={() => navPush("/questions?edit=true")}
+                                    className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                >
+                                    重新填写问卷
+                                </button>
+                            ) : isAccountDisabled || isNotFound ? (
+                                <button
+                                    onClick={() => navPush("/")}
+                                    className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                >
+                                    返回首页
+                                </button>
+                            ) : isAnalysisCompleted ? (
+                                <button
+                                    onClick={() => navPush("/account?tab=diary")}
+                                    className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                >
+                                    查看测肤记录
+                                </button>
+                            ) : isAnswersMissing ? (
+                                <button
+                                    onClick={() => navPush("/questions?edit=true")}
+                                    className="px-6 h-10 bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                >
+                                    重新填写问卷
+                                </button>
                             ) : isQuotaError ? (
                                 <button
                                     onClick={() => navPush("/")}
@@ -1326,7 +1448,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                     <AnalyzingOverlay
                         key="analyzing-overlay"
                         progress={analysisState.progress}
-                        onCancel={() => navPush('/')}
+                        status={analysisState.status}
+                        onCancel={() => {
+                            cancelAnalysis();
+                            navPush('/');
+                        }}
                         queuePosition={analysisState.queuePosition}
                         queueWaitSeconds={analysisState.queueWaitSeconds}
                         onShowSkinTypes={() => setShowSkinTypesModal(true)}
@@ -1385,7 +1511,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             />
 
                             <div className="justify-self-end flex items-center gap-3 md:gap-4">
-                                <UserBadge accountOpenSeq={accountOpenSeq} accountOpenTab="diary" />
+                                <UserBadge accountOpenSeq={accountOpenSeq} accountOpenTab={accountOpenTab} />
                             </div>
                         </div>
                     </header>
@@ -1408,6 +1534,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     证书面整面铺丝绸纹理（silk-texture.png，米色兜底）；页脚仅桌面端展示
                                     （mt-auto 沉底，simple 变体：版权 + AI 声明单行），移动端保持沉浸式不展示 */}
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
+                                {expired && <ExpiredReportBanner />}
                                 <div className="w-full">
                                     <div className="max-w-[900px] mx-auto px-6 md:px-8">
                                         <section aria-label="肌智派证书（第一面）">
@@ -1460,6 +1587,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             >
                                 {/* 游客测肤已下线：原「注册保存报告」横幅已移除（游客无法产生新报告，登录态未就绪时的闪现也是误伤） */}
                                 <ResultHeader nickname={userNickname} skinStateValue={skinStateValue} pageIndex={pageIndex} onSwitchPage={(idx) => { if (idx === 0) handleOpenCover(); else handleFlipToReport(); }} />
+                                {expired && <ExpiredReportBanner />}
 
                                 {/* 带妆拍摄提示条：固定兜底，不依赖 AI 是否在正文写入"仅供参考" */}
                                 {isMakeupCapture && (
@@ -1508,9 +1636,24 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             nickname={userNickname}
                                             previousSummary={prevSum || null}
                                             sessionId={sessionId}
-                                            onOpenDiary={() => setAccountOpenSeq((n) => n + 1)}
+                                            reTestBlockedReason={reTestBlockedReason}
+                                            onOpenDiary={() => {
+                                                setAccountOpenTab("diary");
+                                                setAccountOpenSeq((n) => n + 1);
+                                            }}
                                         />
                                     </section>
+
+                                    {/* 行动区：把报告建议落到执行层（产品 + 顾问） */}
+                                    <section id="action-plan" aria-labelledby="action-plan-title" className="scroll-mt-32 pt-2 lg:pt-4">
+                                        <div className="text-center">
+                                            <h2 id="action-plan-title" className="text-lg lg:text-2xl font-bold text-brand-espresso tracking-wide">
+                                                下一步行动
+                                            </h2>
+                                            <p className="mt-2 text-xs lg:text-sm text-[#8c7a6b]">
+                                                把报告里的建议落到每天：选对产品，或让顾问帮你执行
+                                            </p>
+                                        </div>
 
                                     {/* 产品推荐 - 与报告卡同一容器宽度（不再各自控制 padding） */}
                                     <ProductRecommendationSection
@@ -1545,7 +1688,14 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     />
 
                                     {/* 专属护肤顾问服务：按会员等级展示对应内容（未登录/普通会员/银卡及以上） */}
-                                    <AdvisorServiceSection onLogin={() => openAuthModal("login")} />
+                                    <AdvisorServiceSection
+                                        onLogin={() => openAuthModal("login")}
+                                        onOpenMembership={() => {
+                                            setAccountOpenTab("vip");
+                                            setAccountOpenSeq((n) => n + 1);
+                                        }}
+                                    />
+                                    </section>
 
                                     {/* Global Footer（与证书面共用） */}
                                     <footer className="w-full bg-transparent mt-0">
@@ -1558,7 +1708,25 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
 
                     {/* 两页切换 tab 已上移至标题下方（ResultHeader 内），底部悬浮 tab 移除 */}
 
-                    {/* 右下角浮动：仅「回到顶部」，滚动超过一屏出现、回顶后淡出 */}
+                    {/* 右下角浮动：行动区直达 + 回到顶部 */}
+                    <AnimatePresence>
+                        {pageIndex === 1 && showBackTop && (
+                            <m.button
+                                key="go-action-plan"
+                                initial={{ opacity: 0, scale: 0.8, y: 8 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.8, y: 8 }}
+                                transition={{ duration: 0.18, ease: "easeOut" }}
+                                onClick={() => {
+                                    const el = document.getElementById("action-plan");
+                                    el?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+                                }}
+                                className="fixed right-4 bottom-[calc(max(1.5rem,env(safe-area-inset-bottom))+3.5rem)] z-40 inline-flex h-10 items-center justify-center rounded-full border border-brand-espresso/10 bg-white/85 px-4 text-[12px] font-medium text-[var(--color-brand-cocoa)] backdrop-blur-md shadow-[0_6px_20px_rgba(61,47,37,0.14)] transition-all duration-200 hover:bg-[var(--color-brand-cocoa)] hover:text-white"
+                            >
+                                下一步行动
+                            </m.button>
+                        )}
+                    </AnimatePresence>
                     <AnimatePresence>
                         {pageIndex === 1 && showBackTop && (
                             <m.button

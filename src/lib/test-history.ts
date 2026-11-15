@@ -151,6 +151,7 @@ export async function getTestHistory(
             select: {
                 sessionId: true,
                 completedAt: true,
+                expiresAt: true,
                 skinAssessment: {
                     select: { overallScore: true, skinTypeLabel: true, persona: true },
                 },
@@ -180,6 +181,7 @@ export async function getTestHistory(
                 return {
                     sessionId: row.sessionId,
                     completedAt: row.completedAt,
+                    expiresAt: row.expiresAt,
                     analysisResult: {
                         ...(liteData.score != null ? { faceAnalysis: { overallScore: liteData.score } } : {}),
                         ...(liteData.typeLabel ? { skinProfile: { typeLabel: liteData.typeLabel } } : {}),

@@ -465,10 +465,13 @@ model DiaryEntry {
   tags      Json?    // 情境标签 string[]，如 ["熬夜", "换季"]
   note      String?  @db.VarChar(200)
   sessionId String?  // 测肤自动生成条目的来源会话，用于跳转对应报告；手动打卡为空
+  // manual=用户手动打卡；auto=测肤完成后自动生成。统计/积分只认 manual
+  source    String   @default("manual")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, date])
+  @@index([userId, source, date])
   // userId 单列索引由 (userId, date) 唯一索引的前缀覆盖
 }
 
@@ -570,3 +573,48 @@ model ReportQualityLog {
   @@index([createdAt])
   @@index([narrativeSource, createdAt])
 }
+
+// 主站账户合并幂等记录（内部 API）
+model MergeOperation {
+  operationId  String   @id
+  sourceUserId String
+  targetUserId String
+  status       String   @default("RUNNING")
+  result       Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([sourceUserId])
+  @@index([targetUserId])
+  @@index([createdAt])
+}
+
+// 主站产品快照分批同步会话
+model ProductSyncSession {
+  id            String   @id @default(cuid())
+  syncId        String   @unique
+  batchCount    Int
+  totalProducts Int
+  seenSourceIds Json     @default("[]")
+  status        String   @default("RUNNING")
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  batches ProductSyncBatch[]
+
+  @@index([status, expiresAt])
+}
+
+model ProductSyncBatch {
+  id         String   @id @default(cuid())
+  syncId     String
+  batchIndex Int
+  products   Json
+  createdAt  DateTime @default(now())
+
+  session ProductSyncSession @relation(fields: [syncId], references: [syncId], onDelete: Cascade)
+
+  @@unique([syncId, batchIndex])
+}
+

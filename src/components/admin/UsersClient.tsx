@@ -82,6 +82,8 @@ export function UsersClient({
     const pageSize = Number(searchParams.get("pageSize") || 20) || 20;
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "all";
+    const sort = searchParams.get("sort") || "createdAt";
+    const order: "asc" | "desc" = searchParams.get("order") === "asc" ? "asc" : "desc";
     const [searchInput, setSearchInput] = useState(search);
     const [prevSearch, setPrevSearch] = useState(search);
     if (prevSearch !== search) {
@@ -128,6 +130,8 @@ export function UsersClient({
                 limit: String(pageSize),
                 search,
                 status,
+                sort,
+                order,
             });
             const res = await adminFetch(`/api/admin/users?${params}`, {
                 signal: controller.signal,
@@ -146,7 +150,7 @@ export function UsersClient({
             if (abortRef.current === controller) abortRef.current = null;
             setLoading(false);
         }
-    }, [page, pageSize, search, status]);
+    }, [page, pageSize, search, status, sort, order]);
 
     useEffect(() => {
         fetchUsers();
@@ -228,6 +232,7 @@ export function UsersClient({
         {
             key: "name",
             title: "用户",
+            sortable: true,
             render: (_, user) => (
                 <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-charcoal/[0.04] text-brand-charcoal/65">
@@ -266,6 +271,7 @@ export function UsersClient({
             key: "createdAt",
             title: "注册时间",
             width: "120px",
+            sortable: true,
             render: (_, user) => (
                 <span className="whitespace-nowrap text-sm text-brand-charcoal/70">
                     {formatDate(user.createdAt)}
@@ -289,6 +295,7 @@ export function UsersClient({
             title: "测试次数",
             width: "96px",
             align: "right",
+            sortable: true,
             render: (_, user) => (
                 <span className="font-mono text-sm tabular-nums text-brand-charcoal">
                     {user._count.advisorSessions}
@@ -444,6 +451,11 @@ export function UsersClient({
                         data={users}
                         loading={loading}
                         rowKey="id"
+                        sortBy={sort}
+                        sortOrder={order}
+                        onSort={(key, nextOrder) =>
+                            updateParams({ sort: key, order: nextOrder })
+                        }
                         emptyText={
                             search ? `没有匹配「${search}」的用户` : "暂无用户"
                         }
@@ -522,7 +534,7 @@ export function UsersClient({
                         )}
                     />
 
-                    {pagination && pagination.totalPages > 1 && (
+                    {pagination && (
                         <Pagination
                             page={pagination.page}
                             pageSize={pagination.limit}

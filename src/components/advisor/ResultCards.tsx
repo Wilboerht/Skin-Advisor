@@ -15,6 +15,8 @@ interface ResultCardsProps {
   concernsLabel?: string;
   nickname: string;
   dataSource?: "comprehensive" | "questionnaire" | "hybrid";
+  /** 报告首屏紧凑模式：隐藏左侧标题说明，只保留 4 个 KPI */
+  compact?: boolean;
 }
 
 const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
@@ -31,18 +33,15 @@ const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: n
       setDisplayValue(Math.round(value));
       return;
     }
-    let start = 0;
-    const increment = value / (duration * 1000 / 16);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= value) {
-        setDisplayValue(Math.round(value));
-        clearInterval(timer);
-      } else {
-        setDisplayValue(Math.round(start));
-      }
-    }, 16);
-    return () => clearInterval(timer);
+    let frame = 0;
+    const startedAt = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / (duration * 1000));
+      setDisplayValue(Math.round(value * progress));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
   }, [value, duration, prefersReducedMotion]);
   return (
     <motion.span
@@ -68,6 +67,7 @@ export default function ResultCards({
   concernsLabel,
   nickname,
   dataSource,
+  compact = false,
 }: ResultCardsProps) {
   const scoreBand = getScoreBand(score);
   const isQuestionnaireOnly = dataSource === 'questionnaire';
@@ -78,14 +78,14 @@ export default function ResultCards({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="relative rounded-[32px] p-6 lg:p-10 border border-brand-espresso/8 overflow-hidden"
+        className={`relative rounded-[32px] border border-brand-espresso/8 overflow-hidden ${compact ? "p-4 lg:p-5" : "p-6 lg:p-10"}`}
         style={{
           background: '#F5F2ED',
           boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
         }}
       >
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-0 lg:gap-12 h-full">
-          <div className="flex flex-col justify-between items-start w-full lg:w-[30%] shrink-0">
+          <div className={`flex-col justify-between items-start w-full lg:w-[30%] shrink-0 ${compact ? "hidden" : "flex"}`}>
             <div>
               <div className="relative z-10 mb-4 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-xs font-bold text-[var(--color-brand-charcoal)] lg:mb-6 lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap">
                 专业版报告

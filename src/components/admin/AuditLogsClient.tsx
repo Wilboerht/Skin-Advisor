@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Download, Eye, RefreshCw } from "lucide-react";
+import { AlertTriangle, Download, Eye, RefreshCw } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
 import { isSuperAdmin } from "@/lib/permissions";
 import { useToast } from "@/components/ui/Toast";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Pagination } from "@/components/ui/Pagination";
 import { Select } from "@/components/ui/Select";
+import { formatBeijingDateTime, todayKeyShanghai } from "@/lib/time";
 import {
     DataTable,
     IconButton,
@@ -76,32 +77,21 @@ const TIME_PRESETS = [
 ];
 
 function getDateRange(preset: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const toDate = (date: Date) => date.toLocaleDateString("en-CA");
-    if (preset === "today") return { start: toDate(today), end: toDate(today) };
-    if (preset === "7days") {
-        const start = new Date(today);
-        start.setDate(start.getDate() - 6);
-        return { start: toDate(start), end: toDate(today) };
-    }
-    if (preset === "30days") {
-        const start = new Date(today);
-        start.setDate(start.getDate() - 29);
-        return { start: toDate(start), end: toDate(today) };
-    }
+    // 筛选与 API 一致：按北京时间日界计算，避免管理员在非 UTC+8 时区时「今天」错位
+    const today = todayKeyShanghai();
+    const shiftDay = (key: string, days: number) => {
+        const date = new Date(`${key}T00:00:00.000Z`);
+        date.setUTCDate(date.getUTCDate() - days);
+        return date.toISOString().slice(0, 10);
+    };
+    if (preset === "today") return { start: today, end: today };
+    if (preset === "7days") return { start: shiftDay(today, 6), end: today };
+    if (preset === "30days") return { start: shiftDay(today, 29), end: today };
     return { start: "", end: "" };
 }
 
 function formatTime(value: string) {
-    return new Date(value).toLocaleString("zh-CN", {
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-    });
+    return formatBeijingDateTime(value);
 }
 
 function actionVariant(
@@ -134,9 +124,12 @@ export default function AuditLogsClient({ role }: { role: string }) {
     const timePreset = searchParams.get("timePreset") || "all";
     const startDate = searchParams.get("startDate") || "";
     const endDate = searchParams.get("endDate") || "";
+    const sort = searchParams.get("sort") || "createdAt";
+    const order: "asc" | "desc" = searchParams.get("order") === "asc" ? "asc" : "desc";
 
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState("");
     const [exporting, setExporting] = useState(false);
     const [pagination, setPagination] = useState({
         page: 1,
@@ -174,10 +167,13 @@ export default function AuditLogsClient({ role }: { role: string }) {
         const controller = new AbortController();
         abortRef.current = controller;
         setLoading(true);
+        setLoadError("");
         try {
             const params = new URLSearchParams({
                 page: String(page),
                 limit: "30",
+                sort,
+                order,
             });
             if (selectedAdmin !== "all") params.set("adminId", selectedAdmin);
             if (selectedAction !== "all") params.set("action", selectedAction);
@@ -204,11 +200,13 @@ export default function AuditLogsClient({ role }: { role: string }) {
             setLogs(data.data);
             setPagination(data.pagination);
             if (data.filters) setFilterOptions(data.filters);
+            setLoadError("");
         } catch (error) {
             if (controller.signal.aborted || seq !== requestSeqRef.current) return;
-            toast.error(
-                error instanceof Error ? error.message : "加载审计日志失败",
-            );
+            const message =
+                error instanceof Error ? error.message : "加载审计日志失败";
+            setLoadError(message);
+            toast.error(message);
         } finally {
             if (seq === requestSeqRef.current) setLoading(false);
         }
@@ -220,6 +218,8 @@ export default function AuditLogsClient({ role }: { role: string }) {
         timePreset,
         startDate,
         endDate,
+        sort,
+        order,
         toast,
     ]);
 
@@ -289,7 +289,8 @@ export default function AuditLogsClient({ role }: { role: string }) {
         {
             key: "createdAt",
             title: "时间",
-            width: "136px",
+            width: "176px",
+            sortable: true,
             render: (_, log) => (
                 <span className="whitespace-nowrap text-sm tabular-nums text-brand-charcoal/70">
                     {formatTime(log.createdAt)}
@@ -300,6 +301,7 @@ export default function AuditLogsClient({ role }: { role: string }) {
             key: "admin",
             title: "操作人",
             width: "140px",
+            sortable: true,
             render: (_, log) => (
                 <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-brand-charcoal">
@@ -317,6 +319,7 @@ export default function AuditLogsClient({ role }: { role: string }) {
             key: "action",
             title: "操作",
             width: "150px",
+            sortable: true,
             render: (_, log) => (
                 <Badge variant={actionVariant(log.action)}>
                     {ACTION_LABELS[log.action] || log.action}
@@ -326,6 +329,7 @@ export default function AuditLogsClient({ role }: { role: string }) {
         {
             key: "resource",
             title: "资源",
+            sortable: true,
             render: (_, log) => (
                 <div className="min-w-0">
                     <p className="truncate text-sm text-brand-charcoal">
@@ -487,6 +491,26 @@ export default function AuditLogsClient({ role }: { role: string }) {
                 )}
             </PanelCard>
 
+            {loadError && (
+                <div
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                    role="alert"
+                >
+                    <span className="flex min-w-0 items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        <span className="min-w-0">{loadError}</span>
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchLogs}
+                        loading={loading}
+                    >
+                        重试
+                    </Button>
+                </div>
+            )}
+
             <DataTable
                 columns={columns}
                 tableLayout="fixed"
@@ -494,6 +518,11 @@ export default function AuditLogsClient({ role }: { role: string }) {
                 data={logs}
                 loading={loading}
                 rowKey="id"
+                sortBy={sort}
+                sortOrder={order}
+                onSort={(key, nextOrder) =>
+                    updateParams({ sort: key, order: nextOrder })
+                }
                 emptyText="暂无审计日志"
                 mobileCard={(log) => (
                     <button
@@ -530,7 +559,7 @@ export default function AuditLogsClient({ role }: { role: string }) {
                 )}
             />
 
-            {pagination.totalPages > 1 && (
+            {pagination.total > 0 && (
                 <Pagination
                     page={pagination.page}
                     pageSize={pagination.limit}

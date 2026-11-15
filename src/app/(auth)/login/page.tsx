@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/components/auth/UserProvider";
 import { SsoRedirectScreen, SsoCookiesDisabledScreen } from "@/components/auth/SsoRedirectScreen";
 import { isSafeInternalPath } from "@/lib/url-utils";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 export default function LoginPage() {
     const { user, loading, login } = useUser();
@@ -23,6 +24,16 @@ export default function LoginPage() {
             const redirect = new URLSearchParams(window.location.search).get("redirect");
             router.replace(isSafeInternalPath(redirect) ? redirect : "/");
             return;
+        }
+        // /login?redirect=...：UserProvider.login 在 /login 路径上默认回首页，
+        // 先把目标存入 AUTH_REDIRECT，SSO 回跳后由 AuthUrlDetector 消费。
+        const redirect = new URLSearchParams(window.location.search).get("redirect");
+        if (isSafeInternalPath(redirect)) {
+            try {
+                sessionStorage.setItem(STORAGE_KEYS.AUTH_REDIRECT, redirect);
+            } catch {
+                /* ignore */
+            }
         }
         // Trigger SSO login redirect. The central SSO login page handles
         // password, SMS code and registration flows.

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 主站 → 测肤子站 产品同步
  *
  * 设计口径：
@@ -117,7 +117,7 @@ const snapshotOptionsSchema = z
 const envelopeSchema = z.object({
     schemaVersion: z.literal(1),
     generatedAt: z.string().datetime(),
-    products: z.array(z.unknown()).max(2000),
+    products: z.array(z.unknown()).max(10000),
     options: snapshotOptionsSchema,
 });
 
@@ -999,3 +999,4 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
 export function __resetProductSyncLockForTests(): void {
     syncRunning = false;
 }
+

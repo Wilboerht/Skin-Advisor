@@ -24,6 +24,22 @@ export function todayKeyShanghai(now: Date = new Date()): string {
     return new Date(now.getTime() + SHANGHAI_OFFSET_MS).toISOString().slice(0, 10);
 }
 
+/** 按北京时间格式化日期时间（含年份），避免后台展示依赖浏览器/服务器时区 */
+export function formatBeijingDateTime(value: string | Date): string {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return new Intl.DateTimeFormat("zh-CN", {
+        timeZone: "Asia/Shanghai",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+    }).format(date);
+}
+
 /**
  * 解析 datetime-local 格式（yyyy-MM-ddTHH:mm[:ss]）为北京时间，
  * 返回对应的 UTC 绝对时刻；格式非法返回 null。

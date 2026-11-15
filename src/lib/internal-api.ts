@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 内部 API 请求签名工具
  *
  * 用于子站调用官网 /api/v1/internal/* 接口时生成 HMAC-SHA256 签名。
@@ -21,6 +21,7 @@ export interface InternalApiKeyConfig {
   project: string;
   key: string;
   secret: string;
+  previousSecrets?: string[];
 }
 
 /**
@@ -216,7 +217,17 @@ function findInternalApiKeyByKey(key: string): InternalApiKeyConfig | null {
   try {
     const parsed = JSON.parse(keysEnv) as InternalApiKeyConfig[];
     if (!Array.isArray(parsed)) return null;
-    return parsed.find((item) => item.key === key && item.secret) ?? null;
+    const item = parsed.find((entry) => entry.key === key && entry.secret);
+    if (!item) return null;
+    return {
+      ...item,
+      previousSecrets: Array.isArray(item.previousSecrets)
+        ? item.previousSecrets.filter(
+            (secret): secret is string =>
+              typeof secret === "string" && secret.length >= 32
+          )
+        : undefined,
+    };
   } catch {
     return null;
   }
@@ -286,10 +297,12 @@ export async function verifyInternalRequest(
   const canonicalQuery = canonicalizeQuery(url.search);
   const bodyHash = await hashRequestBody(rawBody);
 
-  const candidates: { signature: string; format: "query-bound" | "legacy" }[] = [
-    {
+  const candidates: { signature: string; format: "query-bound" | "legacy" }[] = [];
+  const secrets = [config.secret, ...(config.previousSecrets ?? [])];
+  for (const secret of secrets) {
+    candidates.push({
       signature: generateInternalApiSignature(
-        config.secret,
+        secret,
         request.method,
         path,
         timestamp,
@@ -298,13 +311,20 @@ export async function verifyInternalRequest(
         canonicalQuery
       ),
       format: "query-bound",
-    },
-  ];
-  if (!isSignedQueryRequired()) {
-    candidates.push({
-      signature: generateInternalApiSignature(config.secret, request.method, path, timestamp, nonce, bodyHash),
-      format: "legacy",
     });
+    if (!isSignedQueryRequired()) {
+      candidates.push({
+        signature: generateInternalApiSignature(
+          secret,
+          request.method,
+          path,
+          timestamp,
+          nonce,
+          bodyHash
+        ),
+        format: "legacy",
+      });
+    }
   }
 
   let matchedFormat: "query-bound" | "legacy" | null = null;
@@ -419,3 +439,4 @@ export async function authorizeInternalRequest(
   });
   return { ok: true, mode: "legacy" };
 }
+

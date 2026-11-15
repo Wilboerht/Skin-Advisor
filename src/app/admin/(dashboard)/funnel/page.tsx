@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
-import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -35,66 +34,61 @@ export default async function AdminFunnelPage() {
 
     // 单次 SQL 聚合计；不把 30 天的 interactions JSON 全量拉到 Node 层，
     // 避免管理端漏斗页在大流量下把内存/序列化 CPU 打满。
-    let counts: FunnelCounts = {
-        total: 0,
-        questionnaireStarted: 0,
-        questionnaireCompleted: 0,
-        captureStarted: 0,
-        captureCompleted: 0,
-        faceAnalyzed: 0,
-        reportStarted: 0,
-        reportCompleted: 0,
-        resultViewed: 0,
-    };
+    const rows = await prisma.$queryRaw<Array<{
+        total: number;
+        questionnaire_started: number;
+        questionnaire_completed: number;
+        capture_started: number;
+        capture_completed: number;
+        face_analyzed: number;
+        report_started: number;
+        report_completed: number;
+        result_viewed: number;
+    }>>`
+        SELECT
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (WHERE "questionnaireStartedAt" IS NOT NULL
+                OR "interactions" @> '[{"type":"questionnaire_start"}]'::jsonb)::int AS questionnaire_started,
+            COUNT(*) FILTER (WHERE "questionnaireCompletedAt" IS NOT NULL
+                OR "interactions" @> '[{"type":"questionnaire_complete"}]'::jsonb)::int AS questionnaire_completed,
+            COUNT(*) FILTER (WHERE "faceScanStartedAt" IS NOT NULL
+                OR "interactions" @> '[{"type":"face_scan_start"}]'::jsonb)::int AS capture_started,
+            COUNT(*) FILTER (WHERE "interactions" @> '[{"type":"face_scan_complete"}]'::jsonb)::int AS capture_completed,
+            COUNT(*) FILTER (WHERE "faceScanCompletedAt" IS NOT NULL)::int AS face_analyzed,
+            COUNT(*) FILTER (WHERE "analysisStartedAt" IS NOT NULL
+                OR "interactions" @> '[{"type":"analysis_start"}]'::jsonb)::int AS report_started,
+            COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL
+                OR "interactions" @> '[{"type":"analysis_complete"}]'::jsonb)::int AS report_completed,
+            COUNT(*) FILTER (WHERE "resultViewedAt" IS NOT NULL
+                OR "interactions" @> '[{"type":"result_view"}]'::jsonb)::int AS result_viewed
+        FROM "AdvisorSession"
+        WHERE "createdAt" >= ${since}
+    `;
+    const row = rows[0];
 
-    try {
-        const rows = await prisma.$queryRaw<Array<{
-            total: number;
-            questionnaire_started: number;
-            questionnaire_completed: number;
-            capture_started: number;
-            capture_completed: number;
-            face_analyzed: number;
-            report_started: number;
-            report_completed: number;
-            result_viewed: number;
-        }>>`
-            SELECT
-                COUNT(*)::int AS total,
-                COUNT(*) FILTER (WHERE "questionnaireStartedAt" IS NOT NULL
-                    OR "interactions" @> '[{"type":"questionnaire_start"}]'::jsonb)::int AS questionnaire_started,
-                COUNT(*) FILTER (WHERE "questionnaireCompletedAt" IS NOT NULL
-                    OR "interactions" @> '[{"type":"questionnaire_complete"}]'::jsonb)::int AS questionnaire_completed,
-                COUNT(*) FILTER (WHERE "faceScanStartedAt" IS NOT NULL
-                    OR "interactions" @> '[{"type":"face_scan_start"}]'::jsonb)::int AS capture_started,
-                COUNT(*) FILTER (WHERE "interactions" @> '[{"type":"face_scan_complete"}]'::jsonb)::int AS capture_completed,
-                COUNT(*) FILTER (WHERE "faceScanCompletedAt" IS NOT NULL)::int AS face_analyzed,
-                COUNT(*) FILTER (WHERE "analysisStartedAt" IS NOT NULL
-                    OR "interactions" @> '[{"type":"analysis_start"}]'::jsonb)::int AS report_started,
-                COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL
-                    OR "interactions" @> '[{"type":"analysis_complete"}]'::jsonb)::int AS report_completed,
-                COUNT(*) FILTER (WHERE "resultViewedAt" IS NOT NULL
-                    OR "interactions" @> '[{"type":"result_view"}]'::jsonb)::int AS result_viewed
-            FROM "AdvisorSession"
-            WHERE "createdAt" >= ${since}
-        `;
-        const row = rows[0];
-        if (row) {
-            counts = {
-                total: row.total,
-                questionnaireStarted: row.questionnaire_started,
-                questionnaireCompleted: row.questionnaire_completed,
-                captureStarted: row.capture_started,
-                captureCompleted: row.capture_completed,
-                faceAnalyzed: row.face_analyzed,
-                reportStarted: row.report_started,
-                reportCompleted: row.report_completed,
-                resultViewed: row.result_viewed,
-            };
-        }
-    } catch (error) {
-        logger.error("[AdminFunnel] aggregate failed", { error: String(error) });
-    }
+    const counts: FunnelCounts = row
+        ? {
+              total: row.total,
+              questionnaireStarted: row.questionnaire_started,
+              questionnaireCompleted: row.questionnaire_completed,
+              captureStarted: row.capture_started,
+              captureCompleted: row.capture_completed,
+              faceAnalyzed: row.face_analyzed,
+              reportStarted: row.report_started,
+              reportCompleted: row.report_completed,
+              resultViewed: row.result_viewed,
+          }
+        : {
+              total: 0,
+              questionnaireStarted: 0,
+              questionnaireCompleted: 0,
+              captureStarted: 0,
+              captureCompleted: 0,
+              faceAnalyzed: 0,
+              reportStarted: 0,
+              reportCompleted: 0,
+              resultViewed: 0,
+          };
 
     const {
         total,

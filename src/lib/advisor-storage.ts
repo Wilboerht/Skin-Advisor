@@ -524,6 +524,15 @@ export const advisorStorage = {
                 }
             }
         } catch { /* ignore */ }
+        // sessionStorage 里也有 advisor_* 标记（分析会话、面部错误等），共享设备切换账号时一并清理
+        try {
+            for (let i = sessionStorage.length - 1; i >= 0; i--) {
+                const key = sessionStorage.key(i);
+                if (key && (key.startsWith("claimed_") || key.startsWith("advisor_"))) {
+                    sessionStorage.removeItem(key);
+                }
+            }
+        } catch { /* ignore */ }
     },
 
     /** 仅清除人脸照片缓存（保留问卷答案和进度） */

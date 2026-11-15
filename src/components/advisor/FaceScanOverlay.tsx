@@ -73,10 +73,17 @@ export function FaceScanOverlay({
                         配合稳定度的衰减式下降，避免环随状态切换闪烁消失/重现；
                         进度分母与拍照帧数一致，环闭合瞬间即拍照瞬间，随后 success 绿环确认动画接手 */}
                     {stabilityProgress > 0 && stabilityProgress <= 100 && faceStatus !== "success" && (
-                        <div className={cn(
-                            "absolute inset-0 pointer-events-none transition-opacity duration-300",
-                            faceStatus === "detecting" && "opacity-50"
-                        )}>
+                        <div
+                            role="progressbar"
+                            aria-label="面部稳定进度"
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={Math.round(stabilityProgress)}
+                            className={cn(
+                                "absolute inset-0 pointer-events-none transition-opacity duration-300",
+                                faceStatus === "detecting" && "opacity-50"
+                            )}
+                        >
                             {/* 静态光晕：一次性光栅化后走合成层，不随进度逐帧重绘 */}
                             <div
                                 aria-hidden="true"

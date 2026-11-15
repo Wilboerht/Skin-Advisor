@@ -35,6 +35,7 @@ const HIDDEN_PREFIXES = [
   "/register",
   "/forgot-password",
   "/reset-password",
+  "/preview",
 ];
 
 interface DockTab {

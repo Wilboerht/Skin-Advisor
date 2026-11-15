@@ -27,7 +27,14 @@ function firstSentence(text?: string): string {
  */
 export function ReportSummary({ result }: ReportSummaryProps) {
     const report = result.consultantReport;
-    const topIssue = report?.issues?.[0];
+    const severityRank: Record<ConsultantIssue["severity"], number> = {
+        severe: 3,
+        moderate: 2,
+        mild: 1,
+    };
+    const topIssue = [...(report?.issues ?? [])].sort(
+        (a, b) => severityRank[b.severity] - severityRank[a.severity]
+    )[0];
     const overview = report?.overview || result.analysis.summary || "本次报告已生成，请查看下方详细分析。";
     const nextStep = (topIssue?.skincarePlan ? firstSentence(topIssue.skincarePlan) : "")
         || "先按下方每日方案完成基础清洁、保湿与防晒，4 周后复测对比。";

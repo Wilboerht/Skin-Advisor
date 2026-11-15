@@ -42,13 +42,13 @@ const VALID_SKIN_TYPES = [
 ] as const;
 
 const SKIN_TYPE_LABELS: Record<string, string> = {
-    dry: "Dry",
-    oily: "Oily",
-    combination: "Combination",
-    combination_dry: "Combination Dry",
-    combination_oily: "Combination Oily",
-    sensitive: "Sensitive",
-    normal: "Normal",
+    dry: "干性",
+    oily: "油性",
+    combination: "混合性",
+    combination_dry: "混干",
+    combination_oily: "混油",
+    sensitive: "敏感",
+    normal: "中性",
 };
 
 function getSkinTypeColor(type: string): string {

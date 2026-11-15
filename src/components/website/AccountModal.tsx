@@ -1,18 +1,19 @@
 "use client";
 
-import { Component, useEffect, useRef, useState, type ReactNode } from "react";
+import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, LazyMotion, domMax, m, useDragControls, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { Crown, Gift, LogOut, NotebookPen, User, X } from "lucide-react";
+import { ChevronLeft, Crown, Gift, LogOut, NotebookPen, User, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { useIsMobile } from "@/hooks/useMediaQuery";
+import { AccountBackProvider } from "@/components/website/AccountBackContext";
 import { LoginGuide } from "@/components/website/LoginGuide";
 import { ACCOUNT_SHELL } from "@/components/website/account-styles";
 import { AccountRootView } from "@/components/website/AccountRootView";
@@ -62,6 +63,8 @@ interface AccountModalProps {
   initialTab?: AccountTab;
   /** tab 切换上报（外部入口如底部 Dock 的高亮状态用） */
   onTabChange?: (tab: AccountTab) => void;
+  /** 用户点击“登录/注册”时触发；用于区分主动关闭与即将整页登录 */
+  onLoginIntent?: () => void;
 }
 
 /** 侧边栏 / 底部 Tab 的一级菜单（不含安全中心） */
@@ -99,7 +102,7 @@ const LEVEL_LABELS: Record<string, string> = {
  * 会员中心 = VipPanel（主站同款）；积分商城 = PointsMallPanel（原生，BFF 代理官网 OAuth 资源端点）。
  * 未登录：登录引导视图，点击按钮走 SSO 统一登录（原护肤档案弹层的未登录态也由这里承接）。
  */
-export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: AccountModalProps) {
+export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLoginIntent }: AccountModalProps) {
   const { user, logout } = useAuth();
   const { openAuthModal } = useAuthModal();
   const isMobile = useIsMobile();
@@ -113,11 +116,22 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
   // 「全部测肤记录」子视图（受控）：DiaryPanel 内部视图状态上抛，
   // 移动端头部据此切换标题（测肤记录）并显示返回按钮；主视图头部则显示入口
   const [diaryHistoryView, setDiaryHistoryView] = useState(false);
+  // 二级视图返回栈：面板在子视图时注册 handler，返回键/头部返回先回退子视图
+  const accountBackRef = useRef<(() => boolean) | null>(null);
+  const [hasSubView, setHasSubView] = useState(false);
+  const registerAccountBack = useCallback((handler: (() => boolean) | null) => {
+    accountBackRef.current = handler;
+    setHasSubView(Boolean(handler));
+  }, []);
+  const handleAccountBack = useCallback(() => {
+    if (accountBackRef.current?.()) return;
+    onClose();
+  }, [onClose]);
 
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
-  // 移动端返回键/返回手势：单级视图，直接关闭弹层
-  useModalBackClose(isOpen, onClose);
+  // 移动端返回键/返回手势：优先回退子视图，再关闭弹层
+  useModalBackClose(isOpen, handleAccountBack);
 
   // 打开瞬间的目标 tab：用 ref 捕获（打开时先更新 ref 再应用），避免 initialTab 变化引发中途复位
   const initialTabOnOpenRef = useRef(initialTab);
@@ -130,6 +144,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
       setActiveTab(target);
       setVisitedTabs([target]);
       setDiaryHistoryView(false);
+      setHasSubView(false);
     }
   }, [isOpen]);
   // 账号切换：回到个人信息（跳过首次挂载，避免覆盖 initialTab）
@@ -140,6 +155,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
     setActiveTab("profile");
     setVisitedTabs(["profile"]);
     setDiaryHistoryView(false);
+    setHasSubView(false);
   }, [user?.id]);
 
   const activateTab = (tab: AccountTab) => {
@@ -217,6 +233,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
   const displayName = user?.name?.trim() || (user?.phone ? `用户${user.phone.slice(-4)}` : "用户");
 
   return createPortal(
+    <AccountBackProvider register={registerAccountBack}>
     <LazyMotion features={domMax}>
       <AnimatePresence>
         {isOpen && (
@@ -433,12 +450,29 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                             <div className="h-1 w-9 rounded-full bg-stone-300/70" />
                           </div>
                           <div className="grid h-14 grid-cols-[3.5rem_1fr_3.5rem] items-center">
-                            {/* 左槽留空：保证标题居中；护肤档案的「全部测肤记录」入口在趋势图下方 */}
-                            <div aria-hidden />
+                            {/* 左槽：二级视图返回；主视图留空保证标题居中 */}
+                            {hasSubView ? (
+                              <button
+                                type="button"
+                                onClick={() => accountBackRef.current?.()}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                aria-label="返回上一级"
+                                className="flex h-11 w-11 items-center justify-center text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                              >
+                                <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
+                              </button>
+                            ) : (
+                              <div aria-hidden />
+                            )}
                             <h2 className="truncate text-center text-[15px] font-medium tracking-wide text-stone-800">
                               {activeTab === "diary" && diaryHistoryView
                                 ? "测肤记录"
                                 : MENU_ITEMS.find((i) => i.key === activeTab)?.label || "个人信息"}
+                              {activeTab === "profile" && user && (
+                                <span className="ml-1.5 align-middle rounded-full border border-brand-charcoal/10 bg-brand-charcoal/[0.04] px-1.5 py-0.5 text-[9px] font-light text-brand-charcoal/55">
+                                  {levelLabel}
+                                </span>
+                              )}
                             </h2>
                             <div className="flex h-full w-full items-center justify-center">
                               <button
@@ -501,6 +535,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                               className="h-full"
                             >
                               <VipPanel
+                                active={activeTab === "vip"}
                                 onRequestLogin={requestLogin}
                                 onNavigateMall={() => activateTab("mall")}
                               />
@@ -515,7 +550,10 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                               className="h-full"
                             >
                               {/* 面板自带标题与滚动区（与官网 PointsMallPanel 同构） */}
-                              <PointsMallPanel />
+                              <PointsMallPanel
+                                active={activeTab === "mall"}
+                                onNavigateVip={() => activateTab("vip")}
+                              />
                             </div>
                           )}
                         </AccountPanelErrorBoundary>
@@ -578,7 +616,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
                   <h2 id="account-modal-title" className="sr-only">
                     我的账户
                   </h2>
-                  <LoginGuide onNavigateLogin={onClose} />
+                  <LoginGuide onLoginIntent={onLoginIntent} onNavigateLogin={onClose} />
                 </div>
               )}
             </m.div>
@@ -645,7 +683,8 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange }: Accou
           </div>
         )}
       </AnimatePresence>
-    </LazyMotion>,
+    </LazyMotion>
+    </AccountBackProvider>,
     document.body
   );
 }

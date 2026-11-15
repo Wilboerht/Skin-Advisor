@@ -2,8 +2,8 @@
  * 打卡积分发放客户端
  *
  * 规则（产品口径）：手动打卡按连续天数发放积分——第 1 天 +1、第 2 天 +2、
- * 第 3 天起 +3；连续中断后重新从 +1 算起。连续天数的判定口径与护肤档案
- * 里程碑的"连续打卡"一致（测肤自动条目也计入连续天数）。
+ * 第 3 天起 +3；连续中断后重新从 +1 算起。连续天数只统计手动打卡，
+ * 测肤自动记录不计入打卡连续天数。
  * 仅"北京时间当天"打卡发积分；补打卡（历史日期）与提前打卡（未来日期）不发。
  *
  * 官网是积分权威账本：本模块只负责把"谁、哪天、连续第几天、多少分"
@@ -155,9 +155,12 @@ export async function backfillRecentCheckinPoints(userId: string, skipDateStr: s
   const [recent, all] = await Promise.all([
     prisma.diaryEntry.findMany({
       where: { userId, date: { gte: since } },
-      select: { date: true, createdAt: true, note: true },
+      select: { date: true, createdAt: true, note: true, source: true },
     }),
-    prisma.diaryEntry.findMany({ where: { userId }, select: { date: true } }),
+    prisma.diaryEntry.findMany({
+      where: { userId, source: "manual" },
+      select: { date: true },
+    }),
   ]);
 
   const manualDates = recent

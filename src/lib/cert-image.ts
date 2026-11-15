@@ -12,7 +12,7 @@
 export const CERT_IMAGE_WIDTH = 1440;
 export const CERT_IMAGE_HEIGHT = 1920;
 
-/** 叠加文字颜色：取样自底图烘焙文字（"击败了全国"等） */
+/** 叠加文字颜色：取样自底图烘焙文字 */
 const TEXT_COLOR = "#324F63";
 const FONT_STACK = '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif';
 
@@ -32,7 +32,7 @@ export interface CertImageInput {
     variant?: CertVariant;
     /** 综合评分（仅 qr 版有评分区）；缺省不叠加（底图留空） */
     score?: number;
-    /** 百分位（击败了全国 X% 的用户）；null/缺省不叠加 */
+    /** 平台用户百分位（超过平台 X% 用户）；null/缺省不叠加 */
     percentile?: number | null;
     /** 参与百分位统计的样本量；有百分位时展示，避免无口径排名 */
     sampleSize?: number;

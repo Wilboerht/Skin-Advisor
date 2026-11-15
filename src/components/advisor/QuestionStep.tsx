@@ -10,7 +10,7 @@ import { useIsTouch } from "@/hooks/useMediaQuery";
 interface QuestionStepProps {
   question: Question;
   selectedValue: string | string[] | null;
-  onSelect: (value: string) => void;
+  onSelect: (value: string, options?: { autoAdvance?: boolean }) => void;
   onNext: () => void;
   direction: number; // 1: 向前, -1: 向后（切题滑入滑出由外层 page 的 AnimatePresence 负责）
   currentStep: number;
@@ -55,7 +55,8 @@ export function QuestionStep({
     const nextIdx = currentIdx === -1
       ? (delta === 1 ? 0 : values.length - 1)
       : (currentIdx + delta + values.length) % values.length;
-    onSelect(values[nextIdx]);
+    // 键盘方向键只移动选择，不自动切题；用户按 Enter/继续按钮再进入下一题
+    onSelect(values[nextIdx], { autoAdvance: false });
   };
 
   const nextLabel = (() => {
@@ -91,6 +92,21 @@ export function QuestionStep({
             >
               {question.subtext}
             </m.p>
+          )}
+          {currentStep === 1 && (
+            <m.p
+              className="mt-3 text-[12px] font-light tracking-[0.08em] text-brand-charcoal/45"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              预计约 2 分钟完成
+            </m.p>
+          )}
+          {["pregnancy", "menstrualCycle", "medicalBeauty", "allergies"].includes(question.fieldName) && (
+            <p className="mt-3 text-[11px] font-light leading-relaxed text-brand-charcoal/45">
+              该信息仅用于安全筛查与方案避雷，不会在报告中公开展示。
+            </p>
           )}
         </div>
 

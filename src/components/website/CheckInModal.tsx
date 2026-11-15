@@ -72,7 +72,15 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved, onAu
   }, [isOpen, existing]);
 
   const toggleTag = (tag: string) => {
-    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag].slice(0, 5)));
+    if (tags.includes(tag)) {
+      setTags(tags.filter((t) => t !== tag));
+      return;
+    }
+    if (tags.length >= 5) {
+      toast.info("最多选择 5 个标签");
+      return;
+    }
+    setTags([...tags, tag]);
   };
 
   const handleSave = async () => {

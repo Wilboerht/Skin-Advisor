@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { useToast } from "@/components/ui/Toast";
@@ -20,7 +20,22 @@ export function ReportFeedback({ sessionId }: ReportFeedbackProps) {
     const toast = useToast();
     const { trackEvent } = useAdvisorAnalytics();
     const [pending, setPending] = useState<Verdict | null>(null);
-    const [submitted, setSubmitted] = useState<Verdict | null>(null);
+    const [submitted, setSubmitted] = useState<Verdict | null>(() => {
+        if (!sessionId || typeof window === "undefined") return null;
+        try {
+            const value = sessionStorage.getItem(`report-feedback:${sessionId}`);
+            return value === "accurate" || value === "inaccurate" ? value : null;
+        } catch {
+            return null;
+        }
+    });
+
+    useEffect(() => {
+        if (!sessionId || !submitted) return;
+        try {
+            sessionStorage.setItem(`report-feedback:${sessionId}`, submitted);
+        } catch { /* ignore */ }
+    }, [sessionId, submitted]);
 
     if (!sessionId) return null;
 
@@ -50,10 +65,10 @@ export function ReportFeedback({ sessionId }: ReportFeedbackProps) {
     return (
         <section aria-labelledby="report-feedback-title" className="rounded-2xl border border-[var(--color-brand-espresso)]/12 bg-white/55 px-4 py-3 lg:px-5 lg:py-4">
             <h4 id="report-feedback-title" className="text-sm font-medium text-[var(--color-brand-espresso)]">
-                报告纠错
+                这份报告准确吗？
             </h4>
             <p className="mt-1 text-[11px] leading-relaxed text-[var(--color-brand-taupe)]">
-                这份报告符合你的实际情况吗？你的反馈会帮助我们改进分析。
+                你的反馈会帮助我们改进分析，让下一次报告更贴近你的实际情况。
             </p>
             {submitted ? (
                 <p className="mt-2 text-[12px] text-[var(--color-report-success)]">已收到你的反馈，感谢。</p>

@@ -127,6 +127,7 @@ export default async function ReportDetailPage(props: {
                     medicalBeauty: rawAnswers.medicalBeauty,
                     skincareLevel: rawAnswers.skincareLevel,
                     skincareFrequency: rawAnswers.skincareFrequency,
+                    budget: rawAnswers.budget,
                     gender: rawAnswers.gender,
                 } : null,
             };
@@ -150,11 +151,14 @@ export default async function ReportDetailPage(props: {
     }
 
     return (
-        <>
-            {isExpired && <ReportExpiredBanner />}
-            {/* key=id：/reports/A → /reports/B 时强制重建客户端状态，避免串报告 */}
-            <ResultClient key={id} id={id} initialData={initialData} previousSummary={previousSummary} />
-        </>
+        // key=id：/reports/A → /reports/B 时强制重建客户端状态，避免串报告
+        <ResultClient
+            key={id}
+            id={id}
+            initialData={initialData}
+            previousSummary={previousSummary}
+            expired={isExpired}
+        />
     );
 }
 
@@ -181,24 +185,6 @@ function ReportArchived() {
                         回到首页
                     </Link>
                 </div>
-            </div>
-        </div>
-    );
-}
-
-function ReportExpiredBanner() {
-    return (
-        <div className="w-full bg-[#f5ead9] px-4 py-3">
-            <div className="mx-auto flex max-w-[900px] flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
-                <p className="text-sm text-[#8c6d3f]">
-                    该报告已超过 90 天有效期，皮肤状态可能已变化。为保持肌肤档案准确，建议重新测试更新档案。
-                </p>
-                <Link
-                    href="/questions"
-                    className="inline-flex items-center justify-center rounded-full bg-[#5c4937] px-4 py-1.5 text-xs font-medium text-white transition-transform active:scale-95"
-                >
-                    重新测试
-                </Link>
             </div>
         </div>
     );

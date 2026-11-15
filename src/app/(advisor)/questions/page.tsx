@@ -566,7 +566,7 @@ export default function QuestionsPage() {
         }, 500);
     };
 
-    const handleSelect = (value: string) => {
+    const handleSelect = (value: string, options?: { autoAdvance?: boolean }) => {
         if (!currentQuestion) return;
 
         // 先清除上一个未触发的自动切题，避免 300ms 内改选另一个选项导致跳两题
@@ -602,8 +602,10 @@ export default function QuestionsPage() {
             }
         } else {
             newAnswers[currentQuestion.fieldName] = value;
-            // 单选自动跳转
-            scheduleAutoAdvance(currentQuestion.fieldName, value, newAnswers);
+            // 单选自动跳题；键盘方向键浏览（autoAdvance=false）不跳题
+            if (options?.autoAdvance !== false) {
+                scheduleAutoAdvance(currentQuestion.fieldName, value, newAnswers);
+            }
         }
 
         setAnswers(newAnswers);
@@ -690,8 +692,8 @@ export default function QuestionsPage() {
             // 规则：如果在本次会话中回答了超过 3 题，且平均每题耗时少于 1.5 秒
             // 或者：如果回答了超过 5 题且总耗时少于 6 秒 (极速盲点)
             const avgTime = timeSpent / questionsAnsweredInSession;
-            const isTooFast = (questionsAnsweredInSession >= 3 && avgTime < 1500) ||
-                (questionsAnsweredInSession >= 5 && timeSpent < 6000);
+            const isTooFast = (questionsAnsweredInSession >= 4 && avgTime < 1200) ||
+                (questionsAnsweredInSession >= 6 && timeSpent < 5000);
 
             if (isTooFast) {
                 setPendingAnswers(currentAnswers);
@@ -1180,9 +1182,9 @@ export default function QuestionsPage() {
                         >
                             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 id="quality-modal-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">确认提交？</h3>
+                                    <h3 id="quality-modal-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">已完成，确认提交？</h3>
                                     <p className="text-sm text-brand-charcoal/60 font-light leading-relaxed">
-                                        我们检测到您的填写速度较快。建议您再次核对，确保 AI 能为您提供<span className="text-brand-charcoal font-medium"> 最精准 </span>的分析结果。
+                                        您完成得很快，建议再核对关键题；确认无误也可以直接提交。
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
@@ -1195,7 +1197,7 @@ export default function QuestionsPage() {
                                         }}
                                         className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
-                                        我已确认，去提交
+                                        确认无误，提交
                                     </button>
                                     <button
                                         onClick={() => setShowQualityWarning(false)}

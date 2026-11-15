@@ -52,7 +52,7 @@ export function PanelShell({
     >
       {!embedded && !hideTitle && (
         <div
-          className={`${PANEL_HEADER_CLASS}${headerExtra ? " items-center gap-4" : ""}`}
+          className={`${PANEL_HEADER_CLASS}${headerExtra ? " items-center gap-4 md:pr-28" : ""}`}
         >
           <h2 className={PANEL_TITLE_CLASS}>{title}</h2>
           {headerExtra}

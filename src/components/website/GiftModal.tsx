@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
+import { m, AnimatePresence, LazyMotion, domAnimation, useReducedMotion } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -23,9 +23,10 @@ function seededRandom(seed: number): number {
  * 组件随弹窗挂载而 mount（AnimatePresence 内），每次打开自动重播一次。
  */
 function GiftConfetti() {
+  const reduceMotion = useReducedMotion();
   const pieces = useMemo(
     () =>
-      Array.from({ length: 48 }, (_, i) => ({
+      reduceMotion ? [] : Array.from({ length: 48 }, (_, i) => ({
         id: i,
         x: seededRandom(i * 7 + 1) * 100,
         delay: seededRandom(i * 13 + 2) * 0.5,
@@ -37,7 +38,7 @@ function GiftConfetti() {
         drift: (seededRandom(i * 37 + 13) - 0.5) * 60,
         round: seededRandom(i * 41 + 17) > 0.6,
       })),
-    []
+    [reduceMotion]
   );
 
   return (

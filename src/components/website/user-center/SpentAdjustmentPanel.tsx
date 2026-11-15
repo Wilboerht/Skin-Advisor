@@ -122,6 +122,7 @@ export function SpentAdjustmentPanel({
 }) {
   const [applications, setApplications] = useState<ApplicationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   // 首次挂载加载跳过回调（父组件同期已在拉取会员卡/积分数据，避免重复请求）
   const loadedOnceRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
@@ -188,6 +189,7 @@ export function SpentAdjustmentPanel({
   );
 
   const loadApplications = useCallback(async () => {
+    setLoadError(false);
     try {
       const res = await fetch("/api/account/spent-adjustments", { cache: "no-store" });
       const data = await res.json().catch(() => null);
@@ -202,9 +204,11 @@ export function SpentAdjustmentPanel({
         }
         loadedOnceRef.current = true;
       } else {
+        setLoadError(true);
         showError(data?.error?.message || "加载申请记录失败");
       }
     } catch {
+      setLoadError(true);
       showError("加载申请记录失败");
     } finally {
       setLoading(false);
@@ -621,6 +625,17 @@ export function SpentAdjustmentPanel({
             {loading ? (
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-5 w-5 animate-spin text-stone-300" />
+              </div>
+            ) : loadError ? (
+              <div className="flex items-center justify-center gap-3 py-4 text-xs text-stone-400">
+                加载申请记录失败
+                <button
+                  type="button"
+                  onClick={() => void loadApplications()}
+                  className="text-brand-charcoal underline underline-offset-2"
+                >
+                  重试
+                </button>
               </div>
             ) : applications.length === 0 ? (
               <p className="py-4 text-center text-xs text-stone-400">暂无录入提交</p>

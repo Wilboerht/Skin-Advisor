@@ -19,6 +19,10 @@ export const SKIN_STATE_LABELS: Record<string, string> = Object.fromEntries(
 
 export const DEFAULT_SKIN_STATE: SkinStateValue = "bare";
 
+export function isSkinStateValue(value: string | null | undefined): value is SkinStateValue {
+    return !!value && SKIN_STATE_OPTIONS.some((option) => option.value === value);
+}
+
 /** 带妆状态：结果页对色斑/泛红/肤色类结论加"仅供参考"提示 */
 export function isMakeupState(value: string | null | undefined): boolean {
     return value === "light_makeup" || value === "heavy_makeup";

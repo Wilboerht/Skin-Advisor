@@ -9,6 +9,7 @@ import {
   SunDim,
   AlertCircle,
   Check,
+  Loader2,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
@@ -102,13 +103,12 @@ const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; ic
 ];
 
 /**
- * 面部拍照/上传组件
+ * 面部拍照组件
  * 功能：
  * - 摄像头调用 (WebRTC getUserMedia)
  * - 自动面部检测 (face-api.js)
  * - 检测到稳定面部后自动拍照
  * - 拍照功能 (Canvas 截图)
- * - 图片上传 (文件选择器)
  * - 面部框引导 (椭圆形引导框)
  * - 光线检测提示
  * - 前置/后置摄像头切换
@@ -160,16 +160,24 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const [isLoading, setIsLoading] = useState(true);
   const isLoadingRef = useRef(isLoading);
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false); // 切换摄像头中
+  const isSwitchingCameraRef = useRef(false);
   const [faceStatus, setFaceStatus] = useState<FaceStatus>("none");
   const [showManualButton, setShowManualButton] = useState(false); // 是否显示手动拍照按钮
   const [qualityHint, setQualityHint] = useState<string | null>(null); // 质量提示（闭眼/模糊）
   const [isAllCaptured, setIsAllCaptured] = useState(false);
   const isAllCapturedRef = useRef(isAllCaptured);
+  // 四角度拍完后的确认页：先让用户检查/重拍，再提交分析
+  const [showReview, setShowReview] = useState(false);
+  const [reviewImages, setReviewImages] = useState<FaceCaptureImages | null>(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const submittingReviewRef = useRef(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [stepEpoch, setStepEpoch] = useState(0);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(() => {
     if (typeof navigator === 'undefined') return false;
     return /Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/i.test(navigator.userAgent);
   });
-  // 慢加载降级（纯本地 UI 状态，15 秒未就绪先给手动拍照；模型晚到会自动恢复自动检测，
+  // 慢加载降级（纯本地 UI 状态，8 秒未就绪先给手动拍照；模型晚到会自动恢复自动检测，
   // 绝不把"等太久"写回全局 failed——这是历史竞态的根源）
   const [slowModelLoad, setSlowModelLoad] = useState(false);
   // 检测循环回调 ref，避免依赖变化导致 requestAnimationFrame 重启
@@ -178,6 +186,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const faceBoxRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   // 摄像头初始化调用ID，防竞态
   const initCallIdRef = useRef(0);
+  // 设备回写 actualFacing 时只更新镜像状态，跳过因 facingMode 变化触发的二次 getUserMedia
+  const skipNextFacingInitRef = useRef(false);
   // 卸载后 getUserMedia 才 resolve 时，必须立即 stop 轨道，避免相机指示灯常亮。
   const isMountedRef = useRef(true);
   // 面部检测并发锁
@@ -245,6 +255,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
   // 保持 ref 与最新状态同步，供检测循环使用（避免 loop 因依赖变化而重启）
   useEffect(() => { capturedImagesRef.current = capturedImages; }, [capturedImages]);
+  useEffect(() => { stepStartTimeRef.current = Date.now(); }, [currentStep, stepEpoch]);
   useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
   useEffect(() => { facingModeRef.current = facingMode; }, [facingMode]);
   useEffect(() => { lightLevelRef.current = lightLevel; }, [lightLevel]);
@@ -252,15 +263,16 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   useEffect(() => { reducedMotionRef.current = reducedMotion; }, [reducedMotion]);
   useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
   useEffect(() => { isAllCapturedRef.current = isAllCaptured; }, [isAllCaptured]);
+  useEffect(() => { isSwitchingCameraRef.current = isSwitchingCamera; }, [isSwitchingCamera]);
 
-  // 15 秒慢加载降级：从等待开始（idle 排队/loading 在途）就计时，覆盖"预载还在 idle 队列"
+  // 8 秒慢加载降级：从等待开始（idle 排队/loading 在途）就计时，覆盖"预载还在 idle 队列"
   // 的空窗期；仅驱动 UI（手动拍照入口），不写回全局状态
   useEffect(() => {
     if (faceModelStatus === "ready" || faceModelStatus === "failed") {
       setSlowModelLoad(false);
       return;
     }
-    const timer = setTimeout(() => setSlowModelLoad(true), 15000);
+    const timer = setTimeout(() => setSlowModelLoad(true), 8000);
     return () => clearTimeout(timer);
   }, [faceModelStatus]);
 
@@ -273,6 +285,12 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       : slowModelLoad
         ? "检测准备较慢，可先手动拍照"
         : "无法自动识别？点击手动拍照";
+  const successStepIndex = showSuccessForStep
+    ? CAPTURE_STEPS.findIndex((item) => item.step === showSuccessForStep)
+    : -1;
+  const nextStepInstruction =
+    successStepIndex >= 0 ? CAPTURE_STEPS[successStepIndex + 1]?.instruction : null;
+
   const retryModelLoad = () => {
     void loadFaceModels().catch(() => { /* 失败保持降级态，可再次重试 */ });
   };
@@ -433,9 +451,13 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       if (videoTrack) {
         const onMute = () => {
           console.warn("Camera track muted — camera may be in use by another app or hardware disabled.");
+          setQualityHint("摄像头可能被其他应用占用，请关闭占用摄像头的应用后重试");
         };
         const onUnmute = () => {
           if (DEBUG) console.log("Camera track unmuted.");
+          setQualityHint((prev) => (
+            prev === "摄像头可能被其他应用占用，请关闭占用摄像头的应用后重试" ? null : prev
+          ));
         };
         const onEnded = () => {
           if (!isMountedRef.current) return;
@@ -450,6 +472,14 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
       streamRef.current = mediaStream!;
       setStream(mediaStream!);
+      // 设备 fallback 可能实际启用了反向/任意摄像头：以 track settings 为准，
+      // 否则镜像预览与左右转头判定会与实际画面相反。
+      const actualFacing = videoTrack?.getSettings?.().facingMode;
+      if ((actualFacing === "user" || actualFacing === "environment") && actualFacing !== facingModeRef.current) {
+        // 只更新镜像预览，不再触发一次新的 getUserMedia
+        skipNextFacingInitRef.current = true;
+        setFacingMode(actualFacing);
+      }
       clearTimeout(initTimeout);
       // 超时兜底可能已先置过错误态，流真正到达时清除
       setError(null);
@@ -517,7 +547,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
    * 使用鼻尖和眼睛位置来判断头部方向
    * 包含左右转头和仰头（下颚）检测
    */
-  const calculateHeadPose = useCallback((landmarks: { positions: { x: number; y: number }[] }, targetStep: CaptureStep, facingMode: "user" | "environment" = "user"): HeadPose => {
+  const calculateHeadPose = useCallback((landmarks: { positions: { x: number; y: number }[] }, targetStep: CaptureStep): HeadPose => {
     const positions = landmarks.positions;
 
     // 68点面部关键点索引：位置16/30/36/45必须存在，面部宽度不能为0
@@ -536,11 +566,10 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
     let noseOffsetRatio = (noseTip.x - eyesCenterX) / faceWidth;
 
-    // 前置摄像头预览做了 CSS 镜像；为了让检测与用户镜像视角的“左/右”一致，
-    // 对用户-facing 摄像头反转水平偏移的符号。
-    if (facingMode === "user") {
-      noseOffsetRatio = -noseOffsetRatio;
-    }
+    // 关键点坐标始终是相机画面坐标：用户向自己的右侧转头时，鼻尖在画面中向左侧偏移。
+    // 前置预览虽有 CSS 镜像，但检测读取的是未镜像视频帧；后置同样如此。
+    // 因此不区分 facingMode，统一反转符号，保证“右转/左转”在两种摄像头下语义一致。
+    noseOffsetRatio = -noseOffsetRatio;
 
     // 仰头指标：鼻尖到眼连线垂距 / 眼到下巴垂距（越小越仰头）
     const tiltRatio = calculateTiltRatio(positions);
@@ -736,7 +765,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
    */
   const detectFace = async () => {
     if (cooldownRef.current || isDetectingRef.current) return;
-    if (!videoRef.current || !faceModels.getApi() || faceModelStatus !== "ready" || isAllCapturedRef.current || isLoadingRef.current) return;
+    if (!videoRef.current || !faceModels.getApi() || faceModelStatus !== "ready" || isAllCapturedRef.current || isLoadingRef.current || isSwitchingCameraRef.current) return;
 
     const video = videoRef.current;
     if (video.readyState < 2) return;
@@ -798,7 +827,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
         const currentStep = currentStepRef.current;
         // 计算头部朝向 (传入 currentStep 以优化判定逻辑；前置摄像头时反转水平偏移以匹配镜像视角)
-        const headPose = calculateHeadPose(detection.landmarks, currentStep, facingModeRef.current);
+        const headPose = calculateHeadPose(detection.landmarks, currentStep);
 
         // 检查当前头部朝向是否匹配当前步骤
         const isPoseCorrect = headPose === currentStep;
@@ -905,11 +934,13 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
               ? "距离太远，请靠近一些"
               : isPoseCorrect && isFaceTooBig
                 ? "距离太近，请离远一点"
-                : isPoseCorrect && !isEyesOpen
-                  ? "请睁大眼睛"
-                  : isPoseCorrect && !isSharp && isLightSufficient
-                    ? "画面模糊，请保持手机稳定"
-                    : null;
+                : !isInEllipse
+                  ? "请将面部移入椭圆框内"
+                  : isPoseCorrect && !isEyesOpen
+                    ? "请睁开眼睛"
+                    : isPoseCorrect && !isSharp && isLightSufficient
+                      ? "画面模糊，请保持手机稳定"
+                      : null;
           setQualityHint((prev) => (prev === hint ? prev : hint));
 
           const now = Date.now();
@@ -929,8 +960,10 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
               feedback = "距离太远，请靠近一些";
             } else if (isFaceTooBig) {
               feedback = "距离太近，请离远一点";
+            } else if (!isInEllipse) {
+              feedback = "请将面部移入椭圆框内";
             } else if (!isEyesOpen) {
-              feedback = "请睁大眼睛";
+              feedback = "请睁开眼睛";
             } else if (!isSharp && isLightSufficient) {
               feedback = "画面模糊，请保持手机稳定";
             }
@@ -948,8 +981,13 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         // 同时同步 stabilityProgress 状态，不再残留旧进度值
         stableCountRef.current = Math.max(0, stableCountRef.current - 1);
         faceBoxRef.current = null;
-        // 无脸时清除质量提示，避免上一次检测的提示残留挂在屏幕上
-        setQualityHint((prev) => (prev === null ? prev : null));
+        // 无脸时给出明确引导，避免用户不知道为什么进度环不动
+        setQualityHint((prev) => (
+          prev === "摄像头可能被其他应用占用，请关闭占用摄像头的应用后重试"
+            || prev === "未检测到人脸，请正对镜头，让面部出现在取景框内"
+            ? prev
+            : "未检测到人脸，请正对镜头，让面部出现在取景框内"
+        ));
 
         setStabilityProgress((prev) => {
           const next = Math.round(Math.min(100, (stableCountRef.current / progressFrames) * 100));
@@ -1042,18 +1080,22 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
    * 使用 ref 读取 currentStep/capturedImages，避免 setTimeout 闭包过时。
    */
   const takePhotoAuto = useCallback((mode: "auto" | "manual" = "auto") => {
-    if (!videoRef.current || !canvasRef.current || cooldownRef.current) return;
+    if (!videoRef.current || !canvasRef.current || cooldownRef.current || isSwitchingCameraRef.current) return;
     // 手动拍照仍允许作为兜底，但明确提示绕过了自动质量门控，避免用户误以为照片一定合格
-    if (mode === "manual" && Date.now() - lastFaceDetectedRef.current > 1500) {
-      setQualityHint("未检测到清晰人脸，照片可能无法通过分析，建议正对镜头后重拍");
+    if (mode === "manual") {
+      if (Date.now() - lastFaceDetectedRef.current > 1500) {
+        setQualityHint("未检测到清晰人脸，照片可能无法通过分析，建议正对镜头后重拍");
+      }
+    } else {
+      setQualityHint(null);
     }
 
     // 立即进入冷却，防止 detectFace 在异步窗口内再次触发
     cooldownRef.current = true;
     setIsInCooldown(true);
-    setQualityHint(null);
 
     setTimeout(async () => {
+      try {
       const canvas = canvasRef.current;
       const video = videoRef.current;
       if (!canvas || !video) {
@@ -1078,11 +1120,28 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
     // 辅助函数：将 canvas 异步编码为 data URL，避免 toDataURL 主线程阻塞
     const encodeCanvas = (c: HTMLCanvasElement): Promise<string> =>
-      new Promise((resolve) => {
+      new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("照片编码超时")), 8000);
+        const finish = (value: string) => {
+          clearTimeout(timeout);
+          resolve(value);
+        };
         c.toBlob((blob) => {
-          if (!blob) { resolve(c.toDataURL("image/jpeg", 0.75)); return; }
+          if (!blob) {
+            try {
+              finish(c.toDataURL("image/jpeg", 0.75));
+            } catch (err) {
+              clearTimeout(timeout);
+              reject(err);
+            }
+            return;
+          }
           const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
+          reader.onloadend = () => finish(reader.result as string);
+          reader.onerror = () => {
+            clearTimeout(timeout);
+            reject(reader.error ?? new Error("照片编码失败"));
+          };
           reader.readAsDataURL(blob);
         }, "image/jpeg", 0.75);
       });
@@ -1166,6 +1225,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       ...prev,
       [step]: imageData,
     }));
+    setQualityHint(null);
 
     // 单步完成埋点（漏斗分析：各角度完成率、手动/自动占比）
     trackFaceScanStep(step, mode);
@@ -1286,36 +1346,26 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           stepStartTimeRef.current = Date.now();
           setShowManualButton(false);
           successTimerRef.current = null;
+          await initCameraRef.current().catch(() => undefined);
           return;
         }
 
-        try {
-          await onCapture(allImages);
-        } catch (err) {
-          console.error("[FaceCapture] onCapture failed, resetting capture state:", err);
-          // 父级处理失败（如资源加载失败），重置当前步骤并重新启动摄像头，
-          // 避免错误浮层出现时相机已停止、用户无法直接重拍
-          setIsAllCaptured(false);
-          setError("处理未成功，请重新拍摄");
-          setFaceStatus("none");
-          setShowSuccessForStep(null);
-          setStabilityProgress(0);
-          stableCountRef.current = 0;
-          cooldownRef.current = false;
-          setIsInCooldown(false);
-          stepStartTimeRef.current = Date.now();
-          setShowManualButton(false);
-          successTimerRef.current = null;
-          setCapturedImages((prev) => ({ ...prev, [step]: null }));
-          await initCamera().catch(() => undefined);
-          return;
-        }
-
+        // 先进入确认页，由用户检查四张照片后再提交分析
+        setReviewImages(allImages);
+        setShowReview(true);
         successTimerRef.current = null;
       }, successDisplayDuration);
     }
+      } catch (captureError) {
+        console.error("[FaceCapture] capture processing failed:", captureError);
+        setError("拍照处理失败，请检查摄像头后重试");
+        cooldownRef.current = false;
+        setIsInCooldown(false);
+        setFaceStatus("none");
+        setStabilityProgress(0);
+      }
     }, 0);
-  }, [getNextStep, initCamera, onCapture, speak, trackFaceScanStep]);
+  }, [getNextStep, speak, trackFaceScanStep]);
 
   // 保持 detectFace 始终能访问到最新的 takePhotoAuto，避免闭包过时
   useEffect(() => {
@@ -1575,6 +1625,10 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
   // 初始化摄像头：仅在 facingMode 变化时重新初始化（通过 ref 调用避免 initCamera 引用变化导致重复触发）
   useEffect(() => {
+    if (skipNextFacingInitRef.current) {
+      skipNextFacingInitRef.current = false;
+      return;
+    }
     void initCameraRef.current();
   }, [facingMode]);
 
@@ -1738,6 +1792,56 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   // 获取当前步骤配置
   const currentStepConfig = CAPTURE_STEPS.find(s => s.step === currentStep);
 
+  const resetForRetake = async (fromStep: CaptureStep) => {
+    if (submittingReviewRef.current) return;
+    const order: CaptureStep[] = ["front", "left", "right", "chin"];
+    const startIndex = order.indexOf(fromStep);
+    setShowReview(false);
+    setReviewImages(null);
+    setReviewError(null);
+    submittingReviewRef.current = false;
+    setSubmittingReview(false);
+    setIsAllCaptured(false);
+    setError(null);
+    setFaceStatus("none");
+    // eslint-disable-next-line react-hooks/purity -- 重拍是事件回调，不是渲染期计算
+    lastFaceDetectedRef.current = Date.now();
+    justCapturedRef.current = null;
+    setShowSuccessForStep(null);
+    setStabilityProgress(0);
+    stableCountRef.current = 0;
+    cooldownRef.current = false;
+    setIsInCooldown(false);
+    setStepEpoch((n) => n + 1);
+    setShowManualButton(false);
+    setCapturedImages((prev) => {
+      const next = { ...prev };
+      for (const step of order.slice(startIndex)) next[step] = null;
+      return next;
+    });
+    setCurrentStep(fromStep);
+    await initCamera().catch(() => undefined);
+  };
+
+  const handleConfirmReview = async () => {
+    if (!reviewImages || submittingReviewRef.current) return;
+    submittingReviewRef.current = true;
+    setReviewError(null);
+    setSubmittingReview(true);
+    try {
+      await onCapture(reviewImages);
+    } catch (err) {
+      console.error("[FaceCapture] onCapture failed, keeping review state:", err);
+      const isStorageFull = err instanceof Error && err.message === "STORAGE_FULL";
+      // 存储不足由父级统一弹窗；其他异常保留四张照片，允许原地重试，避免用户被迫重拍。
+      setReviewError(isStorageFull ? null : "处理未成功，请重试，或重拍有问题的角度。");
+      submittingReviewRef.current = false;
+      setSubmittingReview(false);
+      return;
+    }
+    // 成功提交后保持禁用，直到父级导航卸载本组件；避免跳转窗口内二次提交
+  };
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
       {/* 隐藏的 Canvas */}
@@ -1758,16 +1862,18 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             )}
           />
         ) : (
-          /* 拍摄完成后显示模糊的最后一张图作为背景 */
+          /* 拍摄完成后显示模糊的正面照作为背景 */
           <div className="relative h-full w-full">
             <m.img
               src={capturedImages.front || capturedImages.chin || ""}
               className="h-full w-full object-cover blur-2xl opacity-50 scale-110"
             />
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-              <div className="h-16 w-16 mb-6 rounded-full border-4 border-white/20 border-t-white animate-spin" />
-              <p className="text-xl font-medium text-white tracking-widest">正在分析</p>
-            </div>
+            {!showReview && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+                <div className="h-16 w-16 mb-6 rounded-full border-4 border-white/20 border-t-white animate-spin" />
+                <p className="text-xl font-medium text-white tracking-widest">正在分析</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -1831,7 +1937,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                     ) : (
                       <div className={cn("h-1.5 w-1.5 rounded-full transition-all", isCurrent ? "bg-white scale-125" : "bg-white")} />
                     )}
-                    <span className="text-[10px] font-medium tracking-widest uppercase text-white shadow-black drop-shadow-sm">
+                    <span className="text-[12px] font-medium tracking-widest uppercase text-white shadow-black drop-shadow-sm">
                       {step.label}
                     </span>
                   </div>
@@ -1867,21 +1973,28 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             className="text-center mb-4"
           >
             <h3 aria-live="polite" className="text-2xl md:text-3xl font-serif text-white mb-2 drop-shadow-md">
-              {faceStatus === "success" && showSuccessForStep
-                ? `${CAPTURE_STEPS.find(s => s.step === showSuccessForStep)?.label}拍摄完成`
-                : isInCooldown
-                  ? "下一个动作..."
-                  : currentStepConfig?.instruction}
+              {nextStepInstruction
+                ? `请准备：${nextStepInstruction}`
+                : showSuccessForStep === "chin"
+                  ? "拍摄完成，请确认照片"
+                  : isInCooldown
+                    ? "请稍候，即将进入下一步"
+                    : currentStepConfig?.instruction}
             </h3>
 
             {/* 辅助状态：光线 和 自动拍照提示 */}
             <div className="flex items-center justify-center gap-4 text-white/60 text-sm font-light">
               {/* 光线指示 */}
               <div className="flex items-center gap-1.5">
-                {lightLevel === 'low' || lightLevel === 'too_dark' ? (
+                {lightLevel === 'too_dark' ? (
                   <>
                     <SunDim className="w-4 h-4 text-yellow-300" />
-                    <span className="text-yellow-100">光线不足，请移至明亮处</span>
+                    <span className="text-yellow-100">光线太暗，请移至明亮处</span>
+                  </>
+                ) : lightLevel === 'low' ? (
+                  <>
+                    <SunDim className="w-4 h-4 text-yellow-300" />
+                    <span className="text-yellow-100">光线偏暗，建议面向光源</span>
                   </>
                 ) : lightLevel === 'too_bright' ? (
                   <>
@@ -1906,13 +2019,15 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                   "w-2 h-2 rounded-full",
                   faceStatus === 'ready' ? "bg-green-400 animate-pulse" : "bg-white/40"
                 )} />
-                <span>自动拍摄</span>
+                <span>{facingMode === "environment" ? "后置摄像头 · 可请他人帮拍" : "自动拍摄"}</span>
               </div>
             </div>
 
             {/* 质量提示：闭眼/模糊（姿势错误与光线不足分别由主指令和光线指示器负责） */}
             {qualityHint && (
-              <p className="mt-2 text-[13px] text-yellow-200 drop-shadow-md">{qualityHint}</p>
+              <p className="mt-2 text-[13px] text-yellow-200 drop-shadow-md" role="status" aria-live="polite">
+                {qualityHint}
+              </p>
             )}
           </m.div>
 
@@ -1932,7 +2047,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black">
+        <div role="status" aria-live="polite" className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
           <p className="mt-4 text-white/50 text-sm tracking-widest uppercase">正在启动摄像头</p>
         </div>
@@ -1941,7 +2056,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       {/* 模型降级提示 —— pointer-events-none 让点击穿透到底部的手动拍照按钮；
           失败时提供"重试自动检测"（重试幂等，成功后自动恢复自动检测） */}
       {manualFallback && !isLoading && (
-        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-8 text-center pointer-events-none">
+        <div role="status" aria-live="polite" className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-8 text-center pointer-events-none">
           <AlertCircle className="h-10 w-10 text-yellow-400 mb-3" />
           {faceModelStatus === "failed" ? (
             <>
@@ -1963,18 +2078,86 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         </div>
       )}
 
+      {/* 拍后确认：四角度缩略图 + 单张/全部重拍，避免进入分析后才发现问题 */}
+      {showReview && reviewImages && (
+        <div role="dialog" aria-modal="true" aria-label="确认拍摄照片" className="absolute inset-0 z-[60] flex flex-col bg-black/90 p-5 overflow-y-auto">
+          <div className="mx-auto w-full max-w-md">
+            <h3 className="text-center text-white text-lg font-medium mb-2">确认拍摄照片</h3>
+            <p className="text-center text-white/55 text-xs mb-5 leading-relaxed">
+              请检查光线、清晰度和构图。确认后将开始 AI 分析。
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {CAPTURE_STEPS.map((item) => {
+                const src = reviewImages[item.step];
+                return (
+                  <div key={item.step} className="overflow-hidden rounded-xl border border-white/15 bg-white/5">
+                    <div className="relative aspect-[3/4]">
+                      {src ? (
+                        <div
+                          role="img"
+                          aria-label={`${item.label}照片`}
+                          className="h-full w-full bg-cover bg-center"
+                          style={{ backgroundImage: `url(${src})` }}
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-white/40">缺失</div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 px-3 py-2">
+                      <span className="text-[12px] text-white/70">{item.label}</span>
+                      <button
+                        type="button"
+                        onClick={() => void resetForRetake(item.step)}
+                        disabled={submittingReview}
+                        className="text-[12px] text-white/80 underline underline-offset-2 hover:text-white disabled:opacity-40 disabled:no-underline"
+                      >
+                        重拍
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {reviewError && (
+              <p role="alert" className="mt-4 rounded-lg border border-red-300/30 bg-red-500/15 px-3 py-2 text-center text-[12px] leading-relaxed text-red-100">
+                {reviewError}
+              </p>
+            )}
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleConfirmReview}
+                disabled={submittingReview}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-white px-6 text-[14px] font-medium text-black disabled:opacity-50"
+              >
+                {submittingReview && <Loader2 className="h-4 w-4 animate-spin" />}
+                {submittingReview ? "正在提交..." : "开始分析"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void resetForRetake("front")}
+                disabled={submittingReview}
+                className="min-h-[44px] rounded-full border border-white/25 px-6 text-[13px] text-white/70 transition-colors hover:bg-white/10 disabled:opacity-50"
+              >
+                全部重拍
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Error Overlay */}
       {error && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-8 text-center">
+        <div role="alert" className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-8 text-center">
           <AlertCircle className="h-12 w-12 text-red-400 mb-4" />
           <h3 className="text-white text-lg font-medium mb-2">拍摄遇到问题</h3>
           <p className="text-white/60 max-w-md mb-8">{error}</p>
           <div className="flex gap-4">
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push("/questions?edit=true")}
               className="px-8 py-3 bg-white/10 border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/20 backdrop-blur-sm transition-colors"
             >
-              返回上一页
+              返回修改问卷
             </button>
             <button
               onClick={() => initCameraRef.current()}
@@ -1992,6 +2175,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           <button
             onClick={() => setIsMuted(!isMuted)}
             aria-label={isMuted ? "取消静音" : "静音"}
+            aria-pressed={isMuted}
             className="p-3 rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/40 backdrop-blur-md transition-all"
           >
             {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
@@ -2005,6 +2189,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                 isSwitchingCamera ? "opacity-50 cursor-not-allowed" : "hover:bg-black/40"
               )}
               aria-label="切换摄像头"
+              aria-busy={isSwitchingCamera}
             >
               {isSwitchingCamera ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />

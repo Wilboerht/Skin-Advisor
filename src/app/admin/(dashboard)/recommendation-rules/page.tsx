@@ -1,14 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
+import { cn } from "@/lib/utils";
 import { isSuperAdmin } from "@/lib/permissions";
+import { needsRecommendationConfig } from "@/lib/product-readiness";
 import { SKIN_TYPE_OPTIONS } from "@/types/product";
 import { useToast } from "@/components/ui/Toast";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Switch } from "@/components/ui/Switch";
 import { Textarea } from "@/components/ui/Textarea";
 import { AdminModal } from "@/components/ui/AdminModal";
@@ -25,6 +28,13 @@ interface Product {
     id: string;
     name: string;
     category: string;
+    active: boolean;
+    keyIngredients?: unknown;
+    benefits?: unknown;
+    suitableSkinTypes?: unknown;
+    recommendReasons?: unknown;
+    sourceProductId?: string | null;
+    sourceMissingAt?: string | null;
 }
 
 interface RecommendationRule {
@@ -51,7 +61,32 @@ const CONCERNS = [
     "anti_aging",
     "waterOil",
     "hydration",
+    "pores",
+    "redness",
+    "firmness",
 ];
+
+const CONCERN_LABELS: Record<string, string> = {
+    acne: "痘痘/粉刺",
+    wrinkles: "细纹/皱纹",
+    oil_control: "控油",
+    pores: "毛孔",
+    spots: "色斑",
+    dullness: "暗沉",
+    sensitivity: "敏感",
+    redness: "泛红",
+    firmness: "紧致",
+    hydration: "补水",
+    roughness: "粗糙",
+    dark_circles: "黑眼圈",
+    dryness: "干燥",
+    anti_aging: "抗老",
+    waterOil: "水油平衡",
+};
+
+function concernLabel(value: string) {
+    return CONCERN_LABELS[value] ?? value;
+}
 
 const PERSONAS = [
     { value: "sensitive", label: "敏感型" },
@@ -87,7 +122,7 @@ function conditionBadges(rule: RecommendationRule) {
     conditions.concern?.forEach((value) =>
         items.push({
             key: `concern-${value}`,
-            label: value,
+            label: concernLabel(value),
             variant: "primary",
         }),
     );
@@ -109,15 +144,22 @@ export default function RecommendationRulesPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [productsTruncated, setProductsTruncated] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState("");
     const [role, setRole] = useState("");
     const [showModal, setShowModal] = useState(false);
     const [editingRule, setEditingRule] = useState<RecommendationRule | null>(
         null,
     );
     const [submitting, setSubmitting] = useState(false);
+    const [pendingToggleId, setPendingToggleId] = useState<string | null>(null);
+    const [confirmClose, setConfirmClose] = useState(false);
+    const [productSearch, setProductSearch] = useState("");
+    const [productCategory, setProductCategory] = useState("all");
+    const [onlyNeedsConfig, setOnlyNeedsConfig] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<RecommendationRule | null>(
         null,
     );
+    const formSnapshotRef = useRef("");
 
     const [formName, setFormName] = useState("");
     const [formPriority, setFormPriority] = useState(0);
@@ -143,21 +185,29 @@ export default function RecommendationRulesPage() {
         setProductsTruncated(list.length >= 500);
     }, []);
 
+    const loadData = useCallback(async () => {
+        setLoading(true);
+        setLoadError("");
+        try {
+            await Promise.all([fetchRules(), fetchProducts()]);
+        } catch (error) {
+            setLoadError(
+                error instanceof Error ? error.message : "加载失败",
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [fetchRules, fetchProducts]);
+
     useEffect(() => {
-        Promise.all([fetchRules(), fetchProducts()])
-            .catch((error) =>
-                toast.error(
-                    error instanceof Error ? error.message : "加载失败",
-                ),
-            )
-            .finally(() => setLoading(false));
+        loadData();
         adminFetch("/api/admin/auth/me")
             .then((res) => (res.ok ? res.json() : null))
             .then((data: { user?: { role?: string } } | null) => {
                 if (data?.user?.role) setRole(data.user.role);
             })
             .catch(() => {});
-    }, [fetchRules, fetchProducts, toast]);
+    }, [loadData]);
 
     const resetForm = () => {
         setFormName("");
@@ -168,11 +218,65 @@ export default function RecommendationRulesPage() {
         setSelectedConcerns([]);
         setSelectedPersonas([]);
         setSelectedProductIds([]);
+        setProductSearch("");
+        setProductCategory("all");
+        setOnlyNeedsConfig(false);
         setEditingRule(null);
+    };
+
+    const snapshotForm = (values: {
+        name: string;
+        priority: number;
+        message: string;
+        active: boolean;
+        skinTypes: string[];
+        concerns: string[];
+        personas: string[];
+        productIds: string[];
+    }) => {
+        formSnapshotRef.current = JSON.stringify(values);
+    };
+
+    const isFormDirty = () =>
+        formSnapshotRef.current !==
+        JSON.stringify({
+            name: formName,
+            priority: formPriority,
+            message: formMessage,
+            active: formActive,
+            skinTypes: selectedSkinTypes,
+            concerns: selectedConcerns,
+            personas: selectedPersonas,
+            productIds: selectedProductIds,
+        });
+
+    const closeModal = () => {
+        setShowModal(false);
+        setConfirmClose(false);
+        resetForm();
+    };
+
+    const requestCloseModal = () => {
+        if (submitting) return;
+        if (isFormDirty()) {
+            setConfirmClose(true);
+            return;
+        }
+        closeModal();
     };
 
     const openCreate = () => {
         resetForm();
+        snapshotForm({
+            name: "",
+            priority: 0,
+            message: "",
+            active: true,
+            skinTypes: [],
+            concerns: [],
+            personas: [],
+            productIds: [],
+        });
         setShowModal(true);
     };
 
@@ -182,15 +286,31 @@ export default function RecommendationRulesPage() {
             concern?: string[];
             persona?: string[];
         };
+        const skinTypes = conditions.skinType || [];
+        const concerns = conditions.concern || [];
+        const personas = conditions.persona || [];
+        const productIds = rule.productIds || [];
         setEditingRule(rule);
         setFormName(rule.name);
         setFormPriority(rule.priority);
         setFormMessage(rule.message || "");
         setFormActive(rule.active);
-        setSelectedSkinTypes(conditions.skinType || []);
-        setSelectedConcerns(conditions.concern || []);
-        setSelectedPersonas(conditions.persona || []);
-        setSelectedProductIds(rule.productIds || []);
+        setSelectedSkinTypes(skinTypes);
+        setSelectedConcerns(concerns);
+        setSelectedPersonas(personas);
+        setSelectedProductIds(productIds);
+        setProductSearch("");
+        setProductCategory("all");
+        snapshotForm({
+            name: rule.name,
+            priority: rule.priority,
+            message: rule.message || "",
+            active: rule.active,
+            skinTypes,
+            concerns,
+            personas,
+            productIds,
+        });
         setShowModal(true);
     };
 
@@ -222,6 +342,7 @@ export default function RecommendationRulesPage() {
         }
 
         setSubmitting(true);
+        let saved = false;
         try {
             const body = {
                 name: formName.trim(),
@@ -253,19 +374,28 @@ export default function RecommendationRulesPage() {
                 const payload = await res.json().catch(() => null);
                 throw new Error(payload?.error || "保存失败");
             }
-            setShowModal(false);
-            resetForm();
+            saved = true;
+            closeModal();
             toast.success(editingRule ? "规则已更新" : "规则已创建");
-            await fetchRules();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "保存失败");
         } finally {
             setSubmitting(false);
         }
+
+        if (saved) {
+            try {
+                await fetchRules();
+            } catch {
+                toast.error("规则已保存，但列表刷新失败，请手动重试");
+            }
+        }
     };
 
     const toggleActive = async (rule: RecommendationRule) => {
+        if (pendingToggleId) return;
         const previous = rules;
+        setPendingToggleId(rule.id);
         setRules((current) =>
             current.map((item) =>
                 item.id === rule.id ? { ...item, active: !item.active } : item,
@@ -284,6 +414,8 @@ export default function RecommendationRulesPage() {
         } catch {
             setRules(previous);
             toast.error("状态更新失败，请稍后重试");
+        } finally {
+            setPendingToggleId(null);
         }
     };
 
@@ -307,6 +439,29 @@ export default function RecommendationRulesPage() {
             setDeleteTarget(null);
         }
     };
+
+    const productCategories = Array.from(
+        new Set(products.map((product) => product.category).filter(Boolean)),
+    ).sort((a, b) => a.localeCompare(b, "zh-CN"));
+    const normalizedProductSearch = productSearch.trim().toLowerCase();
+    const filteredProducts = products.filter((product) => {
+        if (
+            productCategory !== "all" &&
+            product.category !== productCategory
+        ) {
+            return false;
+        }
+        if (
+            normalizedProductSearch &&
+            !product.name.toLowerCase().includes(normalizedProductSearch)
+        ) {
+            return false;
+        }
+        if (onlyNeedsConfig && !needsRecommendationConfig(product)) {
+            return false;
+        }
+        return true;
+    });
 
     const columns: Column<RecommendationRule>[] = [
         {
@@ -374,11 +529,17 @@ export default function RecommendationRulesPage() {
             title: "启用",
             width: "76px",
             render: (_, rule) => (
-                <Switch
-                    checked={rule.active}
-                    onChange={() => toggleActive(rule)}
-                    aria-label={`启用 ${rule.name}`}
-                />
+                <div className="flex items-center gap-1.5">
+                    <Switch
+                        checked={rule.active}
+                        onChange={() => toggleActive(rule)}
+                        disabled={pendingToggleId !== null}
+                        aria-label={`启用 ${rule.name}`}
+                    />
+                    {pendingToggleId === rule.id && (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-charcoal/50" />
+                    )}
+                </div>
             ),
         },
         {
@@ -424,6 +585,23 @@ export default function RecommendationRulesPage() {
                 }
             />
 
+            {loadError && (
+                <div
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                    role="alert"
+                >
+                    <span className="min-w-0">{loadError}</span>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={loadData}
+                        loading={loading}
+                    >
+                        重试
+                    </Button>
+                </div>
+            )}
+
             {productsTruncated && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                     可选产品已达到 500 个上限，更多产品暂时无法在规则中选择。
@@ -451,11 +629,17 @@ export default function RecommendationRulesPage() {
                                     </p>
                                 )}
                             </div>
-                            <Switch
-                                checked={rule.active}
-                                onChange={() => toggleActive(rule)}
-                                aria-label={`启用 ${rule.name}`}
-                            />
+                            <div className="flex items-center gap-1.5">
+                                <Switch
+                                    checked={rule.active}
+                                    onChange={() => toggleActive(rule)}
+                                    disabled={pendingToggleId !== null}
+                                    aria-label={`启用 ${rule.name}`}
+                                />
+                                {pendingToggleId === rule.id && (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-charcoal/50" />
+                                )}
+                            </div>
                         </div>
                         <div className="flex flex-wrap gap-1">
                             {conditionBadges(rule).map((item) => (
@@ -493,10 +677,7 @@ export default function RecommendationRulesPage() {
 
             <AdminModal
                 isOpen={showModal}
-                onClose={() => {
-                    setShowModal(false);
-                    resetForm();
-                }}
+                onClose={requestCloseModal}
                 title={editingRule ? "编辑推荐规则" : "新建推荐规则"}
                 titleId="recommendation-rule-modal-title"
                 subtitle="配置规则条件、优先级与推荐产品"
@@ -577,7 +758,7 @@ export default function RecommendationRulesPage() {
                                         )
                                     }
                                 >
-                                    {concern}
+                                    {concernLabel(concern)}
                                 </Button>
                             ))}
                         </div>
@@ -621,16 +802,59 @@ export default function RecommendationRulesPage() {
                     />
 
                     <div>
-                        <p className="mb-2 text-sm font-medium text-brand-charcoal/80">
-                            关联产品
-                        </p>
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-medium text-brand-charcoal/80">
+                                关联产品
+                            </p>
+                            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-brand-charcoal/65">
+                                <input
+                                    type="checkbox"
+                                    checked={onlyNeedsConfig}
+                                    onChange={(event) => setOnlyNeedsConfig(event.target.checked)}
+                                    className="h-3.5 w-3.5 rounded border-brand-charcoal/20 text-brand-primary focus:ring-brand-primary"
+                                />
+                                只看待配置推荐属性
+                            </label>
+                        </div>
+                        <div className="mb-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                            <div className="relative">
+                                <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-brand-charcoal/55" />
+                                <Input
+                                    aria-label="搜索产品名称"
+                                    placeholder="搜索产品名称"
+                                    value={productSearch}
+                                    onChange={(event) =>
+                                        setProductSearch(event.target.value)
+                                    }
+                                    className="pl-9"
+                                />
+                            </div>
+                            <Select
+                                aria-label="按分类筛选产品"
+                                options={[
+                                    { value: "all", label: "全部分类" },
+                                    ...productCategories.map((category) => ({
+                                        value: category,
+                                        label: category,
+                                    })),
+                                ]}
+                                value={productCategory}
+                                onChange={(event) =>
+                                    setProductCategory(event.target.value)
+                                }
+                            />
+                        </div>
                         <div className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-brand-charcoal/10 p-2">
                             {products.length === 0 ? (
                                 <p className="px-2 py-1 text-xs text-brand-charcoal/55">
                                     暂无产品
                                 </p>
+                            ) : filteredProducts.length === 0 ? (
+                                <p className="px-2 py-1 text-xs text-brand-charcoal/55">
+                                    没有匹配的产品
+                                </p>
                             ) : (
-                                products.map((product) => (
+                                filteredProducts.map((product) => (
                                     <label
                                         key={product.id}
                                         className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-brand-charcoal/[0.04]"
@@ -655,12 +879,28 @@ export default function RecommendationRulesPage() {
                                         <span className="text-xs text-brand-charcoal/55">
                                             {product.category}
                                         </span>
+                                        <span
+                                            className={cn(
+                                                "shrink-0 text-xs",
+                                                product.active
+                                                    ? "text-emerald-600"
+                                                    : "text-brand-charcoal/45",
+                                            )}
+                                        >
+                                            {product.active
+                                                ? "已上架"
+                                                : "已下架"}
+                                        </span>
                                     </label>
                                 ))
                             )}
                         </div>
                         <p className="mt-1 text-xs text-brand-charcoal/65">
                             已选择 {selectedProductIds.length} 个产品
+                            {(normalizedProductSearch ||
+                                productCategory !== "all" ||
+                                onlyNeedsConfig) &&
+                                ` · 当前筛选 ${filteredProducts.length} 个`}
                         </p>
                     </div>
 
@@ -675,10 +915,7 @@ export default function RecommendationRulesPage() {
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={() => {
-                                setShowModal(false);
-                                resetForm();
-                            }}
+                            onClick={requestCloseModal}
                             disabled={submitting}
                         >
                             取消
@@ -698,6 +935,17 @@ export default function RecommendationRulesPage() {
                 message={`确定要删除「${deleteTarget?.name ?? ""}」吗？此操作不可撤销。`}
                 confirmText="确认删除"
                 variant="danger"
+            />
+
+            <ConfirmModal
+                isOpen={confirmClose}
+                onClose={() => setConfirmClose(false)}
+                onConfirm={closeModal}
+                title="放弃未保存的修改"
+                message="当前规则修改尚未保存，确定要关闭吗？"
+                confirmText="放弃修改"
+                cancelText="继续编辑"
+                variant="warning"
             />
         </div>
     );

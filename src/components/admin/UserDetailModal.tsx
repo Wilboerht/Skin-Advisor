@@ -42,7 +42,7 @@ interface UserDetail {
     createdAt: string;
     advisorSessions: SessionSummary[];
     _count?: {
-        testRecords?: number;
+        advisorSessions?: number;
     };
 }
 
@@ -333,7 +333,7 @@ export function UserDetailModal({
                             </h3>
                             <span className="text-xs text-brand-charcoal/65">
                                 共{" "}
-                                {user._count?.testRecords ??
+                                {user._count?.advisorSessions ??
                                     user.advisorSessions.length}{" "}
                                 次
                             </span>

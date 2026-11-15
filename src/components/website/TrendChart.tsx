@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 
 export interface TrendMetric {
   key: string;
@@ -18,6 +18,8 @@ export interface TrendsData {
 export function TrendChart({ trends, totalTests, label = "综合评分" }: { trends: TrendsData; totalTests?: number; label?: string }) {
   // 实例级唯一 ID，避免同页多图表实例的渐变 defs 互相覆盖
   const gradientId = `trendArea-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  // 触屏探索：点按/键盘选中数据点后，在图表上方展示当日日期与分数
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const W = 640;
   // 高度含放大的轴字号：绘图区 = H - PAD_TOP - PAD_BOTTOM，需保持 144 左右不显扁
   const H = 216;
@@ -54,6 +56,7 @@ export function TrendChart({ trends, totalTests, label = "综合评分" }: { tre
     score,
     date: trends.dates[i],
   }));
+  const activePoint = activeIndex !== null ? points[activeIndex] : null;
 
   // Catmull-Rom 平滑曲线
   const smoothPath = (pts: { x: number; y: number }[]): string => {
@@ -135,7 +138,13 @@ export function TrendChart({ trends, totalTests, label = "综合评分" }: { tre
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="近几次测肤综合评分趋势">
+      <p className="mb-2 min-h-5 text-[12px] font-light text-brand-charcoal/60" aria-live="polite">
+        {activePoint
+          ? `${fmtDay(activePoint.date)} · ${activePoint.score} 分`
+          : <span className="sm:hidden">点按数据点查看当日分数</span>}
+      </p>
+
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label={`近几次测肤${label}趋势`}>
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#5c4937" stopOpacity="0.12" />
@@ -190,21 +199,50 @@ export function TrendChart({ trends, totalTests, label = "综合评分" }: { tre
         {points.map((p, i) => {
           const isLatest = i === n - 1;
           const isFirst = i === 0;
+          const isActive = activeIndex === i;
           return (
             <g key={i}>
-              {/* 隐形热区：放大 hover/触摸目标，title 提供日期+分数提示 */}
-              <circle cx={p.x} cy={p.y} r={12} fill="transparent">
+              {/* 透明热区：兼容 hover 与触屏点按；title 作为桌面原生提示 */}
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={30}
+                fill="transparent"
+                role="button"
+                tabIndex={0}
+                aria-label={`${fmtDay(p.date)} · ${p.score} 分`}
+                className="cursor-pointer focus-visible:outline-none"
+                onClick={() => setActiveIndex(isActive ? null : i)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setActiveIndex(isActive ? null : i);
+                  }
+                }}
+              >
                 <title>{`${fmtDay(p.date)} · ${p.score} 分`}</title>
               </circle>
-              {/* 最新点光环：视觉锚点 */}
-              {isLatest && (
-                <circle cx={p.x} cy={p.y} r={9} fill="none" stroke="#5c4937" strokeOpacity="0.25" strokeWidth="1.5" />
+              {/* 选中参考线 + 光环 */}
+              {isActive && (
+                <line
+                  x1={p.x}
+                  y1={PAD_TOP}
+                  x2={p.x}
+                  y2={H - PAD_BOTTOM}
+                  stroke="#5c4937"
+                  strokeOpacity="0.25"
+                  strokeDasharray="2 4"
+                  pointerEvents="none"
+                />
+              )}
+              {(isActive || isLatest) && (
+                <circle cx={p.x} cy={p.y} r={isActive ? 11 : 9} fill="none" stroke="#5c4937" strokeOpacity={isActive ? 0.45 : 0.25} strokeWidth="1.5" />
               )}
               <circle
                 cx={p.x}
                 cy={p.y}
-                r={isLatest ? 4.5 : 3}
-                fill={isLatest ? "#5c4937" : "#FAF7F1"}
+                r={isLatest || isActive ? 4.5 : 3}
+                fill={isLatest || isActive ? "#5c4937" : "#FAF7F1"}
                 stroke="#5c4937"
                 strokeWidth="2"
                 className="pointer-events-none"

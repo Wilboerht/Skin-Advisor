@@ -23,10 +23,12 @@ import { CheckInTrend } from "@/components/website/CheckInTrend";
 import { CheckInModal } from "@/components/website/CheckInModal";
 import { ProductFeedbackSection } from "@/components/website/ProductFeedbackSection";
 import { PanelShell } from "@/components/website/user-center/PanelShell";
+import { useAccountBackHandler } from "@/components/website/AccountBackContext";
 import { useToast } from "@/components/ui/Toast";
 import { fetchWithCsrf, fetchWithTimeout } from "@/lib/fetch-client";
 import { localDateStr } from "@/lib/local-date";
 import { parseClientDate, isAutoDiaryEntry } from "@/lib/diary-utils";
+import { hasPrivacyConsent } from "@/lib/consent-storage";
 
 /** 登录状态过期（GET 401）：与网络错误区分，统一走登录引导而非"重试" */
 class AuthExpiredError extends Error {
@@ -51,6 +53,7 @@ interface DiarySummary {
   currentStreak: number;
   longestStreak: number;
   testCount: number;
+  totalRecords?: number;
 }
 
 // 60s 短缓存：趋势与测肤列表重复开关弹层时不重复请求（打卡/删除通过刷新路径绕开）
@@ -104,9 +107,21 @@ interface DiaryPanelProps {
  */
 export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewChange }: DiaryPanelProps) {
   const { user } = useAuth();
+  const handleSubViewBack = useCallback(() => {
+    if (!historyView) return false;
+    onHistoryViewChange(false);
+    return true;
+  }, [historyView, onHistoryViewChange]);
+  useAccountBackHandler(active && historyView ? handleSubViewBack : null, active);
   // 短缓存/请求的用户隔离标识：依赖 user?.id 而非 user 引用（定时续期返回同内容新对象不应触发重置）
   const userId = user?.id;
   const toast = useToast();
+  // 无本地隐私同意时先走首页 Onboarding，避免问卷做完才在扫脸页被服务端打回
+  const [testEntryHref, setTestEntryHref] = useState("/questions");
+  useEffect(() => {
+    if (!active) return;
+    setTestEntryHref(hasPrivacyConsent() ? "/questions" : "/?start=1");
+  }, [active]);
 
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [entriesLoaded, setEntriesLoaded] = useState(false);
@@ -165,7 +180,10 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
     if (!today) return 0;
     const cutoffStr = new Date(today.getTime() - 29 * 86_400_000).toISOString().slice(0, 10);
     return entries.filter(
-      (e) => Boolean(STATE_META[e.skinState]) && e.date.slice(0, 10) >= cutoffStr
+      (e) =>
+        !isAutoDiaryEntry(e) &&
+        Boolean(STATE_META[e.skinState]) &&
+        e.date.slice(0, 10) >= cutoffStr
     ).length;
   }, [entries, todayStr]);
 
@@ -529,9 +547,11 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
     scrollRef.current?.scrollTo({ top: 0 });
   }, []);
 
-  // 「打卡记录」区是否渲染（有过打卡记录才显示）；今日打卡 CTA 也以此为准：
-  // 新用户由时间线空态承担引导，避免同屏重复 CTA
-  const showCheckInSection = Boolean(summary && summary.totalCheckins > 0);
+  // 「打卡记录」区是否渲染：有打卡记录，或已有测肤记录（测肤记录不算打卡，
+  // 但仍需要给用户一个开始手动打卡的入口）；完全新用户由时间线空态承担引导。
+  const showCheckInSection = Boolean(
+    summary && (summary.totalCheckins > 0 || summary.testCount > 0)
+  );
 
   // 新用户空态：首屏加载完成、无错误且完全无记录时，用跨列 hero 空态替代双列布局
   // （加载中走骨架屏、错误走各自错误条，都不会被误判为空态）
@@ -544,7 +564,7 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
   // 仅有过打卡记录时显示（新用户由时间线空态引导，避免同屏重复 CTA）
   const goTestLink = (
     <Link
-      href="/questions"
+      href={testEntryHref}
       className="shrink-0 h-8 inline-flex items-center gap-1 px-3.5 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal"
     >
       去测肤
@@ -641,6 +661,7 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                         initialSessions={lastHistoryPage <= 1 ? tests.slice(0, TESTS_PAGE_SIZE) : undefined}
                         initialTotal={testsTotal}
                         onPageChange={handleHistoryPageChange}
+                        onRequestLogin={onRequestLogin}
                       />
                     </m.div>
                   ) : (
@@ -690,7 +711,7 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                     {/* 双 CTA 平权并排：微圆角 + 暖调薄底 + 发丝边框，图标弱化仅作功能暗示 */}
                     <div className="flex items-center justify-center gap-3">
                       <Link
-                        href="/questions"
+                        href={testEntryHref}
                         className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-brand-charcoal/15 bg-brand-charcoal/[0.04] px-6 text-[12px] font-light tracking-[0.12em] text-brand-charcoal transition-all hover:border-brand-charcoal/30 hover:bg-brand-charcoal/[0.07] active:scale-[0.98]"
                       >
                         去测肤
@@ -840,12 +861,13 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                           全端平铺：细分隔线 + 留白分组（与时间线/趋势区同一套去卡片语言）。
                           标题行与「肌肤变化」镜像：标题在左，右侧为 30 天计数（+ 移动端今日打卡 CTA；
                           桌面端 CTA 由面板标题行承载）；时间线的今日引导据此收为纯文字提示 */}
-                      {summary && summary.totalCheckins > 0 && (
+                      {showCheckInSection && summary && (
                         <div className="mt-6 border-t border-brand-espresso/[0.15] pt-6">
                           <div className="flex items-center justify-between gap-3 mb-3">
                             <h3 className="text-[15px] font-medium text-[var(--color-brand-espresso)] flex items-center gap-2">
                               <Flame className="w-4 h-4 text-[var(--color-brand-taupe)]" strokeWidth={1.5} />
                               打卡记录
+                              <span className="text-[11px] font-light text-brand-charcoal/45">（仅手动打卡）</span>
                             </h3>
                             <div className="flex items-center gap-3">
                               {recentCheckInCount > 0 && (
@@ -866,10 +888,13 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                                提示文字在占位空间内居中，避免数据不足时布局塌缩 */
                             <div className="mb-4 flex w-full aspect-[640/92] items-center justify-center text-center">
                               <p className="text-[13px] text-brand-charcoal/65 font-light">
-                                近 30 天内打卡不足 2 天，暂无打卡色带可看
+                                {summary.totalCheckins === 0
+                                  ? "还没有手动打卡记录，测肤记录不计入打卡"
+                                  : "近 30 天内打卡不足 2 天，暂无打卡色带可看"}
                               </p>
                             </div>
                           )}
+                          {summary.totalCheckins > 0 && (
                           <div className={`grid ${summary.longestStreak > 0 ? "grid-cols-3" : "grid-cols-2"} pt-4 border-t border-brand-espresso/[0.06]`}>
                             <div className="relative flex flex-col items-center gap-1.5 py-1 after:absolute after:right-0 after:top-1/2 after:h-8 after:w-px after:-translate-y-1/2 after:bg-brand-espresso/[0.15] last:after:hidden">
                               <p className="text-xl font-serif font-light text-brand-charcoal leading-none">
@@ -904,6 +929,12 @@ export function DiaryPanel({ active, onRequestLogin, historyView, onHistoryViewC
                               </div>
                             )}
                           </div>
+                          )}
+                          {summary.testCount > 0 && (
+                            <p className="mt-3 text-center text-[11px] font-light leading-relaxed text-brand-charcoal/50">
+                              累计测肤 {summary.testCount} 次 · 测肤自动记录计入护肤历程，不计入打卡
+                            </p>
+                          )}
                         </div>
                       )}
                     </section>

@@ -89,6 +89,11 @@ describe("isAutoDiaryEntry", () => {
         expect(isAutoDiaryEntry({ note: null })).toBe(false);
         expect(isAutoDiaryEntry({ note: undefined })).toBe(false);
     });
+
+    it("显式 source 优先于备注前缀（新数据口径）", () => {
+        expect(isAutoDiaryEntry({ source: "auto", note: "手动备注" })).toBe(true);
+        expect(isAutoDiaryEntry({ source: "manual", note: `${AUTO_DIARY_NOTE_PREFIX} · 旧数据` })).toBe(false);
+    });
 });
 
 describe("localDateStr", () => {

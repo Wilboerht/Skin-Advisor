@@ -13,13 +13,21 @@ export interface ConsentApiState {
 }
 
 export async function fetchConsentState(): Promise<ConsentApiState | null> {
+    // 旧 Safari/WebView 不支持 AbortSignal.timeout，用 AbortController 做兼容降级
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     try {
-        const res = await fetchWithCsrf("/api/account/consent", { cache: "no-store" });
+        const res = await fetchWithCsrf("/api/account/consent", {
+            cache: "no-store",
+            signal: controller.signal,
+        });
         if (!res.ok) return null;
         const body = await res.json();
         return body?.data ?? null;
     } catch {
         return null;
+    } finally {
+        clearTimeout(timeout);
     }
 }
 

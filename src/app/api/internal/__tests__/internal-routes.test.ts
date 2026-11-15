@@ -79,7 +79,7 @@ beforeEach(() => {
   mocks.getDiaryArchive.mockResolvedValue({
     entries: [{ id: "e1" }],
     pagination: { total: 1, offset: 0, limit: 30, hasMore: false },
-    summary: { totalCheckins: 1, currentStreak: 1, longestStreak: 1, testCount: 2 },
+    summary: { totalCheckins: 1, currentStreak: 1, longestStreak: 1, testCount: 2, totalRecords: 3 },
   });
   mocks.upsertDiaryEntry.mockResolvedValue({
     entry: { id: "e1", date: new Date("2026-09-24T00:00:00.000Z"), skinState: "good", tags: [], note: null },

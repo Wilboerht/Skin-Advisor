@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useCallback, useId, useState, useRef, type ReactNode } from "react";
+import { useEffect, useId, useState, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useMounted } from "@/hooks/use-mounted";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { sanitizeHtml } from "@/lib/html-sanitize";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
@@ -116,10 +118,12 @@ export function ProductDrawer({
   );
 
   const mobileContentRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   // 无障碍关联 id（桌面/移动同组件渲染，useId 保证唯一）
   const a11yId = useId();
+
+  // 嵌套弹层：返回键/返回手势先关闭本抽屉，再交给下层账户弹层
+  useModalBackClose(isOpen, onClose);
 
   // 切换 Tab 时重置滚动位置
   const handleTabChange = (tab: "description" | "ingredients" | "usage") => {
@@ -134,81 +138,14 @@ export function ProductDrawer({
     setOpenAccordion(openAccordion === id ? null : id);
   };
 
-  // ESC 键关闭：捕获阶段拦截并阻止冒泡，避免同时触发下层弹窗（如用户中心）的 ESC 关闭
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.stopPropagation();
-      onClose();
-    },
-    [onClose]
-  );
-
   // 锁定背景滚动（记录并恢复原值，抽屉关闭后不解除下层弹窗的滚动锁）
   useEffect(() => {
     if (!isOpen) return;
-
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown, true);
-
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, [isOpen, handleKeyDown]);
-
-  // 打开时聚焦弹窗、关闭后归还焦点（弹层内嵌套场景下保持焦点上下文）
-  useEffect(() => {
-    if (!isOpen) return;
-
-    previousFocusRef.current = document.activeElement as HTMLElement | null;
-    dialogRef.current?.focus();
-
-    return () => {
-      const previous = previousFocusRef.current;
-      if (previous?.isConnected) previous.focus({ preventScroll: true });
-      previousFocusRef.current = null;
-    };
-  }, [isOpen]);
-
-  // 焦点陷阱：Tab 只在弹窗内部循环（过滤 display:none 的元素）
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleTabKey = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      const dialog = dialogRef.current;
-      if (!dialog) return;
-
-      const focusable = Array.from(
-        dialog.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter((el) => el.getClientRects().length > 0);
-
-      if (focusable.length === 0) {
-        e.preventDefault();
-        dialog.focus();
-        return;
-      }
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-      const inside = active ? dialog.contains(active) : false;
-
-      if (!e.shiftKey && (!inside || active === last)) {
-        e.preventDefault();
-        first.focus();
-      } else if (e.shiftKey && (!inside || active === first)) {
-        e.preventDefault();
-        last.focus();
-      }
-    };
-
-    window.addEventListener("keydown", handleTabKey);
-    return () => window.removeEventListener("keydown", handleTabKey);
   }, [isOpen]);
 
   // 关闭时重置状态（渲染阶段同步，避免 effect 内 setState）

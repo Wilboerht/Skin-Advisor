@@ -26,6 +26,7 @@ import {
   DiaryValidationError,
   deleteDiaryEntry,
   getDiaryList,
+  getDiarySummary,
   normalizeDiaryPageSize,
   upsertDiaryEntry,
 } from "./diary-service";
@@ -174,6 +175,25 @@ describe("upsertDiaryEntry 打卡积分口径", () => {
     expect(result.streak).toBeUndefined();
     expect(result.points).toBeUndefined();
     expect(mocks.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("getDiarySummary 打卡口径", () => {
+  it("只统计 source=manual 的打卡，同时返回全部记录数与测肤次数", async () => {
+    mocks.findMany.mockResolvedValue([{ date: today }]);
+    mocks.count.mockResolvedValue(5);
+    mocks.advisorCount.mockResolvedValue(3);
+
+    const summary = await getDiarySummary("u1");
+
+    expect(mocks.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: "u1", source: "manual" }),
+      })
+    );
+    expect(summary.totalCheckins).toBe(1);
+    expect(summary.totalRecords).toBe(5);
+    expect(summary.testCount).toBe(3);
   });
 });
 

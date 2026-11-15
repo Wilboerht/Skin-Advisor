@@ -11,6 +11,7 @@
  * 兑换幂等：requestId 由客户端生成；履约由管理端发货。
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAccountBackHandler } from "@/components/website/AccountBackContext";
 import {
   Check,
   CheckCircle2,
@@ -287,7 +288,13 @@ function createRedeemRequestId(): string {
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export function PointsMallPanel() {
+export function PointsMallPanel({
+  active = true,
+  onNavigateVip,
+}: {
+  active?: boolean;
+  onNavigateVip?: () => void;
+}) {
   const [giftsData, setGiftsData] = useState<GiftsData | null>(null);
   const [giftsLoading, setGiftsLoading] = useState(true);
   const [giftsExpanded, setGiftsExpanded] = useState(false);
@@ -313,6 +320,7 @@ export function PointsMallPanel() {
   const redeemingRef = useRef(false);
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [addressesLoading, setAddressesLoading] = useState(false);
+  const [addressesError, setAddressesError] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showNewAddress, setShowNewAddress] = useState(false);
   const [newRecipient, setNewRecipient] = useState("");
@@ -324,6 +332,16 @@ export function PointsMallPanel() {
   const [view, setView] = useState<"main" | "records" | "detail" | "redeem">("main");
   // 兑换详情返回目标（从主视图或全部记录进入）
   const [detailFrom, setDetailFrom] = useState<"main" | "records">("main");
+  const handleSubViewBack = useCallback(() => {
+    if (view === "main") return false;
+    if (view === "detail") {
+      setView(detailFrom);
+      return true;
+    }
+    setView("main");
+    return true;
+  }, [view, detailFrom]);
+  useAccountBackHandler(active && view !== "main" ? handleSubViewBack : null, active);
   const [selectedRedemption, setSelectedRedemption] = useState<RedemptionRecord | null>(null);
   const [tracking, setTracking] = useState<TrackingData | null>(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
@@ -415,6 +433,7 @@ export function PointsMallPanel() {
 
   const loadAddresses = useCallback(async () => {
     setAddressesLoading(true);
+    setAddressesError(false);
     try {
       const data = await apiGet<{ addresses: AddressItem[] }>("/api/account/addresses");
       setAddresses(data.addresses);
@@ -424,7 +443,7 @@ export function PointsMallPanel() {
         return data.addresses.find((a) => a.isDefault)?.id ?? data.addresses[0]?.id ?? null;
       });
     } catch {
-      // 加载失败静默，用户可内联新增
+      setAddressesError(true);
     } finally {
       setAddressesLoading(false);
     }
@@ -824,11 +843,31 @@ export function PointsMallPanel() {
               <Loader2 className="h-5 w-5 animate-spin text-stone-300" />
             </div>
           ) : !giftsData ? (
-            <p className="py-6 text-center text-xs text-stone-400">礼品加载失败，请稍后重试</p>
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <p className="text-xs text-stone-400">礼品加载失败，请稍后重试</p>
+              <button
+                type="button"
+                onClick={() => void loadGiftsData()}
+                className="text-xs text-brand-charcoal underline underline-offset-2"
+              >
+                重新加载
+              </button>
+            </div>
           ) : giftsData.redeemRate === null ? (
-            <div className="flex items-center justify-center gap-1.5 py-6 text-xs text-stone-400">
-              <Lock className="h-3.5 w-3.5" />
-              升级银卡会员解锁积分兑换
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <p className="flex items-center gap-1.5 text-xs text-stone-400">
+                <Lock className="h-3.5 w-3.5" />
+                升级银卡会员解锁积分兑换
+              </p>
+              {onNavigateVip && (
+                <button
+                  type="button"
+                  onClick={onNavigateVip}
+                  className="rounded-full border border-brand-charcoal/20 px-4 py-1.5 text-xs text-brand-charcoal/70 transition-colors hover:border-brand-charcoal/40 hover:text-brand-charcoal"
+                >
+                  去会员中心
+                </button>
+              )}
             </div>
           ) : giftsData.gifts.length === 0 ? (
             <p className="py-6 text-center text-xs text-stone-400">暂无上架礼品</p>
@@ -1093,7 +1132,18 @@ export function PointsMallPanel() {
                               重试
                             </button>
                           </div>
-                        ) : null}
+                        ) : (
+                          <div className="flex items-center gap-3 py-2">
+                            <p className="text-xs text-stone-400">物流轨迹暂不可用</p>
+                            <button
+                              type="button"
+                              onClick={() => void loadTracking(selectedRedemption.id)}
+                              className="text-xs text-brand-charcoal transition-opacity hover:opacity-70"
+                            >
+                              重新查询
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1236,6 +1286,17 @@ export function PointsMallPanel() {
                   {addressesLoading ? (
                     <div className="flex items-center gap-1.5 py-4 text-xs text-stone-400">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" /> 地址加载中...
+                    </div>
+                  ) : addressesError ? (
+                    <div className="flex items-center justify-between gap-3 border-b border-stone-100 py-3">
+                      <p className="text-xs text-stone-400">地址加载失败，请重试</p>
+                      <button
+                        type="button"
+                        onClick={() => void loadAddresses()}
+                        className="text-xs text-brand-charcoal underline underline-offset-2"
+                      >
+                        重试
+                      </button>
                     </div>
                   ) : !showNewAddress && addresses.length > 0 ? (
                     <div className="mt-2 space-y-2">

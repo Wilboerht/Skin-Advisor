@@ -26,11 +26,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "我的照片和数据安全吗？",
-    a: "面部分析在完成后即被删除，测肤数据加密存储。隐私政策遵循最小留存原则，游客数据保留 90 天，登录后档案可由你随时查看。",
+    a: "面部分析在完成后即被删除，测肤数据加密存储。隐私政策遵循最小留存原则，完整报告每人保留最近 10 份、最长 365 天，更早的数据会脱敏归档。",
   },
   {
-    q: "未登录可以保存记录吗？",
-    a: "游客可完整体验测肤流程并查看本次结果；登录后系统会自动同步你的肌肤变化、里程碑与每日打卡记录。",
+    q: "未登录可以测肤吗？",
+    a: "测肤需注册登录后使用。登录后系统会自动同步你的肌肤变化、里程碑与每日打卡记录。",
   },
 ];
 
@@ -115,7 +115,7 @@ export default function MyskinPreviewPage() {
                     开始测肤
                   </Link>
                 </div>
-                <p className="text-center text-[13px] opacity-70">任何时间都可以开始测肤，无需登录。</p>
+                <p className="text-center text-[13px] opacity-70">登录后即可开始测肤并保存专属护肤档案。</p>
               </div>
             </div>
           </section>
@@ -183,7 +183,7 @@ export default function MyskinPreviewPage() {
             <p style={{ color: DARK }} className="opacity-60">
               肌智派 · <span className="opacity-80">myskin.org 风格复刻演示</span>
               <span className="mx-2">·</span>
-              <Link href="/diary" className="underline hover:text-[#3F8978]">返回肌智派 →</Link>
+              <Link href="/?account=diary" className="underline hover:text-[#3F8978]">返回肌智派 →</Link>
             </p>
           </footer>
         </div>

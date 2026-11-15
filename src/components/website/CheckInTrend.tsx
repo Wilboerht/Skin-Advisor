@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { STATE_META, type DiaryEntry } from "@/components/website/DiaryTimeline";
-import { parseClientDate } from "@/lib/diary-utils";
+import { isAutoDiaryEntry, parseClientDate } from "@/lib/diary-utils";
 
 const TREND_DAYS = 30;
 
@@ -28,6 +28,7 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
   const [activeDay, setActiveDay] = useState<string | null>(null);
   const dayMap = new Map<string, DiaryEntry>();
   for (const entry of entries) {
+    if (isAutoDiaryEntry(entry)) continue;
     const day = entry.date.slice(0, 10);
     if (STATE_META[entry.skinState] && !dayMap.has(day)) dayMap.set(day, entry);
   }

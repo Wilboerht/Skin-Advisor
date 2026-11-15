@@ -36,8 +36,17 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
         const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20") || 20));
         const search = (searchParams.get("search") || "").slice(0, 100);
         const status = searchParams.get("status") || "all"; // all, active, inactive
+        const sort = searchParams.get("sort") || "createdAt";
+        const order: "asc" | "desc" = searchParams.get("order") === "asc" ? "asc" : "desc";
 
         const skip = (page - 1) * limit;
+
+        const orderBy: Prisma.UserOrderByWithRelationInput =
+            sort === "name"
+                ? { name: order }
+                : sort === "sessions"
+                  ? { advisorSessions: { _count: order } }
+                  : { createdAt: order };
 
         const where: Prisma.UserWhereInput = {};
 
@@ -98,7 +107,7 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                         select: { createdAt: true, completedAt: true }
                     }
                 },
-                orderBy: { createdAt: "desc" },
+                orderBy,
                 skip,
                 take: limit,
             }),

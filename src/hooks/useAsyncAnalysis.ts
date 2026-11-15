@@ -13,7 +13,7 @@ import {
     fingerprintAnswers,
     canReuseFailedAnalysis,
 } from '@/lib/failed-analysis-retry';
-import { fetchWithRetry, getServerErrorMessage } from './async-analysis/http';
+import { fetchWithRetry, getServerErrorInfo } from './async-analysis/http';
 import {
     checkSessionStatus,
     pollSessionResult,
@@ -32,12 +32,104 @@ import {
 export type { SessionStatusResponse } from './async-analysis/session';
 export { getAnalysisLock } from './async-analysis/storage';
 
+export type AnalysisErrorCode =
+    | 'UNAUTHORIZED'
+    | 'CONSENT_REQUIRED'
+    | 'ANSWERS_MISSING'
+    | 'FACE_REQUIRED'
+    | 'IMAGE_VALIDATION'
+    | 'QUOTA'
+    | 'FREE_RETRY_USED'
+    | 'FREE_RETRY_INVALID'
+    | 'RATE_LIMITED'
+    | 'AI_UNAVAILABLE'
+    | 'ACCOUNT_DISABLED'
+    | 'ANALYSIS_COMPLETED'
+    | 'NOT_FOUND'
+    | 'FORBIDDEN'
+    | 'NETWORK'
+    | 'TIMEOUT'
+    | 'UNKNOWN';
+
 export interface AsyncAnalysisState {
     status: 'idle' | 'preparing' | 'analyzing_face' | 'analyzing_skin' | 'completed' | 'error';
     progress: number;
     error: string | null;
+    /** 结构化错误码：结果页据此渲染动作，不再依赖文案正则 */
+    errorCode?: AnalysisErrorCode;
+    errorDetails?: string;
     queuePosition?: number;
     queueWaitSeconds?: number;
+}
+
+class AnalysisError extends Error {
+    code: AnalysisErrorCode;
+    details?: string;
+
+    constructor(code: AnalysisErrorCode, message: string, details?: string) {
+        super(message);
+        this.name = 'AnalysisError';
+        this.code = code;
+        this.details = details;
+    }
+}
+
+function serverCodeToAnalysisCode(
+    code: string | undefined,
+    status: number,
+    message: string
+): AnalysisErrorCode {
+    if (message.includes('免费重试已使用')) return 'FREE_RETRY_USED';
+    if (message.includes('免费重试')) return 'FREE_RETRY_INVALID';
+    if (message.includes('账号已被限制') || message.includes('账号不可用')) return 'ACCOUNT_DISABLED';
+    if (message.includes('已完成分析') || message.includes('请开始新的测试')) return 'ANALYSIS_COMPLETED';
+    if (message.includes('报告不存在') || code === 'NOT_FOUND') return 'NOT_FOUND';
+    if (message.includes('无权访问') || code === 'FORBIDDEN') return 'FORBIDDEN';
+    if (code === 'VALIDATION_FAILED' || message.includes('图片验证失败')) return 'IMAGE_VALIDATION';
+    if (code === 'UNAUTHORIZED' || status === 401 || message.includes('登录')) return 'UNAUTHORIZED';
+    if (code === 'CONSENT_REQUIRED' || message.includes('隐私授权') || message.includes('测肤授权')) {
+        return 'CONSENT_REQUIRED';
+    }
+    if (
+        message.includes('次数已用完') ||
+        message.includes('测试次数') ||
+        message.includes('测试上限') ||
+        message.includes('免费测肤次数') ||
+        message.includes('明天再试')
+    ) {
+        return 'QUOTA';
+    }
+    if (message.includes('请求过于频繁') || message.includes('频繁')) return 'RATE_LIMITED';
+    if (code === 'RATE_LIMITED') return 'RATE_LIMITED';
+    if (status === 429) return 'RATE_LIMITED';
+    if (
+        code === 'AI_SERVICE_ERROR' ||
+        status === 503 ||
+        status === 504 ||
+        message.includes('AI 服务') ||
+        message.includes('AI 分析服务') ||
+        message.includes('AI 视觉服务') ||
+        message.includes('AI 助手') ||
+        message.includes('报告生成失败')
+    ) {
+        return 'AI_UNAVAILABLE';
+    }
+    if (message.includes('扫脸') || message.includes('面部') || message.includes('照片')) return 'FACE_REQUIRED';
+    if (message.includes('网络') || message.includes('Failed to fetch')) return 'NETWORK';
+    return 'UNKNOWN';
+}
+
+function normalizeAnalysisError(error: unknown): AnalysisError {
+    if (error instanceof AnalysisError) return error;
+    const err = error instanceof Error ? error : new Error(String(error));
+    if (err.name === 'AbortError') return new AnalysisError('TIMEOUT', '分析时间较长，请稍后重试。');
+    const transport = err as { status?: unknown; code?: unknown };
+    const status = typeof transport.status === 'number' ? transport.status : 0;
+    const code = typeof transport.code === 'string' ? transport.code : undefined;
+    return new AnalysisError(
+        serverCodeToAnalysisCode(code, status, err.message),
+        err.message || '分析失败，请稍后重试。'
+    );
 }
 
 
@@ -68,7 +160,15 @@ export function useAsyncAnalysis() {
         }
         isRunningRef.current = true;
 
-        setAnalysisState({ status: 'preparing', progress: 2, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
+        setAnalysisState({
+            status: 'preparing',
+            progress: 2,
+            error: null,
+            errorCode: undefined,
+            errorDetails: undefined,
+            queuePosition: undefined,
+            queueWaitSeconds: undefined,
+        });
         trackAnalysisStart();
 
         // 共享 AbortController：超时或组件卸载时统一取消所有未完成的请求
@@ -107,7 +207,7 @@ export function useAsyncAnalysis() {
             }
 
             if (!answersStr) {
-                throw new Error("答题数据缺失，请重新填写问卷");
+                throw new AnalysisError('ANSWERS_MISSING', "答题数据缺失，请重新填写问卷");
             }
             const answers = JSON.parse(answersStr);
 
@@ -203,7 +303,7 @@ export function useAsyncAnalysis() {
             if (user?.id) {
                 const consentOk = await ensureClientConsent();
                 if (!consentOk) {
-                    throw new Error("测肤授权未完成，请重新阅读并同意隐私政策后再试。");
+                    throw new AnalysisError('CONSENT_REQUIRED', "测肤授权未完成，请重新阅读并同意隐私政策后再试。");
                 }
             }
 
@@ -353,32 +453,29 @@ export function useAsyncAnalysis() {
                                 const errorData = await faceRes.json().catch(() => ({}));
                                 console.warn("Face analysis API failed", faceRes.status, errorData);
 
-                                // Specific error messages for known status codes not handled by retry
-                                if (faceRes.status === 429) { // This case should ideally be caught by fetchWithRetry, but kept for explicit handling if needed
-                                    throw new Error("当前排队人数较多，请稍后再试。");
-                                }
-                                if (faceRes.status === 503 || faceRes.status === 504) { // This case should ideally be caught by fetchWithRetry
-                                    throw new Error("AI 服务暂时繁忙，请稍后重试");
-                                }
-                                throw new Error(getServerErrorMessage(errorData, "面部分析未完成"));
+                                const info = getServerErrorInfo(errorData, "面部分析未完成");
+                                const code = info.requireLogin
+                                    ? 'UNAUTHORIZED'
+                                    : serverCodeToAnalysisCode(info.code, faceRes.status, info.message);
+                                throw new AnalysisError(code, info.message, info.details);
                             }
                         } catch (e: unknown) {
                             const err = e as Error;
                             console.error("Face analysis fetch failed", e);
                             if (err.name === 'AbortError') {
-                                throw new Error("面部分析时间较长，请稍后重试。");
+                                throw new AnalysisError('TIMEOUT', "面部分析时间较长，请稍后重试。");
                             }
-                            // Check if the error is from fetchWithRetry's specific message
+                            if (err instanceof AnalysisError) throw err;
                             if (err.message.includes("Request failed: 429")) {
-                                throw new Error("请求过于频繁，请稍后重试");
+                                throw new AnalysisError('RATE_LIMITED', "请求过于频繁，请稍后重试");
                             }
                             if (err.message.includes("Request failed: 5")) {
-                                throw new Error("AI 服务暂时繁忙，请稍后重试");
+                                throw new AnalysisError('AI_UNAVAILABLE', "AI 服务暂时繁忙，请稍后重试");
                             }
                             if (err.message.includes("Failed to fetch")) {
-                                throw new Error("网络连接异常，请检查网络后重试");
+                                throw new AnalysisError('NETWORK', "网络连接异常，请检查网络后重试");
                             }
-                            throw e; // Rethrow to stop the process and show error state
+                            throw normalizeAnalysisError(e);
                         } finally {
                             clearTimeout(faceAnalyzeTimeout);
                             abortController.signal.removeEventListener('abort', onTotalAbort);
@@ -389,14 +486,26 @@ export function useAsyncAnalysis() {
 
             // 强制扫脸：面部阶段未成功时不得进入文本分析（不再降级为纯问卷报告）。
             if (!faceReady && !isFreeRetryEarly) {
-                throw new Error("面部分析未完成，请重新拍摄或稍后重试。");
+                throw new AnalysisError('FACE_REQUIRED', "面部分析未完成，请重新拍摄或稍后重试。");
             }
 
             // 面部分析完成 → 推进进度条（同时切换到下一阶段，合并更新减少 re-render）
             if (faceAnalysis) {
-                setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 65) }));
+                setAnalysisState(prev => ({
+                    ...prev,
+                    status: 'analyzing_skin',
+                    progress: Math.max(prev.progress, 65),
+                    queuePosition: undefined,
+                    queueWaitSeconds: undefined,
+                }));
             } else {
-                setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 55) }));
+                setAnalysisState(prev => ({
+                    ...prev,
+                    status: 'analyzing_skin',
+                    progress: Math.max(prev.progress, 55),
+                    queuePosition: undefined,
+                    queueWaitSeconds: undefined,
+                }));
             }
 
             // 2. Comprehensive Analysis (Text)
@@ -447,41 +556,39 @@ export function useAsyncAnalysis() {
                 }));
             }
 
-            // 服务端已响应，快速推进进度让用户感知到进展
-            setAnalysisState(prev => ({ ...prev, progress: 90 }));
-
             let result: Record<string, unknown> | undefined;
 
             if (analyzeRes.status === 202) {
                 // 服务端提示已有其他请求在分析同一 session，进入轮询等待
                 const pollResult = await pollSessionResult(sessionId, {
                     onProgress: (attempt) => {
-                        setAnalysisState(prev => ({ ...prev, progress: Math.min(85, 55 + attempt * 1) }));
+                        setAnalysisState(prev => ({
+                            ...prev,
+                            progress: Math.max(prev.progress, Math.min(85, 55 + attempt * 1)),
+                        }));
                     },
                     signal: abortController.signal
                 });
                 if (pollResult.status !== 'completed' || !pollResult.rawResult) {
-                    throw new Error('分析等待超时，建议重试一次。');
+                    throw new AnalysisError('TIMEOUT', '分析等待超时，建议重试一次。');
                 }
                 result = pollResult.rawResult;
             } else {
                 if (!analyzeRes.ok) {
-                    // 解析服务端错误信息，透传给用户
-                    let serverError = "分析未完成，请重试。";
-                    try {
-                        const errorData = await analyzeRes.json();
-                        serverError = getServerErrorMessage(errorData, serverError);
-                    } catch {
-                        serverError = "当前访问人数较多，请稍后再试。";
-                    }
-                    throw new Error(serverError);
+                    const errorData = await analyzeRes.json().catch(() => ({}));
+                    const info = getServerErrorInfo(errorData, "分析未完成，请重试。");
+                    const code = info.requireLogin
+                        ? 'UNAUTHORIZED'
+                        : serverCodeToAnalysisCode(info.code, analyzeRes.status, info.message);
+                    throw new AnalysisError(code, info.message, info.details);
                 }
 
+                setAnalysisState(prev => ({ ...prev, progress: Math.max(prev.progress, 90) }));
                 result = await analyzeRes.json();
             }
 
             if (!result) {
-                throw new Error('未获取到分析结果，请重试一次。');
+                throw new AnalysisError('UNKNOWN', '未获取到分析结果，请重试一次。');
             }
 
             if (faceAnalysis && !result.faceAnalysis) {
@@ -544,14 +651,30 @@ export function useAsyncAnalysis() {
         } catch (e: unknown) {
             cancelTimeout();
             abortController.abort(); // 确保取消所有未完成的请求
-            const error = e instanceof Error ? e : new Error(String(e));
-            console.error("Analysis failed:", error);
-            // 失败会话暂存：同问卷重试时复用 sessionId（服务端预占幂等，不额外扣次）
-            if (activeSessionId && activeAnswersFingerprint) {
+            const analysisError = normalizeAnalysisError(e);
+            console.error("Analysis failed:", analysisError);
+            // 仅暂存可重试失败：业务错误（额度/登录/图片校验等）不能复用旧 session
+            if (
+                (analysisError.code === 'TIMEOUT' ||
+                    analysisError.code === 'NETWORK' ||
+                    analysisError.code === 'AI_UNAVAILABLE') &&
+                activeSessionId &&
+                activeAnswersFingerprint
+            ) {
                 writeFailedAnalysisRetry(activeSessionId, activeAnswersFingerprint);
+            } else {
+                clearFailedAnalysisRetry();
             }
-            setAnalysisState({ status: 'error', progress: 0, error: error.message || "Unknown error", queuePosition: undefined, queueWaitSeconds: undefined });
-            throw error;
+            setAnalysisState({
+                status: 'error',
+                progress: 0,
+                error: analysisError.message || "Unknown error",
+                errorCode: analysisError.code,
+                errorDetails: analysisError.details,
+                queuePosition: undefined,
+                queueWaitSeconds: undefined,
+            });
+            throw analysisError;
         } finally {
             isRunningRef.current = false;
             if (activeAnalysisAbortRef.current === abortController) {
@@ -634,7 +757,15 @@ export function useAsyncAnalysis() {
         }
         isRunningRef.current = true;
 
-        setAnalysisState({ status: 'analyzing_skin', progress: 55, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
+        setAnalysisState(prev => ({
+            status: 'preparing',
+            progress: Math.max(prev.progress, 2),
+            error: null,
+            errorCode: undefined,
+            errorDetails: undefined,
+            queuePosition: undefined,
+            queueWaitSeconds: undefined,
+        }));
 
         const sleep = (ms: number) => new Promise<void>((resolve, reject) => {
             if (signal?.aborted) {
@@ -651,13 +782,18 @@ export function useAsyncAnalysis() {
         // 面部结果已由服务端持久化时，恢复流程只需补跑文本阶段。
         // 返回 null 表示服务端已有其它请求在分析（202），由下方轮询等待。
         const launchTextAnalysis = async (): Promise<Record<string, unknown> | null> => {
+            setAnalysisState(prev => ({
+                ...prev,
+                status: 'analyzing_skin',
+                progress: Math.max(prev.progress, 65),
+            }));
             let answersStr: string | null = null;
             let nickname = "您";
             try {
                 answersStr = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
                 nickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME) || user?.name || "您";
             } catch { /* ignore */ }
-            if (!answersStr) throw new Error("答题数据缺失，请重新填写问卷");
+            if (!answersStr) throw new AnalysisError('ANSWERS_MISSING', "答题数据缺失，请重新填写问卷");
             const answers = JSON.parse(answersStr);
             let skinState: string | undefined;
             try { skinState = localStorage.getItem(STORAGE_KEYS.ADVISOR_SKIN_STATE) || undefined; } catch { /* ignore */ }
@@ -685,7 +821,11 @@ export function useAsyncAnalysis() {
             if (res.status === 202) return null;
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(getServerErrorMessage(errorData, "报告生成未完成，请重试。"));
+                const info = getServerErrorInfo(errorData, "报告生成未完成，请重试。");
+                const code = info.requireLogin
+                    ? 'UNAUTHORIZED'
+                    : serverCodeToAnalysisCode(info.code, res.status, info.message);
+                throw new AnalysisError(code, info.message, info.details);
             }
             return await res.json();
         };
@@ -725,8 +865,29 @@ export function useAsyncAnalysis() {
                 const message = statusRes.status === 'unauthorized'
                     ? '登录状态已失效，请重新登录后查看报告。'
                     : '该报告不属于当前账号，或无权访问。';
-                setAnalysisState({ status: 'error', progress: 0, error: message });
+                setAnalysisState({
+                    status: 'error',
+                    progress: 0,
+                    error: message,
+                    errorCode: statusRes.status === 'unauthorized' ? 'UNAUTHORIZED' : 'FORBIDDEN',
+                });
                 return { status: 'error', message };
+            }
+
+            if (statusRes.phase !== 'pending') {
+                if (statusRes.phase === 'face_analyzing') {
+                    setAnalysisState(prev => ({
+                        ...prev,
+                        status: 'analyzing_face',
+                        progress: Math.max(prev.progress, 25),
+                    }));
+                } else {
+                    setAnalysisState(prev => ({
+                        ...prev,
+                        status: 'analyzing_skin',
+                        progress: Math.max(prev.progress, 55),
+                    }));
+                }
             }
 
             // 阶段感知恢复：
@@ -779,7 +940,7 @@ export function useAsyncAnalysis() {
             }
 
             const message = '分析结果准备时间有点长，请稍后重试。';
-            setAnalysisState({ status: 'error', progress: 0, error: message });
+            setAnalysisState({ status: 'error', progress: 0, error: message, errorCode: 'TIMEOUT' });
             return { status: 'error', message };
         } catch (e: unknown) {
             if (signal?.aborted) {
@@ -801,11 +962,17 @@ export function useAsyncAnalysis() {
                     if (answersStr) writeFailedAnalysisRetry(sessionId, fingerprintAnswers(answersStr));
                 } catch { /* ignore */ }
             }
-            const message = e instanceof SessionRecoveryError && e.reason === 'timeout'
-                ? '分析结果准备时间有点长，请稍后重试。'
-                : e instanceof Error ? e.message : '恢复分析状态失败，请稍后重试。';
-            setAnalysisState({ status: 'error', progress: 0, error: message });
-            return { status: 'error', message };
+            const normalized = e instanceof SessionRecoveryError && e.reason === 'timeout'
+                ? new AnalysisError('TIMEOUT', '分析结果准备时间有点长，请稍后重试。')
+                : normalizeAnalysisError(e);
+            setAnalysisState({
+                status: 'error',
+                progress: 0,
+                error: normalized.message,
+                errorCode: normalized.code,
+                errorDetails: normalized.details,
+            });
+            return { status: 'error', message: normalized.message };
         } finally {
             isRunningRef.current = false;
             releaseAnalysisLock();

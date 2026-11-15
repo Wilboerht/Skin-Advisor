@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, ChevronDown } from "lucide-react";
 import ResultCards from "./ResultCards";
 import ComparisonCard from "./ComparisonCard";
 import { ConsultantReport } from "./ConsultantReport";
@@ -50,14 +51,58 @@ const CONDITION_SEVERITY: Record<SkinCondition["severity"], { label: string; cla
 };
 
 const REPORT_NAV = [
-    { href: "#report-conclusion", label: "结论与评分" },
-    { href: "#report-evidence", label: "检测数据" },
-    { href: "#report-diagnosis", label: "问题诊断" },
-    { href: "#report-routine", label: "每日方案" },
-    { href: "#report-safety", label: "安全与复测" },
-    { href: "#product-recommendation", label: "产品推荐" },
-    { href: "#advisor-service", label: "顾问服务" },
+    { id: "report-conclusion", label: "结论与评分" },
+    { id: "report-evidence", label: "检测数据" },
+    { id: "report-diagnosis", label: "问题诊断" },
+    { id: "report-routine", label: "每日方案" },
+    { id: "report-safety", label: "安全与复测" },
+    { id: "product-recommendation", label: "产品推荐" },
+    { id: "advisor-service", label: "顾问服务" },
 ] as const;
+
+/** 报告深度模块：标题行可折叠，导航点击可自动展开 */
+function ReportSection({
+    id,
+    title,
+    summary,
+    open,
+    onToggle,
+    children,
+}: {
+    id: string;
+    title: string;
+    summary?: string;
+    open: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+}) {
+    return (
+        <section id={id} aria-label={title} className="scroll-mt-32">
+            <button
+                type="button"
+                onClick={onToggle}
+                aria-expanded={open}
+                aria-controls={`${id}-content`}
+                className="flex w-full items-center justify-between gap-3 border-b border-[var(--color-brand-espresso)]/20 pb-2 text-left transition-colors hover:border-[var(--color-brand-espresso)]/40"
+            >
+                <span className="min-w-0">
+                    <span className="text-base font-medium text-[var(--color-brand-espresso)]">{title}</span>
+                    {summary && (
+                        <span className="ml-2 text-[11px] font-light text-[var(--color-brand-taupe)]">{summary}</span>
+                    )}
+                </span>
+                <ChevronDown
+                    className={`h-4 w-4 shrink-0 text-[var(--color-brand-taupe)] transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                />
+            </button>
+            <div id={`${id}-content`} className="pt-4" hidden={!open}>
+                {children}
+            </div>
+        </section>
+    );
+}
 
 /** 区域是否有实质问题：任一数值指标低于统一关注阈值；无数值数据时按 condition 兜底 */
 function zoneNeedsAttention(zone: ZoneData): boolean {
@@ -83,6 +128,8 @@ interface ReportPageProps {
     sessionId?: string;
     /** 护肤档案入口（趋势对比卡内）：打开「我的」账户弹层的档案 tab */
     onOpenDiary?: () => void;
+    /** 重新测肤额度/登录预检结果：非空时展示原因而不是可点链接 */
+    reTestBlockedReason?: "login" | "daily" | "lifetime" | null;
 }
 
 export default function ReportPage({
@@ -92,6 +139,7 @@ export default function ReportPage({
     previousSummary,
     sessionId,
     onOpenDiary,
+    reTestBlockedReason,
 }: ReportPageProps) {
     // v2-only：有实质内容的 consultantReport 即新版顾问叙事报告；
     // 历史 v1 报告不再只显示“已升级”，旧 details/tips 仍以只读方式保留。
@@ -104,11 +152,52 @@ export default function ReportPage({
         .filter(Boolean)
         .join("、") || undefined;
     const skinConditions = faceAnalysis?.skinConditions ?? [];
+    const safetySummaryParts = [
+        (result.safetyNotes?.excluded?.length ?? 0) > 0 ? `已避开 ${result.safetyNotes!.excluded.length} 项风险` : "",
+        (result.safetyNotes?.actives?.length ?? 0) > 0 ? `${result.safetyNotes!.actives.length} 项活性成分` : "",
+        (result.safetyNotes?.conflicts?.length ?? 0) > 0 ? `${result.safetyNotes!.conflicts.length} 条叠加禁忌` : "",
+    ].filter(Boolean);
     const reportNav = REPORT_NAV.filter((item) => {
-        if (item.href === "#report-diagnosis" && !isV2Report) return false;
-        if (item.href === "#product-recommendation" && (result.products?.length ?? 0) === 0) return false;
+        if (item.id === "report-diagnosis" && !isV2Report) return false;
+        if (item.id === "product-recommendation" && (result.products?.length ?? 0) === 0) return false;
         return true;
     });
+
+    // 深度模块默认展开策略：诊断/每日方案是核心价值，检测数据默认收起；安全信息默认展开
+    const sectionsStorageKey = `report-open-sections:${sessionId ?? "current"}`;
+    const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
+        const defaults = {
+            "report-evidence": false,
+            "report-diagnosis": isV2Report,
+            "report-routine": true,
+            "report-safety": true,
+        };
+        try {
+            const raw = sessionStorage.getItem(sectionsStorageKey);
+            if (raw) {
+                const parsed = JSON.parse(raw) as Record<string, boolean>;
+                return { ...defaults, ...parsed };
+            }
+        } catch { /* ignore */ }
+        return defaults;
+    });
+    useEffect(() => {
+        try {
+            sessionStorage.setItem(sectionsStorageKey, JSON.stringify(openSections));
+        } catch { /* ignore */ }
+    }, [openSections, sectionsStorageKey]);
+    const toggleSection = (id: string) =>
+        setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
+
+    const handleNavClick = (id: string) => {
+        // 内部深度模块：先展开再滚动；外部行动区交给浏览器锚点
+        if (id in openSections) {
+            setOpenSections((prev) => ({ ...prev, [id]: true }));
+            requestAnimationFrame(() => {
+                document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+        }
+    };
 
     // 复测重点：取本次分数最低的 2 个有效维度（不含不可见维度）
     const retestFocus = Object.entries(faceAnalysis?.dimensions ?? {})
@@ -165,12 +254,16 @@ export default function ReportPage({
 
     return (
         <div className="flex flex-col gap-8 lg:gap-10">
-            <nav aria-label="报告导航" className="sticky top-[calc(var(--result-topbar-h,76px)+env(safe-area-inset-top,0px))] z-20 -mx-1 flex flex-wrap gap-2 rounded-xl bg-[#FDFBF7]/90 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-[#FDFBF7]/70">
+            <nav
+                aria-label="报告导航"
+                className="sticky top-[calc(var(--result-topbar-h,76px)+env(safe-area-inset-top,0px))] z-20 -mx-1 flex gap-2 overflow-x-auto rounded-xl bg-[#FDFBF7]/90 px-1 py-2 backdrop-blur scrollbar-hide supports-[backdrop-filter]:bg-[#FDFBF7]/70"
+            >
                 {reportNav.map((item) => (
                     <a
-                        key={item.href}
-                        href={item.href}
-                        className="inline-flex h-8 items-center rounded-full border border-[var(--color-brand-espresso)]/12 bg-white/55 px-3 text-[11px] font-medium text-[var(--color-brand-cocoa)] transition-colors hover:border-[var(--color-brand-espresso)]/30 hover:bg-white active:scale-[0.98]"
+                        key={item.id}
+                        href={`#${item.id}`}
+                        onClick={() => handleNavClick(item.id)}
+                        className="inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--color-brand-espresso)]/12 bg-white/55 px-3 text-[11px] font-medium text-[var(--color-brand-cocoa)] transition-colors hover:border-[var(--color-brand-espresso)]/30 hover:bg-white active:scale-[0.98]"
                     >
                         {item.label}
                     </a>
@@ -180,7 +273,7 @@ export default function ReportPage({
             {/* 1. 结论与评分：报告头、结论摘要、趋势对比、核心指标 */}
             <div id="report-conclusion" className="flex scroll-mt-32 flex-col gap-6 lg:gap-8">
                 <ReportMeta result={result} faceAnalysis={faceAnalysis} />
-                <ReportSummary result={result} />
+                {isV2Report && <ReportSummary result={result} />}
                 {previousSummary && (
                     <ComparisonCard
                         prev={previousSummary}
@@ -200,11 +293,38 @@ export default function ReportPage({
                     concernsLabel={concernsLabel}
                     nickname={nickname}
                     dataSource={result.dataSource}
+                    compact
                 />
+                {result.safetyNotes && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-brand-espresso)]/12 bg-white/55 px-4 py-3">
+                        <p className="text-[12px] leading-relaxed text-[var(--color-brand-cocoa)]">
+                            安全摘要：{safetySummaryParts.length > 0 ? safetySummaryParts.join(" · ") : "复测与注意事项"}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setOpenSections((prev) => ({ ...prev, "report-safety": true }));
+                                requestAnimationFrame(() => {
+                                    document.getElementById("report-safety")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                });
+                            }}
+                            className="text-[12px] font-medium text-[var(--color-brand-cocoa)] underline underline-offset-4"
+                        >
+                            查看安全与复测
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* 2. 检测证据：十维总览、可见皮肤表现、区域皮肤地图集中展示 */}
-            <section id="report-evidence" aria-label="检测证据" className="flex scroll-mt-32 flex-col gap-6 lg:gap-8">
+            <ReportSection
+                id="report-evidence"
+                title="检测数据"
+                summary="十维数据 · 区域状态 · 可见表现"
+                open={!!openSections["report-evidence"]}
+                onToggle={() => toggleSection("report-evidence")}
+            >
+            <div className="flex flex-col gap-6 lg:gap-8">
                 {faceAnalysis?.dimensions && (
                     <section aria-labelledby="dimension-overview-title">
                         <h4 id="dimension-overview-title" className="mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2 text-base font-medium text-[var(--color-brand-espresso)]">
@@ -311,34 +431,52 @@ export default function ReportPage({
                         )}
                     </section>
                 )}
-            </section>
+            </div>
+            </ReportSection>
 
             {/* 3. 逐问题诊断：完整的观察 → 诱因 → 方案 → 就医边界 */}
             {isV2Report && result.consultantReport && (
-                <section id="report-diagnosis" aria-label="逐问题诊断" className="scroll-mt-32">
+                <ReportSection
+                    id="report-diagnosis"
+                    title="逐问题诊断"
+                    summary={`${result.consultantReport.issues?.length ?? 0} 个问题 · 观察/诱因/方案`}
+                    open={!!openSections["report-diagnosis"]}
+                    onToggle={() => toggleSection("report-diagnosis")}
+                >
                     <ConsultantReport
                         report={result.consultantReport}
                         dimensions={faceAnalysis?.dimensions as Record<string, { score?: number; grade?: string; details?: string; confidence?: number; notVisible?: boolean } | undefined> | undefined}
                         personaRoute={result.persona}
                         sessionId={sessionId}
                     />
-                </section>
+                </ReportSection>
             )}
 
             {/* 4. 每日方案：唯一的 AM/PM 行动表（派系骨架 + 产品落点 + AI 微调） */}
-            <section id="report-routine" aria-label="每日方案" className="scroll-mt-32">
+            <ReportSection
+                id="report-routine"
+                title="每日方案"
+                summary="AM / PM 行动表 · 产品落点"
+                open={!!openSections["report-routine"]}
+                onToggle={() => toggleSection("report-routine")}
+            >
                 <RoutinePlan
                     plan={routinePlan}
                     routineNote={result.consultantReport?.routineNote}
                     issues={result.consultantReport?.issues}
                 />
-            </section>
+            </ReportSection>
 
             {/* 5. 安全与复测 */}
-            <section id="report-safety" aria-label="安全与复测" className="flex scroll-mt-32 flex-col gap-6 lg:gap-8">
+            <ReportSection
+                id="report-safety"
+                title="安全与复测"
+                summary="注意事项 · 复测计划"
+                open={!!openSections["report-safety"]}
+                onToggle={() => toggleSection("report-safety")}
+            >
+                <div className="flex flex-col gap-6 lg:gap-8">
                 <SafetyPanel notes={result.safetyNotes} issues={result.consultantReport?.issues} />
-
-                <ReportFeedback sessionId={sessionId} />
 
                 <section aria-labelledby="retest-title">
                     <h4 id="retest-title" className="mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2 text-base font-medium text-[var(--color-brand-espresso)]">
@@ -362,16 +500,29 @@ export default function ReportPage({
                                 <CalendarPlus className="h-4 w-4" strokeWidth={1.8} />
                                 添加到日历
                             </button>
-                            <Link
-                                href="/questions?edit=true"
-                                className="inline-flex h-10 items-center justify-center rounded-full border border-brand-cocoa/25 bg-white px-5 text-[13px] font-medium text-brand-cocoa transition-colors hover:border-brand-cocoa/45 hover:bg-brand-cocoa/[0.06]"
-                            >
-                                重新测肤
-                            </Link>
+                            {reTestBlockedReason ? (
+                                <span className="inline-flex h-10 items-center justify-center rounded-full border border-brand-cocoa/15 bg-white/60 px-5 text-[12px] font-light text-brand-cocoa/55">
+                                    {reTestBlockedReason === "login"
+                                        ? "登录后可重新测肤"
+                                        : reTestBlockedReason === "lifetime"
+                                            ? "测肤次数已用完"
+                                            : "今日测试次数已用完"}
+                                </span>
+                            ) : (
+                                <Link
+                                    href="/questions?edit=true"
+                                    className="inline-flex h-10 items-center justify-center rounded-full border border-brand-cocoa/25 bg-white px-5 text-[13px] font-medium text-brand-cocoa transition-colors hover:border-brand-cocoa/45 hover:bg-brand-cocoa/[0.06]"
+                                >
+                                    重新测肤
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </section>
-            </section>
+                </div>
+            </ReportSection>
+
+            <ReportFeedback key={sessionId} sessionId={sessionId} />
 
             {/* 历史 v1 报告：保留旧 details/tips 只读内容 + 重新测肤引导 */}
             {!isV2Report && (

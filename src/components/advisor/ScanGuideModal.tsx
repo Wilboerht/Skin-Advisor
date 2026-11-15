@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sun, Info, ChevronLeft, Smile, Droplets, Brush, Palette } from "lucide-react";
+import { ArrowRight, Sun, Info, ChevronLeft, Check, Smile, Droplets, Brush, Palette } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,8 @@ interface ScanGuideModalProps {
     gender?: "female" | "male" | null;
     /** 上次选择的肌肤状态；返回修改问卷后再次进入时保留，不再重置为素颜 */
     initialSkinState?: SkinStateValue;
+    /** 上次分析未通过的面部校验原因（结果页回跳时提示） */
+    previousError?: string | null;
 }
 
 /** 状态胶囊的短文案：完整文案（SKIN_STATE_LABELS）仍用于报告与 AI 提示词，这里只做界面简写 */
@@ -39,7 +41,7 @@ const STATE_ICONS: Record<SkinStateValue, LucideIcon> = {
     heavy_makeup: Palette,
 };
 
-export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinState }: ScanGuideModalProps) {
+export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinState, previousError }: ScanGuideModalProps) {
     const [skinState, setSkinState] = useState<SkinStateValue>(initialSkinState ?? DEFAULT_SKIN_STATE);
 
     useEffect(() => {
@@ -125,6 +127,28 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinS
                                 </div>
                             </m.div>
 
+                            {previousError && (
+                                <div className="mt-6 w-full max-w-md rounded-xl border border-amber-200/70 bg-amber-50/80 px-4 py-3 text-left text-[12px] leading-relaxed text-amber-900">
+                                    <p className="font-medium">上次分析未通过面部校验</p>
+                                    <p className="mt-1 text-amber-800/80">{previousError}</p>
+                                    <p className="mt-1 text-amber-800/60">请摘掉口罩/眼镜，确保单人、正对镜头、光线均匀后重拍。</p>
+                                </div>
+                            )}
+
+                            <div className="mt-6 grid w-full max-w-md grid-cols-2 gap-2 text-left text-[12px] leading-relaxed text-brand-charcoal/65">
+                                {[
+                                    "摘掉眼镜、口罩，确保单人入镜",
+                                    "面向光源，避免逆光或强阴影",
+                                    "头发不遮挡额头与脸颊",
+                                    "接下来会引导完成 4 个角度拍摄",
+                                ].map((tip) => (
+                                    <p key={tip} className="flex items-start gap-1.5 rounded-lg border border-brand-charcoal/[0.08] bg-white/55 px-2.5 py-2">
+                                        <Check className="mt-0.5 h-3 w-3 shrink-0 text-[var(--color-brand-cocoa)]" strokeWidth={2.5} />
+                                        {tip}
+                                    </p>
+                                ))}
+                            </div>
+
                             {/* 2. 拍摄状态（关键输入）：图标卡片（对齐预览页 F），选中带妆就地提示影响范围 */}
                             <m.div
                                 initial={{ opacity: 0, y: 16 }}
@@ -205,7 +229,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinS
                                 className="w-full flex flex-col items-center mt-8 md:mt-9"
                             >
                                 <p className="text-center text-[12px] font-light text-brand-charcoal/60 leading-relaxed tracking-[0.02em]">
-                                    照片仅用于本次分析，分析完成后即删除
+                                    照片仅用于本次分析，分析成功后立即删除；失败或中断时本地最多保留 6 小时
                                 </p>
 
                                 <button

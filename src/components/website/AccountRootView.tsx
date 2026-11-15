@@ -453,7 +453,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                   onClick={startEditNickname}
                   className="group -my-2 flex items-center gap-1.5 py-2 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
                 >
-                  <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100">修改</span>
+                  <span className="opacity-100 md:opacity-60 md:group-hover:opacity-100 focus-visible:opacity-100">修改</span>
                   <ChevronRight className="h-3.5 w-3.5 text-stone-300 md:hidden" />
                 </button>
               )}
@@ -482,7 +482,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                 aria-expanded={editingGender}
                 className="group -my-2 flex shrink-0 items-center gap-1.5 py-2 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
               >
-                <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100">修改</span>
+                <span className="opacity-100 md:opacity-60 md:group-hover:opacity-100 focus-visible:opacity-100">修改</span>
                 <ChevronRight className="h-3.5 w-3.5 text-stone-300 md:hidden" />
               </button>
             </div>
@@ -595,7 +595,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                   }}
                   className="group -my-2 flex items-center gap-1.5 py-2 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
                 >
-                  <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100">设置</span>
+                  <span className="opacity-100 md:opacity-60 md:group-hover:opacity-100 focus-visible:opacity-100">设置</span>
                   <ChevronRight className="h-3.5 w-3.5 text-stone-300 md:hidden" />
                 </button>
               )}
@@ -621,7 +621,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                 aria-expanded={phoneOpen}
                 className="flex shrink-0 items-center gap-1.5 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
               >
-                <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100">修改</span>
+                <span className="opacity-100 md:opacity-60 md:group-hover:opacity-100 focus-visible:opacity-100">修改</span>
                 <ChevronRight
                   className={`h-3.5 w-3.5 text-stone-300 transition-transform duration-200 md:hidden ${
                     phoneOpen ? "rotate-90" : ""

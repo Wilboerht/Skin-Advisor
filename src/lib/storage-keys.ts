@@ -23,6 +23,10 @@ export const STORAGE_KEYS = {
     ADVISOR_LAST_SUMMARY: 'advisor_last_summary',
     // 测肤拍摄时肌肤状态（纯素颜/带妆等，扫脸引导弹窗选择）
     ADVISOR_SKIN_STATE: 'advisor_skin_state',
+    // 上次分析失败的面部原因（如未检测到清晰人脸），回扫脸页时提示
+    ADVISOR_FACE_ERROR: 'advisor_face_error',
+    // 用户点击「开始测肤」但未登录时暂存；SSO 回跳后自动续跑
+    ADVISOR_PENDING_START: 'advisor_pending_start',
     // 证书下载版式偏好（qr 标准版 / noqr 分享版，记忆上次选择）
     ADVISOR_CERT_VARIANT: 'advisor_cert_variant',
 

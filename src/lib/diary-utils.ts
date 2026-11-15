@@ -42,8 +42,10 @@ export function scoreToSkinState(score: number): string {
 /** 测肤自动生成条目的备注前缀，用于区分自动记录与手动打卡 */
 export const AUTO_DIARY_NOTE_PREFIX = "在线测肤";
 
-/** 判断条目是否为测肤自动生成（手动打卡的备注不会以此前缀开头） */
-export function isAutoDiaryEntry(entry: { note?: string | null }): boolean {
+/** 判断条目是否为测肤自动生成：优先看显式 source，旧数据回退备注前缀 */
+export function isAutoDiaryEntry(entry: { note?: string | null; source?: string | null }): boolean {
+    if (entry.source === "auto") return true;
+    if (entry.source === "manual") return false;
     return !!entry.note && entry.note.startsWith(AUTO_DIARY_NOTE_PREFIX);
 }
 

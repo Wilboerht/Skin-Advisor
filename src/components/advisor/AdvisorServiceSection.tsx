@@ -15,6 +15,8 @@ import {
 interface AdvisorServiceSectionProps {
     /** 未登录时点击登录按钮：由父级打开登录弹窗 */
     onLogin?: () => void;
+    /** 普通会员：打开会员中心升级 */
+    onOpenMembership?: () => void;
     className?: string;
 }
 
@@ -31,14 +33,26 @@ const LEVEL_SERVICE: Record<string, { title: string; desc: string }> = {
  * 会员等级分治与 Dock「专属顾问」弹层一致：
  * 未登录 → 登录引导；普通会员 → 升级引导；银卡及以上 → 对应等级服务 + 顾问二维码。
  */
-export function AdvisorServiceSection({ onLogin, className }: AdvisorServiceSectionProps) {
-    const { user } = useAuth();
+export function AdvisorServiceSection({ onLogin, onOpenMembership, className }: AdvisorServiceSectionProps) {
+    const { user, isInitialized } = useAuth();
     // 二维码素材缺失时降级为占位框（与 AdvisorContactModal 同一素材、同一兜底策略）
     const [qrFailed, setQrFailed] = useState(false);
 
     const level = user?.membershipLevel ?? "";
     const hasAccess = !!user && ADVISOR_MEMBER_LEVELS.has(level);
     const service = LEVEL_SERVICE[level] ?? LEVEL_SERVICE.SILVER;
+
+    if (!isInitialized) {
+        return (
+            <section id="advisor-service" className={cn("relative w-full scroll-mt-32", className)}>
+                <div className="mx-auto w-full max-w-xl rounded-3xl border border-brand-charcoal/[0.08] bg-[#FCFAF4] p-6 md:p-8">
+                    <div className="h-5 w-40 animate-pulse rounded bg-brand-charcoal/[0.06]" />
+                    <div className="mt-4 h-12 w-full animate-pulse rounded-xl bg-brand-charcoal/[0.04]" />
+                    <div className="mt-3 h-12 w-3/4 animate-pulse rounded-xl bg-brand-charcoal/[0.04]" />
+                </div>
+            </section>
+        );
+    }
 
     return (
         <section id="advisor-service" className={cn("relative w-full scroll-mt-32", className)}>
@@ -142,6 +156,16 @@ export function AdvisorServiceSection({ onLogin, className }: AdvisorServiceSect
                                 升级银卡及以上会员即可解锁
                             </p>
                         </div>
+                        {onOpenMembership && (
+                            <button
+                                type="button"
+                                onClick={onOpenMembership}
+                                className="mt-5 inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[var(--color-brand-cocoa)]/30 bg-white px-5 text-[13px] font-medium text-[var(--color-brand-cocoa)] transition-colors hover:border-[var(--color-brand-cocoa)]/55 hover:bg-[var(--color-brand-cocoa)]/[0.06]"
+                            >
+                                去会员中心
+                                <ArrowRight className="h-4 w-4" strokeWidth={1.8} />
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

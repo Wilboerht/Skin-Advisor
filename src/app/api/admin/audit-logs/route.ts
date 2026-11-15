@@ -60,7 +60,18 @@ export const GET = withAdminAuth(async (request, { admin }) => {
         const adminId = searchParams.get("adminId");
         const startDate = searchParams.get("startDate");
         const endDate = searchParams.get("endDate");
+        const sort = searchParams.get("sort") || "createdAt";
+        const order: "asc" | "desc" = searchParams.get("order") === "asc" ? "asc" : "desc";
         const skip = (page - 1) * limit;
+
+        const orderBy: Prisma.AdminAuditLogOrderByWithRelationInput =
+            sort === "action"
+                ? { action: order }
+                : sort === "resource"
+                  ? { resource: order }
+                  : sort === "admin"
+                    ? { admin: { username: order } }
+                    : { createdAt: order };
 
         const whereCondition: Prisma.AdminAuditLogWhereInput = {};
 
@@ -103,7 +114,7 @@ export const GET = withAdminAuth(async (request, { admin }) => {
         const [logs, total, admins] = await Promise.all([
             prisma.adminAuditLog.findMany({
                 where: whereCondition,
-                orderBy: { createdAt: 'desc' },
+                orderBy,
                 skip,
                 take: limit,
                 include: {

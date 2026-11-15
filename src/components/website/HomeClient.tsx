@@ -25,6 +25,7 @@ import { HomeFeatureCards } from "@/components/website/HomeFeatureCards";
 import { HomeMobileHero } from "@/components/website/HomeMobileHero";
 import { HeroDoodles } from "@/components/website/HeroDoodles";
 import type { AccountTab } from "@/components/website/AccountModal";
+import { normalizeAccountTab } from "@/lib/account-tab";
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
 const FaqModal = dynamic(() => import("@/components/website/FaqModal").then((mod) => mod.FaqModal), { ssr: false });
 const AccountModal = dynamic(() => import("@/components/website/AccountModal").then((mod) => mod.AccountModal), { ssr: false });
@@ -99,6 +100,48 @@ function StartParamDetector({ onStart, authReady }: { onStart: () => void; authR
   return null;
 }
 
+/**
+ * ?account=<tab> / ?tab=<tab> 深链接：打开账户弹层对应 tab。
+ * 与主站 /?account=<tab> 约定一致；未登录时记录回跳目标并展示登录引导，
+ * SSO 回跳后由 AuthUrlDetector 消费 AUTH_REDIRECT 再回到本页打开弹层。
+ * URL 参数在读取后清理，避免关闭弹层后刷新又自动打开。
+ */
+function AccountParamDetector({
+  onOpen,
+  authReady,
+  userId,
+}: {
+  onOpen: (tab: AccountTab) => void;
+  authReady: boolean;
+  userId?: string;
+}) {
+  const searchParams = useSearchParams();
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || firedRef.current || !authReady) return;
+    const raw = searchParams.get("account") ?? searchParams.get("tab");
+    if (!raw) return;
+    firedRef.current = true;
+    const tab = normalizeAccountTab(raw);
+
+    if (!userId) {
+      try {
+        sessionStorage.setItem(STORAGE_KEYS.AUTH_REDIRECT, `/?account=${tab}`);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("account");
+    url.searchParams.delete("tab");
+    window.history.replaceState({}, "", url.toString());
+
+    onOpen(tab);
+  }, [searchParams, authReady, userId, onOpen]);
+  return null;
+}
+
 // Region options
 const regionOptions = [
   { group: "华北/东北", regions: ["北京", "天津", "河北", "山西", "内蒙古", "黑龙江", "吉林", "辽宁"] },
@@ -147,7 +190,13 @@ export default function HomeClient() {
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [accountInitialTab, setAccountInitialTab] = useState<AccountTab>("profile");
   const [showAdvisorModal, setShowAdvisorModal] = useState(false);
+  // 本次账户弹层是否由「开始测肤」打开：只有该场景登录成功后才自动续跑
+  const accountStartFlowRef = useRef(false);
+  // 区分“关闭登录引导”与“点击登录后整页跳转”：后者不能清掉待续跑意图
+  const loginIntentRef = useRef(false);
   const openAccountModal = useCallback((tab: AccountTab = "profile") => {
+    accountStartFlowRef.current = false;
+    loginIntentRef.current = false;
     setAccountInitialTab(tab);
     setShowAccountModal(true);
   }, []);
@@ -255,12 +304,15 @@ export default function HomeClient() {
     safeStorage.remove(STORAGE_KEYS.ADVISOR_FAILED_ANALYSIS);
     // 新测试重置拍摄状态，避免沿用上一次的“带妆/防晒”选择
     safeStorage.remove(STORAGE_KEYS.ADVISOR_SKIN_STATE);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_FACE_ERROR);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_PENDING_START);
     // 预处理图可能尚未被异步 clearFaceImages 清掉，先同步移除，防止新测试复用旧照片
     safeStorage.remove("advisor_processed_images");
     try {
       sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
       sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
       sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
+      sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_ERROR);
     } catch { /* ignore */ }
     // 面部照片存 IndexedDB + advisor_processed_images：startNewTest 必须清掉，
     // 避免上一次的照片被当作本次输入，也避免共享设备残留。
@@ -297,40 +349,46 @@ export default function HomeClient() {
   const handleLocationAccept = async () => {
     setIsLocating(true);
     const requestId = ++locationRequestId.current;
-    if ("geolocation" in navigator) {
-      try {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: false,
-            timeout: 10000,
-            maximumAge: 300000,
-          });
-        });
-
-        // Ignore stale result if user has already moved past the location step
-        if (requestId !== locationRequestId.current) {
-          return;
-        }
-
-        safeStorage.set("userRegion", JSON.stringify({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude
-        }));
-        safeStorage.setSession("locationConsent", "granted");
-        setIsLocating(false);
-      } catch (error) {
-        console.warn("Geolocation failed", error);
-        setIsLocating(false);
-        throw error; // Let OnboardingFlowModal handle the fallback
+    try {
+      if (!("geolocation" in navigator)) {
+        throw new Error("No geolocation support");
       }
-    } else {
-      setIsLocating(false);
-      throw new Error("No geolocation support");
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 300000,
+        });
+      });
+
+      // Ignore stale result if user has already moved past the location step
+      if (requestId !== locationRequestId.current) {
+        return false;
+      }
+
+      safeStorage.set("userRegion", JSON.stringify({
+        lat: position.coords.latitude,
+        lon: position.coords.longitude
+      }));
+      safeStorage.setSession("locationConsent", "granted");
+      return true;
+    } catch (error) {
+      // 已被跳过/选地区/关闭弹窗/新请求取代：不作为本次定位失败处理
+      if (requestId !== locationRequestId.current) {
+        return false;
+      }
+      console.warn("Geolocation failed", error);
+      throw error; // Let OnboardingFlowModal handle the fallback
+    } finally {
+      if (requestId === locationRequestId.current) {
+        setIsLocating(false);
+      }
     }
   };
 
   const handleRegionSelect = (region: string) => {
     locationRequestId.current += 1;
+    setIsLocating(false);
     safeStorage.setSession("locationConsent", "granted");
     safeStorage.set("userRegion", JSON.stringify({ province: region, city: region }));
     // Do not close or start test here, let legal step handle it
@@ -339,6 +397,7 @@ export default function HomeClient() {
   const handleSkipRegionSelect = () => {
     // This is now repurposed as the FINAL completion handler from the Legal step
     locationRequestId.current += 1;
+    setIsLocating(false);
     setShowOnboardingModal(false);
     setIsLoading(true);
     
@@ -365,6 +424,7 @@ export default function HomeClient() {
   const handleLocationDecline = () => {
     // Declining loc will naturally open Region Select, but handled by OnboardingFlowModal now implicitly via callback
     locationRequestId.current += 1;
+    setIsLocating(false);
     safeStorage.setSession("locationConsent", "declined");
   };
 
@@ -440,6 +500,7 @@ export default function HomeClient() {
     if (startingRef.current) return;
     startingRef.current = true;
     startCancelledRef.current = false;
+    loginIntentRef.current = false;
 
     try {
       // 会话未初始化（如刚登录回跳、/api/auth/me 仍在途）时先等其完成：
@@ -449,9 +510,11 @@ export default function HomeClient() {
         await refreshUser();
       }
 
-      // 未登录：打开「我的」账户弹层的登录引导，测肤必须先登录（不再走游客流程）
+      // 未登录：记录“待开始”，SSO 回跳后自动续跑；同时打开登录引导
       if (!userRef.current) {
+        safeStorage.set(STORAGE_KEYS.ADVISOR_PENDING_START, String(Date.now()));
         openAccountModal();
+        accountStartFlowRef.current = true;
         return;
       }
 
@@ -467,7 +530,9 @@ export default function HomeClient() {
         // 需登录：打开「我的」账户弹层的未登录视图（紧凑卡片 + LoginGuide），
         // 与 Dock「我的」/护肤档案未登录态保持全站一致；不再使用整屏 AuthModal 面板
         if (limit.requireLogin) {
+          safeStorage.set(STORAGE_KEYS.ADVISOR_PENDING_START, String(Date.now()));
           openAccountModal();
+          accountStartFlowRef.current = true;
           return;
         }
         setShowLimitModal(true);
@@ -495,6 +560,22 @@ export default function HomeClient() {
     }
   }, [checkTestLimit, openAccountModal, refreshUser, showOnboardingModal]);
 
+  // SSO 回跳后自动续跑：只有用户此前点击「开始测肤」才置位，关闭登录引导会清除
+  useEffect(() => {
+    if (!isInitialized || !user) return;
+    const raw = safeStorage.get(STORAGE_KEYS.ADVISOR_PENDING_START);
+    if (!raw) return;
+    const startedAt = Number(raw);
+    // 只续跑最近 10 分钟内的意图，避免很久以后登录被意外拉起
+    if (!Number.isFinite(startedAt) || Date.now() - startedAt > 10 * 60 * 1000) {
+      safeStorage.remove(STORAGE_KEYS.ADVISOR_PENDING_START);
+      return;
+    }
+    if (showOnboardingModal) return;
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_PENDING_START);
+    void handleStart();
+  }, [isInitialized, user, showOnboardingModal, handleStart]);
+
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
       return;
@@ -516,6 +597,12 @@ export default function HomeClient() {
         {!isLoading && <ArrowRight className="h-5 w-5" strokeWidth={1.8} />}
       </button>
 
+      {isInitialized && !user && (
+        <p className="mt-2 text-[12px] font-light tracking-[0.04em] text-[#00263E]/55">
+          登录后开始测肤 · 注册即享 10 次免费测肤
+        </p>
+      )}
+
       <button
         type="button"
         onClick={openGiftModal}
@@ -534,6 +621,11 @@ export default function HomeClient() {
         <RefCapture />
         <GiftParamDetector onOpen={openGiftModal} />
         <StartParamDetector onStart={handleStart} authReady={isInitialized} />
+        <AccountParamDetector
+          onOpen={openAccountModal}
+          authReady={isInitialized}
+          userId={user?.id}
+        />
       </Suspense>
 
       {/* Full Screen Loading Overlay */}
@@ -749,7 +841,19 @@ export default function HomeClient() {
       {shouldRenderAccount && (
         <AccountModal
           isOpen={showAccountModal}
-          onClose={() => setShowAccountModal(false)}
+          onClose={() => {
+            setShowAccountModal(false);
+            if (!loginIntentRef.current) {
+              safeStorage.remove(STORAGE_KEYS.ADVISOR_PENDING_START);
+            }
+            accountStartFlowRef.current = false;
+          }}
+          onLoginIntent={() => {
+            // 只有「开始测肤 → 登录」才续跑；普通「我的」入口登录不应自动开测
+            if (!accountStartFlowRef.current) return;
+            loginIntentRef.current = true;
+            safeStorage.set(STORAGE_KEYS.ADVISOR_PENDING_START, String(Date.now()));
+          }}
           initialTab={accountInitialTab}
         />
       )}
@@ -784,6 +888,8 @@ export default function HomeClient() {
           onClose={() => {
             // 标记用户已主动取消，防止 handleStart 中待完成的异步回调重新打开弹窗或恢复 loading
             startCancelledRef.current = true;
+            locationRequestId.current += 1;
+            setIsLocating(false);
             setShowOnboardingModal(false);
             setIsLoading(false);
           }}

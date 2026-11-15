@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { EmergencyLoginForm } from "./EmergencyLoginForm";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+    title: "应急登录",
+    robots: { index: false, follow: false },
+};
 
 export default async function EmergencyLoginPage() {
     // 显式读取请求头，确保 env 开关在运行时判断，而不是构建期静态化。

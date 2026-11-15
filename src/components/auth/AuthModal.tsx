@@ -10,9 +10,11 @@ import { validatePasswordStrength, PASSWORD_MIN_LENGTH } from "@/lib/password";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { isSafeInternalPath } from "@/lib/url-utils";
 import { LoginGuide } from "@/components/website/LoginGuide";
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
 
 // SSO 迁移后，login / register / forgot_password 统一引导至主站账号中心，
@@ -95,6 +97,7 @@ export function AuthModal() {
         }
     };
     const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, handleEscape);
+    useModalBackClose(isOpen, handleEscape);
 
     // 桌面/移动面板按断点条件渲染（而非 CSS 隐藏同时挂载两个 aria-modal dialog）。
     // SSR 快照固定为 false（移动面板），避免水合不匹配
@@ -204,7 +207,7 @@ export function AuthModal() {
     const pcInputClass = "w-full bg-transparent border-0 border-b border-brand-charcoal/20 rounded-none py-4 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider placeholder:uppercase focus:outline-none focus:border-brand-charcoal/40 transition-colors";
     const pcBtnClass = "w-full py-4 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2";
 
-    const isSsoView = view === "login" || view === "register" || view === "forgot_password";
+    const isSsoView = view === "login" || view === "register";
 
     // login / register / forgot_password：SSO 迁移后统一引导至主站账号中心。
     // 引导视图与 AccountModal 未登录态共用 LoginGuide（全站统一视觉）
@@ -272,10 +275,18 @@ export function AuthModal() {
                                     />
                                 </div>
 
-                                {/* ====== SSO（login / register / forgot_password） ====== */}
+                                {/* ====== 找回密码（站内 BFF 表单） ====== */}
+                                {view === "forgot_password" && (
+                                    <>
+                                        <h1 id="auth-modal-title-desktop" className="sr-only">找回密码</h1>
+                                        <ForgotPasswordForm onBackToLogin={closeAuthModal} />
+                                    </>
+                                )}
+
+                                {/* ====== SSO（login / register） ====== */}
                                 {isSsoView && (
                                     <>
-                                        {/* 对话框可访问名称：SSO 视图无可见标题，用 sr-only 标题补齐 aria-labelledby 指向 */}
+                                        {/* 对话框可访问名称：SSO 视图无可见标题，故用 sr-only 标题补齐 aria-labelledby 指向 */}
                                         <h1 id="auth-modal-title-desktop" className="sr-only">登录或注册</h1>
                                         {ssoPanel}
                                     </>
@@ -424,7 +435,15 @@ export function AuthModal() {
                                         before:content-[''] before:flex-[1_0_0]
                                         after:content-[''] after:flex-[1_0_0]">
 
-                        {/* ====== SSO（login / register / forgot_password）：统一 LoginGuide 引导 ====== */}
+                        {/* ====== 找回密码（站内 BFF 表单） ====== */}
+                        {view === "forgot_password" && (
+                            <>
+                                <h2 id="auth-modal-title-mobile" className="sr-only">找回密码</h2>
+                                <ForgotPasswordForm onBackToLogin={closeAuthModal} />
+                            </>
+                        )}
+
+                        {/* ====== SSO（login / register） ====== */}
                         {isSsoView && (
                             <>
                                 {/* 对话框可访问名称：SSO 视图无可见标题，用 sr-only 标题补齐 aria-labelledby 指向 */}

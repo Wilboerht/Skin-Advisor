@@ -12,6 +12,7 @@ import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { AdminModal } from "@/components/ui/AdminModal";
 import { useMounted } from "@/hooks/use-mounted";
+import { formatBeijingDateTime } from "@/lib/time";
 
 interface AuditLogEntry {
     id: string;
@@ -205,7 +206,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                     执行时间
                                 </span>
                                 <span className="text-sm font-semibold text-brand-charcoal/70">
-                                    {new Date(log.createdAt).toLocaleString()}
+                                    {formatBeijingDateTime(log.createdAt)}
                                 </span>
                             </div>
                         </div>

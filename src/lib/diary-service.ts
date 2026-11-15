@@ -41,10 +41,16 @@ export class DiaryValidationError extends Error {
 }
 
 export interface DiarySummary {
+    /** 手动打卡累计次数（不含测肤自动记录） */
     totalCheckins: number;
+    /** 手动打卡连续天数（不含测肤自动记录） */
     currentStreak: number;
+    /** 手动打卡最长连续天数（不含测肤自动记录） */
     longestStreak: number;
+    /** 累计完成测肤次数 */
     testCount: number;
+    /** 全部护肤记录数（手动打卡 + 测肤自动记录） */
+    totalRecords: number;
 }
 
 export interface DiaryQueryFilter {
@@ -61,10 +67,11 @@ const ENTRY_SELECT = {
     tags: true,
     note: true,
     sessionId: true,
+    source: true,
     updatedAt: true,
 } as const;
 
-type DiaryDateWhere = { userId: string; date?: { gte?: Date; lt?: Date } };
+type DiaryDateWhere = { userId: string; date?: { gte?: Date; lt?: Date }; source?: string };
 
 /** 与旧实现一致：month 优先于 before；无效值视为不过滤 */
 function buildDiaryWhere(userId: string, filter: DiaryQueryFilter): DiaryDateWhere {
@@ -91,13 +98,20 @@ export function normalizeDiaryPageSize(raw?: string | null): number {
 /** 里程碑统计（summary=1 或 archive 聚合内复用） */
 export async function getDiarySummary(userId: string, filter: DiaryQueryFilter = {}): Promise<DiarySummary> {
     const where = buildDiaryWhere(userId, filter);
+    const manualWhere = { ...where, source: "manual" };
     const hasDateFilter = !!(filter.month || filter.before);
-    const [rows, streakRows, testCount] = await Promise.all([
-        prisma.diaryEntry.findMany({ where, select: { date: true }, orderBy: { date: "desc" } }),
-        // 连续天数始终基于全量历史：月份筛选只影响 totalCheckins，不应截断里程碑
+    const [rows, streakRows, totalRecords, testCount] = await Promise.all([
+        prisma.diaryEntry.findMany({ where: manualWhere, select: { date: true }, orderBy: { date: "desc" } }),
+        // 连续天数始终基于全量手动打卡历史：月份筛选只影响 totalCheckins，不应截断里程碑；
+        // 测肤自动记录不计入打卡连续天数
         hasDateFilter
-            ? prisma.diaryEntry.findMany({ where: { userId }, select: { date: true }, orderBy: { date: "desc" } })
+            ? prisma.diaryEntry.findMany({
+                  where: { userId, source: "manual" },
+                  select: { date: true },
+                  orderBy: { date: "desc" },
+              })
             : Promise.resolve(null),
+        prisma.diaryEntry.count({ where }),
         // 累计测肤次数：归档只影响报告可见性，不应让里程碑回退
         prisma.advisorSession.count({
             where: { userId, completedAt: { not: null } },
@@ -109,6 +123,7 @@ export async function getDiarySummary(userId: string, filter: DiaryQueryFilter =
         currentStreak: current,
         longestStreak: longest,
         testCount,
+        totalRecords,
     };
 }
 
@@ -123,24 +138,29 @@ export async function getDiaryArchive(
 }> {
     const limit = normalizeDiaryPageSize(limitRaw);
     const where = { userId };
-    const [entries, total, streakRows, testCount] = await Promise.all([
+    const [entries, total, manualRows, testCount] = await Promise.all([
         prisma.diaryEntry.findMany({ where, orderBy: { date: "desc" }, take: limit, select: ENTRY_SELECT }),
         prisma.diaryEntry.count({ where }),
-        prisma.diaryEntry.findMany({ where: { userId }, select: { date: true }, orderBy: { date: "desc" } }),
+        prisma.diaryEntry.findMany({
+            where: { userId, source: "manual" },
+            select: { date: true },
+            orderBy: { date: "desc" },
+        }),
         // 累计测肤次数：归档只影响报告可见性，不应让里程碑回退
         prisma.advisorSession.count({
             where: { userId, completedAt: { not: null } },
         }),
     ]);
-    const { current, longest } = computeStreak(streakRows.map((r) => r.date));
+    const { current, longest } = computeStreak(manualRows.map((r) => r.date));
     return {
         entries,
         pagination: { total, offset: 0, limit, hasMore: entries.length < total },
         summary: {
-            totalCheckins: streakRows.length,
+            totalCheckins: manualRows.length,
             currentStreak: current,
             longestStreak: longest,
             testCount,
+            totalRecords: total,
         },
     };
 }
@@ -188,7 +208,7 @@ export async function getDiaryList(
 }
 
 export interface DiaryUpsertResult {
-    entry: { id: string; date: Date; skinState: string; tags: unknown; note: string | null };
+    entry: { id: string; date: Date; skinState: string; tags: unknown; note: string | null; source: string };
     isFirstManualCheckin: boolean;
     /** 仅 isFirstManualCheckin=true 时返回：截至打卡日的连续天数 */
     streak?: number;
@@ -241,7 +261,7 @@ export async function upsertDiaryEntry(
     // 编辑已有手动打卡不重复发放；积分账本按 checkin:{userId}:{date} 幂等兜底
     const existing = await prisma.diaryEntry.findUnique({
         where: { userId_date: { userId, date } },
-        select: { note: true, tags: true },
+        select: { note: true, tags: true, source: true },
     });
     const isFirstManualCheckin =
         !existing ||
@@ -249,9 +269,9 @@ export async function upsertDiaryEntry(
 
     const entry = await prisma.diaryEntry.upsert({
         where: { userId_date: { userId, date } },
-        update: { skinState, tags, note },
-        create: { userId, date, skinState, tags, note },
-        select: { id: true, date: true, skinState: true, tags: true, note: true },
+        update: { skinState, tags, note, source: "manual" },
+        create: { userId, date, skinState, tags, note, source: "manual" },
+        select: { id: true, date: true, skinState: true, tags: true, note: true, source: true },
     });
 
     if (!isFirstManualCheckin) {
@@ -265,21 +285,21 @@ export async function upsertDiaryEntry(
         return { entry, isFirstManualCheckin: false };
     }
 
-    // 连续天数口径与里程碑"连续打卡"一致（含测肤自动条目）。
+    // 连续天数口径与里程碑"连续打卡"一致：只统计手动打卡，测肤自动记录不计入。
     // 积分规则在 streak=3 封顶（checkinPointsForStreak = min(streak,3)），
     // 先回查昨天/前天两个点得出封顶内天数，多数打卡免去全量历史扫描；
     // 仅当两天都有（streak ≥ 3）才补一次全量查询取精确连续天数——
     // 精确值要写进积分明细 note（"连续第 N 天"），不能用封顶值冒充。
     const prevDates = [1, 2].map((n) => new Date(date.getTime() - n * 86_400_000));
     const prevRows = await prisma.diaryEntry.findMany({
-        where: { userId, date: { in: prevDates } },
+        where: { userId, source: "manual", date: { in: prevDates } },
         select: { date: true },
     });
     const prevSet = new Set(prevRows.map((r) => r.date.getTime()));
     let streak = cappedCheckinStreak(prevSet.has(prevDates[0].getTime()), prevSet.has(prevDates[1].getTime()));
     if (streak === 3) {
         const rows = await prisma.diaryEntry.findMany({
-            where: { userId },
+            where: { userId, source: "manual" },
             select: { date: true },
         });
         streak = streakEndingAt(rows.map((r) => r.date), date);

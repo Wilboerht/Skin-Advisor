@@ -10,7 +10,7 @@ import ProductForm from "./ProductForm";
 import type { ProductFormData } from "@/types/product";
 
 interface ProductEditorPageProps {
-    product: ProductFormData | null;
+    product: ProductFormData;
     returnTo: string;
 }
 
@@ -39,12 +39,8 @@ export default function ProductEditorPage({
     return (
         <div className="flex flex-col gap-5">
             <PageHeader
-                title={product ? "编辑产品" : "新增产品"}
-                description={
-                    product
-                        ? "修改产品信息、图片与推荐配置"
-                        : "填写产品信息并发布到产品库"
-                }
+                title="编辑产品"
+                description="产品基础信息由主站同步，子站维护推荐属性、上下架与精选"
                 actions={
                     <Button
                         variant="outline"
@@ -59,7 +55,7 @@ export default function ProductEditorPage({
 
             <div className="mx-auto w-full max-w-4xl">
                 <ProductForm
-                    key={product?.id || "new"}
+                    key={product.id}
                     initialData={product}
                     onSuccess={leave}
                     onCancel={handleCancel}
