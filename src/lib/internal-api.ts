@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 内部 API 请求签名工具
  *
  * 用于子站调用官网 /api/v1/internal/* 接口时生成 HMAC-SHA256 签名。
@@ -439,4 +439,3 @@ export async function authorizeInternalRequest(
   });
   return { ok: true, mode: "legacy" };
 }
-

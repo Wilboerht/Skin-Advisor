@@ -617,4 +617,3 @@ model ProductSyncBatch {
 
   @@unique([syncId, batchIndex])
 }
-

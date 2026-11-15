@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { authorizeInternalRequest } from "@/lib/internal-api";
@@ -110,7 +110,10 @@ export async function POST(request: NextRequest) {
         data: { operationId, merged: false, duplicated: true, result: existing.result },
       });
     }
-    if (existing?.status === "RUNNING") {
+    const staleRunning =
+      existing?.status === "RUNNING" &&
+      Date.now() - existing.updatedAt.getTime() > 5 * 60 * 1000;
+    if (existing?.status === "RUNNING" && !staleRunning) {
       return jsonError("MERGE_IN_PROGRESS", "账户合并正在执行，请稍后重试", 409);
     }
 
@@ -191,3 +194,4 @@ export async function POST(request: NextRequest) {
     return jsonError("INTERNAL_ERROR", "账户合并失败", 500);
   }
 }
+

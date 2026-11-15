@@ -1,4 +1,4 @@
-﻿CREATE TABLE "MergeOperation" (
+CREATE TABLE "MergeOperation" (
   "operationId" TEXT PRIMARY KEY,
   "sourceUserId" TEXT NOT NULL,
   "targetUserId" TEXT NOT NULL,
@@ -36,5 +36,3 @@ CREATE TABLE "ProductSyncBatch" (
 );
 
 CREATE UNIQUE INDEX "ProductSyncBatch_syncId_batchIndex_key" ON "ProductSyncBatch"("syncId", "batchIndex");
-
-

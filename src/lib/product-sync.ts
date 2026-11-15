@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 主站 → 测肤子站 产品同步
  *
  * 设计口径：
@@ -999,4 +999,3 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
 export function __resetProductSyncLockForTests(): void {
     syncRunning = false;
 }
-
