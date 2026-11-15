@@ -6,6 +6,7 @@ import { Check, LogOut, ArrowRight, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 // 8 大派系 IP 形象
 const PERSONAS = [
@@ -36,7 +37,8 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [personaPaused, setPersonaPaused] = useState(false);
-    const overlayRef = useRef<HTMLDivElement>(null);
+    // 分析遮罩是模态层：锁定键盘焦点并让背景 inert，避免 Tab 进入下层页面
+    const overlayRef = useFocusTrap<HTMLDivElement>(true);
     const prefersReducedMotion = useReducedMotion();
     // 避免 SSR 与服务端渲染状态不一致，同时避免 effect 中同步 setState
     const isMounted = useSyncExternalStore(
@@ -47,7 +49,6 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
     const [isExiting, setIsExiting] = useState(false);
 
     useEffect(() => {
-        overlayRef.current?.focus({ preventScroll: true });
         const startedAt = Date.now();
         const timer = setInterval(() => {
             setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));

@@ -100,6 +100,10 @@ async function mergeUserData(fromUserId: string, toUserId: string): Promise<void
                         : (mergedTags as Prisma.InputJsonValue),
                     note: useOld ? (diary.note ?? existing.note) : (existing.note ?? diary.note),
                     sessionId: existing.sessionId ?? diary.sessionId,
+                    // manual 打卡关系到积分/连续天数，任何一方是手动记录都保留 manual
+                    source: existing.source === "manual" || diary.source === "manual" ? "manual" : "auto",
+                    // 保留更早创建时间，避免合并后连续打卡/早期记录口径偏移
+                    createdAt: existing.createdAt < diary.createdAt ? existing.createdAt : diary.createdAt,
                 },
             });
             await tx.diaryEntry.delete({ where: { id: diary.id } });

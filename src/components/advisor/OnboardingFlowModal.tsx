@@ -74,6 +74,9 @@ export function OnboardingFlowModal({
     const currentScreenRef = useRef(currentScreen);
     const isOpenRef = useRef(isOpen);
     const finishingRef = useRef(false);
+    // 切屏有 0.9s 动画；锁定一次推进，防止双击跳过 legal 屏
+    const advancingRef = useRef(false);
+    const advanceUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // 焦点圈定：Tab 在弹层内循环、关闭后焦点归还触发元素（原实现只 focus 容器，Tab 会跑到背景页）
     const modalRef = useFocusTrap<HTMLDivElement>(isOpen);
 
@@ -93,6 +96,13 @@ export function OnboardingFlowModal({
         currentScreenRef.current = currentScreen;
         isOpenRef.current = isOpen;
     }, [activeIndex, currentScreen, isOpen]);
+
+    useEffect(() => () => {
+        if (advanceUnlockTimerRef.current) {
+            clearTimeout(advanceUnlockTimerRef.current);
+            advanceUnlockTimerRef.current = null;
+        }
+    }, []);
 
     // Keyboard support: Escape to close (except on legal step)
     useEffect(() => {
@@ -120,7 +130,22 @@ export function OnboardingFlowModal({
         setMaxVisitedIndex(prev => Math.max(prev, index));
     };
 
-    const goNext = () => goTo(activeIndexRef.current + 1);
+    const beginAdvance = () => {
+        if (advancingRef.current) return false;
+        advancingRef.current = true;
+        if (advanceUnlockTimerRef.current) clearTimeout(advanceUnlockTimerRef.current);
+        advanceUnlockTimerRef.current = setTimeout(() => {
+            advancingRef.current = false;
+            advanceUnlockTimerRef.current = null;
+        }, 1000);
+        return true;
+    };
+
+    const advanceToNext = () => goTo(activeIndexRef.current + 1);
+    const goNext = () => {
+        if (!beginAdvance()) return;
+        advanceToNext();
+    };
 
     const finish = () => {
         if (finishingRef.current) return;
@@ -130,11 +155,11 @@ export function OnboardingFlowModal({
 
     /** 最后一屏直接完成，否则进入下一屏（不再按 isLoggedIn 跳过 legal 屏） */
     const advanceOrFinish = () => {
-        if (finishingRef.current) return;
+        if (finishingRef.current || !beginAdvance()) return;
         if (activeIndexRef.current >= totalScreens - 1) {
             finish();
         } else {
-            goNext();
+            advanceToNext();
         }
     };
 

@@ -8,6 +8,19 @@ const mocks = vi.hoisted(() => ({
     sync: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
+    prisma: {
+        productSyncSession: {
+            deleteMany: vi.fn(),
+            findUnique: vi.fn(),
+            create: vi.fn(),
+            update: vi.fn(),
+        },
+        productSyncBatch: {
+            upsert: vi.fn(),
+            count: vi.fn(),
+            findMany: vi.fn(),
+        },
+    },
 }));
 
 vi.mock("@/lib/internal-api", () => ({
@@ -22,6 +35,9 @@ vi.mock("@/lib/product-sync", () => ({
 }));
 vi.mock("@/lib/logger", () => ({
     logger: { error: mocks.error, warn: mocks.warn, info: vi.fn() },
+}));
+vi.mock("@/lib/prisma", () => ({
+    default: mocks.prisma,
 }));
 
 import { POST } from "../admin/products/sync/route";
@@ -133,6 +149,35 @@ describe("POST /api/internal/admin/products/sync", () => {
         expect(res.status).toBe(409);
         const body = await res.json();
         expect(body.error.code).toBe("SYNC_IN_PROGRESS");
+    });
+
+    it("v2 收齐批次但产品数与 totalProducts 不一致时拒绝提交", async () => {
+        mocks.prisma.productSyncSession.findUnique.mockResolvedValue(null);
+        mocks.prisma.productSyncSession.create.mockResolvedValue({
+            syncId: "sync-1",
+            batchCount: 1,
+            totalProducts: 3,
+            status: "RUNNING",
+        });
+        mocks.prisma.productSyncBatch.count.mockResolvedValue(1);
+        mocks.prisma.productSyncBatch.findMany.mockResolvedValue([
+            { batchIndex: 0, products: [{ sourceProductId: "p1" }] },
+        ]);
+
+        const res = await POST(fakeReq({
+            schemaVersion: 2,
+            syncId: "sync-1",
+            generatedAt: "2026-10-27T00:00:00.000Z",
+            batchIndex: 0,
+            batchCount: 1,
+            totalProducts: 3,
+            products: [{ sourceProductId: "p1" }],
+        }));
+
+        expect(res.status).toBe(409);
+        const body = await res.json();
+        expect(body.error.code).toBe("SYNC_PRODUCT_COUNT_MISMATCH");
+        expect(mocks.sync).not.toHaveBeenCalled();
     });
 
     it("请求体超限返回 413", async () => {

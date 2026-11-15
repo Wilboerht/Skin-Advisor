@@ -104,30 +104,70 @@ export async function POST(request: NextRequest) {
     const existing = await prisma.mergeOperation.findUnique({
       where: { operationId },
     });
+    // operationId 是幂等键，必须绑定同一对账户；复用旧 operationId 不能返回别人的合并结果
+    if (
+      existing &&
+      (existing.sourceUserId !== sourceUserId || existing.targetUserId !== targetUserId)
+    ) {
+      return jsonError(
+        "MERGE_OPERATION_CONFLICT",
+        "operationId 已绑定其他账户，请使用新的 operationId",
+        409
+      );
+    }
     if (existing?.status === "COMPLETED") {
       return NextResponse.json({
         success: true,
         data: { operationId, merged: false, duplicated: true, result: existing.result },
       });
     }
+    const staleBefore = new Date(Date.now() - 5 * 60 * 1000);
     const staleRunning =
-      existing?.status === "RUNNING" &&
-      Date.now() - existing.updatedAt.getTime() > 5 * 60 * 1000;
+      existing?.status === "RUNNING" && existing.updatedAt < staleBefore;
     if (existing?.status === "RUNNING" && !staleRunning) {
       return jsonError("MERGE_IN_PROGRESS", "账户合并正在执行，请稍后重试", 409);
     }
 
-    if (!source) {
-      await prisma.mergeOperation.upsert({
-        where: { operationId },
-        create: {
+    // 原子抢占执行权：并发 execute 只能有一个进入合并流程
+    let claimed = false;
+    if (!existing) {
+      try {
+        await prisma.mergeOperation.create({
+          data: {
+            operationId,
+            sourceUserId,
+            targetUserId,
+            status: "RUNNING",
+          },
+        });
+        claimed = true;
+      } catch (claimError) {
+        if ((claimError as { code?: string }).code !== "P2002") throw claimError;
+      }
+    } else {
+      const claimedResult = await prisma.mergeOperation.updateMany({
+        where: {
           operationId,
-          sourceUserId,
-          targetUserId,
-          status: "COMPLETED",
-          result: { noop: true, reason: "source_missing" },
+          OR: [
+            { status: "FAILED" },
+            { status: "RUNNING", updatedAt: { lt: staleBefore } },
+          ],
         },
-        update: {
+        data: {
+          status: "RUNNING",
+          result: Prisma.DbNull,
+        },
+      });
+      claimed = claimedResult.count === 1;
+    }
+    if (!claimed) {
+      return jsonError("MERGE_IN_PROGRESS", "账户合并正在执行，请稍后重试", 409);
+    }
+
+    if (!source) {
+      await prisma.mergeOperation.update({
+        where: { operationId },
+        data: {
           status: "COMPLETED",
           result: { noop: true, reason: "source_missing" },
         },
@@ -138,22 +178,12 @@ export async function POST(request: NextRequest) {
       });
     }
     if (isDisabledUser(source.role)) {
+      await prisma.mergeOperation.update({
+        where: { operationId },
+        data: { status: "FAILED", result: { reason: "source_disabled" } },
+      }).catch(() => {});
       return jsonError("SOURCE_DISABLED", "测肤侧源账户已被禁用，拒绝合并", 409);
     }
-
-    await prisma.mergeOperation.upsert({
-      where: { operationId },
-      create: {
-        operationId,
-        sourceUserId,
-        targetUserId,
-        status: "RUNNING",
-      },
-      update: {
-        status: "RUNNING",
-        result: Prisma.DbNull,
-      },
-    });
 
     try {
       if (!target) {

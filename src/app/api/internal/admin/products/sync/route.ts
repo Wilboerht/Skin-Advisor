@@ -126,6 +126,17 @@ async function syncV2(payload: V2Payload) {
     products.push(...(items as unknown[]));
   }
 
+  // totalProducts 是主站对整次快照的完整性声明；不一致时绝不能提交，
+  // 否则 syncProductsFromMain 会把未收到的产品全部判定为“主站已删除”并停用。
+  if (products.length !== payload.totalProducts) {
+    return {
+      ok: false as const,
+      status: 409,
+      code: "SYNC_PRODUCT_COUNT_MISMATCH",
+      message: `同步产品数量不一致：收到 ${products.length} 个，主站声明 ${payload.totalProducts} 个，请重新发起同步`,
+    };
+  }
+
   const outcome = await syncProductsFromMain({
     schemaVersion: 1,
     generatedAt: payload.generatedAt,

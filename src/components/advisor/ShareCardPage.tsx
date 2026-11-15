@@ -197,7 +197,7 @@ export default function ShareCardPage({
                 initial={{ opacity: 0, y: reduceMotion ? 0 : 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.5, delay: reduceMotion ? 0 : 0.05 }}
-                className="lg:hidden relative -mx-6 w-[calc(100%_+_3rem)] md:mx-auto md:w-full md:max-w-[480px] h-[clamp(480px,72dvh,560px)] overflow-hidden bg-[#F2EDE5]"
+                className="lg:hidden relative -mx-6 w-[calc(100%_+_3rem)] md:mx-auto md:w-full md:max-w-[480px] h-[clamp(540px,72dvh,560px)] overflow-hidden bg-[#F2EDE5]"
             >
                 {/* 下部灰蓝色块：斜切 */}
                 <div

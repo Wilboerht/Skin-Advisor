@@ -1247,9 +1247,8 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         const isAccountDisabled = errorCode === 'ACCOUNT_DISABLED';
         const isAnalysisCompleted = errorCode === 'ANALYSIS_COMPLETED';
         const isNotFound = errorCode === 'NOT_FOUND' || errorCode === 'FORBIDDEN';
-        const isLifetimeQuota = errorMessage.includes('免费测肤次数已用完')
-            || errorMessage.includes('共 10 次')
-            || errorMessage.includes('终身');
+        // 普通/银卡是终身额度，金卡/钻石是每日额度；服务端文案已明确“今日/明天”。
+        const isDailyQuota = errorMessage.includes('今日') || errorMessage.includes('明天');
         const errorTitle = isRequireLogin
             ? "测肤需登录后使用"
             : isConsentRequired
@@ -1269,7 +1268,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                         : isNotFound
                                             ? "报告不存在或无权查看"
                                             : isQuotaError
-                                                ? (isLifetimeQuota ? "测肤次数已用完" : "今日测试次数已用完")
+                                                ? (isDailyQuota ? "今日测试次数已用完" : "测肤次数已用完")
                                                 : isRateLimited
                                                     ? "当前访问人数较多"
                                                     : isAiUnavailable

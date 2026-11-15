@@ -171,6 +171,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const [reviewImages, setReviewImages] = useState<FaceCaptureImages | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
   const submittingReviewRef = useRef(false);
+  const [awaitingNavigation, setAwaitingNavigation] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [stepEpoch, setStepEpoch] = useState(0);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(() => {
@@ -264,6 +265,19 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
   useEffect(() => { isAllCapturedRef.current = isAllCaptured; }, [isAllCaptured]);
   useEffect(() => { isSwitchingCameraRef.current = isSwitchingCamera; }, [isSwitchingCamera]);
+
+  // 提交成功依赖父级导航卸载本组件；仅在上传/保存完成后监听导航，
+  // 避免慢速上传期间恢复按钮导致重复提交。
+  useEffect(() => {
+    if (!awaitingNavigation) return;
+    const timer = setTimeout(() => {
+      submittingReviewRef.current = false;
+      setSubmittingReview(false);
+      setAwaitingNavigation(false);
+      setReviewError("页面跳转较慢，请重试提交。");
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, [awaitingNavigation]);
 
   // 8 秒慢加载降级：从等待开始（idle 排队/loading 在途）就计时，覆盖"预载还在 idle 队列"
   // 的空窗期；仅驱动 UI（手动拍照入口），不写回全局状态
@@ -1801,6 +1815,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     setReviewError(null);
     submittingReviewRef.current = false;
     setSubmittingReview(false);
+    setAwaitingNavigation(false);
     setIsAllCaptured(false);
     setError(null);
     setFaceStatus("none");
@@ -1837,9 +1852,11 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       setReviewError(isStorageFull ? null : "处理未成功，请重试，或重拍有问题的角度。");
       submittingReviewRef.current = false;
       setSubmittingReview(false);
+      setAwaitingNavigation(false);
       return;
     }
-    // 成功提交后保持禁用，直到父级导航卸载本组件；避免跳转窗口内二次提交
+    // 保存/上传已完成，进入等待导航阶段；成功提交后保持禁用，直到父级导航卸载本组件
+    setAwaitingNavigation(true);
   };
 
   return (
