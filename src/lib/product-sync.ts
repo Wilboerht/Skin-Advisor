@@ -140,7 +140,12 @@ const snapshotProductSchema = z.object({
 
 type SnapshotProduct = z.infer<typeof snapshotProductSchema>;
 
-let syncRunning = false;
+/**
+ * 产品同步分布式锁（PostgreSQL advisory lock）。
+ * 替代原进程内 syncRunning 标志，支持多实例部署。
+ * 锁 ID 固定：避免与其他业务锁冲突。
+ */
+const PRODUCT_SYNC_LOCK_ID = 728194;
 
 export function normalizeProductName(value: string): string {
     return value.trim().toLowerCase().replace(/\s+/g, "");
@@ -397,7 +402,11 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
         };
     }
 
-    if (syncRunning) {
+    // 数据库 advisory lock：多实例下互斥，替代原进程内 syncRunning 标志
+    const lockResult = await prisma.$queryRaw<Array<{ locked: boolean }>>`
+        SELECT pg_try_advisory_lock(${PRODUCT_SYNC_LOCK_ID}) AS locked
+    `;
+    if (!lockResult[0]?.locked) {
         return {
             ok: false,
             code: "SYNC_IN_PROGRESS",
@@ -406,7 +415,6 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
         };
     }
 
-    syncRunning = true;
     const startedAt = Date.now();
     try {
         const parsed = envelopeSchema.safeParse(input);
@@ -991,11 +999,16 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
             status: 500,
         };
     } finally {
-        syncRunning = false;
+        // 释放 advisory lock，允许其他实例/请求进入同步
+        await prisma.$queryRaw`SELECT pg_advisory_unlock(${PRODUCT_SYNC_LOCK_ID})`.catch(
+            (unlockError) => {
+                logger.error("[ProductSync] 释放同步锁失败", { error: String(unlockError) });
+            }
+        );
     }
 }
 
-/** 仅测试用：重置进程内同步锁 */
+/** 仅测试用：重置进程内同步锁（已废弃，保留兼容旧测试） */
 export function __resetProductSyncLockForTests(): void {
-    syncRunning = false;
+    // 数据库 advisory lock 由测试自行管理，此函数保留仅为兼容
 }

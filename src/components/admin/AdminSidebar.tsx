@@ -1,7 +1,7 @@
 "use client";
 
 import { adminFetch } from "@/lib/admin-fetch";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -18,12 +18,10 @@ import {
     Activity,
     Wand2,
     BarChart3,
-    FileSpreadsheet,
     LayoutDashboard,
     Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isSuperAdmin } from "@/lib/permissions";
 
 const BASE_MENU_ITEMS = [
     { href: "/admin", label: "仪表盘", icon: LayoutDashboard },
@@ -34,6 +32,7 @@ const BASE_MENU_ITEMS = [
     { href: "/admin/report-quality", label: "报告质量", icon: Activity },
     { href: "/admin/users", label: "用户管理", icon: Users },
     { href: "/admin/audit-logs", label: "安全审计", icon: Shield },
+    { href: "/admin/exports", label: "数据导出", icon: Download },
 ];
 
 interface AdminMe {
@@ -48,9 +47,7 @@ export default function AdminSidebar() {
     const router = useRouter();
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [showExportMenu, setShowExportMenu] = useState(false);
     const [admin, setAdmin] = useState<AdminMe | null>(null);
-    const exportMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // 移动端点击导航后自动收起侧栏
@@ -72,28 +69,6 @@ export default function AdminSidebar() {
 
     // 管理员账号统一由主站管理，子站不再提供管理员管理入口
     const menuItems = BASE_MENU_ITEMS;
-
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (
-                exportMenuRef.current &&
-                !exportMenuRef.current.contains(event.target as Node)
-            ) {
-                setShowExportMenu(false);
-            }
-        }
-        if (showExportMenu) {
-            document.addEventListener("mousedown", handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [showExportMenu]);
-
-    const handleExport = (type: string) => {
-        window.open(`/api/admin/export?type=${type}`, "_blank");
-        setShowExportMenu(false);
-    };
 
     const handleLogout = async () => {
         try {
@@ -227,89 +202,6 @@ export default function AdminSidebar() {
                             </Link>
                         );
                     })}
-
-                    <div className="mt-4 border-t border-brand-charcoal/10 pt-4">
-                        {!collapsed && (
-                            <div className="px-3 mb-2 text-xs font-medium uppercase tracking-wider text-brand-charcoal/65">
-                                数据导出
-                            </div>
-                        )}
-                        <div className="relative px-3" ref={exportMenuRef}>
-                            <button
-                                onClick={() =>
-                                    setShowExportMenu(!showExportMenu)
-                                }
-                                aria-expanded={showExportMenu}
-                                aria-haspopup="true"
-                                className={cn(
-                                    "group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 w-full",
-                                    showExportMenu
-                                        ? "bg-brand-charcoal/[0.06] font-medium text-brand-charcoal"
-                                        : "text-brand-charcoal/70 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal",
-                                    collapsed ? "justify-center" : "",
-                                )}
-                                title={collapsed ? "数据导出" : undefined}
-                            >
-                                <Download
-                                    className={cn(
-                                        "h-4 w-4 transition-transform duration-300",
-                                        showExportMenu ? "scale-110" : "",
-                                        collapsed ? "" : "mr-3",
-                                    )}
-                                />
-                                {!collapsed && <span>数据报表</span>}
-                            </button>
-
-                            {showExportMenu && (
-                                <div
-                                    className={cn(
-                                        "absolute z-50 w-44 overflow-hidden rounded-lg border border-brand-charcoal/10 bg-white py-1 shadow-xl",
-                                        collapsed
-                                            ? "left-16 bottom-0"
-                                            : "left-0 bottom-full mb-2",
-                                    )}
-                                >
-                                    {[
-                                        {
-                                            id: "products",
-                                            label: "产品数据报表",
-                                            icon: Package,
-                                        },
-                                        {
-                                            id: "whitepaper",
-                                            label: "白皮书统计数据",
-                                            icon: FileSpreadsheet,
-                                        },
-                                        ...(isSuperAdmin(admin?.role ?? null)
-                                            ? [
-                                                  {
-                                                      id: "users",
-                                                      label: "用户增长数据",
-                                                      icon: Users,
-                                                  },
-                                                  {
-                                                      id: "sessions",
-                                                      label: "诊断请求记录",
-                                                      icon: Activity,
-                                                  },
-                                              ]
-                                            : []),
-                                    ].map((item) => (
-                                        <button
-                                            key={item.id}
-                                            onClick={() =>
-                                                handleExport(item.id)
-                                            }
-                                            className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-brand-charcoal/80 transition-colors hover:bg-brand-charcoal/[0.06] hover:text-brand-charcoal"
-                                        >
-                                            <item.icon className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:text-brand-primary transition-colors" />
-                                            {item.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
                 </nav>
 
                 <div className="px-3 pb-2 pt-2 border-t border-brand-charcoal/10">

@@ -11,6 +11,17 @@ vi.mock("@/lib/prisma", () => ({
             const db = mocks.db.current as { $transaction: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown> };
             return db.$transaction(fn);
         },
+        $queryRaw: vi.fn(async (strings: TemplateStringsArray) => {
+            // 测试环境模拟 advisory lock 始终成功
+            const sql = strings.join("");
+            if (sql.includes("pg_try_advisory_lock")) {
+                return [{ locked: true }];
+            }
+            if (sql.includes("pg_advisory_unlock")) {
+                return [];
+            }
+            return [];
+        }),
     },
 }));
 vi.mock("@/lib/logger", () => ({ logger: mocks.logger }));

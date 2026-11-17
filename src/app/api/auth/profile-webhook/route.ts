@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { normalizeSsoAvatarUrl, SSO_BASE_URL } from "@/lib/sso-auth";
 import { SSO_SERVER_BASE_URL } from "@/lib/sso-config";
 import { logger } from "@/lib/logger";
+import { consumeOnce, exists } from "@/lib/distributed-state";
 
 /**
  * 主站资料/会员变更 Webhook（服务端到服务端，无浏览器 Cookie）
@@ -36,35 +37,18 @@ const PROFILE_EVENT_TYPE = "profile_event";
 const jwks = createRemoteJWKSet(new URL(`${SSO_SERVER_BASE_URL}/api/oauth/jwks`));
 
 /**
- * jti 内存防重放（参考 SDK backchannel logout 的 recordJti 实现）：
- * 已成功处理且在有效期内的 jti 再次到达即拒绝；容量上限 1000，超出淘汰最旧。
- * 仅在事件处理成功后登记——处理失败（返回 500）时主站会用同一 token 重投，
- * 提前登记会误拒合法重试。进程内方案，多实例不共享（与全站单飞缓存同级）。
+ * jti 分布式防重放：
+ * - 已成功处理且在有效期内的 jti 再次到达即拒绝
+ * - 仅在事件处理成功后登记——处理失败（返回 500）时主站会用同一 token 重投
+ * - 多实例通过 Redis 共享状态；单实例回落内存
  */
-const JTI_CACHE_CAPACITY = 1000;
-const seenJti = new Map<string, number>();
-
-function hasSeenJti(jti: string): boolean {
-    const exp = seenJti.get(jti);
-    if (exp === undefined) return false;
-    if (exp <= Date.now()) {
-        seenJti.delete(jti);
-        return false;
-    }
-    return true;
+async function hasSeenJti(jti: string): Promise<boolean> {
+    return exists("profile-webhook-jti", jti);
 }
 
-function markJtiSeen(jti: string, expiresAtMs: number): void {
-    const now = Date.now();
-    for (const [key, exp] of seenJti) {
-        if (exp <= now) seenJti.delete(key);
-    }
-    while (seenJti.size >= JTI_CACHE_CAPACITY) {
-        const oldest = seenJti.keys().next().value;
-        if (oldest === undefined) break;
-        seenJti.delete(oldest);
-    }
-    seenJti.set(jti, expiresAtMs);
+async function markJtiSeen(jti: string, expiresAtMs: number): Promise<void> {
+    const ttlMs = Math.max(60_000, expiresAtMs - Date.now());
+    await consumeOnce("profile-webhook-jti", jti, ttlMs);
 }
 
 /** 验签失败 / claims 不符的统一响应（不区分具体原因，避免泄露校验细节） */
@@ -131,7 +115,7 @@ export async function POST(request: NextRequest) {
     if (!jti) {
         return unauthorized("缺少 jti");
     }
-    if (hasSeenJti(jti)) {
+    if (await hasSeenJti(jti)) {
         return unauthorized("jti 重放", { jti });
     }
     const jtiExpiresAt = (typeof payload.exp === "number" ? payload.exp * 1000 : Date.now()) + 60_000;
@@ -175,7 +159,7 @@ export async function POST(request: NextRequest) {
         // updateMany 而非 update：用户可能尚未登录过子站（本地无记录），此时空操作返回 200，
         // 让主站视为投递成功（用户首次登录时会通过 userinfo 回源拿到最新资料）
         const result = await prisma.user.updateMany({ where: { id: userId }, data });
-        markJtiSeen(jti, jtiExpiresAt);
+        await markJtiSeen(jti, jtiExpiresAt);
         if (result.count === 0) {
             logger.info("[profile-webhook] 本地无此用户，跳过更新", { userId });
         } else {

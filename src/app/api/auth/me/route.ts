@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const token = await getAccessToken(req);
     // 登出撤销黑名单：不能直接 ssoVerifier.verify，否则已撤销的 access token
     // 仍可在 TTL 内重新换发本地会话。
-    let payload = token && !isAccessTokenRevoked(token) ? await ssoVerifier.verify(token) : null;
+    let payload = token && !(await isAccessTokenRevoked(token)) ? await ssoVerifier.verify(token) : null;
 
     // access_token（15 分钟）过期后，用 refresh_token 静默轮换，避免页面停留期间掉登录态
     // 单飞：并发 /api/auth/me 共享同一次轮换，避免一次性 refresh_token 互相踩踏
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
         const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
         if (refreshToken) {
             refreshed = await refreshSsoTokensSingleFlight(refreshToken);
-            if (refreshed && !isAccessTokenRevoked(refreshed.access_token)) {
+            if (refreshed && !(await isAccessTokenRevoked(refreshed.access_token))) {
                 payload = await ssoVerifier.verify(refreshed.access_token);
             }
         }

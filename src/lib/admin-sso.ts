@@ -14,6 +14,7 @@ import prisma from "@/lib/prisma";
 import { createSignedSession } from "@/lib/session-verify";
 import { AdminRole } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
+import { consumeOnce } from "@/lib/distributed-state";
 
 export const ADMIN_SSO_AUDIENCE = "advisor-admin";
 export const ADMIN_SSO_ISSUER = "https://nihplod.cn";
@@ -80,7 +81,8 @@ function assertHttpsOrLoopback(name: string, value: string): void {
 }
 
 export function getAdminSsoConfig(): AdminSsoConfig {
-  const ttlRaw = Number(process.env.ADMIN_SSO_SESSION_TTL_MINUTES || "540");
+  // 默认 120 分钟（2 小时）：缩短会话 TTL，降低主站撤销/改权限后的窗口期风险
+  const ttlRaw = Number(process.env.ADMIN_SSO_SESSION_TTL_MINUTES || "120");
   const authorizeUrl = required("ADMIN_SSO_AUTHORIZE_URL");
   let issuer = ADMIN_SSO_ISSUER;
   try {
@@ -128,11 +130,11 @@ export function getAdminSsoConfig(): AdminSsoConfig {
     publicKey: process.env.ADMIN_SSO_PUBLIC_KEY || null,
     allowLegacyHs256,
     legacySecret,
-    // 硬上限 9 小时，防止误配成超长会话
+    // 硬上限 2 小时，防止误配成超长会话；默认 120 分钟
     sessionTtlMinutes:
       Number.isFinite(ttlRaw) && ttlRaw > 0
-        ? Math.min(Math.floor(ttlRaw), 540)
-        : 540,
+        ? Math.min(Math.floor(ttlRaw), 120)
+        : 120,
   };
 }
 
@@ -329,7 +331,7 @@ export async function verifyAdminSsoAssertion(
     throw new AdminSsoError("MAIN_SESSION_EXPIRED", "主站登录已过期，请重新登录", 401);
   }
 
-  if (!consumeAssertionJti(payload.jti, payload.exp)) {
+  if (!(await consumeAssertionJti(payload.jti, payload.exp))) {
     throw new AdminSsoError("ASSERTION_REPLAYED", "管理员断言已被使用", 401);
   }
 
@@ -368,16 +370,9 @@ export function resolveLocalAdminRole(claims: AdminSsoClaims): "super_admin" | "
   return null;
 }
 
-const usedJti = new Map<string, number>();
-
-function consumeAssertionJti(jti: string, expSeconds: number): boolean {
-  const now = Date.now();
-  for (const [key, expiresAt] of usedJti) {
-    if (expiresAt <= now) usedJti.delete(key);
-  }
-  if (usedJti.has(jti)) return false;
-  usedJti.set(jti, expSeconds * 1000 + 60_000);
-  return true;
+async function consumeAssertionJti(jti: string, expSeconds: number): Promise<boolean> {
+  // 分布式 jti 防重放：多实例下通过 Redis 原子占位
+  return consumeOnce("admin-sso-jti", jti, expSeconds * 1000 + 60_000);
 }
 
 export interface ShadowAdminResult {
@@ -537,7 +532,7 @@ export interface SsoSessionResult {
 
 /**
  * 签发本地 SSO 会话：
- * - 配置上限 9 小时；
+ * - 配置上限 2 小时；
  * - 不超过主站管理员 JWT 剩余寿命；
  * - 返回与 TTL 一致的 Cookie maxAge。
  */

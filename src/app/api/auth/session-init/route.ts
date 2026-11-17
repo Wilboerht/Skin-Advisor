@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
     try {
         let accessToken = await getAccessToken(req);
         // 已登出撤销的 access token 不能换发本地会话
-        let payload = accessToken && !isAccessTokenRevoked(accessToken)
+        let payload = accessToken && !(await isAccessTokenRevoked(accessToken))
             ? await ssoVerifier.verify(accessToken)
             : null;
 
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
             const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
             if (refreshToken) {
                 rotated = await refreshSsoTokensSingleFlight(refreshToken);
-                if (rotated && !isAccessTokenRevoked(rotated.access_token)) {
+                if (rotated && !(await isAccessTokenRevoked(rotated.access_token))) {
                     payload = await ssoVerifier.verify(rotated.access_token);
                     accessToken = rotated.access_token;
                 }

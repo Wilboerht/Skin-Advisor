@@ -16,6 +16,7 @@
 
 import { createHmac, createHash, randomBytes, timingSafeEqual } from "crypto";
 import { logger } from "./logger";
+import { consumeOnce } from "./distributed-state";
 
 export interface InternalApiKeyConfig {
   project: string;
@@ -190,19 +191,6 @@ const INTERNAL_TIMESTAMP_TOLERANCE_SEC = 300;
 /** nonce 去重保留时长 */
 const NONCE_TTL_MS = 5 * 60 * 1000;
 
-/**
- * nonce 去重（单实例内存）。
- * 注意：PM2 单实例部署下有效；多实例部署需替换为 Redis/DB 去重。
- */
-const seenNonces = new Map<string, number>();
-
-function pruneExpiredNonces(now: number): void {
-  if (seenNonces.size < 1000) return;
-  for (const [nonce, expiresAt] of seenNonces) {
-    if (expiresAt <= now) seenNonces.delete(nonce);
-  }
-}
-
 function safeEqualHex(a: string, b: string): boolean {
   const bufA = Buffer.from(a, "hex");
   const bufB = Buffer.from(b, "hex");
@@ -286,12 +274,6 @@ export async function verifyInternalRequest(
     return { ok: false, reason: "timestamp_out_of_window" };
   }
 
-  const now = Date.now();
-  pruneExpiredNonces(now);
-  if (seenNonces.has(nonce)) {
-    return { ok: false, reason: "nonce_replayed" };
-  }
-
   const url = new URL(request.url);
   const path = url.pathname;
   const canonicalQuery = canonicalizeQuery(url.search);
@@ -338,8 +320,12 @@ export async function verifyInternalRequest(
     return { ok: false, reason: "signature_mismatch" };
   }
 
-  // 校验通过后再记录 nonce，避免攻击者用无效签名刷掉合法 nonce
-  seenNonces.set(nonce, now + NONCE_TTL_MS);
+  // 校验通过后再消费 nonce：避免攻击者用无效签名刷掉合法 nonce。
+  // 分布式原子占位：多实例下通过 Redis SET NX 防重放。
+  const nonceFirstUse = await consumeOnce("internal-nonce", nonce, NONCE_TTL_MS);
+  if (!nonceFirstUse) {
+    return { ok: false, reason: "nonce_replayed" };
+  }
   logger.info("[InternalApi] 签名校验通过", {
     path,
     signatureFormat: matchedFormat,

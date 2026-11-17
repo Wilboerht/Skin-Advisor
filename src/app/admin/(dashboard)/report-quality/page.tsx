@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
+import {
+    ADMIN_REPORT_QUALITY_DAYS,
+    getAdminReportQualitySummary,
+} from "@/lib/admin-report-quality";
 
 export const dynamic = "force-dynamic";
 
@@ -17,28 +21,13 @@ function pct(value: number, total: number): string {
 export default async function ReportQualityPage() {
     // Server Component 每次请求生成；动态管理页允许使用当前时间
     // eslint-disable-next-line react-hooks/purity
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const now = Date.now();
+    const since = new Date(
+        now - ADMIN_REPORT_QUALITY_DAYS * 24 * 60 * 60 * 1000
+    );
 
-    const [aggregate, sourceGroups, fallbacks] = await Promise.all([
-        prisma.reportQualityLog.aggregate({
-            where: { createdAt: { gte: since } },
-            _count: { id: true },
-            _avg: {
-                durationMs: true,
-                diagnosisFindingCount: true,
-                issueCount: true,
-                coverageScored: true,
-                queueWaitMs: true,
-                textGenerationMs: true,
-                productSelectionMs: true,
-                persistMs: true,
-            },
-        }),
-        prisma.reportQualityLog.groupBy({
-            by: ["narrativeSource"],
-            where: { createdAt: { gte: since } },
-            _count: { id: true },
-        }),
+    const [summary, fallbacks] = await Promise.all([
+        getAdminReportQualitySummary(),
         prisma.reportQualityLog.findMany({
             where: { createdAt: { gte: since }, narrativeSource: "fallback" },
             orderBy: { createdAt: "desc" },
@@ -55,17 +44,17 @@ export default async function ReportQualityPage() {
         }),
     ]);
 
-    const total = aggregate._count.id;
-    const fallback = sourceGroups.find((item) => item.narrativeSource === "fallback")?._count.id ?? 0;
-    const avgDuration = Math.round(aggregate._avg.durationMs ?? 0);
-    const avgFindings = Math.round((aggregate._avg.diagnosisFindingCount ?? 0) * 10) / 10;
-    const avgIssues = Math.round((aggregate._avg.issueCount ?? 0) * 10) / 10;
-    const avgCoverage = Math.round((aggregate._avg.coverageScored ?? 0) * 10) / 10;
-    const avgQueue = Math.round(aggregate._avg.queueWaitMs ?? 0);
-    const avgText = Math.round(aggregate._avg.textGenerationMs ?? 0);
-    const avgProduct = Math.round(aggregate._avg.productSelectionMs ?? 0);
-    const avgPersist = Math.round(aggregate._avg.persistMs ?? 0);
-    const bySource = sourceGroups;
+    const total = summary.totalReports;
+    const fallback = summary.fallback;
+    const avgDuration = Math.round(summary.avgDurationMs);
+    const avgFindings = Math.round(summary.avgDiagnosisFindingCount * 10) / 10;
+    const avgIssues = Math.round(summary.avgIssueCount * 10) / 10;
+    const avgCoverage = Math.round(summary.avgCoverageScored * 10) / 10;
+    const avgQueue = Math.round(summary.avgQueueWaitMs);
+    const avgText = Math.round(summary.avgTextGenerationMs);
+    const avgProduct = Math.round(summary.avgProductSelectionMs);
+    const avgPersist = Math.round(summary.avgPersistMs);
+    const bySource = summary.bySource;
     const recentFallbacks = fallbacks;
 
     const narrativeSourceLabel = (value: string) => {
@@ -93,7 +82,7 @@ export default async function ReportQualityPage() {
             <div>
                 <h1 className="text-xl font-semibold text-brand-charcoal">报告质量</h1>
                 <p className="mt-1 text-sm text-brand-charcoal/60">
-                    近 30 天 · 聚焦 AI 文案与规则兜底比例、报告篇幅与有效维度覆盖
+                    近 {ADMIN_REPORT_QUALITY_DAYS} 天 · 聚焦 AI 文案与规则兜底比例、报告篇幅与有效维度覆盖
                 </p>
             </div>
 
@@ -110,8 +99,8 @@ export default async function ReportQualityPage() {
                 <h2 className="text-sm font-medium text-brand-charcoal">文案来源分布</h2>
                 <div className="mt-3 flex flex-wrap gap-2">
                     {bySource.length > 0 ? bySource.map((item) => (
-                        <span key={item.narrativeSource} className="rounded-full border border-brand-charcoal/10 px-3 py-1 text-xs text-brand-charcoal/70">
-                            {narrativeSourceLabel(item.narrativeSource)} · {item._count.id}
+                        <span key={item.source} className="rounded-full border border-brand-charcoal/10 px-3 py-1 text-xs text-brand-charcoal/70">
+                            {narrativeSourceLabel(item.source)} · {item.count}
                         </span>
                     )) : <span className="text-sm text-brand-charcoal/45">暂无数据</span>}
                 </div>

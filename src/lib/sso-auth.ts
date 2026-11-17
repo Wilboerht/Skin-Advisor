@@ -18,6 +18,7 @@ import { logger } from "@/lib/logger";
 import { isMainUserActive } from "@/lib/main-user-status";
 import prisma from "@/lib/prisma";
 import { mergeUserByPhone } from "@/lib/user-merge";
+import { consumeOnce, exists } from "@/lib/distributed-state";
 import type { SessionUser } from "@/lib/auth";
 
 const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn";
@@ -159,13 +160,11 @@ export const mpVerifier = createTokenVerifier({
 /**
  * 本地撤销集合：登出时已向主站撤销的 access token 在其剩余有效期内
  * 仍可能通过本地 RS256 验签（JWKS 路径不感知撤销）或 introspect 缓存，
- * 这里按 sha256(token) 记入进程内黑名单，verifySsoToken 命中即拒绝。
+ * 这里按 sha256(token) 记入分布式黑名单，verifySsoToken 命中即拒绝。
  *
- * 已知限制：进程内方案，多实例部署不同步（与上方单飞缓存同级）；
+ * 多实例通过 Redis 共享撤销状态；单实例回落内存。
  * 撤销窗口最长到 token 自然过期（主站 access token 默认 8 小时）。
  */
-const revokedAccessTokenHashes = new Map<string, number>();
-const REVOKED_CACHE_CAPACITY = 1000;
 const DEFAULT_ACCESS_TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
 
 function hashAccessToken(token: string): string {
@@ -176,7 +175,7 @@ function hashAccessToken(token: string): string {
  * 标记 access token 已撤销。expiresAtMs 缺省时按 token JWT 的 exp 解析，
  * 解析失败按 8 小时兜底（主站 access token 默认有效期）。
  */
-export function markAccessTokenRevoked(token: string, expiresAtMs?: number): void {
+export async function markAccessTokenRevoked(token: string, expiresAtMs?: number): Promise<void> {
     let exp = expiresAtMs;
     if (exp === undefined) {
         try {
@@ -188,27 +187,13 @@ export function markAccessTokenRevoked(token: string, expiresAtMs?: number): voi
         }
     }
     const until = exp ?? Date.now() + DEFAULT_ACCESS_TOKEN_TTL_MS;
-    if (until <= Date.now()) return;
-    const now = Date.now();
-    for (const [key, expiry] of revokedAccessTokenHashes) {
-        if (expiry <= now) revokedAccessTokenHashes.delete(key);
-    }
-    while (revokedAccessTokenHashes.size >= REVOKED_CACHE_CAPACITY) {
-        const oldest = revokedAccessTokenHashes.keys().next().value;
-        if (oldest === undefined) break;
-        revokedAccessTokenHashes.delete(oldest);
-    }
-    revokedAccessTokenHashes.set(hashAccessToken(token), until);
+    const ttlMs = until - Date.now();
+    if (ttlMs <= 0) return;
+    await consumeOnce("sso-revoked-at", hashAccessToken(token), ttlMs);
 }
 
-export function isAccessTokenRevoked(token: string): boolean {
-    const until = revokedAccessTokenHashes.get(hashAccessToken(token));
-    if (until === undefined) return false;
-    if (until <= Date.now()) {
-        revokedAccessTokenHashes.delete(hashAccessToken(token));
-        return false;
-    }
-    return true;
+export async function isAccessTokenRevoked(token: string): Promise<boolean> {
+    return exists("sso-revoked-at", hashAccessToken(token));
 }
 
 /** refresh_token 轮换后主站返回的 token 集 */
@@ -428,7 +413,7 @@ export async function verifySsoToken(req?: NextRequest): Promise<VerifiedTokenPa
     const token = await getAccessToken(req);
     if (!token) return null;
     // 登出撤销窗口：本地黑名单命中直接拒绝（introspection 有 30s 缓存，前端登出需即时生效）
-    if (isAccessTokenRevoked(token)) return null;
+    if (await isAccessTokenRevoked(token)) return null;
     return ssoVerifier.verify(token);
 }
 
@@ -443,7 +428,7 @@ export async function verifyMpBearerToken(req: NextRequest): Promise<VerifiedTok
     const token = authHeader.slice(7).trim();
     if (!token) return null;
     // 与 verifySsoToken 一致：登出撤销窗口由本地黑名单兜底
-    if (isAccessTokenRevoked(token)) return null;
+    if (await isAccessTokenRevoked(token)) return null;
     try {
         const payload = await mpVerifier.verify(token);
         if (!payload) {

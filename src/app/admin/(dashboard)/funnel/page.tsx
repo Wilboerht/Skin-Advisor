@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import prisma from "@/lib/prisma";
+import {
+    ADMIN_FUNNEL_DAYS,
+    getAdminFunnelCounts,
+} from "@/lib/admin-funnel";
 
 export const dynamic = "force-dynamic";
 
@@ -15,81 +18,7 @@ interface FunnelStep {
     count: number;
 }
 
-type FunnelCounts = {
-    total: number;
-    questionnaireStarted: number;
-    questionnaireCompleted: number;
-    captureStarted: number;
-    captureCompleted: number;
-    faceAnalyzed: number;
-    reportStarted: number;
-    reportCompleted: number;
-    resultViewed: number;
-};
-
 export default async function AdminFunnelPage() {
-    // Server Component 每次请求生成；动态管理页允许使用当前时间
-    // eslint-disable-next-line react-hooks/purity
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-    // 单次 SQL 聚合计；不把 30 天的 interactions JSON 全量拉到 Node 层，
-    // 避免管理端漏斗页在大流量下把内存/序列化 CPU 打满。
-    const rows = await prisma.$queryRaw<Array<{
-        total: number;
-        questionnaire_started: number;
-        questionnaire_completed: number;
-        capture_started: number;
-        capture_completed: number;
-        face_analyzed: number;
-        report_started: number;
-        report_completed: number;
-        result_viewed: number;
-    }>>`
-        SELECT
-            COUNT(*)::int AS total,
-            COUNT(*) FILTER (WHERE "questionnaireStartedAt" IS NOT NULL
-                OR "interactions" @> '[{"type":"questionnaire_start"}]'::jsonb)::int AS questionnaire_started,
-            COUNT(*) FILTER (WHERE "questionnaireCompletedAt" IS NOT NULL
-                OR "interactions" @> '[{"type":"questionnaire_complete"}]'::jsonb)::int AS questionnaire_completed,
-            COUNT(*) FILTER (WHERE "faceScanStartedAt" IS NOT NULL
-                OR "interactions" @> '[{"type":"face_scan_start"}]'::jsonb)::int AS capture_started,
-            COUNT(*) FILTER (WHERE "interactions" @> '[{"type":"face_scan_complete"}]'::jsonb)::int AS capture_completed,
-            COUNT(*) FILTER (WHERE "faceScanCompletedAt" IS NOT NULL)::int AS face_analyzed,
-            COUNT(*) FILTER (WHERE "analysisStartedAt" IS NOT NULL
-                OR "interactions" @> '[{"type":"analysis_start"}]'::jsonb)::int AS report_started,
-            COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL
-                OR "interactions" @> '[{"type":"analysis_complete"}]'::jsonb)::int AS report_completed,
-            COUNT(*) FILTER (WHERE "resultViewedAt" IS NOT NULL
-                OR "interactions" @> '[{"type":"result_view"}]'::jsonb)::int AS result_viewed
-        FROM "AdvisorSession"
-        WHERE "createdAt" >= ${since}
-    `;
-    const row = rows[0];
-
-    const counts: FunnelCounts = row
-        ? {
-              total: row.total,
-              questionnaireStarted: row.questionnaire_started,
-              questionnaireCompleted: row.questionnaire_completed,
-              captureStarted: row.capture_started,
-              captureCompleted: row.capture_completed,
-              faceAnalyzed: row.face_analyzed,
-              reportStarted: row.report_started,
-              reportCompleted: row.report_completed,
-              resultViewed: row.result_viewed,
-          }
-        : {
-              total: 0,
-              questionnaireStarted: 0,
-              questionnaireCompleted: 0,
-              captureStarted: 0,
-              captureCompleted: 0,
-              faceAnalyzed: 0,
-              reportStarted: 0,
-              reportCompleted: 0,
-              resultViewed: 0,
-          };
-
     const {
         total,
         questionnaireStarted,
@@ -100,7 +29,7 @@ export default async function AdminFunnelPage() {
         reportStarted,
         reportCompleted,
         resultViewed,
-    } = counts;
+    } = await getAdminFunnelCounts();
 
     const steps: FunnelStep[] = [
         { key: "questionnaire_started", label: "进入问卷", count: questionnaireStarted },
@@ -120,7 +49,8 @@ export default async function AdminFunnelPage() {
             <div>
                 <h1 className="text-xl font-semibold text-brand-charcoal">转化漏斗</h1>
                 <p className="mt-1 text-sm text-brand-charcoal/60">
-                    近 30 天 · 扫脸事件与分析会话已归并到同一 sessionId · 共 {total.toLocaleString("zh-CN")} 个会话
+                    近 {ADMIN_FUNNEL_DAYS} 天 · 扫脸事件与分析会话已归并到同一 sessionId · 共{" "}
+                    {total.toLocaleString("zh-CN")} 个会话
                 </p>
             </div>
 
