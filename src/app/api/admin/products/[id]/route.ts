@@ -23,6 +23,7 @@ const SYNCED_SHARED_FIELDS = [
     "images",
     "price",
     "description",
+    "ingredients",
     "howToUse",
     "origin",
     "capacity",

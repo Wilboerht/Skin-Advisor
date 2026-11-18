@@ -7,6 +7,10 @@ const mocks = vi.hoisted(() => ({
     diaryFindUnique: vi.fn(),
     diaryUpdate: vi.fn(),
     diaryDelete: vi.fn(),
+    reportFeedbackFindMany: vi.fn(),
+    reportFeedbackFindUnique: vi.fn(),
+    reportFeedbackUpdate: vi.fn(),
+    reportFeedbackDelete: vi.fn(),
     userUpdate: vi.fn(),
     userDelete: vi.fn(),
     info: vi.fn(),
@@ -35,6 +39,12 @@ vi.mock("@/lib/prisma", () => {
             delete: mocks.diaryDelete,
         },
         productFeedback: { findMany: vi.fn().mockResolvedValue([]) },
+        reportFeedback: {
+            findMany: mocks.reportFeedbackFindMany,
+            findUnique: mocks.reportFeedbackFindUnique,
+            update: mocks.reportFeedbackUpdate,
+            delete: mocks.reportFeedbackDelete,
+        },
         reminderSettings: { findUnique: vi.fn().mockResolvedValue(null) },
     };
     return {
@@ -91,6 +101,10 @@ beforeEach(() => {
     mocks.userDelete.mockResolvedValue({});
     mocks.diaryUpdate.mockResolvedValue({});
     mocks.diaryDelete.mockResolvedValue({});
+    mocks.reportFeedbackFindMany.mockResolvedValue([]);
+    mocks.reportFeedbackFindUnique.mockResolvedValue(null);
+    mocks.reportFeedbackUpdate.mockResolvedValue({});
+    mocks.reportFeedbackDelete.mockResolvedValue({});
 });
 
 describe("mergeUserData 日记冲突", () => {
@@ -137,5 +151,51 @@ describe("mergeUserData 日记冲突", () => {
             })
         );
         expect(mocks.diaryDelete).toHaveBeenCalledWith({ where: { id: "old" } });
+    });
+});
+
+describe("mergeUserData 报告反馈迁移", () => {
+    const oldFeedback = {
+        id: "rf-old",
+        userId: "source",
+        sessionId: "session-1",
+        targetType: "report",
+        targetKey: "report",
+        verdict: "inaccurate",
+        note: null,
+        createdAt: new Date("2026-02-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-02-03T00:00:00.000Z"),
+    };
+
+    it("无冲突时改挂到目标账号，避免级联删除", async () => {
+        mocks.reportFeedbackFindMany.mockResolvedValue([oldFeedback]);
+
+        await __internal.mergeUserData("source", "target");
+
+        expect(mocks.reportFeedbackFindUnique).toHaveBeenCalledWith({
+            where: {
+                userId_sessionId_targetType_targetKey: {
+                    userId: "target",
+                    sessionId: "session-1",
+                    targetType: "report",
+                    targetKey: "report",
+                },
+            },
+        });
+        expect(mocks.reportFeedbackUpdate).toHaveBeenCalledWith({
+            where: { id: "rf-old" },
+            data: { userId: "target", updatedAt: new Date("2026-02-03T00:00:00.000Z") },
+        });
+        expect(mocks.reportFeedbackDelete).not.toHaveBeenCalled();
+    });
+
+    it("目标账号已有同位置反馈时保留目标行，删除旧行", async () => {
+        mocks.reportFeedbackFindMany.mockResolvedValue([oldFeedback]);
+        mocks.reportFeedbackFindUnique.mockResolvedValue({ id: "rf-new" });
+
+        await __internal.mergeUserData("source", "target");
+
+        expect(mocks.reportFeedbackDelete).toHaveBeenCalledWith({ where: { id: "rf-old" } });
+        expect(mocks.reportFeedbackUpdate).not.toHaveBeenCalled();
     });
 });

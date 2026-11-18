@@ -18,6 +18,7 @@ export interface ProductRecommendation {
     price: string;
     reason: string;
     description?: string | null;
+    ingredients?: string | null;
     score?: number;
     matchedBenefits?: string[];
     affiliateLinks?: Record<string, string> | null;

@@ -13,6 +13,7 @@ export interface PurgeUserResult {
     diaryEntries: number;
     advisorSessions: number;
     productFeedbacks: number;
+    reportFeedbacks: number;
     reportQualityLogs: number;
     aiUsageLogs: number;
     localUser: boolean;
@@ -34,11 +35,13 @@ export async function purgeUserData(userId: string): Promise<PurgeUserResult> {
     const deletedAvatarFiles = await deleteUserAvatar(user?.avatarUrl, userId);
     const deletedFaceUploads = await deleteUserFaceUploads(userId, sessionIds);
 
-    const [testRecords, diaryEntries, productFeedbacks, reportQualityLogs, advisorSessions, aiUsageLogs, localUser] =
+    const [testRecords, diaryEntries, productFeedbacks, reportFeedbacks, reportQualityLogs, advisorSessions, aiUsageLogs, localUser] =
         await prisma.$transaction([
             prisma.testRecord.deleteMany({ where: { userId } }),
             prisma.diaryEntry.deleteMany({ where: { userId } }),
             prisma.productFeedback.deleteMany({ where: { userId } }),
+            // 显式清理并计数：虽然 advisorSession 级联也会删除，但删除审计需要独立口径
+            prisma.reportFeedback.deleteMany({ where: { userId } }),
             // 质量日志没有用户外键；按 userId + sessionId 双条件清理，
             // 避免匿名/历史行在删除会话后残留。
             prisma.reportQualityLog.deleteMany({
@@ -61,6 +64,7 @@ export async function purgeUserData(userId: string): Promise<PurgeUserResult> {
         diaryEntries: diaryEntries.count,
         advisorSessions: advisorSessions.count,
         productFeedbacks: productFeedbacks.count,
+        reportFeedbacks: reportFeedbacks.count,
         reportQualityLogs: reportQualityLogs.count,
         aiUsageLogs: aiUsageLogs.count,
         localUser: localUser.count > 0,

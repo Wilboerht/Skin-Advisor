@@ -47,6 +47,7 @@ export interface ComprehensiveResult {
         images?: string[] | null;
         price?: string;
         description?: string | null;
+        ingredients?: string | null;
         keyIngredients?: string[];
         benefits?: string[];
         affiliateLinks?: Record<string, string> | null;

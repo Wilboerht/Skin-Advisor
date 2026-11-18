@@ -7,6 +7,7 @@ export const MAX_NAME_LENGTH = 200;
 export const MAX_CATEGORY_LENGTH = 100;
 export const MAX_PRICE_LENGTH = 50;
 export const MAX_DESCRIPTION_LENGTH = 5000;
+export const MAX_INGREDIENTS_LENGTH = 5000;
 export const MAX_HOW_TO_USE_LENGTH = 2000;
 export const MAX_IMAGE_URL_LENGTH = 500;
 export const MAX_PURCHASE_URL_LENGTH = 2000;
@@ -247,6 +248,7 @@ export const productSchema = z.object({
     images: z.array(imageUrlSchema).max(MAX_IMAGE_COUNT).nullable().default(null),
     price: nonEmptyString(MAX_PRICE_LENGTH),
     description: nonEmptyString(MAX_DESCRIPTION_LENGTH),
+    ingredients: optionalNullableString(MAX_INGREDIENTS_LENGTH),
     howToUse: optionalNullableString(MAX_HOW_TO_USE_LENGTH),
     origin: optionalNullableString(MAX_ORIGIN_LENGTH),
     capacity: optionalNullableString(MAX_CAPACITY_LENGTH),
@@ -276,6 +278,7 @@ export const productFormDataSchema = z.object({
     image: z.string().optional(),
     images: z.array(z.string()).max(MAX_IMAGE_COUNT).nullable().optional(),
     description: z.string().nullable().optional(),
+    ingredients: z.string().nullable().optional(),
     howToUse: z.string().nullable().optional(),
     origin: z.string().nullable().optional(),
     capacity: z.string().nullable().optional(),

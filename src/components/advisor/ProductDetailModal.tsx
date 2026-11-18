@@ -10,6 +10,7 @@ import type { ProductCardData } from "./ProductCard";
 import { normalizeProductPurchaseLinks } from "@/lib/product-links";
 import { PlatformIcon } from "./PlatformIcon";
 import { lookupIngredient } from "@/lib/ingredient-glossary";
+import { sanitizeHtml } from "@/lib/html-sanitize";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useModalBackClose } from "@/hooks/use-modal-back-close";
@@ -111,11 +112,11 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
 
     if (!mounted || !product) return null;
 
-    // H5 直接打开网页链接；微信小店没有 H5 入口，暂不展示。
+    // H5 直接打开网页链接；微信小店仅在配置了 H5 链接时展示。
     const allLinks = normalizeProductPurchaseLinks(
         product.purchaseLinks,
         product.affiliateLinks
-    ).filter((link) => link.platformKey !== "wechat-shop" && link.url);
+    ).filter((link) => link.url);
 
     return createPortal(
         <AnimatePresence>
@@ -308,15 +309,45 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
 
                             {/* Accordions */}
                             <section className="border-t border-[#3d2f25]/8">
-                                {/* Key Ingredients */}
-                                {product.keyIngredients && product.keyIngredients.length > 0 && (
+                                {/* Description */}
+                                {product.description && (
+                                    <div className="border-b border-[#3d2f25]/8">
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleAccordion("description")}
+                                            className="flex w-full cursor-pointer items-center justify-between py-4 text-left text-[14px] font-semibold text-[#3d2f25]"
+                                        >
+                                            <span>产品描述</span>
+                                            <span className={cn(
+                                                "text-[18px] transition-transform duration-200 text-[#8c7a6b]",
+                                                openAccordion === "description" && "rotate-45"
+                                            )}>+</span>
+                                        </button>
+                                        <AnimatePresence>
+                                            {openAccordion === "description" && (
+                                                <m.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: "auto", opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <RichText html={product.description} className="pb-4" />
+                                                </m.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                )}
+
+                                {/* Ingredients */}
+                                {(product.ingredients || (product.keyIngredients && product.keyIngredients.length > 0)) && (
                                     <div className="border-b border-[#3d2f25]/8">
                                         <button
                                             type="button"
                                             onClick={() => toggleAccordion("ingredients")}
                                             className="flex w-full cursor-pointer items-center justify-between py-4 text-left text-[14px] font-semibold text-[#3d2f25]"
                                         >
-                                            <span>核心成分</span>
+                                            <span>成分说明</span>
                                             <span className={cn(
                                                 "text-[18px] transition-transform duration-200 text-[#8c7a6b]",
                                                 openAccordion === "ingredients" && "rotate-45"
@@ -331,17 +362,21 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                                     transition={{ duration: 0.2 }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <div className="pb-4 space-y-3">
-                                                        {product.keyIngredients.map((ingredient, i) => {
-                                                            const info = lookupIngredient(ingredient);
-                                                            return (
-                                                                <div key={i} className="flex items-center gap-2.5">
-                                                                    <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#8B7355]/40" />
-                                                                    <span className="text-[15px] text-[#5c4937]">{info ? info.title : ingredient}</span>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
+                                                    {product.ingredients ? (
+                                                        <RichText html={product.ingredients} className="pb-4" />
+                                                    ) : (
+                                                        <div className="pb-4 space-y-3">
+                                                            {product.keyIngredients?.map((ingredient, i) => {
+                                                                const info = lookupIngredient(ingredient);
+                                                                return (
+                                                                    <div key={i} className="flex items-center gap-2.5">
+                                                                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#8B7355]/40" />
+                                                                        <span className="text-[15px] text-[#5c4937]">{info ? info.title : ingredient}</span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
                                                 </m.div>
                                             )}
                                         </AnimatePresence>
@@ -403,9 +438,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                                     transition={{ duration: 0.2 }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <p className="pb-4 text-[15px] leading-[1.7] text-[#5c4937]">
-                                                        {product.howToUse}
-                                                    </p>
+                                                    <RichText html={product.howToUse} className="pb-4" />
                                                 </m.div>
                                             )}
                                         </AnimatePresence>
@@ -447,5 +480,33 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
             )}
         </AnimatePresence>,
         document.body
+    );
+}
+
+/**
+ * 富文本渲染：与主站详情页共用同一套 sanitize 白名单（p/br/ul/ol/li/strong/em/u/h/a）。
+ * 旧数据/纯文本没有标签时按 pre-line 渲染，避免换行丢失。
+ */
+function RichText({ html, className }: { html: string; className?: string }) {
+    const sanitized = sanitizeHtml(html);
+    if (!sanitized) return null;
+
+    const looksLikeHtml = /<[a-z][\s\S]*>/i.test(sanitized);
+    if (!looksLikeHtml) {
+        return (
+            <p className={cn("whitespace-pre-line text-[15px] leading-[1.7] text-[#5c4937]", className)}>
+                {sanitized}
+            </p>
+        );
+    }
+
+    return (
+        <div
+            className={cn(
+                "text-[15px] leading-[1.7] text-[#5c4937] [&_a]:text-[#8B6914] [&_a]:underline [&_li+_li]:mt-1 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-[1.2em] [&_p+p]:mt-3 [&_strong]:font-semibold [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-[1.2em]",
+                className
+            )}
+            dangerouslySetInnerHTML={{ __html: sanitized }}
+        />
     );
 }

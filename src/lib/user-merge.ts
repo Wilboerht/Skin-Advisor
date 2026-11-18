@@ -8,7 +8,7 @@
  *
  * 注意：
  * - RefreshToken 不迁移：旧账号的会话 tokenVersion 可能不一致，直接撤销更安全；
- * - 冲突的唯一键（日记日期、同意 scope/version、产品反馈）按合并策略处理；
+ * - 冲突的唯一键（日记日期、同意 scope/version、产品反馈、报告反馈）按合并策略处理；
  * - 迁移完成后删除旧账号，避免留下任何伪手机号或孤儿数据。
  */
 import prisma from "@/lib/prisma";
@@ -128,6 +128,32 @@ async function mergeUserData(fromUserId: string, toUserId: string): Promise<void
                 await tx.productFeedback.update({
                     where: { id: feedback.id },
                     data: { userId: toUserId, sessionId: targetSessionId },
+                });
+            }
+        }
+
+        // ===== ReportFeedback：userId+sessionId+targetType+targetKey 唯一 =====
+        // 必须在上面的 AdvisorSession 迁移之后执行：会话已归到目标账号。
+        // 冲突时保留目标账号已有反馈（用户在新账号的最新操作），删除旧账号重复行。
+        const reportFeedbacks = await tx.reportFeedback.findMany({ where: { userId: fromUserId } });
+        for (const feedback of reportFeedbacks) {
+            const existing = await tx.reportFeedback.findUnique({
+                where: {
+                    userId_sessionId_targetType_targetKey: {
+                        userId: toUserId,
+                        sessionId: feedback.sessionId,
+                        targetType: feedback.targetType,
+                        targetKey: feedback.targetKey,
+                    },
+                },
+            });
+            if (existing) {
+                await tx.reportFeedback.delete({ where: { id: feedback.id } });
+            } else {
+                await tx.reportFeedback.update({
+                    where: { id: feedback.id },
+                    // 合并是系统迁移，不应刷新 updatedAt，否则旧反馈会跑到「最近反馈」顶部
+                    data: { userId: toUserId, updatedAt: feedback.updatedAt },
                 });
             }
         }

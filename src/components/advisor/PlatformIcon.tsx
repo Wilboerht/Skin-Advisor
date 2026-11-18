@@ -1,9 +1,13 @@
 "use client";
 
 import { ShoppingBag } from "lucide-react";
+import { WeChatShopIcon } from "@/components/ui/WeChatShopIcon";
 
 export function PlatformIcon({ platform }: { platform: string }) {
   const p = platform.trim();
+  if (p.includes("微信小店") || p.toLowerCase().includes("wechat")) {
+    return <WeChatShopIcon />;
+  }
   if (p.includes("天猫") || p.toLowerCase().includes("tmall") || p.toLowerCase().includes("taobao")) {
     return (
       <svg viewBox="0 0 231 55" className="h-4 w-auto" xmlns="http://www.w3.org/2000/svg">

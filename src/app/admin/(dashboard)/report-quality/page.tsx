@@ -4,6 +4,7 @@ import {
     ADMIN_REPORT_QUALITY_DAYS,
     getAdminReportQualitySummary,
 } from "@/lib/admin-report-quality";
+import { getAdminReportFeedbackSummary } from "@/lib/admin-report-feedback";
 
 export const dynamic = "force-dynamic";
 
@@ -26,8 +27,9 @@ export default async function ReportQualityPage() {
         now - ADMIN_REPORT_QUALITY_DAYS * 24 * 60 * 60 * 1000
     );
 
-    const [summary, fallbacks] = await Promise.all([
+    const [summary, feedback, fallbacks] = await Promise.all([
         getAdminReportQualitySummary(),
+        getAdminReportFeedbackSummary(),
         prisma.reportQualityLog.findMany({
             where: { createdAt: { gte: since }, narrativeSource: "fallback" },
             orderBy: { createdAt: "desc" },
@@ -63,6 +65,45 @@ export default async function ReportQualityPage() {
         return value;
     };
 
+    const targetTypeLabel = (value: string) => {
+        if (value === "dimension") return "维度";
+        if (value === "finding") return "问题";
+        if (value === "report") return "整份报告";
+        return value;
+    };
+
+    const verdictLabel = (value: string) => {
+        if (value === "accurate") return "准确";
+        if (value === "inaccurate") return "不准确";
+        if (value === "unsure") return "不确定";
+        return value;
+    };
+
+    const verdictTone = (value: string) => {
+        if (value === "accurate") return "text-emerald-700 bg-emerald-50 border-emerald-200/60";
+        if (value === "inaccurate") return "text-rose-700 bg-rose-50 border-rose-200/60";
+        return "text-brand-charcoal/60 bg-brand-charcoal/[0.04] border-brand-charcoal/10";
+    };
+
+    const feedbackStats = [
+        { label: "反馈总数", value: feedback.total.toLocaleString("zh-CN") },
+        { label: "准确率（不含不确定）", value: feedback.total > 0 ? `${feedback.accuracyRate}%` : "—" },
+        { label: "不准确", value: feedback.inaccurate.toLocaleString("zh-CN") },
+        { label: "反馈用户", value: feedback.reporterCount.toLocaleString("zh-CN") },
+    ];
+
+    // 补齐没有反馈的日期：SQL 只返回有数据的日期，直接画图会压缩时间轴
+    const trendByDate = new Map(feedback.trend.map((day) => [day.date, day]));
+    const recentTrend = Array.from({ length: 14 }, (_, index) => {
+        const date = new Date(now - (13 - index) * 24 * 60 * 60 * 1000);
+        const key = date.toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
+        return trendByDate.get(key) ?? { date: key, accurate: 0, inaccurate: 0, unsure: 0 };
+    });
+    const trendMax = Math.max(
+        1,
+        ...recentTrend.map((day) => day.accurate + day.inaccurate + day.unsure)
+    );
+
     const stats = [
         { label: "报告总数", value: total.toLocaleString("zh-CN") },
         { label: "AI 文案", value: pct(total - fallback, total) },
@@ -93,6 +134,155 @@ export default async function ReportQualityPage() {
                         <p className="mt-1 text-xl font-semibold tabular-nums text-brand-charcoal">{stat.value}</p>
                     </div>
                 ))}
+            </div>
+
+            <div className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-6">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 className="text-sm font-medium text-brand-charcoal">用户反馈</h2>
+                    <span className="text-[11px] text-brand-charcoal/45">
+                        近 {feedback.days} 天 · 来自结果页报告反馈
+                    </span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {feedbackStats.map((stat) => (
+                        <div key={stat.label} className="rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/[0.015] p-3">
+                            <p className="text-[11px] text-brand-charcoal/50">{stat.label}</p>
+                            <p className="mt-1 text-lg font-semibold tabular-nums text-brand-charcoal">{stat.value}</p>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                    <div>
+                        <h3 className="text-xs font-medium text-brand-charcoal/70">被标记「不准确」最多的位置</h3>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {feedback.topInaccurateTargets.length > 0 ? feedback.topInaccurateTargets.map((target) => (
+                                <span
+                                    key={`${target.targetType}:${target.targetKey}`}
+                                    className="rounded-full border border-rose-200/60 bg-rose-50 px-3 py-1 text-xs text-rose-700"
+                                >
+                                    {targetTypeLabel(target.targetType)} · {target.targetKey} · {target.count}
+                                </span>
+                            )) : <span className="text-sm text-brand-charcoal/45">暂无反馈</span>}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-xs font-medium text-brand-charcoal/70">近 14 天趋势</h3>
+                            <div className="flex items-center gap-2 text-[10px] text-brand-charcoal/45">
+                                <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-emerald-500" />准确</span>
+                                <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-rose-400" />不准确</span>
+                                <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-brand-charcoal/25" />不确定</span>
+                            </div>
+                        </div>
+                        {feedback.total > 0 ? (
+                            <div className="mt-3 flex h-20 items-end gap-1">
+                                {recentTrend.map((day) => (
+                                    <div key={day.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${day.date} · 准确 ${day.accurate} / 不准确 ${day.inaccurate} / 不确定 ${day.unsure}`}>
+                                        <div className="flex w-full flex-col justify-end overflow-hidden rounded-sm bg-brand-charcoal/[0.04]" style={{ height: "64px" }}>
+                                            <div className="w-full bg-emerald-500" style={{ height: `${(day.accurate / trendMax) * 64}px` }} />
+                                            <div className="w-full bg-brand-charcoal/25" style={{ height: `${(day.unsure / trendMax) * 64}px` }} />
+                                            <div className="w-full bg-rose-400" style={{ height: `${(day.inaccurate / trendMax) * 64}px` }} />
+                                        </div>
+                                        <span className="text-[9px] tabular-nums text-brand-charcoal/40">{day.date.slice(5)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="mt-3 text-sm text-brand-charcoal/45">暂无反馈</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="mt-5 grid gap-4 border-t border-brand-charcoal/[0.06] pt-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                        <h3 className="text-xs font-medium text-brand-charcoal/70">反馈准确率 · 按文案来源</h3>
+                        <div className="mt-2 space-y-1.5">
+                            {feedback.byNarrativeSource.length > 0 ? feedback.byNarrativeSource.map((item) => (
+                                <div key={item.source} className="flex items-center justify-between rounded-lg bg-brand-charcoal/[0.02] px-3 py-1.5 text-xs">
+                                    <span className="text-brand-charcoal/65">
+                                        {item.source === "unknown" ? "未记录" : narrativeSourceLabel(item.source)}
+                                    </span>
+                                    <span className="tabular-nums text-brand-charcoal/55">
+                                        {item.accuracyRate}% 准确 · {item.total} 条
+                                    </span>
+                                </div>
+                            )) : <span className="text-sm text-brand-charcoal/45">暂无数据</span>}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-xs font-medium text-brand-charcoal/70">反馈准确率 · 按模型</h3>
+                        <div className="mt-2 space-y-1.5">
+                            {feedback.byModel.length > 0 ? feedback.byModel.map((item) => (
+                                <div key={item.model} className="flex items-center justify-between rounded-lg bg-brand-charcoal/[0.02] px-3 py-1.5 text-xs">
+                                    <span className="truncate text-brand-charcoal/65">
+                                        {item.model === "unknown" ? "未记录" : item.model}
+                                    </span>
+                                    <span className="shrink-0 tabular-nums text-brand-charcoal/55">
+                                        {item.accuracyRate}% 准确 · {item.total} 条
+                                    </span>
+                                </div>
+                            )) : <span className="text-sm text-brand-charcoal/45">暂无数据</span>}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-xs font-medium text-brand-charcoal/70">反馈准确率 · 按 prompt 版本</h3>
+                        <div className="mt-2 space-y-1.5">
+                            {feedback.byPromptVersion.length > 0 ? feedback.byPromptVersion.map((item) => (
+                                <div key={item.promptVersion} className="flex items-center justify-between rounded-lg bg-brand-charcoal/[0.02] px-3 py-1.5 text-xs">
+                                    <span className="truncate text-brand-charcoal/65">
+                                        {item.promptVersion === "unknown" ? "未记录" : item.promptVersion}
+                                    </span>
+                                    <span className="shrink-0 tabular-nums text-brand-charcoal/55">
+                                        {item.accuracyRate}% 准确 · {item.total} 条
+                                    </span>
+                                </div>
+                            )) : <span className="text-sm text-brand-charcoal/45">暂无数据</span>}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-brand-charcoal/10 bg-white">
+                <div className="border-b border-brand-charcoal/10 px-4 py-3 sm:px-6">
+                    <h2 className="text-sm font-medium text-brand-charcoal">最近用户反馈</h2>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                        <thead className="bg-brand-charcoal/[0.03] text-brand-charcoal/50">
+                            <tr>
+                                <th className="px-4 py-2 font-medium sm:px-6">时间</th>
+                                <th className="px-4 py-2 font-medium">会话</th>
+                                <th className="px-4 py-2 font-medium">位置</th>
+                                <th className="px-4 py-2 font-medium">结论</th>
+                                <th className="px-4 py-2 font-medium">备注</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-brand-charcoal/[0.06]">
+                            {feedback.recent.length > 0 ? feedback.recent.map((row) => (
+                                <tr key={row.id}>
+                                    <td className="px-4 py-2 text-brand-charcoal/60 sm:px-6" title={`首次反馈：${row.createdAt.toLocaleString("zh-CN")}`}>
+                                        {row.updatedAt.toLocaleString("zh-CN")}
+                                    </td>
+                                    <td className="max-w-[140px] truncate px-4 py-2 font-mono text-[11px] text-brand-charcoal/60">{row.sessionId}</td>
+                                    <td className="px-4 py-2 text-brand-charcoal/60">{targetTypeLabel(row.targetType)} · {row.targetKey}</td>
+                                    <td className="px-4 py-2">
+                                        <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] ${verdictTone(row.verdict)}`}>
+                                            {verdictLabel(row.verdict)}
+                                        </span>
+                                    </td>
+                                    <td className="max-w-[240px] truncate px-4 py-2 text-brand-charcoal/60" title={row.note || ""}>{row.note || "—"}</td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-brand-charcoal/45">暂无用户反馈</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-6">

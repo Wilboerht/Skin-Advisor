@@ -178,6 +178,7 @@ function buildProducts(result: ComprehensiveResult, reportV3: ReportV3 | undefin
         price: product.price,
         reason: product.reason,
         description: product.description ?? null,
+        ingredients: product.ingredients ?? null,
         keyIngredients: product.keyIngredients ?? [],
         benefits: product.benefits ?? [],
         affiliateLinks: product.affiliateLinks ?? null,

@@ -310,6 +310,7 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index, sessi
                                     sessionId={sessionId}
                                     targetType="finding"
                                     targetKey={`issue-${index + 1}`}
+                                    targetLabel={issue.title}
                                 />
                             </div>
                         </div>

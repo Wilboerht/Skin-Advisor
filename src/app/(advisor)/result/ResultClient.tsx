@@ -1665,6 +1665,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             price: p.price ?? '',
                                             reason: p.reason,
                                             description: p.description || null,
+                                            ingredients: p.ingredients || null,
                                             keyIngredients: p.keyIngredients || [],
                                             benefits: p.benefits || [],
                         affiliateLinks: p.affiliateLinks || null,

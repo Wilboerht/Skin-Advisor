@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
                 images: true,
                 price: true,
                 description: true,
+                ingredients: true,
                 keyIngredients: true,
                 suitableSkinTypes: true,
                 benefits: true,

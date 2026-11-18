@@ -8,6 +8,7 @@ import type { VisionScoring } from "@/lib/vision-scoring";
 import { DIMENSION_LABELS } from "@/lib/advisor-utils";
 import { CONCERN_LABELS } from "@/lib/advisor-labels";
 import { SKIN_STATE_LABELS, buildSkinStateTextNote } from "@/lib/skin-state";
+import { htmlToPlainText } from "@/lib/html-sanitize";
 
 export const BRAND_CONFIG = {
   name: "NIHPLOD",
@@ -373,7 +374,7 @@ export function buildConsultantPrompt(params: {
   };
   const productSource = params.products && params.products.length > 0 ? params.products : [];
   const productsContext = (productSource as ProductPromptItem[]).slice(0, 6).map((p) => {
-    const desc = p.description || "";
+    const desc = htmlToPlainText(p.description);
     const truncatedDesc = desc.length > MAX_PRODUCT_DESC_CHARS ? desc.slice(0, MAX_PRODUCT_DESC_CHARS) + "..." : desc;
     const reasonsHint = p.recommendReasons && Object.keys(p.recommendReasons).length > 0
       ? `, 推荐理由参考: ${sanitizePromptInput(JSON.stringify(p.recommendReasons).slice(0, 400))}`

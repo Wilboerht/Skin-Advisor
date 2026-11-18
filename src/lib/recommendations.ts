@@ -207,6 +207,7 @@ export async function recommendProducts(
                 price: p.price,
                 reason,
                 description: p.description || null,
+                ingredients: p.ingredients || null,
                 score: p.rawScore,
                 matchedBenefits: p.matchedBenefits,
                 affiliateLinks: (p.affiliateLinks as Record<string, string> | null) || null,

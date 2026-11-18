@@ -317,6 +317,7 @@ model Product {
 
   // ===== 新增字段 =====
   howToUse          String?  // 使用方法说明
+  ingredients       String?  // 成分说明（主站同步的富文本 HTML）
   origin            String?  // 产地
   capacity          String?  // 规格容量
   affiliateLinks    Json?    // 旧结构兼容 { taobao: "", xiaohongshu: "", douyin: "" }
@@ -498,6 +499,7 @@ model ReportFeedback {
   verdict    String   // accurate | inaccurate | unsure
   note       String?  @db.VarChar(500)
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   session AdvisorSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
@@ -505,6 +507,7 @@ model ReportFeedback {
   @@unique([userId, sessionId, targetType, targetKey])
   @@index([sessionId])
   @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 // ������ֻ��� �� ����/�ٷ�λ/��̨ͳ�ƵĲ�ѯ�㣨analysisResult ��������������ʵԴ��

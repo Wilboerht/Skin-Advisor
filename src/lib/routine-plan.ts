@@ -4,6 +4,7 @@
  */
 
 import { getSkinTypeByIpKey } from "@/lib/result-content";
+import { htmlToPlainText } from "@/lib/html-sanitize";
 
 export interface RoutineProduct {
     id: string;
@@ -77,7 +78,7 @@ function toSteps(text: string | undefined, products: RoutineProduct[]): RoutineS
             productId: product?.id,
             productName: product?.name,
             category: product?.category ?? undefined,
-            howToUse: product?.howToUse ?? undefined,
+            howToUse: htmlToPlainText(product?.howToUse) || undefined,
         };
     });
 }

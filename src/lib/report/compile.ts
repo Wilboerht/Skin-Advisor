@@ -32,6 +32,7 @@ interface CompileProduct {
     price?: string;
     reason?: string;
     description?: string | null;
+    ingredients?: string | null;
     keyIngredients?: string[] | null;
     benefits?: string[] | null;
     affiliateLinks?: Record<string, string> | null;
@@ -104,6 +105,7 @@ function toReportProducts(products: CompileProduct[]): ReportProduct[] {
         price: product.price,
         reason: product.reason,
         description: product.description ?? null,
+        ingredients: product.ingredients ?? null,
         keyIngredients: product.keyIngredients ?? [],
         benefits: product.benefits ?? [],
         affiliateLinks: product.affiliateLinks ?? null,

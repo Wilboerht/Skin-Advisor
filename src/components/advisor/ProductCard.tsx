@@ -11,6 +11,7 @@ import {
 } from "@/lib/product-links";
 import { PlatformIcon } from "./PlatformIcon";
 import { cn, formatPrice } from "@/lib/utils";
+import { htmlToPlainText } from "@/lib/html-sanitize";
 
 export interface ProductCardData {
     id: string;
@@ -21,6 +22,7 @@ export interface ProductCardData {
     price: string;
     reason: string;
     description?: string | null;
+    ingredients?: string | null;
     score?: number;
     matchScore?: number; // 匹配度百分比
     keyIngredients?: string[];
@@ -160,7 +162,7 @@ function CompactProductCard({
                         )}
                         {product.howToUse && (
                             <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-[var(--color-brand-taupe)]">
-                                用法：{product.howToUse}
+                                用法：{htmlToPlainText(product.howToUse)}
                             </p>
                         )}
 

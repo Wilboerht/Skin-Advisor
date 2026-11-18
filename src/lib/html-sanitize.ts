@@ -147,3 +147,42 @@ export function sanitizeHtml(html: string | null | undefined): string {
     KEEP_CONTENT: true,
   });
 }
+
+/**
+ * 富文本 HTML → 纯文本（保留段落与列表结构）
+ *
+ * 供纯文本消费方使用（如卡片摘要、行动步骤、AI 提示词）。
+ * 输入已由 sanitizeHtml 消毒（标签集受限：p/br/ul/ol/li/strong/em/u/h/a）。
+ */
+export function htmlToPlainText(html: string | null | undefined): string {
+  if (!html) return "";
+
+  let text = html;
+  // 链接保留文字（丢弃地址；[\s\S] 兼容多行内容，避免依赖 dotAll 标志）
+  text = text.replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, "$1");
+  // 列表项前缀
+  text = text.replace(/<li\b[^>]*>/gi, "• ");
+  // 块级闭合 → 换行
+  text = text.replace(/<\/(p|div|h[1-6]|li|ul|ol|blockquote|tr|table)>/gi, "\n");
+  // <br> → 换行
+  text = text.replace(/<br\b[^>]*\/?>/gi, "\n");
+  // 其余标签整体移除
+  text = text.replace(/<[^>]*>/g, "");
+  // 解码常见实体（&amp; 最后处理，避免二次解码）
+  text = text
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0*39;|&apos;/gi, "'")
+    .replace(/&amp;/gi, "&");
+
+  // 逐行规范化空白并折叠连续空行
+  return text
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+

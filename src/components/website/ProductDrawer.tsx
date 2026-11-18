@@ -73,6 +73,9 @@ interface ProductDrawerProps {
  */
 export function PlatformIcon({ platform }: { platform: string }) {
   const p = platform.trim();
+  if (p.includes("微信小店") || p.toLowerCase().includes("wechat")) {
+    return <>{getPlatformIcon("wechat-shop")}</>;
+  }
   if (p.includes("天猫") || p.toLowerCase().includes("tmall")) {
     return <>{getPlatformIcon("tmall")}</>;
   }

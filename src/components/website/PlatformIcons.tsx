@@ -1,6 +1,8 @@
 "use client";
 
-export type PlatformIconName = "tmall" | "xiaohongshu" | "douyin";
+import { WeChatShopIcon } from "@/components/ui/WeChatShopIcon";
+
+export type PlatformIconName = "wechat-shop" | "tmall" | "xiaohongshu" | "douyin";
 
 /**
  * 根据平台名称返回对应的 SVG 图标组件
@@ -8,6 +10,8 @@ export type PlatformIconName = "tmall" | "xiaohongshu" | "douyin";
  */
 export function getPlatformIcon(platform: PlatformIconName): React.ReactNode {
   switch (platform) {
+    case "wechat-shop":
+      return <WeChatShopIcon />;
     case "tmall":
       return <TmallIcon />;
     case "xiaohongshu":

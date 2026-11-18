@@ -189,13 +189,26 @@ export function DimensionRadarChart({ dimensions, sessionId }: DimensionRadarCha
                                                 sessionId={sessionId}
                                                 targetType="dimension"
                                                 targetKey={row.key}
+                                                targetLabel={row.label}
                                             />
                                         </div>
                                     </div>
                                 </details>
                             ) : (
-                                <div className="flex items-center justify-between gap-3 px-3 py-2">
-                                    {summaryContent}
+                                <div className="px-3 py-2">
+                                    <div className="flex items-center justify-between gap-3">
+                                        {summaryContent}
+                                    </div>
+                                    {!row.notVisible && (
+                                        <div className="mt-1 flex justify-end">
+                                            <ReportFeedbackButton
+                                                sessionId={sessionId}
+                                                targetType="dimension"
+                                                targetKey={row.key}
+                                                targetLabel={row.label}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </li>

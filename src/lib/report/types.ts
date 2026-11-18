@@ -68,6 +68,7 @@ export interface ReportProduct {
     price?: string;
     reason?: string;
     description?: string | null;
+    ingredients?: string | null;
     keyIngredients?: string[];
     benefits?: string[];
     affiliateLinks?: Record<string, string> | null;

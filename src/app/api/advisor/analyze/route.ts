@@ -1362,6 +1362,7 @@ export async function POST(request: NextRequest) {
                         images: (catalogProduct as { images?: string[] | null }).images || null,
                         price: catalogProduct.price,
                         description: catalogProduct.description,
+                        ingredients: catalogProduct.ingredients || null,
                         keyIngredients: catalogProduct.keyIngredients || [],
                         benefits: catalogProduct.benefits || [],
                         affiliateLinks: catalogProduct.affiliateLinks || null,

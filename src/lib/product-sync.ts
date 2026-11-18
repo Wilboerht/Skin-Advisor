@@ -28,6 +28,7 @@ import {
     MAX_HOW_TO_USE_LENGTH,
     MAX_IMAGE_COUNT,
     MAX_IMAGE_URL_LENGTH,
+    MAX_INGREDIENTS_LENGTH,
     MAX_MINI_PROGRAM_SHORT_LINK_LENGTH,
     MAX_NAME_LENGTH,
     MAX_ORIGIN_LENGTH,
@@ -127,6 +128,7 @@ const snapshotProductSchema = z.object({
     category: z.string().trim().min(1),
     price: z.union([z.string(), z.number()]),
     description: z.string().default(""),
+    ingredients: z.string().nullable().optional(),
     published: z.boolean(),
     updatedAt: z.string().datetime(),
     capacity: z.string().nullable().optional(),
@@ -576,6 +578,7 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
                     .slice(0, MAX_DESCRIPTION_LENGTH);
                 const capacity = trimOrNull(item.capacity, MAX_CAPACITY_LENGTH);
                 const origin = trimOrNull(item.origin, MAX_ORIGIN_LENGTH);
+                const ingredients = trimOrNull(item.ingredients, MAX_INGREDIENTS_LENGTH);
                 const howToUse = trimOrNull(item.howToUse, MAX_HOW_TO_USE_LENGTH);
                 const images = sanitizeProductImages(item.images, warnings, itemRef);
                 // 区分“字段未提供”和“明确为空”：旧版/部分快照未带购买链接时不能清空子站已有配置
@@ -716,6 +719,9 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
                     if (item.origin !== undefined && existing.origin !== origin) {
                         set("origin", origin);
                     }
+                    if (item.ingredients !== undefined && existing.ingredients !== ingredients) {
+                        set("ingredients", ingredients);
+                    }
                     if (item.howToUse !== undefined && existing.howToUse !== howToUse) {
                         set("howToUse", howToUse);
                     }
@@ -851,6 +857,7 @@ export async function syncProductsFromMain(input: unknown): Promise<ProductSyncO
                     images: images as unknown as Prisma.InputJsonValue,
                     capacity,
                     origin,
+                    ingredients,
                     howToUse,
                     benefits: benefits as unknown as Prisma.InputJsonValue,
                     keyIngredients: [],
