@@ -63,6 +63,7 @@ export function OnboardingFlowModal({
     const [activeIndex, setActiveIndex] = useState(0);
     const [locationView, setLocationView] = useState<LocationSubView>("main");
     const [isAgreed, setIsAgreed] = useState(false);
+    const [isSensitiveAgreed, setIsSensitiveAgreed] = useState(false);
     const [isFinishing, setIsFinishing] = useState(false);
     const [maxVisitedIndex, setMaxVisitedIndex] = useState(0);
     const prefersReducedMotion = useReducedMotion();
@@ -216,7 +217,7 @@ export function OnboardingFlowModal({
 
     /* ---- Legal handlers ---- */
     const handleLegalSubmit = () => {
-        if (!isAgreed || isFinishing) return;
+        if (!isAgreed || !isSensitiveAgreed || isFinishing) return;
         setIsFinishing(true);
         finish();
     };
@@ -562,15 +563,36 @@ export function OnboardingFlowModal({
                                                 >
                                                     服务条款
                                                 </button>
-                                                。本次授权包括：人脸照片分析、健康问卷处理、第三方 AI 服务处理。
-                                            </span>
-                                        </div>
-                                    </div>
+                                                 。
+                                             </span>
+                                         </div>
+                                     </div>
 
-                                    <div className="flex flex-col items-center space-y-4">
+                                     <div
+                                         className={`p-5 md:p-6 mb-7 text-left max-w-lg mx-auto rounded-xl border transition-all duration-300 ${
+                                             isSensitiveAgreed
+                                                 ? "bg-white/60 border-[#8B7355]/25 shadow-[0_2px_12px_rgba(139,115,85,0.06)]"
+                                                 : "bg-white/40 border-[#3D4430]/8 hover:border-[#8B7355]/15 hover:bg-white/50"
+                                         }`}
+                                     >
+                                         <label className="flex items-start gap-3.5 md:gap-4 cursor-pointer">
+                                             <input
+                                                 type="checkbox"
+                                                 checked={isSensitiveAgreed}
+                                                 onChange={(e) => setIsSensitiveAgreed(e.target.checked)}
+                                                 className="mt-1 h-4 w-4 shrink-0 accent-[#8B7355]"
+                                             />
+                                             <span className="text-[13px] md:text-base text-brand-charcoal/60 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] select-none">
+                                                 我单独同意处理我的面部照片、肤质与健康状况，并用于第三方 AI 服务（DeepSeek/Qwen）分析。
+                                                 我理解此类信息属于敏感个人信息；如拒绝，将无法使用 AI 测肤，但不影响其他服务。
+                                             </span>
+                                         </label>
+                                     </div>
+
+                                     <div className="flex flex-col items-center space-y-4">
                                         <button
                                             onClick={handleLegalSubmit}
-                                            disabled={!isAgreed || isFinishing}
+                                            disabled={!isAgreed || !isSensitiveAgreed || isFinishing}
                                             className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
                                         >
                                             {isFinishing ? (

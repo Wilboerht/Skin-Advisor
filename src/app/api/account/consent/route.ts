@@ -11,7 +11,7 @@ import {
     revokeConsent,
     type ConsentScope,
 } from "@/lib/consent";
-import { CONSENT_COMPATIBLE_VERSIONS, isConsentScope } from "@/lib/consent-constants";
+import { CONSENT_COMPATIBLE_VERSIONS, CONSENT_VERSION, isConsentScope } from "@/lib/consent-constants";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +47,12 @@ export async function POST(request: NextRequest) {
     const record = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
     const scopes = parseScopes(record.scopes);
     const version = typeof record.version === "string" ? record.version : "";
+    // 兼容旧客户端：旧版把「隐私政策 + 服务条款」放在同一个勾选里，
+    // 但只上报 privacy，没有单独的 terms scope。旧版本同意时补记 terms，
+    // 避免升级后旧客户端反复被 CONSENT_REQUIRED 拦截。
+    if (version !== CONSENT_VERSION && scopes.includes("privacy") && !scopes.includes("terms")) {
+        scopes.push("terms");
+    }
 
     if (record.agreed !== true) {
         return apiError(ErrorCode.VALIDATION_ERROR, "请先确认授权", 400);
