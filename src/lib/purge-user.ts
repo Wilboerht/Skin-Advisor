@@ -7,6 +7,7 @@
  */
 import prisma from "@/lib/prisma";
 import { deleteUserAvatar, deleteUserFaceUploads } from "@/lib/user-data-files";
+import { consentRetentionUntil } from "@/lib/consent";
 
 export interface PurgeUserResult {
     testRecords: number;
@@ -35,7 +36,7 @@ export async function purgeUserData(userId: string): Promise<PurgeUserResult> {
     const deletedAvatarFiles = await deleteUserAvatar(user?.avatarUrl, userId);
     const deletedFaceUploads = await deleteUserFaceUploads(userId, sessionIds);
 
-    const [testRecords, diaryEntries, productFeedbacks, reportFeedbacks, reportQualityLogs, advisorSessions, aiUsageLogs, localUser] =
+    const [testRecords, diaryEntries, productFeedbacks, reportFeedbacks, reportQualityLogs, advisorSessions, aiUsageLogs, , localUser] =
         await prisma.$transaction([
             prisma.testRecord.deleteMany({ where: { userId } }),
             prisma.diaryEntry.deleteMany({ where: { userId } }),
@@ -55,6 +56,15 @@ export async function purgeUserData(userId: string): Promise<PurgeUserResult> {
             prisma.advisorSession.deleteMany({ where: { userId } }),
             // 匿名化而非删除：保留成本审计（token/费用无 PII）
             prisma.aIUsageLog.updateMany({ where: { userId }, data: { userId: null } }),
+            // 同意事件不随 User 级联删除：注销后保留最小化证据，到期由清理任务删除
+            prisma.consentEvent.updateMany({
+                where: { userId },
+                data: {
+                    retentionUntil: consentRetentionUntil(),
+                    userId: null,
+                    userAgent: null,
+                },
+            }),
             // 最后删用户行：RefreshToken/PushSubscription/ReminderSettings 级联清除
             prisma.user.deleteMany({ where: { id: userId } }),
         ]);

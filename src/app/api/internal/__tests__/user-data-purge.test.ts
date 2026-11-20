@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   sessionDeleteMany: vi.fn(),
   sessionFindMany: vi.fn(),
   aiUsageUpdateMany: vi.fn(),
+  consentEventUpdateMany: vi.fn(),
   userDeleteMany: vi.fn(),
   userFindUnique: vi.fn(),
   deleteUserAvatar: vi.fn(),
@@ -46,6 +47,7 @@ vi.mock("@/lib/prisma", () => ({
     reportQualityLog: { deleteMany: mocks.qualityDeleteMany },
     advisorSession: { deleteMany: mocks.sessionDeleteMany, findMany: mocks.sessionFindMany },
     aIUsageLog: { updateMany: mocks.aiUsageUpdateMany },
+    consentEvent: { updateMany: mocks.consentEventUpdateMany },
     user: { deleteMany: mocks.userDeleteMany, findUnique: mocks.userFindUnique },
   },
 }));
@@ -82,6 +84,7 @@ function stubCounts(t: number, d: number, f: number, s: number, a: number, u: nu
   mocks.qualityDeleteMany.mockResolvedValue({ count: 0 });
   mocks.sessionDeleteMany.mockResolvedValue({ count: s });
   mocks.aiUsageUpdateMany.mockResolvedValue({ count: a });
+  mocks.consentEventUpdateMany.mockResolvedValue({ count: 0 });
   mocks.userDeleteMany.mockResolvedValue({ count: u });
 }
 

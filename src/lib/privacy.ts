@@ -12,6 +12,10 @@ import { createHash } from 'crypto';
  * Note: The salt uses a server-side env var so hashes are consistent
  * across requests but not reproducible outside this deployment.
  */
+export function hashConsentSubject(identifier: string): string {
+    return hashIP(`subject:${identifier}`);
+}
+
 export function hashIP(ip: string): string {
     const salt = process.env.IP_HASH_SALT;
     if (!salt) {

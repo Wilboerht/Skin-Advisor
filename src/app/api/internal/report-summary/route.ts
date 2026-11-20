@@ -37,7 +37,12 @@ export async function GET(request: NextRequest) {
     try {
         const session = await prisma.advisorSession.findUnique({
             where: { sessionId, archivedAt: null }, // 冷层归档摘要对用户不可见，内部接口保持同一可见性语义
-            select: { analysisResult: true, answers: true, createdAt: true },
+            select: {
+                analysisResult: true,
+                answers: true,
+                createdAt: true,
+                userId: true,
+            },
         });
 
         if (!session?.analysisResult || !isCompletedAnalysisResult(session.analysisResult)) {
@@ -62,7 +67,11 @@ export async function GET(request: NextRequest) {
         if (!summary.found) {
             return NextResponse.json({ found: false }, { status: 404 });
         }
-        return NextResponse.json({ ...summary, createdAt: session.createdAt.toISOString() });
+        return NextResponse.json({
+            ...summary,
+            createdAt: session.createdAt.toISOString(),
+            userId: session.userId,
+        });
     } catch (error) {
         logger.error("report-summary failed", { error: String(error) });
         return NextResponse.json({ error: "Internal error" }, { status: 500 });

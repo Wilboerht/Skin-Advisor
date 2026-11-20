@@ -520,6 +520,19 @@ export async function GET(request: NextRequest) {
             });
         }
 
+        // ===== 11. 清理到期同意证据（注销后默认保留 3 年）=====
+        let deletedConsentEvents = 0;
+        try {
+            const result = await prisma.consentEvent.deleteMany({
+                where: { retentionUntil: { lt: new Date(now) } },
+            });
+            deletedConsentEvents = result.count;
+        } catch (consentErr) {
+            logger.error("[Cleanup] Consent event cleanup failed", {
+                error: consentErr instanceof Error ? consentErr.message : String(consentErr),
+            });
+        }
+
         return NextResponse.json({
             success: true,
             timestamp: new Date().toISOString(),
@@ -535,6 +548,7 @@ export async function GET(request: NextRequest) {
                 guestOssFiles: deletedGuestOssFiles,
                 productFiles: deletedProductFiles,
                 orphanReservations: deletedOrphanReservations,
+                consentEvents: deletedConsentEvents,
             },
         });
     } catch (error: unknown) {

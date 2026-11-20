@@ -260,6 +260,46 @@ model ConsentRecord {
   @@index([version])
 }
 
+enum ConsentEventAction {
+  GRANTED
+  REVOKED
+}
+
+enum ConsentEventDocument {
+  PRIVACY
+  TERMS
+  FACE
+  HEALTH
+  AI
+}
+
+/// 只追加的同意事件台账。不要对 User 建外键：
+/// 用户注销/硬删除后仍需保留最小化证据。
+model ConsentEvent {
+  id             String               @id @default(cuid())
+  userId         String?
+  subjectType    String               @default("USER")
+  subjectHash    String
+  project        String               @default("SKIN")
+  document       ConsentEventDocument
+  version        String
+  contentHash    String?
+  action         ConsentEventAction
+  channel        String               @default("skin")
+  occurredAt     DateTime
+  ipHash         String?
+  userAgent      String?
+  evidence       Json?
+  retentionUntil DateTime?
+  createdAt      DateTime             @default(now())
+
+  @@index([userId, occurredAt])
+  @@index([subjectHash, occurredAt])
+  @@index([document, occurredAt])
+  @@index([retentionUntil])
+  @@index([occurredAt])
+}
+
 // Refresh Token 存储 — 支持双 Token 轮转与设备管理
 model RefreshToken {
   id        String   @id @default(cuid())
