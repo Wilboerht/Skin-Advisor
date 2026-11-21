@@ -4,12 +4,17 @@ import {
     CONSENT_VERSION,
     type ConsentScope,
 } from "@/lib/consent-constants";
-import { getPrivacyConsentPayload } from "@/lib/consent-storage";
+import {
+    getPrivacyConsentPayload,
+    savePrivacyConsent,
+    type LocalConsentHashes,
+} from "@/lib/consent-storage";
 
 export interface ConsentApiState {
     version: string;
     granted: ConsentScope[];
     missing: ConsentScope[];
+    contentHashes: LocalConsentHashes;
 }
 
 export async function fetchConsentState(): Promise<ConsentApiState | null> {
@@ -46,7 +51,11 @@ export async function recordClientConsent(
         });
         if (!res.ok) return null;
         const body = await res.json();
-        return body?.data ?? null;
+        const state = (body?.data ?? null) as ConsentApiState | null;
+        if (state?.contentHashes && scopes.every((scope) => state.granted.includes(scope))) {
+            savePrivacyConsent(state.contentHashes);
+        }
+        return state;
     } catch {
         return null;
     }
@@ -65,7 +74,21 @@ export async function ensureClientConsent(
     if (state && scopes.every((scope) => state.granted.includes(scope))) return true;
 
     const local = getPrivacyConsentPayload();
-    if (!local?.consentedAt) return false;
+    if (!local?.consentedAt || !local.contentHashes || local.version !== CONSENT_VERSION) {
+        return false;
+    }
+
+    // 本地同意必须和服务器当前发布内容 hash 一致，才允许迁移写入；
+    // 否则说明政策内容已变化，必须重新展示同意页，不能静默补写。
+    const current = state?.contentHashes;
+    if (
+        !current?.privacy ||
+        !current?.terms ||
+        local.contentHashes.privacy !== current.privacy ||
+        local.contentHashes.terms !== current.terms
+    ) {
+        return false;
+    }
 
     const recorded = await recordClientConsent(scopes);
     return !!recorded && scopes.every((scope) => recorded.granted.includes(scope));

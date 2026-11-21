@@ -88,28 +88,48 @@ export interface ConsentState {
     version: string;
     granted: ConsentScope[];
     missing: ConsentScope[];
+    contentHashes: {
+        privacy: string | null;
+        terms: string | null;
+    };
 }
 
 export async function getConsentState(userId: string): Promise<ConsentState> {
-    const records = await prisma.consentRecord.findMany({
-        where: {
-            userId,
-            version: CONSENT_VERSION,
-            revokedAt: null,
-        },
-        select: { scope: true },
-    });
+    const [records, privacyHash, termsHash] = await Promise.all([
+        prisma.consentRecord.findMany({
+            where: {
+                userId,
+                version: CONSENT_VERSION,
+                revokedAt: null,
+            },
+            select: { scope: true, contentHash: true },
+        }),
+        resolveContentHash("privacy"),
+        resolveContentHash("terms"),
+    ]);
+    const currentHashByScope: Partial<Record<ConsentScope, string | null>> = {
+        privacy: privacyHash,
+        terms: termsHash,
+    };
 
     const granted = new Set(
         records
-            .map((record) => record.scope)
-            .filter(isConsentScope)
+            .filter((record) => {
+                if (!isConsentScope(record.scope)) return false;
+                const currentHash = currentHashByScope[record.scope];
+                return !currentHash || record.contentHash === currentHash;
+            })
+            .map((record) => record.scope as ConsentScope)
     );
 
     return {
         version: CONSENT_VERSION,
         granted: ALL_CONSENT_SCOPES.filter((scope) => granted.has(scope)),
         missing: ALL_CONSENT_SCOPES.filter((scope) => !granted.has(scope)),
+        contentHashes: {
+            privacy: privacyHash,
+            terms: termsHash,
+        },
     };
 }
 
@@ -135,14 +155,18 @@ export async function recordConsent(
         })
     );
 
+    const privacyUserUpdate = uniqueScopes.includes("privacy")
+        ? prisma.user.update({
+              where: { id: userId },
+              data: {
+                  privacyConsentAt: now,
+                  privacyConsentVersion: CONSENT_VERSION,
+              },
+          })
+        : null;
+
     await prisma.$transaction([
-        prisma.user.update({
-            where: { id: userId },
-            data: {
-                privacyConsentAt: now,
-                privacyConsentVersion: CONSENT_VERSION,
-            },
-        }),
+        ...(privacyUserUpdate ? [privacyUserUpdate] : []),
         ...uniqueScopes.map((scope) =>
             prisma.consentRecord.upsert({
                 where: {
@@ -155,12 +179,14 @@ export async function recordConsent(
                 update: {
                     grantedAt: now,
                     revokedAt: null,
+                    contentHash: contentHashes.get(scope) ?? null,
                     ipHash: ipHash ?? null,
                 },
                 create: {
                     userId,
                     scope,
                     version: CONSENT_VERSION,
+                    contentHash: contentHashes.get(scope) ?? null,
                     grantedAt: now,
                     ipHash: ipHash ?? null,
                 },

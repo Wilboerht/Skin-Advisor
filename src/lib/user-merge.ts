@@ -73,7 +73,12 @@ async function mergeUserData(fromUserId: string, toUserId: string): Promise<void
                       : consent.revokedAt;
             await tx.consentRecord.update({
                 where: { id: existing.id },
-                data: { grantedAt, revokedAt, ipHash: existing.ipHash ?? consent.ipHash },
+                data: {
+                    grantedAt,
+                    revokedAt,
+                    ipHash: existing.ipHash ?? consent.ipHash,
+                    contentHash: existing.contentHash ?? consent.contentHash,
+                },
             });
             await tx.consentRecord.delete({ where: { id: consent.id } });
         }

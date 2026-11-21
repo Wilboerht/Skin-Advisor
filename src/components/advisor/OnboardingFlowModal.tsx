@@ -18,7 +18,7 @@ interface OnboardingFlowProps {
     isLocating: boolean;
     onLocationAccept: () => Promise<boolean>;
     onLocationDecline: () => void;
-    onSkipLocation: () => void;
+    onSkipLocation: () => boolean | void | Promise<boolean | void>;
     onRegionSelect: (region: string) => void;
     regionOptions: { group: string; regions: string[] }[];
     isLoggedIn: boolean;
@@ -148,10 +148,22 @@ export function OnboardingFlowModal({
         advanceToNext();
     };
 
-    const finish = () => {
+    const finish = async () => {
         if (finishingRef.current) return;
         finishingRef.current = true;
-        onSkipLocation();
+        setIsFinishing(true);
+        try {
+            const result = await onSkipLocation();
+            if (result === false) {
+                finishingRef.current = false;
+                setIsFinishing(false);
+                toast.error("同意记录同步失败，请检查网络后重试");
+            }
+        } catch {
+            finishingRef.current = false;
+            setIsFinishing(false);
+            toast.error("同意记录同步失败，请检查网络后重试");
+        }
     };
 
     /** 最后一屏直接完成，否则进入下一屏（不再按 isLoggedIn 跳过 legal 屏） */

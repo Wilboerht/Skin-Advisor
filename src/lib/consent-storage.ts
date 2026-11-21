@@ -6,11 +6,17 @@
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { CONSENT_VERSION } from "@/lib/consent-constants";
 
+export interface LocalConsentHashes {
+    privacy: string | null;
+    terms: string | null;
+}
+
 export interface LocalPrivacyConsent {
     version?: string;
     consentedAt?: string;
     /** 本机同意记录归属账号；账号变化后旧记录不得复用 */
     ownerId?: string;
+    contentHashes?: LocalConsentHashes;
 }
 
 function currentOwnerId(): string {
@@ -52,12 +58,15 @@ export function getPrivacyConsentPayload(): LocalPrivacyConsent | null {
 }
 
 /** 显式同意后写入（只有用户点击同意才调用，不在分析流程中自动授予） */
-export function savePrivacyConsent(): LocalPrivacyConsent | null {
+export function savePrivacyConsent(
+    contentHashes?: LocalConsentHashes
+): LocalPrivacyConsent | null {
     if (typeof window === "undefined") return null;
     const payload: LocalPrivacyConsent = {
         version: CONSENT_VERSION,
         consentedAt: new Date().toISOString(),
         ownerId: currentOwnerId(),
+        contentHashes: contentHashes ?? getPrivacyConsentPayload()?.contentHashes,
     };
     try {
         localStorage.setItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT, JSON.stringify(payload));

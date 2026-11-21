@@ -250,6 +250,7 @@ model ConsentRecord {
   userId    String
   scope     String   // privacy | face | health | ai
   version   String
+  contentHash String?
   grantedAt DateTime @default(now())
   revokedAt DateTime?
   ipHash    String?

@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { hasPrivacyConsent, savePrivacyConsent } from "@/lib/consent-storage";
-import { recordClientConsent } from "@/lib/consent-client";
+import { fetchConsentState, recordClientConsent } from "@/lib/consent-client";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -225,6 +225,19 @@ export default function HomeClient() {
       .catch(() => undefined);
   }, []);
 
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    void fetchConsentState().then((state) => {
+      if (!cancelled && state) {
+        setPrivacyConsentPresent(state.missing.length === 0);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
   // 兜底自愈：极端情况下弹窗已按游客流程打开（如 /api/auth/me 初次请求 429/超时，
   // user 保持 null），之后登录态由定时续期/visibilitychange 落地时，
   // 回填昵称让昵称屏自动收起（OnboardingFlowModal 会据 isLoggedIn/nickname 重算屏幕）。
@@ -394,24 +407,32 @@ export default function HomeClient() {
     // Do not close or start test here, let legal step handle it
   };
 
-  const handleSkipRegionSelect = () => {
+  const handleSkipRegionSelect = async (): Promise<boolean> => {
     // This is now repurposed as the FINAL completion handler from the Legal step
     locationRequestId.current += 1;
     setIsLocating(false);
-    setShowOnboardingModal(false);
-    setIsLoading(true);
-    
+
     // Ensure consent is recorded if not already set by location/region steps
     if (!safeStorage.getSession("locationConsent")) {
         safeStorage.setSession("locationConsent", "declined");
     }
 
-    // Record privacy consent from the legal step（登录用户同样会看到 legal 屏）
-    savePrivacyConsent();
-    if (user?.id) void recordClientConsent();
-    setPrivacyConsentPresent(true);
+    if (user?.id) {
+      const recorded = await recordClientConsent();
+      if (!recorded || recorded.missing.length > 0) {
+        setIsLoading(false);
+        return false;
+      }
+    } else {
+      // 游客只写本机记录；登录后由 ensureClientConsent 做服务端迁移。
+      savePrivacyConsent();
+    }
 
-    // 最终提交前确保昵称已保存：用户填写优先，否则已登录用户回退到官网昵称
+    setPrivacyConsentPresent(true);
+    setShowOnboardingModal(false);
+    setIsLoading(true);
+
+    // 提交前确保昵称已保存：用户手写优先，登录用户回退到账号昵称
     if (nickname.trim()) {
       safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, nickname.trim());
     } else if (user?.name && !safeStorage.get(STORAGE_KEYS.ADVISOR_NICKNAME)) {
@@ -419,6 +440,7 @@ export default function HomeClient() {
     }
     
     startNewTest();
+    return true;
   };
 
   const handleLocationDecline = () => {

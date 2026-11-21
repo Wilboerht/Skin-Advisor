@@ -6,7 +6,6 @@ import { Shield, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
 import { recordClientConsent } from "@/lib/consent-client";
-import { savePrivacyConsent } from "@/lib/consent-storage";
 
 interface PrivacyConsentProps {
     onConsent: () => void;
@@ -16,6 +15,8 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
     const [agreed, setAgreed] = useState(false);
     const [sensitiveAgreed, setSensitiveAgreed] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [submitError, setSubmitError] = useState("");
     const { openLegalDoc } = useLegalDocModal();
 
     return (
@@ -160,21 +161,32 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
 
                     <button
                         onClick={async () => {
-                            if (!agreed || !sensitiveAgreed) return;
-                            savePrivacyConsent();
-                            await recordClientConsent();
+                            if (!agreed || !sensitiveAgreed || saving) return;
+                            setSaving(true);
+                            setSubmitError("");
+                            const recorded = await recordClientConsent();
+                            setSaving(false);
+                            if (!recorded || recorded.missing.length > 0) {
+                                setSubmitError("同意记录同步失败，请检查网络后重试。");
+                                return;
+                            }
                             onConsent();
                         }}
-                        disabled={!agreed || !sensitiveAgreed}
+                        disabled={!agreed || !sensitiveAgreed || saving}
                         className={cn(
                             "w-full py-3.5 rounded-xl text-sm font-medium tracking-wide transition-all duration-300",
-                            agreed && sensitiveAgreed
+                            agreed && sensitiveAgreed && !saving
                                 ? "bg-[#1A1A1A] text-white hover:bg-[#333] shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                                 : "bg-[#1A1A1A]/10 text-[#1A1A1A]/30 cursor-not-allowed"
                         )}
                     >
-                        同意并继续
+                        {saving ? "正在提交…" : "同意并继续"}
                     </button>
+                    {submitError ? (
+                        <p className="text-xs text-red-600" role="alert">
+                            {submitError}
+                        </p>
+                    ) : null}
                 </div>
             </m.div>
         </div>
