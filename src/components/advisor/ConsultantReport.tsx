@@ -22,7 +22,7 @@ import { ReportFeedbackButton } from "./ReportFeedbackButton";
 const SEVERITY_META: Record<ConsultantIssue["severity"], { label: string; badge: string; bar: string }> = {
     severe: { label: "重点", badge: "bg-red-100 text-red-700", bar: "bg-red-400" },
     moderate: { label: "待改善", badge: "bg-amber-100 text-amber-700", bar: "bg-amber-400" },
-    mild: { label: "轻微", badge: "bg-[#F1ECE3] text-[#8c7a6b]", bar: "bg-[#D9D0C3]" },
+    mild: { label: "轻微", badge: "bg-report-muted text-brand-taupe", bar: "bg-brand-beige-dark" },
 };
 
 // 分数语义色/档位：与全站评分标准一致（85+优秀 / 70-84良好 / 55-69一般 / 40-54需关注 / <40较差），

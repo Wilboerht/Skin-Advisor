@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function ReportNotFound() {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7] px-4">
+        <div className="flex min-h-screen items-center justify-center bg-brand-canvas px-4">
             <div className="w-full max-w-md rounded-2xl border border-brand-charcoal/[0.08] bg-white p-8 text-center shadow-sm">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-charcoal/[0.04] text-2xl">
                     🗂️

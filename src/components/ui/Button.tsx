@@ -1,19 +1,48 @@
 "use client";
 
 import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
-    size?: "sm" | "md" | "lg";
+export const buttonVariants = cva(
+    "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium tracking-wider outline-none transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    {
+        variants: {
+            variant: {
+                primary: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+                secondary:
+                    "bg-brand-charcoal/8 text-brand-charcoal hover:bg-brand-charcoal/15",
+                outline:
+                    "border border-brand-charcoal/20 bg-white text-brand-charcoal/80 hover:bg-brand-charcoal/[0.03]",
+                ghost: "text-brand-charcoal/80 hover:bg-brand-charcoal/[0.06]",
+                danger:
+                    "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
+            },
+            size: {
+                sm: "h-9 px-3 text-sm",
+                md: "h-11 px-4 text-sm",
+                lg: "h-12 px-6 text-base",
+                icon: "size-9",
+            },
+        },
+        defaultVariants: {
+            variant: "primary",
+            size: "md",
+        },
+    },
+);
+
+interface ButtonProps
+    extends ButtonHTMLAttributes<HTMLButtonElement>,
+        VariantProps<typeof buttonVariants> {
     loading?: boolean;
     leftIcon?: ReactNode;
     rightIcon?: ReactNode;
 }
 
 /**
- * 通用按钮组件
+ * 通用按钮组件（shadcn/ui Button 规范实现，保持原 API）
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     (
@@ -30,37 +59,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         },
         ref,
     ) => {
-        const baseStyles =
-            "inline-flex items-center justify-center gap-2 rounded-lg font-medium tracking-wider transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100";
-
-        const variantStyles = {
-            primary: "bg-brand-primary text-white hover:bg-brand-primary/90",
-            secondary:
-                "bg-brand-charcoal/8 text-brand-charcoal hover:bg-brand-charcoal/15",
-            outline:
-                "border border-brand-charcoal/20 text-brand-charcoal/80 bg-white hover:bg-brand-charcoal/[0.03]",
-            ghost: "text-brand-charcoal/80 hover:bg-brand-charcoal/[0.06]",
-            danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-600",
-        };
-
-        const sizeStyles = {
-            sm: "h-9 px-3 text-sm",
-            md: "h-11 px-4 text-sm",
-            lg: "h-12 px-6 text-base",
-        };
-
         return (
             <button
                 ref={ref}
                 type="button"
                 disabled={disabled || loading}
                 aria-busy={loading || undefined}
-                className={cn(
-                    baseStyles,
-                    variantStyles[variant],
-                    sizeStyles[size],
-                    className,
-                )}
+                className={cn(buttonVariants({ variant, size }), className)}
                 {...props}
             >
                 {loading ? (

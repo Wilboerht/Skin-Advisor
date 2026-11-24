@@ -407,7 +407,7 @@ export function AuthModal() {
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
-                    className="fixed inset-0 z-[100003] pl-4 pr-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] bg-[#FDFBF7] flex flex-col"
+                    className="fixed inset-0 z-[100003] pl-4 pr-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] bg-brand-canvas flex flex-col"
                 >
                     {/* 手机端顶部栏 */}
                     <div className="flex-shrink-0 h-[56px] w-full flex items-center justify-center relative">

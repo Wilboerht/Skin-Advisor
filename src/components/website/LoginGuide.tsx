@@ -50,7 +50,7 @@ export function LoginGuide({ onNavigateLogin, onLoginIntent }: { onNavigateLogin
       </div>
       <button
         onClick={handleLogin}
-        className="inline-flex items-center justify-center h-11 px-8 min-w-[200px] rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[13px] font-normal tracking-[0.08em] cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c]"
+        className="inline-flex items-center justify-center h-11 px-8 min-w-[200px] rounded-full bg-[var(--color-brand-cocoa)] text-brand-canvas text-[13px] font-normal tracking-[0.08em] cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c]"
       >
         登录 / 注册
       </button>

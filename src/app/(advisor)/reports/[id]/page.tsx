@@ -164,11 +164,11 @@ export default async function ReportDetailPage(props: {
 
 function ReportArchived() {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7] px-4">
+        <div className="flex min-h-screen items-center justify-center bg-brand-canvas px-4">
             <div className="text-center max-w-md">
                 <div className="text-5xl mb-4">🗂️</div>
                 <h2 className="text-xl font-bold text-[#5c4937] mb-2">报告已归档</h2>
-                <p className="text-sm text-[#8c7a6b] mb-6">
+                <p className="text-sm text-brand-taupe mb-6">
                     每用户保留最近 10 份、且不超过 365 天的完整报告；更早的报告已归档为脱敏统计数据，最长保留 3 年。您的肤质趋势对比不受影响。
                 </p>
                 <div className="flex flex-col items-center gap-3">
@@ -180,7 +180,7 @@ function ReportArchived() {
                     </Link>
                     <Link
                         href="/"
-                        className="text-xs text-[#8c7a6b] underline-offset-4 hover:underline"
+                        className="text-xs text-brand-taupe underline-offset-4 hover:underline"
                     >
                         回到首页
                     </Link>

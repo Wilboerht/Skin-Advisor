@@ -103,7 +103,7 @@ export function AdvisorContactModal({ isOpen, onClose }: AdvisorContactModalProp
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full max-h-[85dvh] sm:max-h-none sm:max-w-sm bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden"
+              className="relative z-10 w-full max-h-[85dvh] sm:max-h-none sm:max-w-sm bg-brand-canvas rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* 关闭按钮 */}

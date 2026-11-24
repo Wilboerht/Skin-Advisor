@@ -1,7 +1,17 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/* shadcn/ui 的 dark: 变体只在显式挂 .dark 时生效，避免跟随系统深色模式 */
+@custom-variant dark (&:is(.dark *));
 
 /* ========================================
    MyskinToday Brand Design System
+   ========================================
+   颜色规范：
+   1. 下面 @theme 中的 --color-brand-* 是唯一原始色板（Primitive），只在这里写色值。
+   2. :root 中的 --background / --primary / --border 等是 shadcn 语义层（Semantic），
+      一律引用原始色板，不在组件里直接写 hex。
+   3. 业务页面优先使用语义 token 或 brand-* utility；确需品牌变体时再用 --color-brand-*。
    ======================================== */
 
 @keyframes orbit-spin {
@@ -56,6 +66,19 @@
   --color-brand-charcoal-light: #4A6272;
   --color-brand-primary: #00263E;
   --color-brand-primary-dark: #001525;
+  /* 页面/表面层级：统一替代散落的 #FDFBF7 / #F5F2E9 / #FAF8F5 / #F8F5EE */
+  --color-brand-canvas: #FDFBF7;        /* 全站页面底色 */
+  --color-brand-canvas-warm: #F5F2E9;   /* 测评流程底色 */
+  --color-brand-canvas-soft: #FAF8F5;   /* 分析/等待层底色 */
+  --color-brand-surface-warm: #F8F5EE;  /* 选项选中/暖表面 */
+  --color-brand-bronze: #8B7355;        /* 测评流程主强调（暖棕） */
+  --color-brand-bronze-light: #A68B6A;  /* 选中态渐变高光 */
+  --color-brand-ink-soft: #5A7282;      /* 次级文字（charcoal 65% on white） */
+  --color-brand-ink-muted: #5E5E5E;     /* 中性正文次级色 */
+  --color-brand-gold-soft: #C8A97E;     /* 产品卡徽标暖金 */
+  --color-brand-line-muted: #D4CFC5;    /* 浅分割线 */
+  --shadow-brand-soft: 0 8px 30px -8px rgba(139, 115, 85, 0.18);
+  --shadow-brand-check: 0 2px 8px rgba(139, 115, 85, 0.3);
   /* 肌智派结果页暖色系 token（result 组件使用） */
   --color-brand-espresso: #3d2f25;
   --color-brand-cocoa: #5c4937;
@@ -125,22 +148,92 @@
 
   /* Legacy Colors (Keep for other pages) */
   --color-brand-gold: #C9A86C;
-  --color-brand-gold-light: #D4B77A;
-  --color-brand-gold-dark: #B8975B;
-  --color-brand-cream: #F5F2ED;
-  --color-brand-cream-dark: #F5F2ED;
-  --color-brand-charcoal-light: #4A4A4A;
-  --color-brand-blush: #F5E6E0;
   --color-brand-beige: #E8E2D9;
   --color-brand-beige-dark: #D9D0C3;
-  --color-brand-blue: #7a9fd4;
-  --color-brand-bronze: #8B6914;
-  --color-brand-champagne: #F7E7CE;
 
   /* Legacy Fonts */
   /* 命名误导注意：--font-serif 的内容实际是无衬线字体栈（历史遗留），
      font-serif 类渲染的并非衬线字体 */
   --font-serif: "Futura LT", "Futura", "PingFang SC", "Source Han Sans", "Microsoft YaHei", serif;
+}
+
+/* shadcn/ui 语义 token 映射：所有值引用上面的品牌色板，保持现有配色不变 */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  /* 语义映射：background=页面底、foreground=品牌主文字、primary=主操作、
+     border=分割线、input=表单边框、ring=焦点、muted/accent=浅暖表面、
+     destructive=危险操作；组件里不再直接写 hex。 */
+  --radius: 0.5rem;
+  --background: var(--color-brand-canvas);
+  --foreground: var(--color-brand-charcoal);
+  --card: #FFFFFF;
+  --card-foreground: var(--color-brand-charcoal);
+  --popover: #FFFFFF;
+  --popover-foreground: var(--color-brand-charcoal);
+  --primary: var(--color-brand-primary);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--color-cream);
+  --secondary-foreground: var(--color-olive);
+  --muted: var(--color-brand-cream);
+  --muted-foreground: var(--color-brand-ink-soft);
+  --accent: var(--color-brand-cream);
+  --accent-foreground: var(--color-brand-charcoal);
+  --destructive: var(--color-brand-danger);
+  --destructive-foreground: #FFFFFF;
+  --border: var(--color-brand-beige);
+  --input: var(--color-brand-beige-dark);
+  --ring: var(--color-brand-primary);
+  --chart-1: var(--color-brand-gold);
+  --chart-2: var(--color-olive);
+  --chart-3: var(--color-brand-bronze);
+  --chart-4: var(--color-state-good);
+  --chart-5: var(--color-brand-danger);
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: var(--color-brand-charcoal);
+  --sidebar-primary: var(--color-brand-primary);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--color-brand-cream);
+  --sidebar-accent-foreground: var(--color-brand-charcoal);
+  --sidebar-border: var(--color-brand-beige);
+  --sidebar-ring: var(--color-brand-primary);
 }
 
 @layer base {

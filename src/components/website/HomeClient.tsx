@@ -657,7 +657,7 @@ export default function HomeClient() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center"
+            className="fixed inset-0 z-[9999] bg-brand-canvas flex flex-col items-center justify-center"
           >
             <Loader2 className="w-10 h-10 text-[var(--color-brand-charcoal)] animate-spin mb-6" />
             <p className="text-brand-charcoal/70 text-[15px] font-medium tracking-wide">即将进入 AI 问卷...</p>
@@ -954,7 +954,7 @@ export default function HomeClient() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full max-w-[420px] max-h-[90dvh] bg-[#FDFBF7] rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
+              className="relative z-10 w-full max-w-[420px] max-h-[90dvh] bg-brand-canvas rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               {/* Close Button：与全站弹层规范一致（移动端 44px 触达） */}

@@ -2,6 +2,7 @@
 
 import { InputHTMLAttributes, ReactNode, forwardRef, useId } from "react";
 import { cn } from "@/lib/utils";
+import { Label } from "./label";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
@@ -35,20 +36,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         return (
             <div className="w-full">
                 {label && (
-                    <label
+                    <Label
                         htmlFor={inputId}
-                        className="mb-1 block text-sm font-medium text-brand-charcoal/80"
+                        className="mb-1 text-sm font-medium text-brand-charcoal/80"
                     >
                         {label}
                         {required && (
                             <span
-                                className="ml-0.5 text-red-500"
+                                className="ml-0.5 text-destructive"
                                 aria-hidden="true"
                             >
                                 *
                             </span>
                         )}
-                    </label>
+                    </Label>
                 )}
                 <div className="relative">
                     <input
@@ -59,14 +60,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         aria-invalid={error ? true : undefined}
                         aria-describedby={describedBy}
                         className={cn(
-                            "w-full rounded-lg border bg-white px-4 py-2.5 text-brand-charcoal transition-colors",
-                            "placeholder:text-brand-charcoal/65",
-                            "focus:outline-none focus:ring-1",
-                            error
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                : "border-brand-charcoal/20 focus:border-brand-primary focus:ring-brand-primary",
-                            disabled &&
-                                "cursor-not-allowed bg-brand-charcoal/[0.03] opacity-50",
+                            "flex h-11 w-full min-w-0 rounded-lg border border-input bg-white px-4 py-2.5 text-base text-brand-charcoal shadow-xs transition-[color,box-shadow] outline-none",
+                            "placeholder:text-muted-foreground",
+                            "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                            "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
+                            "disabled:cursor-not-allowed disabled:bg-brand-charcoal/[0.03] disabled:opacity-50 md:text-sm",
                             rightElement && "pr-12",
                             className,
                         )}
@@ -79,13 +77,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     )}
                 </div>
                 {error ? (
-                    <p id={errorId} className="mt-1 text-sm text-red-500">
+                    <p id={errorId} className="mt-1 text-sm text-destructive">
                         {error}
                     </p>
                 ) : hint ? (
                     <p
                         id={hintId}
-                        className="mt-1 text-xs text-brand-charcoal/65"
+                        className="mt-1 text-xs text-muted-foreground"
                     >
                         {hint}
                     </p>

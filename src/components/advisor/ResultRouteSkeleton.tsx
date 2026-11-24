@@ -9,12 +9,12 @@
 export function ResultRouteSkeleton() {
     return (
         <div
-            className="fixed inset-0 overflow-hidden bg-[#E8E2D9]"
+            className="fixed inset-0 overflow-hidden bg-brand-beige"
             aria-busy="true"
             aria-label="报告加载中"
         >
             {/* 顶部栏骨架（毛玻璃底 + 居中 logo 占位） */}
-            <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-center bg-[#E8E2D9]/90 px-4 pb-5 pt-[calc(1.75rem+env(safe-area-inset-top,0px))] backdrop-blur-sm">
+            <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-center bg-brand-beige/90 px-4 pb-5 pt-[calc(1.75rem+env(safe-area-inset-top,0px))] backdrop-blur-sm">
                 <div className="h-7 w-[120px] animate-pulse rounded-md bg-[#3d2f25]/10 md:h-9" />
             </div>
 

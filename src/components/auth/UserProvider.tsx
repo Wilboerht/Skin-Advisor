@@ -362,7 +362,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         <UserContext.Provider value={value}>
             {children}
             {isLoggingOut && (
-                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 bg-[#F5F2E9]">
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 bg-brand-canvas-warm">
                     <Loader2 className="h-7 w-7 animate-spin text-stone-500" />
                     <p className="text-sm font-light tracking-wide text-stone-500">正在退出登录…</p>
                 </div>

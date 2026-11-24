@@ -159,7 +159,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
             onMouseLeave={() => setPersonaPaused(false)}
             onFocus={() => setPersonaPaused(true)}
             onBlur={() => setPersonaPaused(false)}
-            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#FAF8F5] overflow-hidden outline-none"
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-brand-canvas-soft overflow-hidden outline-none"
         >
             {/* Brand anchor — 立即出现，不参与淡入 */}
             <div className="absolute top-0 left-0 right-0 flex justify-center pt-8 px-4 md:px-12 lg:px-20">

@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { m } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import {
   RefreshCw,
   Sun,
@@ -1983,21 +1983,24 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         <div className="absolute bottom-8 left-0 right-0 z-20 flex flex-col items-center pointer-events-none px-4">
 
           {/* 状态提示文字 - 极大号，像电影字幕 */}
-          <m.div
-            key={currentStep} // 切换步骤时触发动画
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-4"
-          >
-            <h3 aria-live="polite" className="text-2xl md:text-3xl font-serif text-white mb-2 drop-shadow-md">
-              {nextStepInstruction
-                ? `请准备：${nextStepInstruction}`
-                : showSuccessForStep === "chin"
-                  ? "拍摄完成，请确认照片"
-                  : isInCooldown
-                    ? "请稍候，即将进入下一步"
-                    : currentStepConfig?.instruction}
-            </h3>
+          <div className="text-center mb-4">
+            <div aria-live="polite">
+              <m.h3
+                key={currentStep}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="text-2xl md:text-3xl font-serif text-white mb-2 drop-shadow-md"
+              >
+                {nextStepInstruction
+                  ? `请准备：${nextStepInstruction}`
+                  : showSuccessForStep === "chin"
+                    ? "拍摄完成，请确认照片"
+                    : isInCooldown
+                      ? "请稍候，即将进入下一步"
+                      : currentStepConfig?.instruction}
+              </m.h3>
+            </div>
 
             {/* 辅助状态：光线 和 自动拍照提示 */}
             <div className="flex items-center justify-center gap-4 text-white/60 text-sm font-light">
@@ -2046,7 +2049,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                 {qualityHint}
               </p>
             )}
-          </m.div>
+          </div>
 
           {/* 手动拍照按钮 (Fallback) */}
           {(showManualButton || manualFallback) && (
@@ -2096,72 +2099,83 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       )}
 
       {/* 拍后确认：四角度缩略图 + 单张/全部重拍，避免进入分析后才发现问题 */}
-      {showReview && reviewImages && (
-        <div role="dialog" aria-modal="true" aria-label="确认拍摄照片" className="absolute inset-0 z-[60] flex flex-col bg-black/90 p-5 overflow-y-auto">
-          <div className="mx-auto w-full max-w-md">
-            <h3 className="text-center text-white text-lg font-medium mb-2">确认拍摄照片</h3>
-            <p className="text-center text-white/55 text-xs mb-5 leading-relaxed">
-              请检查光线、清晰度和构图。确认后将开始 AI 分析。
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {CAPTURE_STEPS.map((item) => {
-                const src = reviewImages[item.step];
-                return (
-                  <div key={item.step} className="overflow-hidden rounded-xl border border-white/15 bg-white/5">
-                    <div className="relative aspect-[3/4]">
-                      {src ? (
-                        <div
-                          role="img"
-                          aria-label={`${item.label}照片`}
-                          className="h-full w-full bg-cover bg-center"
-                          style={{ backgroundImage: `url(${src})` }}
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-xs text-white/40">缺失</div>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between gap-2 px-3 py-2">
-                      <span className="text-[12px] text-white/70">{item.label}</span>
-                      <button
-                        type="button"
-                        onClick={() => void resetForRetake(item.step)}
-                        disabled={submittingReview}
-                        className="text-[12px] text-white/80 underline underline-offset-2 hover:text-white disabled:opacity-40 disabled:no-underline"
-                      >
-                        重拍
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {reviewError && (
-              <p role="alert" className="mt-4 rounded-lg border border-red-300/30 bg-red-500/15 px-3 py-2 text-center text-[12px] leading-relaxed text-red-100">
-                {reviewError}
+      <AnimatePresence>
+        {showReview && reviewImages && (
+          <m.div
+            key="review"
+            role="dialog"
+            aria-modal="true"
+            aria-label="确认拍摄照片"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.24, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ opacity: 0, y: 12, pointerEvents: "none" as const, transition: { duration: 0.16, ease: "easeIn" } }}
+            className="absolute inset-0 z-[60] flex flex-col bg-black/90 p-5 overflow-y-auto"
+          >
+            <div className="mx-auto w-full max-w-md">
+              <h3 className="text-center text-white text-lg font-medium mb-2">确认拍摄照片</h3>
+              <p className="text-center text-white/55 text-xs mb-5 leading-relaxed">
+                请检查光线、清晰度和构图。确认后将开始 AI 分析。
               </p>
-            )}
-            <div className="mt-6 flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={handleConfirmReview}
-                disabled={submittingReview}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-white px-6 text-[14px] font-medium text-black disabled:opacity-50"
-              >
-                {submittingReview && <Loader2 className="h-4 w-4 animate-spin" />}
-                {submittingReview ? "正在提交..." : "开始分析"}
-              </button>
-              <button
-                type="button"
-                onClick={() => void resetForRetake("front")}
-                disabled={submittingReview}
-                className="min-h-[44px] rounded-full border border-white/25 px-6 text-[13px] text-white/70 transition-colors hover:bg-white/10 disabled:opacity-50"
-              >
-                全部重拍
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                {CAPTURE_STEPS.map((item) => {
+                  const src = reviewImages[item.step];
+                  return (
+                    <div key={item.step} className="overflow-hidden rounded-xl border border-white/15 bg-white/5">
+                      <div className="relative aspect-[3/4]">
+                        {src ? (
+                          <div
+                            role="img"
+                            aria-label={`${item.label}照片`}
+                            className="h-full w-full bg-cover bg-center"
+                            style={{ backgroundImage: `url(${src})` }}
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-xs text-white/40">缺失</div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-2 px-3 py-2">
+                        <span className="text-[12px] text-white/70">{item.label}</span>
+                        <button
+                          type="button"
+                          onClick={() => void resetForRetake(item.step)}
+                          disabled={submittingReview}
+                          className="text-[12px] text-white/80 underline underline-offset-2 hover:text-white disabled:opacity-40 disabled:no-underline"
+                        >
+                          重拍
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {reviewError && (
+                <p role="alert" className="mt-4 rounded-lg border border-red-300/30 bg-red-500/15 px-3 py-2 text-center text-[12px] leading-relaxed text-red-100">
+                  {reviewError}
+                </p>
+              )}
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={handleConfirmReview}
+                  disabled={submittingReview}
+                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-white px-6 text-[14px] font-medium text-black disabled:opacity-50"
+                >
+                  {submittingReview && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {submittingReview ? "正在提交..." : "开始分析"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void resetForRetake("front")}
+                  disabled={submittingReview}
+                  className="min-h-[44px] rounded-full border border-white/25 px-6 text-[13px] text-white/70 transition-colors hover:bg-white/10 disabled:opacity-50"
+                >
+                  全部重拍
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </m.div>
+        )}
+      </AnimatePresence>
 
       {/* Error Overlay */}
       {error && (

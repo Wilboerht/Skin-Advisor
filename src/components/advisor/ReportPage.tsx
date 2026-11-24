@@ -45,7 +45,7 @@ const ZONE_SCORE_LABELS: Record<(typeof ZONE_SCORE_KEYS)[number], string> = {
 };
 
 const CONDITION_SEVERITY: Record<SkinCondition["severity"], { label: string; className: string }> = {
-    mild: { label: "轻度", className: "bg-[#F1ECE3] text-[#8c7a6b]" },
+    mild: { label: "轻度", className: "bg-report-muted text-brand-taupe" },
     moderate: { label: "中度", className: "bg-amber-100 text-amber-700" },
     severe: { label: "重度", className: "bg-red-100 text-red-700" },
 };
@@ -256,7 +256,7 @@ export default function ReportPage({
         <div className="flex flex-col gap-8 lg:gap-10">
             <nav
                 aria-label="报告导航"
-                className="sticky top-[calc(var(--result-topbar-h,76px)+env(safe-area-inset-top,0px))] z-20 -mx-1 flex gap-2 overflow-x-auto rounded-xl bg-[#FDFBF7]/90 px-1 py-2 backdrop-blur scrollbar-hide supports-[backdrop-filter]:bg-[#FDFBF7]/70"
+                className="sticky top-[calc(var(--result-topbar-h,76px)+env(safe-area-inset-top,0px))] z-20 -mx-1 flex gap-2 overflow-x-auto rounded-xl bg-brand-canvas/90 px-1 py-2 backdrop-blur scrollbar-hide supports-[backdrop-filter]:bg-brand-canvas/70"
             >
                 {reportNav.map((item) => (
                     <a

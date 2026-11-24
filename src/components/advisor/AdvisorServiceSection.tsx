@@ -65,7 +65,7 @@ export function AdvisorServiceSection({ onLogin, onOpenMembership, className }: 
                 <h2 className="text-lg lg:text-2xl font-bold text-brand-espresso tracking-wide">
                     专属护肤顾问服务
                 </h2>
-                <p className="text-xs lg:text-sm text-[#8c7a6b] mt-2">
+                <p className="text-xs lg:text-sm text-brand-taupe mt-2">
                     让本次诊断不止于一份报告
                 </p>
             </m.div>

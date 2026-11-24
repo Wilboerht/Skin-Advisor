@@ -79,10 +79,10 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinS
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="fixed inset-0 z-[320] bg-[#FAF8F5] flex flex-col overscroll-contain"
+                    className="fixed inset-0 z-[320] bg-brand-canvas-soft flex flex-col overscroll-contain"
                 >
                     {/* ---- Header（随流布局，内容区独立滚动，矮屏/横屏不再靠固定 padding 避让） ---- */}
-                    <header className="relative w-full shrink-0 flex items-center justify-center px-6 md:px-12 lg:px-20 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-5 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-6 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-brand-charcoal/5 z-10">
+                    <header className="relative w-full shrink-0 flex items-center justify-center px-6 md:px-12 lg:px-20 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-5 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-6 bg-brand-canvas-soft/95 backdrop-blur-sm border-b border-brand-charcoal/5 z-10">
                         <button
                             onClick={handleClose}
                             className="absolute left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 cursor-pointer bg-transparent border-none touch-manipulation active:scale-95"

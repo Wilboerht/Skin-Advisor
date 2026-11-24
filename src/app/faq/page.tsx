@@ -30,7 +30,7 @@ export const revalidate = 86400;
 
 export default function FAQPage() {
   return (
-    <div className="relative min-h-screen text-[#1A1A1A] bg-[#FDFBF7] pb-dock">
+    <div className="relative min-h-screen text-text-primary bg-brand-canvas pb-dock">
       <FAQPageSchema faqs={faqs} />
       <BreadcrumbSchema
         items={[
@@ -44,13 +44,13 @@ export default function FAQPage() {
       {/* Hero */}
       <section className="relative pt-12 md:pt-20 pb-12 md:pb-20 px-6 md:px-12 lg:px-20">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-[11px] tracking-[0.25em] text-[#8B7355] uppercase mb-5">
+          <p className="text-[11px] tracking-[0.25em] text-brand-bronze uppercase mb-5">
             Frequently Asked Questions
           </p>
-          <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-5">
+          <h1 className="text-2xl md:text-3xl font-serif text-text-primary mb-5">
             AI 护肤分析 · 常见问题
           </h1>
-          <p className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed">
+          <p className="text-[15px] md:text-base text-brand-ink-muted font-light max-w-xl mx-auto leading-relaxed">
             关于 NIHPLOD AI 护肤分析的使用方法、准确性、数据隐私等问题，在这里找到答案。
           </p>
         </div>
@@ -65,13 +65,13 @@ export default function FAQPage() {
               className="group py-5 md:py-6 cursor-pointer"
               id={`faq-${i + 1}`}
             >
-              <summary className="flex items-center justify-between gap-4 text-[15px] md:text-base font-medium text-[#1A1A1A] list-none marker:content-none hover:text-[#3D4430] transition-colors">
+              <summary className="flex items-center justify-between gap-4 text-[15px] md:text-base font-medium text-text-primary list-none marker:content-none hover:text-olive transition-colors">
                 <span>{faq.question}</span>
-                <span className="shrink-0 text-[#8B7355] text-lg leading-none group-open:rotate-45 transition-transform duration-300">
+                <span className="shrink-0 text-brand-bronze text-lg leading-none group-open:rotate-45 transition-transform duration-300">
                   +
                 </span>
               </summary>
-              <p className="mt-4 text-[14px] md:text-[15px] text-[#5E5E5E] font-light leading-relaxed">
+              <p className="mt-4 text-[14px] md:text-[15px] text-brand-ink-muted font-light leading-relaxed">
                 {faq.answer}
               </p>
             </details>

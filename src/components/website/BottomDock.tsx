@@ -167,7 +167,7 @@ export function BottomDock() {
     >
       {/* 移动端实色上浮 8px；桌面端磨砂并使用更宽的定宽胶囊 */}
       <div
-        className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 max-w-[420px] md:max-w-md bg-[#FDFBF7] md:bg-[#FDFBF7]/90 md:backdrop-blur-md rounded-full border border-brand-charcoal/[0.08] shadow-[0_8px_30px_rgba(0,38,62,0.12)] mb-[calc(env(safe-area-inset-bottom,0px)+var(--dock-bottom-offset))] md:mb-8 pointer-events-auto"
+        className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 max-w-[420px] md:max-w-md bg-brand-canvas md:bg-brand-canvas/90 md:backdrop-blur-md rounded-full border border-brand-charcoal/[0.08] shadow-[0_8px_30px_rgba(0,38,62,0.12)] mb-[calc(env(safe-area-inset-bottom,0px)+var(--dock-bottom-offset))] md:mb-8 pointer-events-auto"
       >
         {TABS.map((tab) => {
           const active = isActive(tab);

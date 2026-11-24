@@ -11,7 +11,7 @@ interface SkeletonProps {
 }
 
 /**
- * 骨架屏组件
+ * 骨架屏组件（shadcn/ui Skeleton 规范实现，保持原 API）
  */
 export function Skeleton({
     className,
@@ -39,6 +39,7 @@ export function Skeleton({
 
     return (
         <div
+            data-slot="skeleton"
             className={cn(
                 "bg-brand-charcoal/10",
                 variantStyles[variant],

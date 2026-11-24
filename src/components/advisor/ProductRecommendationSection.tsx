@@ -124,7 +124,7 @@ export function ProductRecommendationSection({
         return (
             <div className="py-12 text-center">
                 <h4 className="text-base font-medium text-brand-espresso mb-2">护理组合筹备中</h4>
-                <p className="text-sm text-[#8c7a6b]">正在为这个派系甄选产品，也可以先咨询专属顾问</p>
+                <p className="text-sm text-brand-taupe">正在为这个派系甄选产品，也可以先咨询专属顾问</p>
                 <a
                     href="#advisor-service"
                     className="mt-4 inline-flex h-9 items-center justify-center rounded-full border border-brand-cocoa/25 bg-white px-5 text-[12px] font-medium text-brand-cocoa transition-colors hover:border-brand-cocoa/45 hover:bg-brand-cocoa/[0.06]"
@@ -147,7 +147,7 @@ export function ProductRecommendationSection({
                 <h2 className="text-lg lg:text-2xl font-bold text-brand-espresso tracking-wide">
                     为您甄选的护理组合
                 </h2>
-                <p className="text-xs lg:text-sm text-[#8c7a6b] mt-2">
+                <p className="text-xs lg:text-sm text-brand-taupe mt-2">
                     方案中每一步护理，这里是为你对应好的具体选择
                 </p>
             </m.div>
@@ -213,7 +213,7 @@ export function ProductRecommendationSection({
             </div>
 
             {!centered && (
-                <p className="text-xs text-[#8c7a6b] text-center mt-6">
+                <p className="text-xs text-brand-taupe text-center mt-6">
                     💡 左右滑动或点击箭头查看更多产品
                 </p>
             )}

@@ -117,7 +117,7 @@ export function ForgotPasswordForm({ onBackToLogin }: { onBackToLogin?: () => vo
     const inputClass =
         "w-full rounded-lg border border-brand-charcoal/15 bg-white/70 px-10 py-3.5 text-[15px] text-brand-charcoal placeholder:text-brand-charcoal/35 focus:outline-none focus:border-brand-charcoal/40 transition-colors";
     const buttonClass =
-        "w-full h-12 rounded-full bg-[var(--color-brand-cocoa)] text-[#FDFBF7] text-[14px] font-normal tracking-[0.08em] transition-colors hover:bg-[#4a3a2c] disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-center gap-2";
+        "w-full h-12 rounded-full bg-[var(--color-brand-cocoa)] text-brand-canvas text-[14px] font-normal tracking-[0.08em] transition-colors hover:bg-[#4a3a2c] disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-center gap-2";
 
     if (succeeded) {
         return (

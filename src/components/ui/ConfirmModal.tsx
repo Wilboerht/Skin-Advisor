@@ -1,9 +1,17 @@
 "use client";
 
 import { useState, useCallback, useId, useRef } from "react";
-import { AdminModal } from "./AdminModal";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "./Button";
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "./alert-dialog";
+import { cn } from "@/lib/utils";
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -59,61 +67,68 @@ export function ConfirmModal({
 
     const iconStyles =
         variant === "danger"
-            ? "bg-red-50 text-red-500"
+            ? "bg-brand-danger/10 text-brand-danger"
             : variant === "warning"
-              ? "bg-amber-50 text-amber-500"
-              : "bg-brand-primary/10 text-brand-primary";
+              ? "bg-brand-ember/10 text-brand-ember"
+              : "bg-primary/10 text-primary";
 
     return (
-        <AdminModal
-            isOpen={isOpen}
-            onClose={onClose}
-            title={title}
-            titleId={titleId}
-            maxWidth="sm"
-            disabled={isLoading}
-            showCloseButton={!isLoading}
-            aria-describedby={descId}
+        <AlertDialog
+            open={isOpen}
+            onOpenChange={(open) => {
+                if (!open && !isLoading) onClose();
+            }}
         >
-            <div className="flex gap-4">
-                <div
-                    className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${iconStyles}`}
-                >
-                    <AlertTriangle className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <p
-                        id={descId}
-                        className="text-sm leading-relaxed text-brand-charcoal/65"
+            <AlertDialogContent
+                aria-labelledby={titleId}
+                aria-describedby={descId}
+                className="max-w-sm sm:max-w-sm"
+            >
+                <div className="flex gap-4">
+                    <div
+                        className={cn(
+                            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full",
+                            iconStyles,
+                        )}
                     >
-                        {message}
-                    </p>
-                    {error && (
-                        <p className="mt-3 rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-700">
-                            {error}
-                        </p>
-                    )}
+                        <AlertTriangle className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle id={titleId}>
+                                {title}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription id={descId}>
+                                {message}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        {error && (
+                            <p className="mt-3 rounded-lg border border-brand-danger/20 bg-brand-danger/10 px-4 py-2.5 text-sm text-brand-danger">
+                                {error}
+                            </p>
+                        )}
+                    </div>
                 </div>
-            </div>
-            <div className="mt-5 flex flex-wrap justify-end gap-3">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onClose}
-                    disabled={isLoading}
-                >
-                    {cancelText}
-                </Button>
-                <Button
-                    type="button"
-                    variant={variant === "danger" ? "danger" : "primary"}
-                    onClick={handleConfirm}
-                    loading={isLoading}
-                >
-                    {confirmText}
-                </Button>
-            </div>
-        </AdminModal>
+                <AlertDialogFooter className="mt-1">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onClose}
+                        disabled={isLoading}
+                    >
+                        {cancelText}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={variant === "danger" ? "danger" : "primary"}
+                        onClick={handleConfirm}
+                        loading={isLoading}
+                    >
+                        {confirmText}
+                    </Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 

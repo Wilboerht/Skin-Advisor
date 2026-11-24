@@ -137,13 +137,13 @@ function CompactProductCard({
                 <div className="flex min-w-0 flex-1 flex-col p-3 lg:p-4">
                     <div>
                         {/* 产品名称 */}
-                        <h4 className="mb-1 line-clamp-2 text-base font-bold leading-snug text-[#1a1a1a] lg:mb-2 lg:text-lg">
+                        <h4 className="mb-1 line-clamp-2 text-base font-bold leading-snug text-text-primary lg:mb-2 lg:text-lg">
                             {product.name}
                         </h4>
 
                         {/* 功效标签 */}
                         {product.benefits && product.benefits.length > 0 && (
-                            <p className="mb-1 truncate text-xs text-[#C8A97E] lg:text-xs">
+                            <p className="mb-1 truncate text-xs text-brand-gold-soft lg:text-xs">
                                 {product.benefits.join(" | ")}
                             </p>
                         )}
@@ -168,9 +168,9 @@ function CompactProductCard({
 
                         {/* 社交证明标签 */}
                         {product.socialProof && product.socialProof.affinity >= 10 && (
-                            <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#F0EDE1]/70 px-2 py-0.5 text-[10px] text-[#8B7355] font-medium">
+                            <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-cream/70 px-2 py-0.5 text-[10px] text-brand-bronze font-medium">
                                 <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none">
-                                    <path d="M8 1L10 5l4 0.5-3 3 1 4.5L8 11l-4 2 1-4.5-3-3L6 5 8 1z" fill="#C8A97E" opacity="0.7"/>
+                                    <path d="M8 1L10 5l4 0.5-3 3 1 4.5L8 11l-4 2 1-4.5-3-3L6 5 8 1z" fill="var(--color-brand-gold-soft)" opacity="0.7"/>
                                 </svg>
                                 <span>{product.socialProof.label} · {product.socialProof.affinity}%</span>
                             </div>
@@ -179,7 +179,7 @@ function CompactProductCard({
 
                     {/* 价格 + 查看详情 - mobile only */}
                     <div className="mt-auto flex items-center justify-between lg:hidden">
-                        <span className="text-base font-bold text-[#1a1a1a]">
+                        <span className="text-base font-bold text-text-primary">
                             {formatPrice(product.price)}
                         </span>
                         <button
@@ -196,7 +196,7 @@ function CompactProductCard({
 
                     {/* 底部操作栏 - desktop only */}
                     <div className="hidden items-center justify-between pt-3 lg:flex">
-                        <span className="text-xl font-bold text-[#1a1a1a]">
+                        <span className="text-xl font-bold text-text-primary">
                             {formatPrice(product.price)}
                         </span>
                         <button

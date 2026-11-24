@@ -16,7 +16,7 @@ export default function ReportError({
     }, [error]);
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7] px-4">
+        <div className="flex min-h-screen items-center justify-center bg-brand-canvas px-4">
             <div className="w-full max-w-md rounded-2xl border border-brand-charcoal/[0.08] bg-white p-8 text-center shadow-sm">
                 <AlertCircle className="mx-auto h-12 w-12 text-red-500" strokeWidth={1.5} />
                 <h2 className="mt-4 text-lg font-medium text-brand-charcoal">报告加载失败</h2>

@@ -25,7 +25,7 @@ function zoneAverage(zone: ZoneData | undefined): number | null {
 
 function fillFor(zone: ZoneData | undefined): { fill: string; fillOpacity: number; label: string } {
     const average = zoneAverage(zone);
-    if (average === null) return { fill: "#D9D0C3", fillOpacity: 0.35, label: "无数据" };
+    if (average === null) return { fill: "var(--color-brand-beige-dark)", fillOpacity: 0.35, label: "无数据" };
     const band = getScoreBand(average);
     return {
         fill: band?.color ?? "#8B7355",

@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#FDFBF7] text-[#1A1A1A] px-6 text-center">
-      <p className="text-[80px] md:text-[120px] font-serif text-[#8B7355]/30 leading-none mb-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-brand-canvas text-text-primary px-6 text-center">
+      <p className="text-[80px] md:text-[120px] font-serif text-brand-bronze/30 leading-none mb-4">
         404
       </p>
       <h1 className="text-xl md:text-2xl font-serif mb-3">页面未找到</h1>
-      <p className="text-[14px] text-[#5E5E5E] font-light max-w-md mb-8 leading-relaxed">
+      <p className="text-[14px] text-brand-ink-muted font-light max-w-md mb-8 leading-relaxed">
          您访问的页面可能已移动或暂时不可用。不如回到首页，开始一次 AI 肤质分析？
       </p>
       <Link

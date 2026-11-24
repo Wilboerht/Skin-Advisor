@@ -165,7 +165,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                             {galleryImages.length > 0 ? (
                                 <>
                                     {imageErrors[galleryImages[activeImageIndex]] ? (
-                                        <div className="flex h-full w-full flex-col items-center justify-center text-[#8c7a6b]/50">
+                                        <div className="flex h-full w-full flex-col items-center justify-center text-brand-taupe/50">
                                             <ImageOff className="h-12 w-12" />
                                             <span className="mt-2 text-sm">图片加载未成功</span>
                                         </div>
@@ -225,7 +225,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                     )}
                                 </>
                             ) : (
-                                <div className="flex h-full items-center justify-center text-[#8c7a6b]/50">
+                                <div className="flex h-full items-center justify-center text-brand-taupe/50">
                                     <span className="text-sm">暂无图片</span>
                                 </div>
                             )}
@@ -255,13 +255,13 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                 <div className="mb-4 grid grid-cols-2 gap-3 text-[13px]">
                                     {product.origin && (
                                         <div>
-                                            <span className="text-[#8c7a6b]">产地</span>
+                                            <span className="text-brand-taupe">产地</span>
                                             <span className="ml-2 text-[#3d2f25]">{product.origin}</span>
                                         </div>
                                     )}
                                     {product.capacity && (
                                         <div>
-                                            <span className="text-[#8c7a6b]">规格</span>
+                                            <span className="text-brand-taupe">规格</span>
                                             <span className="ml-2 text-[#3d2f25]">{product.capacity}</span>
                                         </div>
                                     )}
@@ -298,7 +298,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                                 </svg>
                                             </a>
                                             {isMobile && (
-                                                <p className="mt-1.5 text-[11px] text-[#8c7a6b]/60">
+                                                <p className="mt-1.5 text-[11px] text-brand-taupe/60">
                                                     若未唤起小红书App，请手动搜索「{keyword}」
                                                 </p>
                                             )}
@@ -319,7 +319,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                         >
                                             <span>产品描述</span>
                                             <span className={cn(
-                                                "text-[18px] transition-transform duration-200 text-[#8c7a6b]",
+                                                "text-[18px] transition-transform duration-200 text-brand-taupe",
                                                 openAccordion === "description" && "rotate-45"
                                             )}>+</span>
                                         </button>
@@ -349,7 +349,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                         >
                                             <span>成分说明</span>
                                             <span className={cn(
-                                                "text-[18px] transition-transform duration-200 text-[#8c7a6b]",
+                                                "text-[18px] transition-transform duration-200 text-brand-taupe",
                                                 openAccordion === "ingredients" && "rotate-45"
                                             )}>+</span>
                                         </button>
@@ -370,7 +370,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                                                 const info = lookupIngredient(ingredient);
                                                                 return (
                                                                     <div key={i} className="flex items-center gap-2.5">
-                                                                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#8B7355]/40" />
+                                                                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-brand-bronze/40" />
                                                                         <span className="text-[15px] text-[#5c4937]">{info ? info.title : ingredient}</span>
                                                                     </div>
                                                                 );
@@ -393,7 +393,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                         >
                                             <span>主要功效</span>
                                             <span className={cn(
-                                                "text-[18px] transition-transform duration-200 text-[#8c7a6b]",
+                                                "text-[18px] transition-transform duration-200 text-brand-taupe",
                                                 openAccordion === "benefits" && "rotate-45"
                                             )}>+</span>
                                         </button>
@@ -425,7 +425,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                         >
                                             <span>使用方法</span>
                                             <span className={cn(
-                                                "text-[18px] transition-transform duration-200 text-[#8c7a6b]",
+                                                "text-[18px] transition-transform duration-200 text-brand-taupe",
                                                 openAccordion === "usage" && "rotate-45"
                                             )}>+</span>
                                         </button>
@@ -469,7 +469,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                                 </a>
                                             ))
                                         ) : (
-                                            <span className="text-[12px] text-[#8c7a6b]">暂无购买链接</span>
+                                            <span className="text-[12px] text-brand-taupe">暂无购买链接</span>
                                         )}
                                     </div>
                                 </div>

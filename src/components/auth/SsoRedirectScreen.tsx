@@ -18,7 +18,7 @@ export function SsoRedirectScreen({ message }: { message: string }) {
 
     // 注意：不能用 <main>——layout 已提供唯一 <main id="main-content"> 地标
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-[#FDFBF7] px-6 text-center">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-brand-canvas px-6 text-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/NIHPLOD-logo.svg" alt="NIHPLOD" className="h-[52px] object-contain" />
             {timedOut ? (
@@ -63,7 +63,7 @@ export function SsoRedirectScreen({ message }: { message: string }) {
 export function SsoCookiesDisabledScreen() {
     return (
         // 注意：不能用 <main>——layout 已提供唯一 <main id="main-content"> 地标
-        <div className="flex min-h-screen flex-col items-center justify-center bg-[#FDFBF7] px-6 text-center">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-brand-canvas px-6 text-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/NIHPLOD-logo.svg" alt="NIHPLOD" className="h-[52px] object-contain" />
             <p className="mt-10 text-sm tracking-wide text-brand-charcoal/70" role="alert">

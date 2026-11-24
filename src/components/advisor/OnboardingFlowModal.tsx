@@ -272,7 +272,7 @@ export function OnboardingFlowModal({
                     <div id="onboarding-modal-title" className="sr-only">肌肤测试引导</div>
 
                     {/* ---- App Bar / Header ---- */}
-                    <header className="fixed top-0 left-0 right-0 z-[100003] flex items-center justify-between px-6 md:px-12 lg:px-20 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 bg-[#FDFBF7]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
+                    <header className="fixed top-0 left-0 right-0 z-[100003] flex items-center justify-between px-6 md:px-12 lg:px-20 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 bg-brand-canvas/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
                         <button
                             onClick={onClose}
                             className="group flex items-center gap-2 text-brand-charcoal/80 hover:text-brand-charcoal transition-colors cursor-pointer bg-transparent border-none"
@@ -288,7 +288,7 @@ export function OnboardingFlowModal({
                         </button>
                         <button
                             onClick={onClose}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-[#1A1A1A]/5 transition-all cursor-pointer bg-transparent border-none"
+                            className="flex items-center gap-2 px-4 py-2 rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-text-primary/5 transition-all cursor-pointer bg-transparent border-none"
                             aria-label="退出"
                         >
                             <LogOut className="w-4 h-4" strokeWidth={1.5} />
@@ -317,7 +317,7 @@ export function OnboardingFlowModal({
                                     initial="hidden"
                                     animate={currentScreen === "nickname" ? "visible" : "hidden"}
                                 >
-                                    <div className="flex justify-center mb-8 text-[#3D4430]">
+                                    <div className="flex justify-center mb-8 text-olive">
                                         <Image
                                             src="/images/hi.svg"
                                             alt="Wave"
@@ -341,7 +341,7 @@ export function OnboardingFlowModal({
                                         onChange={(e) => setNickname(e.target.value)}
                                         placeholder="输入您的昵称"
                                         maxLength={10}
-                                        className="w-full bg-transparent border-0 border-b border-[#3D4430]/20 rounded-none py-4 px-0 mb-7 text-center text-brand-charcoal focus:outline-none focus:border-[#3D4430]/40 transition-colors placeholder:text-brand-charcoal/30 text-[16px] tracking-wide"
+                                        className="w-full bg-transparent border-0 border-b border-olive/20 rounded-none py-4 px-0 mb-7 text-center text-brand-charcoal focus:outline-none focus:border-olive/40 transition-colors placeholder:text-brand-charcoal/30 text-[16px] tracking-wide"
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") handleNicknameNext();
                                         }}
@@ -351,7 +351,7 @@ export function OnboardingFlowModal({
                                     <button
                                         onClick={handleNicknameNext}
                                         disabled={!nickname.trim()}
-                                        className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+                                        className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-brand-bronze text-brand-bronze bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-brand-bronze hover:text-white"
                                     >
                                         <span>下一步</span>
                                         <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
@@ -383,7 +383,7 @@ export function OnboardingFlowModal({
                                         exit={{ opacity: 0, x: -20 }}
                                         transition={{ duration: 0.3 }}
                                     >
-                                        <div className="flex justify-center mb-8 text-[#8B7355]">
+                                        <div className="flex justify-center mb-8 text-brand-bronze">
                                             <MapPin className="h-10 w-10 md:h-12 md:w-12 opacity-90" strokeWidth={1.2} />
                                         </div>
 
@@ -399,7 +399,7 @@ export function OnboardingFlowModal({
                                             <button
                                                 onClick={handleLocationAcceptWrapper}
                                                 disabled={isLocating}
-                                                className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-wait cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+                                                className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-brand-bronze text-brand-bronze bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-wait cursor-pointer transition-all duration-500 hover:bg-brand-bronze hover:text-white"
                                             >
                                                 {isLocating ? (
                                                     <>
@@ -488,7 +488,7 @@ export function OnboardingFlowModal({
                                     initial="hidden"
                                     animate={currentScreen === "legal" ? "visible" : "hidden"}
                                 >
-                                    <div className="flex justify-center mb-8 text-[#8B7355]">
+                                    <div className="flex justify-center mb-8 text-brand-bronze">
                                         <ShieldCheck className="h-10 w-10 md:h-12 md:w-12 opacity-90" strokeWidth={1.2} />
                                     </div>
 
@@ -499,8 +499,8 @@ export function OnboardingFlowModal({
                                     <div
                                         className={`p-5 md:p-6 mb-7 text-left max-w-lg mx-auto rounded-xl border cursor-pointer transition-all duration-300 ${
                                             isAgreed
-                                                ? "bg-white/60 border-[#8B7355]/25 shadow-[0_2px_12px_rgba(139,115,85,0.06)]"
-                                                : "bg-white/40 border-[#3D4430]/8 hover:border-[#8B7355]/15 hover:bg-white/50"
+                                                ? "bg-white/60 border-brand-bronze/25 shadow-[0_2px_12px_rgba(139,115,85,0.06)]"
+                                                : "bg-white/40 border-olive/8 hover:border-brand-bronze/15 hover:bg-white/50"
                                         }`}
                                         onClick={(e) => {
                                             if ((e.target as HTMLElement).tagName !== "A") {
@@ -524,8 +524,8 @@ export function OnboardingFlowModal({
                                                 <m.div
                                                     className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors duration-300 ${
                                                         isAgreed
-                                                            ? "bg-[#8B7355] border-[#8B7355]"
-                                                            : "bg-transparent border-[#3D4430]/15 group-hover:border-[#8B7355]/60 group-focus-visible:ring-2 group-focus-visible:ring-[#8B7355]/30 group-focus-visible:ring-offset-2"
+                                                            ? "bg-brand-bronze border-brand-bronze"
+                                                            : "bg-transparent border-olive/15 group-hover:border-brand-bronze/60 group-focus-visible:ring-2 group-focus-visible:ring-[#8B7355]/30 group-focus-visible:ring-offset-2"
                                                     }`}
                                                     animate={isAgreed ? { scale: [1, 0.92, 1.04, 1] } : { scale: 1 }}
                                                     transition={{ duration: 0.4, ease: "easeOut" }}
@@ -583,8 +583,8 @@ export function OnboardingFlowModal({
                                      <div
                                          className={`p-5 md:p-6 mb-7 text-left max-w-lg mx-auto rounded-xl border transition-all duration-300 ${
                                              isSensitiveAgreed
-                                                 ? "bg-white/60 border-[#8B7355]/25 shadow-[0_2px_12px_rgba(139,115,85,0.06)]"
-                                                 : "bg-white/40 border-[#3D4430]/8 hover:border-[#8B7355]/15 hover:bg-white/50"
+                                                 ? "bg-white/60 border-brand-bronze/25 shadow-[0_2px_12px_rgba(139,115,85,0.06)]"
+                                                 : "bg-white/40 border-olive/8 hover:border-brand-bronze/15 hover:bg-white/50"
                                          }`}
                                      >
                                          <label className="flex items-start gap-3.5 md:gap-4 cursor-pointer">
@@ -605,7 +605,7 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleLegalSubmit}
                                             disabled={!isAgreed || !isSensitiveAgreed || isFinishing}
-                                            className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+                                            className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-brand-bronze text-brand-bronze bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-brand-bronze hover:text-white"
                                         >
                                             {isFinishing ? (
                                                 <>
@@ -649,10 +649,10 @@ export function OnboardingFlowModal({
                                                 aria-label={`跳转到第 ${index + 1} 步：${label}`}
                                                 className={`flex items-baseline gap-1.5 transition-colors duration-500 focus:outline-none ${
                                                     isActive
-                                                        ? "text-[#8B7355]"
+                                                        ? "text-brand-bronze"
                                                         : isCompleted
-                                                            ? "text-[#3D4430]/55 hover:text-[#3D4430]/80"
-                                                            : "text-[#3D4430]/25"
+                                                            ? "text-olive/55 hover:text-olive/80"
+                                                            : "text-olive/25"
                                                 }`}
                                             >
                                                 <span className="text-[9px] md:text-[10px] opacity-60">
@@ -662,7 +662,7 @@ export function OnboardingFlowModal({
                                             </button>
 
                                             {index < screens.length - 1 && (
-                                                <span className="text-[#3D4430]/15 select-none">/</span>
+                                                <span className="text-olive/15 select-none">/</span>
                                             )}
                                         </div>
                                     );

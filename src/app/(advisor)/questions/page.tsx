@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 
-import { m, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence, type Variants } from "framer-motion";
 import { ChevronLeft, LogOut, Loader2 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
@@ -26,6 +26,14 @@ import { clearFailedAnalysisRetry, readFailedAnalysisRetry } from "@/hooks/async
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useNavPush } from "@/hooks/use-nav-push";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/Button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 const safeStorage = {
     get: (key: string) => {
@@ -37,6 +45,24 @@ const safeStorage = {
     remove: (key: string) => {
         try { localStorage.removeItem(key); } catch { /* ignore */ }
     },
+};
+
+const stepVariants: Variants = {
+    enter: (direction: number) => ({
+        opacity: 0,
+        x: direction === 0 ? 0 : direction > 0 ? 24 : -24,
+    }),
+    center: {
+        opacity: 1,
+        x: 0,
+        transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+    },
+    exit: (direction: number) => ({
+        opacity: 0,
+        x: direction > 0 ? -16 : 16,
+        pointerEvents: "none",
+        transition: { duration: 0.16, ease: "easeIn" as const },
+    }),
 };
 
 export default function QuestionsPage() {
@@ -756,7 +782,7 @@ export default function QuestionsPage() {
     if (accessDenied === null) {
         // 守卫检查（localStorage + 登录态）尚未完成，先渲染加载态避免闪出性别选择页
         return (
-            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9]">
+            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-brand-canvas-warm">
                 <Loader2 className="w-6 h-6 text-brand-charcoal/60 animate-spin" />
             </div>
         );
@@ -764,7 +790,7 @@ export default function QuestionsPage() {
 
     if (accessDenied) {
         return (
-            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9] gap-4 px-4">
+            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-brand-canvas-warm gap-4 px-4">
                 <p className="text-sm text-brand-charcoal/60 font-light tracking-wide text-center leading-relaxed">请从首页同意隐私协议后开始测评。</p>
                 <button
                     onClick={() => navPush("/")}
@@ -781,7 +807,7 @@ export default function QuestionsPage() {
     // 避免先闪出"无预选"标题再切换为"个人账号信息"文案
     if (!gender && !isUserInitialized) {
         return (
-            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9]">
+            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-brand-canvas-warm">
                 <Loader2 className="w-6 h-6 text-brand-charcoal/60 animate-spin" />
             </div>
         );
@@ -794,14 +820,14 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-[#F5F2E9] overflow-hidden pointer-events-auto"
+                    className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-brand-canvas-warm overflow-hidden pointer-events-auto"
                 >
                     {/* Top Bar */}
                     <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 z-20">
                         <button
                             onClick={() => navPush("/")}
                             disabled={isNavigating}
-                            className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95 disabled:opacity-40"
+                            className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95 disabled:opacity-40"
                             aria-label="回首页"
                         >
                             <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
@@ -824,7 +850,7 @@ export default function QuestionsPage() {
                                 navPush("/");
                             }}
                             disabled={isNavigating}
-                            className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95 disabled:opacity-40"
+                            className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95 disabled:opacity-40"
                             aria-label="退出并清除进度"
                         >
                             <LogOut className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
@@ -843,7 +869,7 @@ export default function QuestionsPage() {
                                     正在检查服务状态...
                                 </div>
                             ) : aiConfigured === false ? (
-                                <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
+                                <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-beige shadow-sm text-center">
                                     <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
                                         {configNetworkError ? "网络异常" : "敬请期待"}
                                     </h3>
@@ -866,7 +892,7 @@ export default function QuestionsPage() {
                                     </div>
                                 </div>
                             ) : limitExceeded ? (
-                                <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
+                                <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-beige shadow-sm text-center">
                                     <div className="text-4xl mb-4">⏳</div>
                                     <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
                                         {limitAccountDisabled
@@ -957,7 +983,7 @@ export default function QuestionsPage() {
 
     if (!currentQuestion) {
         return (
-            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9] gap-4 px-4">
+            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-brand-canvas-warm gap-4 px-4">
                 <p className="text-sm text-brand-charcoal/60 font-light tracking-wide">题目加载异常，请刷新页面或返回首页重试。</p>
                 <button
                     onClick={() => navPush("/")}
@@ -970,7 +996,7 @@ export default function QuestionsPage() {
     }
 
     return (
-        <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-[#F5F2E9] text-brand-charcoal overflow-hidden pointer-events-auto">
+        <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-brand-canvas-warm text-brand-charcoal overflow-hidden pointer-events-auto">
 
             {/* 提交中加载遮罩 */}
             <AnimatePresence>
@@ -979,7 +1005,7 @@ export default function QuestionsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[60] bg-[#F5F2E9]/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
+                        className="fixed inset-0 z-[60] bg-brand-canvas-warm/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
                     >
                         <Loader2 className="w-8 h-8 text-brand-charcoal animate-spin" />
                                 <p className="text-sm text-brand-charcoal/60 font-light tracking-wide">
@@ -993,7 +1019,7 @@ export default function QuestionsPage() {
             <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 z-20 shrink-0">
                 <button
                     onClick={handleBack}
-                    className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
+                    className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95"
                     aria-label="上一题"
                 >
                     <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
@@ -1014,7 +1040,7 @@ export default function QuestionsPage() {
                 <button
                     onClick={() => setShowExitConfirm(true)}
                     aria-label="退出测评"
-                    className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
+                    className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95"
                 >
                     <LogOut className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
                     <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">退出</span>
@@ -1024,21 +1050,15 @@ export default function QuestionsPage() {
             {/* 进度条：动态题数（含条件题），让用户随时知道所处位置 */}
             <div className="shrink-0 px-4 md:px-12 lg:px-20 pb-2">
                 <div className="max-w-5xl mx-auto flex items-center gap-3">
-                    <div
-                        className="flex-1 h-px bg-brand-charcoal/10 overflow-hidden"
-                        role="progressbar"
-                        aria-valuenow={currentStepIndex + 1}
-                        aria-valuemin={1}
-                        aria-valuemax={questions.length}
+                    <Progress
+                        value={((currentStepIndex + 1) / questions.length) * 100}
+                        getValueLabel={() =>
+                            `第 ${currentStepIndex + 1} 题，共 ${questions.length} 题`
+                        }
                         aria-label={`第 ${currentStepIndex + 1} 题，共 ${questions.length} 题`}
-                    >
-                        <m.div
-                            className="h-full bg-brand-charcoal/50"
-                            initial={false}
-                            animate={{ width: `${((currentStepIndex + 1) / questions.length) * 100}%` }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
-                        />
-                    </div>
+                        className="h-px flex-1 rounded-none bg-brand-charcoal/10"
+                        indicatorClassName="bg-brand-charcoal/50 duration-300 ease-out"
+                    />
                     <span className="text-[11px] text-brand-charcoal/50 font-light tracking-[0.1em] tabular-nums shrink-0" aria-hidden="true">
                         {currentStepIndex + 1} / {questions.length}
                     </span>
@@ -1072,11 +1092,12 @@ export default function QuestionsPage() {
                         <m.div
                             key={currentStepIndex}
                             custom={direction}
-                            initial={{ opacity: 0, x: direction > 0 ? 20 : -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            // 滑出中的旧题不再响应点击，避免 iOS 上 tap 命中位移中的选项
-                            exit={{ opacity: 0, x: direction > 0 ? -20 : 20, pointerEvents: "none" }}
-                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            variants={stepVariants}
+                            initial="enter"
+                            animate="center"
+                            // 滑出中的旧题不再响应点击，避免 iOS 上 tap 命中位移中的选项；
+                            // 退场方向读取 AnimatePresence 传入的最新 custom，快速回退/前进也不跳错方向
+                            exit="exit"
                             className="w-full"
                         >
                             <QuestionStep
@@ -1084,7 +1105,6 @@ export default function QuestionsPage() {
                                 selectedValue={(answers[currentQuestion.fieldName] as string | string[] | null) || null}
                                 onSelect={handleSelect}
                                 onNext={handleNext}
-                                direction={direction}
                                 currentStep={currentStepIndex + 1}
                                 totalSteps={questions.length}
                             />
@@ -1109,109 +1129,81 @@ export default function QuestionsPage() {
 
 
             {/* Exit Modal */}
-            <AnimatePresence>
-                {showExitConfirm && (
-                    <div
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="exit-modal-title"
-                        tabIndex={-1}
-                    >
-                        <m.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
-                            onClick={() => setShowExitConfirm(false)}
-                        />
-                        <m.div
-                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
-                            tabIndex={-1}
-                        >
-                            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                                <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 id="exit-modal-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">退出测试？</h3>
-                                    <p className="text-sm text-brand-charcoal/60 font-light leading-relaxed">
-                                        您的进度已自动保存，下次返回可直接从此处继续。
-                                    </p>
-                                </div>
-                                <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
-                                    <button
-                                        onClick={() => setShowExitConfirm(false)}
-                                        className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
-                                    >
-                                        继续测试
-                                    </button>
-                                    <button
-                                        onClick={() => navPush("/")}
-                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-brand-charcoal/60 hover:text-brand-charcoal hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
-                                    >
-                                        退出并返回首页
-                                    </button>
-                                </div>
-                            </div>
-                        </m.div>
-                        <Image src="/images/watermark.webp" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
+            <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+                <DialogContent
+                    showCloseButton={false}
+                    className="max-w-lg gap-0 border-brand-beige bg-white/95 p-8 shadow-sm backdrop-blur-sm"
+                >
+                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+                        <div className="text-center sm:w-[60%] sm:text-left">
+                            <DialogTitle className="mb-3 text-lg tracking-[0.02em] text-brand-charcoal sm:mb-2">
+                                退出测试？
+                            </DialogTitle>
+                            <DialogDescription className="font-light text-brand-charcoal/60">
+                                您的进度已自动保存，下次返回可直接从此处继续。
+                            </DialogDescription>
+                        </div>
+                        <div className="flex w-full shrink-0 flex-col gap-3 sm:w-[40%] sm:gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowExitConfirm(false)}
+                                className="h-10 w-full rounded-lg border-brand-charcoal text-[13px] tracking-[0.1em] text-brand-charcoal hover:bg-brand-charcoal hover:text-white"
+                            >
+                                继续测试
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={() => navPush("/")}
+                                className="h-10 w-full rounded-lg border border-brand-beige text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:border-brand-beige-dark hover:text-brand-charcoal"
+                            >
+                                退出并返回首页
+                            </Button>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                    <Image src="/images/watermark.webp" alt="" width={200} height={200} className="pointer-events-none absolute bottom-4 left-1/2 h-auto w-32 -translate-x-1/2 object-contain opacity-15" unoptimized />
+                </DialogContent>
+            </Dialog>
 
             {/* Quality Check Modal */}
-            <AnimatePresence>
-                {showQualityWarning && (
-                    <div
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="quality-modal-title"
-                        tabIndex={-1}
-                    >
-                        <m.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm"
-                            onClick={() => setShowQualityWarning(false)}
-                        />
-                        <m.div
-                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
-                            tabIndex={-1}
-                        >
-                            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                                <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 id="quality-modal-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">已完成，确认提交？</h3>
-                                    <p className="text-sm text-brand-charcoal/60 font-light leading-relaxed">
-                                        您完成得很快，建议再核对关键题；确认无误也可以直接提交。
-                                    </p>
-                                </div>
-                                <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
-                                    <button
-                                        onClick={() => {
-                                            setShowQualityWarning(false);
-                                            sessionStartTime.current = Date.now();
-                                            startStepIndex.current = currentStepIndex;
-                                            if (pendingAnswers) processSubmission(pendingAnswers);
-                                        }}
-                                        className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
-                                    >
-                                        确认无误，提交
-                                    </button>
-                                    <button
-                                        onClick={() => setShowQualityWarning(false)}
-                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-brand-charcoal/60 hover:text-brand-charcoal hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
-                                    >
-                                        返回检查
-                                    </button>
-                                </div>
-                            </div>
-                        </m.div>
-                        <Image src="/images/watermark.webp" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
+            <Dialog open={showQualityWarning} onOpenChange={setShowQualityWarning}>
+                <DialogContent
+                    showCloseButton={false}
+                    className="max-w-lg gap-0 border-brand-beige bg-white/95 p-8 shadow-sm backdrop-blur-sm"
+                >
+                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+                        <div className="text-center sm:w-[60%] sm:text-left">
+                            <DialogTitle className="mb-3 text-lg tracking-[0.02em] text-brand-charcoal sm:mb-2">
+                                已完成，确认提交？
+                            </DialogTitle>
+                            <DialogDescription className="font-light text-brand-charcoal/60">
+                                您完成得很快，建议再核对关键题；确认无误也可以直接提交。
+                            </DialogDescription>
+                        </div>
+                        <div className="flex w-full shrink-0 flex-col gap-3 sm:w-[40%] sm:gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowQualityWarning(false);
+                                    sessionStartTime.current = Date.now();
+                                    startStepIndex.current = currentStepIndex;
+                                    if (pendingAnswers) processSubmission(pendingAnswers);
+                                }}
+                                className="h-10 w-full rounded-lg border-brand-charcoal text-[13px] tracking-[0.1em] text-brand-charcoal hover:bg-brand-charcoal hover:text-white"
+                            >
+                                确认无误，提交
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={() => setShowQualityWarning(false)}
+                                className="h-10 w-full rounded-lg border border-brand-beige text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:border-brand-beige-dark hover:text-brand-charcoal"
+                            >
+                                返回检查
+                            </Button>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                    <Image src="/images/watermark.webp" alt="" width={200} height={200} className="pointer-events-none absolute bottom-4 left-1/2 h-auto w-32 -translate-x-1/2 object-contain opacity-15" unoptimized />
+                </DialogContent>
+            </Dialog>
 
         </div>
     );

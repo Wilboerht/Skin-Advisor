@@ -61,7 +61,7 @@ export function FaqModal({ isOpen, onClose }: FaqModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full h-[85dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-lg bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+            className="relative z-10 w-full h-[85dvh] sm:h-[min(680px,calc(100dvh-3rem))] sm:max-w-lg bg-brand-canvas rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
@@ -86,13 +86,13 @@ export function FaqModal({ isOpen, onClose }: FaqModalProps) {
               <div className="divide-y divide-brand-charcoal/[0.08]">
                 {faqs.map((faq, i) => (
                   <details key={i} className="group cursor-pointer">
-                    <summary className="flex items-center justify-between gap-4 py-4 md:py-5 px-2 -mx-2 rounded-xl text-[14px] md:text-[15px] font-light text-[#1A1A1A] list-none marker:content-none hover:text-brand-charcoal active:bg-brand-charcoal/[0.04] transition-colors touch-manipulation select-none">
+                    <summary className="flex items-center justify-between gap-4 py-4 md:py-5 px-2 -mx-2 rounded-xl text-[14px] md:text-[15px] font-light text-text-primary list-none marker:content-none hover:text-brand-charcoal active:bg-brand-charcoal/[0.04] transition-colors touch-manipulation select-none">
                       <span>{faq.question}</span>
                       <span className="shrink-0 text-brand-charcoal/55 text-lg leading-none group-open:rotate-45 transition-transform duration-300 motion-reduce:transition-none">
                         +
                       </span>
                     </summary>
-                    <p className="mt-1 mb-4 md:mb-5 px-2 text-[13px] md:text-[14px] text-[#5E5E5E] font-light leading-relaxed">
+                    <p className="mt-1 mb-4 md:mb-5 px-2 text-[13px] md:text-[14px] text-brand-ink-muted font-light leading-relaxed">
                       {faq.answer}
                     </p>
                   </details>

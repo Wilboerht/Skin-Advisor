@@ -126,7 +126,7 @@ interface ResultClientProps {
 export default function ResultClient(props: ResultClientProps) {
     return (
         <Suspense fallback={
-            <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7]">
+            <div className="flex min-h-screen items-center justify-center bg-brand-canvas">
                 <ScanFace className="w-12 h-12 text-[#D4B78F] animate-pulse" />
             </div>
         }>
@@ -1164,7 +1164,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     // 入口守卫判定未就绪（SSR 或挂载前）：渲染加载态，避免水合不一致（React #418）
     if (accessDenied === null) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7]">
+            <div className="flex min-h-screen items-center justify-center bg-brand-canvas">
                 <ScanFace className="w-12 h-12 text-[#D4B78F] animate-pulse" />
             </div>
         );
@@ -1174,7 +1174,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     if (accessDenied) {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm" />
+                <div className="absolute inset-0 bg-brand-canvas-warm/80 backdrop-blur-sm" />
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
@@ -1203,7 +1203,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     if (privacyGate) {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm" />
+                <div className="absolute inset-0 bg-brand-canvas-warm/80 backdrop-blur-sm" />
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
@@ -1417,7 +1417,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
     if (!result && !showLoading) {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm" />
+                <div className="absolute inset-0 bg-brand-canvas-warm/80 backdrop-blur-sm" />
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
@@ -1493,7 +1493,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             <button
                                 onClick={() => navPush('/')}
                                 disabled={isNavigating}
-                                className="justify-self-start inline-flex items-center gap-1.5 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95 disabled:opacity-40"
+                                className="justify-self-start inline-flex items-center gap-1.5 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95 disabled:opacity-40"
                                 aria-label="回到首页"
                             >
                                 <House className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
@@ -1649,7 +1649,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                             <h2 id="action-plan-title" className="text-lg lg:text-2xl font-bold text-brand-espresso tracking-wide">
                                                 下一步行动
                                             </h2>
-                                            <p className="mt-2 text-xs lg:text-sm text-[#8c7a6b]">
+                                            <p className="mt-2 text-xs lg:text-sm text-brand-taupe">
                                                 把报告里的建议落到每天：选对产品，或让顾问帮你执行
                                             </p>
                                         </div>

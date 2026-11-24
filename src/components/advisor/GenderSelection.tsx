@@ -14,11 +14,6 @@ interface GenderSelectionProps {
 }
 
 export function GenderSelection({ onSelect, selectedGender, title = "开始之前，请选择您的性别" }: GenderSelectionProps) {
-    const item = {
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0 }
-    };
-
     const options = [
         { value: "female" as const, label: "女性", Icon: Venus },
         { value: "male" as const, label: "男性", Icon: Mars },
@@ -47,8 +42,9 @@ export function GenderSelection({ onSelect, selectedGender, title = "开始之�
         // 改动前请在真机验证：性别页由父级 h-full 容器居中，直接移除会整体下沉。
         <div className="flex w-full flex-col items-center -mt-8 sm:mt-0">
             <m.h2
-                initial={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                 className="text-center font-serif font-light text-lg md:text-2xl text-brand-charcoal tracking-[0.02em]"
             >
                 {title}
@@ -71,13 +67,19 @@ export function GenderSelection({ onSelect, selectedGender, title = "开始之�
                 onKeyDown={handleKeyDown}
             >
                 {/* 容器用 div 承载标题等内容；点击/ARIA/焦点由覆盖层 button 承担 */}
-                {options.map(({ value, label, Icon }) => {
+                {options.map(({ value, label, Icon }, index) => {
                     const isSelected = selectedGender === value;
                     const isHighlighted = highlighted === value;
                     return (
                         <m.div
                             key={value}
-                            variants={item}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{
+                                duration: 0.3,
+                                delay: 0.05 + index * 0.06,
+                                ease: [0.22, 1, 0.36, 1],
+                            }}
                             className={cn(
                                 "group relative flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-4 rounded-2xl border bg-white px-5 sm:px-8 py-5 sm:py-9 text-left sm:text-center transition-all duration-300",
                                 isSelected
@@ -118,9 +120,14 @@ export function GenderSelection({ onSelect, selectedGender, title = "开始之�
                             </div>
 
                             {isSelected && (
-                                <span className="absolute right-3 top-3 sm:right-4 sm:top-4 flex h-5 w-5 items-center justify-center rounded-full bg-brand-charcoal text-white">
+                                <m.span
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.18, ease: "easeOut" }}
+                                    className="absolute right-3 top-3 sm:right-4 sm:top-4 flex h-5 w-5 items-center justify-center rounded-full bg-brand-charcoal text-white"
+                                >
                                     <Check className="h-3 w-3" strokeWidth={2.5} />
-                                </span>
+                                </m.span>
                             )}
                         </m.div>
                     );

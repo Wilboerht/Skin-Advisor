@@ -14,8 +14,14 @@ import { fetchConsentState } from "@/lib/consent-client";
 import { useAuth } from "@/hooks/useAuth";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useNavPush } from "@/hooks/use-nav-push";
+import { Button } from "@/components/ui/Button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { useFaceModels } from "@/hooks/use-face-models";
 import { scheduleFaceModelPreload } from "@/lib/face-models";
 import { isSkinStateValue, type SkinStateValue } from "@/lib/skin-state";
@@ -65,10 +71,6 @@ export default function FaceScanPage() {
         window.addEventListener("beforeunload", handler);
         return () => window.removeEventListener("beforeunload", handler);
     }, [hasStarted]);
-    // 弹窗焦点管理 + Escape 关闭
-    const exitModalRef = useFocusTrap<HTMLDivElement>(showExitConfirm, () => setShowExitConfirm(false));
-    const storageErrorModalRef = useFocusTrap<HTMLDivElement>(storageError);
-
     useEffect(() => {
         if (!isInitialized) return;
         let cancelled = false;
@@ -221,7 +223,7 @@ export default function FaceScanPage() {
 
     if (!entryReady) {
         return (
-            <div className="fixed inset-0 z-0 flex flex-col items-center justify-center bg-[#F5F2E9]">
+            <div className="fixed inset-0 z-0 flex flex-col items-center justify-center bg-brand-canvas-warm">
                 <Loader2 className="h-6 w-6 animate-spin text-brand-charcoal/60" />
                 <p className="mt-3 text-[13px] font-light text-brand-charcoal/55">正在检查测肤状态…</p>
             </div>
@@ -229,9 +231,9 @@ export default function FaceScanPage() {
     }
 
     return (
-        <div className="relative h-dvh overflow-hidden w-full bg-[#F5F2E9] flex flex-col items-center">
+        <div className="relative h-dvh overflow-hidden w-full bg-brand-canvas-warm flex flex-col items-center">
             {/* Top Bar —— 复用 /questions 统一样式 */}
-            <header className={`w-full relative flex items-center justify-center pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-brand-charcoal/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
+            <header className={`w-full relative flex items-center justify-center pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-brand-charcoal/5 transition-colors duration-300 ${isModalOpen ? 'bg-brand-canvas-soft' : 'bg-brand-canvas-warm'}`}>
                 <button
                     onClick={() => {
                         if (isSubmitting) return;
@@ -282,7 +284,7 @@ export default function FaceScanPage() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                            className="relative w-full max-w-[420px] md:max-w-[480px] aspect-[3/4] max-h-[65dvh] md:max-h-[70dvh] bg-black rounded-[2rem] overflow-hidden shadow-[0_8px_32px_-8px_rgba(0,38,62,0.12),0_24px_60px_-20px_rgba(0,38,62,0.18)] ring-[3px] ring-[#FAF8F5] z-10 flex flex-col before:absolute before:inset-0 before:rounded-[2rem] before:ring-1 before:ring-inset before:ring-white/10 before:pointer-events-none"
+                            className="relative w-full max-w-[420px] md:max-w-[480px] aspect-[3/4] max-h-[65dvh] md:max-h-[70dvh] bg-black rounded-[2rem] overflow-hidden shadow-[0_8px_32px_-8px_rgba(0,38,62,0.12),0_24px_60px_-20px_rgba(0,38,62,0.18)] ring-[3px] ring-brand-canvas-soft z-10 flex flex-col before:absolute before:inset-0 before:rounded-[2rem] before:ring-1 before:ring-inset before:ring-white/10 before:pointer-events-none"
                         >
                             {/* Real Camera Component */}
                             <FaceCapture onCapture={handleCaptureComplete} />
@@ -327,9 +329,9 @@ export default function FaceScanPage() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.4 }}
-                        className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center"
+                        className="fixed inset-0 z-[9999] bg-brand-canvas flex flex-col items-center justify-center"
                     >
-                        <Loader2 className="w-10 h-10 text-[#8B7355] animate-spin mb-8" />
+                        <Loader2 className="w-10 h-10 text-brand-bronze animate-spin mb-8" />
                         <p className="text-brand-charcoal text-xl md:text-2xl font-serif font-light tracking-[0.02em]">正在准备 AI 面部扫描</p>
                         <p className="text-brand-charcoal/60 text-[13px] md:text-sm mt-3 font-light max-w-xs text-center leading-[1.8] tracking-[0.06em]">首次加载模型可能需要 10–30 秒；若加载较慢，可先进入相机使用手动拍照</p>
                         <button
@@ -344,116 +346,97 @@ export default function FaceScanPage() {
             </AnimatePresence>
 
             {/* Exit Confirmation Modal —— 复用 /questions 风格 */}
-            <AnimatePresence>
-                {showExitConfirm && (
-                    <div
-                        ref={exitModalRef}
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="face-scan-exit-title"
-                        tabIndex={-1}
-                        className="fixed inset-0 z-[400] flex items-center justify-center p-4"
-                    >
-                        <m.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
-                            onClick={() => setShowExitConfirm(false)}
-                        />
-                        <m.div
-                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm overflow-hidden"
-                        >
-<div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                                <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 id="face-scan-exit-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">退出测试？</h3>
-                                    <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
-                                        退出后将清除已拍摄的照片，下次进入需重新拍摄；问卷答案会保留。
-                                    </p>
-                                </div>
-                                <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
-                                    <button
-                                        onClick={() => setShowExitConfirm(false)}
-                                        className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
-                                    >
-                                        继续测试
-                                    </button>
-                                    <button
-                                        onClick={async () => {
-                                            // 仅清除人脸照片缓存，保留问卷答案和进度供用户返回修改
-                                            const { advisorStorage } = await import("@/lib/advisor-storage");
-                                            await advisorStorage.clearFaceImages();
-                                            navPush(exitTarget);
-                                        }}
-                                        className="px-6 h-10 border border-brand-charcoal/20 text-brand-charcoal/60 hover:text-brand-charcoal hover:border-brand-charcoal/40 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
-                                    >
-                                        {exitTarget === "/questions?edit=true" ? "离开并返回问卷" : "退出并返回首页"}
-                                    </button>
-                                </div>
-                            </div>
-                        </m.div>
-                        <Image src="/images/watermark.webp" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
+            <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+                <DialogContent
+                    showCloseButton={false}
+                    className="max-w-lg gap-0 overflow-hidden border-brand-beige bg-white/95 p-8 shadow-sm backdrop-blur-sm"
+                >
+                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+                        <div className="text-center sm:w-[60%] sm:text-left">
+                            <DialogTitle className="mb-3 text-lg tracking-[0.02em] text-brand-charcoal sm:mb-2">
+                                退出测试？
+                            </DialogTitle>
+                            <DialogDescription className="font-light text-brand-charcoal/60">
+                                退出后将清除已拍摄的照片，下次进入需重新拍摄；问卷答案会保留。
+                            </DialogDescription>
+                        </div>
+                        <div className="flex w-full shrink-0 flex-col gap-3 sm:w-[40%] sm:gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowExitConfirm(false)}
+                                className="h-10 w-full rounded-lg border-brand-charcoal/60 text-[13px] tracking-[0.1em] text-brand-charcoal hover:border-brand-charcoal hover:bg-brand-charcoal/[0.07]"
+                            >
+                                继续测试
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={async () => {
+                                    // 仅清除人脸照片缓存，保留问卷答案和进度供用户返回修改
+                                    const { advisorStorage } = await import("@/lib/advisor-storage");
+                                    await advisorStorage.clearFaceImages();
+                                    navPush(exitTarget);
+                                }}
+                                className="h-10 w-full rounded-lg border border-brand-charcoal/20 text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:border-brand-charcoal/40 hover:text-brand-charcoal"
+                            >
+                                {exitTarget === "/questions?edit=true" ? "离开并返回问卷" : "退出并返回首页"}
+                            </Button>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                    <Image src="/images/watermark.webp" alt="" width={200} height={200} className="pointer-events-none absolute bottom-4 left-1/2 h-auto w-32 -translate-x-1/2 object-contain opacity-15" unoptimized />
+                </DialogContent>
+            </Dialog>
 
             {/* Storage Error Modal —— 存储空间不足时的逃生出口 */}
-            <AnimatePresence>
-                {storageError && (
-                    <div
-                        ref={storageErrorModalRef}
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="storage-error-title"
-                        tabIndex={-1}
-                        className="fixed inset-0 z-[400] flex items-center justify-center p-4"
-                    >
-                        <m.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
-                        />
-                        <m.div
-                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm overflow-hidden"
-                        >
-<div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                                <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 id="storage-error-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">存储空间不足</h3>
-                                    <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
-                                        浏览器存储空间已满，无法保存照片。请清理浏览器缓存后重新尝试。
-                                    </p>
-                                </div>
-                                <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
-                                    <button
-                                        onClick={() => {
-                                            setStorageError(false);
-                                            setIsSubmitting(false);
-                                        }}
-                                        className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
-                                    >
-                                        重新尝试拍照
-                                    </button>
-                                    <button
-                                        onClick={async () => {
-                                            // 仅清理人脸照片缓存，保留问卷答案/隐私同意
-                                            const { advisorStorage } = await import("@/lib/advisor-storage");
-                                            await advisorStorage.clearFaceImages();
-                                            navPush("/");
-                                        }}
-                                        className="px-6 h-10 border border-brand-charcoal/20 text-brand-charcoal/60 hover:text-brand-charcoal hover:border-brand-charcoal/40 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
-                                    >
-                                        退出并返回首页
-                                    </button>
-                                </div>
-                            </div>
-                        </m.div>
-                        <Image src="/images/watermark.webp" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
+            <Dialog
+                open={storageError}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setStorageError(false);
+                        setIsSubmitting(false);
+                    }
+                }}
+            >
+                <DialogContent
+                    showCloseButton={false}
+                    className="max-w-lg gap-0 overflow-hidden border-brand-beige bg-white/95 p-8 shadow-sm backdrop-blur-sm"
+                >
+                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+                        <div className="text-center sm:w-[60%] sm:text-left">
+                            <DialogTitle className="mb-3 text-lg tracking-[0.02em] text-brand-charcoal sm:mb-2">
+                                存储空间不足
+                            </DialogTitle>
+                            <DialogDescription className="font-light text-brand-charcoal/60">
+                                浏览器存储空间已满，无法保存照片。请清理浏览器缓存后重新尝试。
+                            </DialogDescription>
+                        </div>
+                        <div className="flex w-full shrink-0 flex-col gap-3 sm:w-[40%] sm:gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setStorageError(false);
+                                    setIsSubmitting(false);
+                                }}
+                                className="h-10 w-full rounded-lg border-brand-charcoal/60 text-[13px] tracking-[0.1em] text-brand-charcoal hover:border-brand-charcoal hover:bg-brand-charcoal/[0.07]"
+                            >
+                                重新尝试拍照
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={async () => {
+                                    // 仅清理人脸照片缓存，保留问卷答案/隐私同意
+                                    const { advisorStorage } = await import("@/lib/advisor-storage");
+                                    await advisorStorage.clearFaceImages();
+                                    navPush("/");
+                                }}
+                                className="h-10 w-full rounded-lg border border-brand-charcoal/20 text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:border-brand-charcoal/40 hover:text-brand-charcoal"
+                            >
+                                退出并返回首页
+                            </Button>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                    <Image src="/images/watermark.webp" alt="" width={200} height={200} className="pointer-events-none absolute bottom-4 left-1/2 h-auto w-32 -translate-x-1/2 object-contain opacity-15" unoptimized />
+                </DialogContent>
+            </Dialog>
 
             {/* Prep Guide Modal */}
             <ScanGuideModal

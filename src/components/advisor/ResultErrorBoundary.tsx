@@ -49,11 +49,11 @@ export class ResultErrorBoundary extends Component<Props, State> {
     render() {
         if (this.state.hasError) {
             return (
-                <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7] px-4">
+                <div className="flex min-h-screen items-center justify-center bg-brand-canvas px-4">
                     <div className="text-center max-w-md">
-                        <AlertCircle className="w-12 h-12 text-[#8c7a6b] mx-auto mb-4" />
+                        <AlertCircle className="w-12 h-12 text-brand-taupe mx-auto mb-4" />
                         <h2 className="text-xl font-bold text-[#5c4937] mb-2">报告页面出现了问题</h2>
-                        <p className="text-sm text-[#8c7a6b] mb-6">
+                        <p className="text-sm text-brand-taupe mb-6">
                             报告页面暂时无法显示。请重试或返回首页重新开始。
                         </p>
                         <div className="flex items-center justify-center gap-3">

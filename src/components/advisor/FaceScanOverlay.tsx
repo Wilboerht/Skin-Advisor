@@ -150,7 +150,7 @@ export function FaceScanOverlay({
                 <AnimatePresence>
                     {currentStep === "front" && (faceStatus === "none" || faceStatus === "detecting") && !prefersReducedMotion && (
                         <m.div
-                            className="absolute left-[8%] right-[8%] top-[10%] h-[80%] bg-[linear-gradient(to_right,transparent,#C9A86C,transparent)] bg-[length:100%_2px] bg-no-repeat [filter:drop-shadow(0_0_7px_rgba(234,179,8,0.5))]"
+                            className="absolute left-[8%] right-[8%] top-[10%] h-[80%] bg-[linear-gradient(to_right,transparent,var(--color-brand-gold),transparent)] bg-[length:100%_2px] bg-no-repeat [filter:drop-shadow(0_0_7px_rgba(201,168,108,0.5))]"
                             initial={{ y: "0%", opacity: 0 }}
                             animate={{ y: ["0%", "100%", "0%"], opacity: 1 }}
                             transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}

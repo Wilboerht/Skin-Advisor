@@ -1,42 +1,42 @@
 "use client";
 
 import { ReactNode } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-type BadgeVariant =
-    | "default"
-    | "primary"
-    | "secondary"
-    | "success"
-    | "warning"
-    | "danger"
-    | "outline";
+export const badgeVariants = cva(
+    "inline-flex items-center rounded-full font-medium",
+    {
+        variants: {
+            variant: {
+                default: "bg-brand-charcoal/8 text-brand-charcoal/80",
+                primary: "bg-primary/10 text-primary",
+                secondary: "bg-brand-charcoal/8 text-brand-charcoal/70",
+                success: "bg-state-great/10 text-state-great",
+                warning: "bg-brand-ember/10 text-brand-ember",
+                danger: "bg-brand-danger/10 text-brand-danger",
+                outline:
+                    "border border-brand-charcoal/20 bg-transparent text-brand-charcoal/80",
+            },
+            size: {
+                sm: "px-2.5 py-0.5 text-xs",
+                md: "px-2.5 py-1 text-sm",
+            },
+        },
+        defaultVariants: {
+            variant: "default",
+            size: "sm",
+        },
+    },
+);
 
-interface BadgeProps {
+interface BadgeProps extends VariantProps<typeof badgeVariants> {
     children: ReactNode;
-    variant?: BadgeVariant;
-    size?: "sm" | "md";
     className?: string;
 }
 
-const variantStyles: Record<BadgeVariant, string> = {
-    default: "bg-brand-charcoal/8 text-brand-charcoal/80",
-    primary: "bg-brand-primary/10 text-brand-primary",
-    secondary: "bg-brand-charcoal/8 text-brand-charcoal/70",
-    success: "bg-emerald-50 text-emerald-700",
-    warning: "bg-amber-50 text-amber-700",
-    danger: "bg-red-50 text-red-700",
-    outline:
-        "border border-brand-charcoal/20 text-brand-charcoal/80 bg-transparent",
-};
-
-const sizeStyles = {
-    sm: "px-2.5 py-0.5 text-xs",
-    md: "px-2.5 py-1 text-sm",
-};
-
 /**
- * 状态徽章组件
+ * 状态徽章组件（shadcn/ui Badge 规范实现，保持原 API）
  */
 export function Badge({
     children,
@@ -46,12 +46,8 @@ export function Badge({
 }: BadgeProps) {
     return (
         <span
-            className={cn(
-                "inline-flex items-center rounded-full font-medium",
-                variantStyles[variant],
-                sizeStyles[size],
-                className,
-            )}
+            data-slot="badge"
+            className={cn(badgeVariants({ variant, size }), className)}
         >
             {children}
         </span>
@@ -72,10 +68,10 @@ export function DotBadge({
 }) {
     const dotColors = {
         gray: "bg-brand-charcoal/40",
-        green: "bg-emerald-500",
-        yellow: "bg-amber-500",
-        red: "bg-red-500",
-        primary: "bg-brand-primary",
+        green: "bg-state-great",
+        yellow: "bg-brand-ember",
+        red: "bg-brand-danger",
+        primary: "bg-primary",
     };
 
     return (

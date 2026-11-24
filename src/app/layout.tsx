@@ -148,7 +148,7 @@ export default function RootLayout({
           )}
         </head>
         <body
-          className={`antialiased bg-[#FDFBF7]`}
+          className={`antialiased bg-brand-canvas`}
           suppressHydrationWarning
         >
           {/* 键盘/屏幕阅读器用户跳转主内容 */}

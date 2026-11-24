@@ -47,7 +47,7 @@ export function GenderMismatchModal({
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 8 }}
                 transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                className="bg-[#FDFBF7] rounded-2xl shadow-sm w-full max-w-[420px] overflow-hidden border border-brand-charcoal/10"
+                className="bg-brand-canvas rounded-2xl shadow-sm w-full max-w-[420px] overflow-hidden border border-brand-charcoal/10"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="gender-mismatch-title"
@@ -156,7 +156,7 @@ export function ReTestConfirmModal({ isOpen, onClose, onConfirm }: ReTestConfirm
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 24, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                        className="relative z-10 w-full sm:max-w-[420px] rounded-t-[28px] sm:rounded-[28px] bg-[#FDFBF7] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)]"
+                        className="relative z-10 w-full sm:max-w-[420px] rounded-t-[28px] sm:rounded-[28px] bg-brand-canvas shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)]"
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="re-test-confirm-title"
