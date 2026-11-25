@@ -9,7 +9,6 @@ import {
   SunDim,
   AlertCircle,
   Check,
-  Loader2,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
@@ -166,13 +165,10 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const [qualityHint, setQualityHint] = useState<string | null>(null); // 质量提示（闭眼/模糊）
   const [isAllCaptured, setIsAllCaptured] = useState(false);
   const isAllCapturedRef = useRef(isAllCaptured);
-  // 四角度拍完后的确认页：先让用户检查/重拍，再提交分析
-  const [showReview, setShowReview] = useState(false);
-  const [reviewImages, setReviewImages] = useState<FaceCaptureImages | null>(null);
-  const [submittingReview, setSubmittingReview] = useState(false);
-  const submittingReviewRef = useRef(false);
-  const [awaitingNavigation, setAwaitingNavigation] = useState(false);
-  const [reviewError, setReviewError] = useState<string | null>(null);
+  // 四角度拍完自动提交分析；仅在提交失败时显示重试层
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
+  const pendingImagesRef = useRef<FaceCaptureImages | null>(null);
   const [stepEpoch, setStepEpoch] = useState(0);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(() => {
     if (typeof navigator === 'undefined') return false;
@@ -265,19 +261,6 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
   useEffect(() => { isAllCapturedRef.current = isAllCaptured; }, [isAllCaptured]);
   useEffect(() => { isSwitchingCameraRef.current = isSwitchingCamera; }, [isSwitchingCamera]);
-
-  // 提交成功依赖父级导航卸载本组件；仅在上传/保存完成后监听导航，
-  // 避免慢速上传期间恢复按钮导致重复提交。
-  useEffect(() => {
-    if (!awaitingNavigation) return;
-    const timer = setTimeout(() => {
-      submittingReviewRef.current = false;
-      setSubmittingReview(false);
-      setAwaitingNavigation(false);
-      setReviewError("页面跳转较慢，请重试提交。");
-    }, 15000);
-    return () => clearTimeout(timer);
-  }, [awaitingNavigation]);
 
   // 8 秒慢加载降级：从等待开始（idle 排队/loading 在途）就计时，覆盖"预载还在 idle 队列"
   // 的空窗期；仅驱动 UI（手动拍照入口），不写回全局状态
@@ -1088,6 +1071,54 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     return null;
   }, []);
 
+  const restartCapture = useCallback(async (fromStep: CaptureStep = "front") => {
+    if (submittingRef.current) return;
+    const order: CaptureStep[] = ["front", "left", "right", "chin"];
+    const startIndex = order.indexOf(fromStep);
+    pendingImagesRef.current = null;
+    setSubmitError(null);
+    setIsAllCaptured(false);
+    setError(null);
+    setFaceStatus("none");
+    lastFaceDetectedRef.current = Date.now();
+    justCapturedRef.current = null;
+    setShowSuccessForStep(null);
+    setStabilityProgress(0);
+    stableCountRef.current = 0;
+    cooldownRef.current = false;
+    setIsInCooldown(false);
+    setStepEpoch((n) => n + 1);
+    setShowManualButton(false);
+    setCapturedImages((prev) => {
+      const next = { ...prev };
+      for (const step of order.slice(startIndex)) next[step] = null;
+      return next;
+    });
+    setCurrentStep(fromStep);
+    await initCamera().catch(() => undefined);
+  }, [initCamera]);
+
+  const submitImages = useCallback(async (images: FaceCaptureImages) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    pendingImagesRef.current = images;
+    setSubmitError(null);
+    try {
+      await onCapture(images);
+    } catch (err) {
+      console.error("[FaceCapture] onCapture failed:", err);
+      const isStorageFull = err instanceof Error && err.message === "STORAGE_FULL";
+      submittingRef.current = false;
+      if (isStorageFull) {
+        // 父级会弹出存储清理提示；重置相机到正面，关闭弹窗后可直接重拍
+        pendingImagesRef.current = null;
+        void restartCapture("front");
+        return;
+      }
+      setSubmitError("提交未成功，照片已保留，请重试提交。");
+    }
+  }, [onCapture, restartCapture]);
+
   /**
    * 自动拍照并进入下一步
    * 优化：根据面部检测框裁剪图像，去除多余背景
@@ -1317,7 +1348,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       setShowSuccessForStep(step);
 
       successTimerRef.current = setTimeout(async () => {
-        // 所有步骤完成 - 直接调用 onCapture 并传递所有照片
+        // 所有步骤完成 - 自动提交分析
         setIsAllCaptured(true);
 
         // 停止面部检测
@@ -1360,14 +1391,15 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           stepStartTimeRef.current = Date.now();
           setShowManualButton(false);
           successTimerRef.current = null;
+          pendingImagesRef.current = null;
+          setSubmitError(null);
           await initCameraRef.current().catch(() => undefined);
           return;
         }
 
-        // 先进入确认页，由用户检查四张照片后再提交分析
-        setReviewImages(allImages);
-        setShowReview(true);
+        // 四角度完成：直接提交分析，不再插入照片确认步骤
         successTimerRef.current = null;
+        void submitImages(allImages);
       }, successDisplayDuration);
     }
       } catch (captureError) {
@@ -1379,7 +1411,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         setStabilityProgress(0);
       }
     }, 0);
-  }, [getNextStep, speak, trackFaceScanStep]);
+  }, [getNextStep, speak, submitImages, trackFaceScanStep]);
 
   // 保持 detectFace 始终能访问到最新的 takePhotoAuto，避免闭包过时
   useEffect(() => {
@@ -1806,59 +1838,6 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   // 获取当前步骤配置
   const currentStepConfig = CAPTURE_STEPS.find(s => s.step === currentStep);
 
-  const resetForRetake = async (fromStep: CaptureStep) => {
-    if (submittingReviewRef.current) return;
-    const order: CaptureStep[] = ["front", "left", "right", "chin"];
-    const startIndex = order.indexOf(fromStep);
-    setShowReview(false);
-    setReviewImages(null);
-    setReviewError(null);
-    submittingReviewRef.current = false;
-    setSubmittingReview(false);
-    setAwaitingNavigation(false);
-    setIsAllCaptured(false);
-    setError(null);
-    setFaceStatus("none");
-    // eslint-disable-next-line react-hooks/purity -- 重拍是事件回调，不是渲染期计算
-    lastFaceDetectedRef.current = Date.now();
-    justCapturedRef.current = null;
-    setShowSuccessForStep(null);
-    setStabilityProgress(0);
-    stableCountRef.current = 0;
-    cooldownRef.current = false;
-    setIsInCooldown(false);
-    setStepEpoch((n) => n + 1);
-    setShowManualButton(false);
-    setCapturedImages((prev) => {
-      const next = { ...prev };
-      for (const step of order.slice(startIndex)) next[step] = null;
-      return next;
-    });
-    setCurrentStep(fromStep);
-    await initCamera().catch(() => undefined);
-  };
-
-  const handleConfirmReview = async () => {
-    if (!reviewImages || submittingReviewRef.current) return;
-    submittingReviewRef.current = true;
-    setReviewError(null);
-    setSubmittingReview(true);
-    try {
-      await onCapture(reviewImages);
-    } catch (err) {
-      console.error("[FaceCapture] onCapture failed, keeping review state:", err);
-      const isStorageFull = err instanceof Error && err.message === "STORAGE_FULL";
-      // 存储不足由父级统一弹窗；其他异常保留四张照片，允许原地重试，避免用户被迫重拍。
-      setReviewError(isStorageFull ? null : "处理未成功，请重试，或重拍有问题的角度。");
-      submittingReviewRef.current = false;
-      setSubmittingReview(false);
-      setAwaitingNavigation(false);
-      return;
-    }
-    // 保存/上传已完成，进入等待导航阶段；成功提交后保持禁用，直到父级导航卸载本组件
-    setAwaitingNavigation(true);
-  };
-
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
       {/* 隐藏的 Canvas */}
@@ -1885,7 +1864,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
               src={capturedImages.front || capturedImages.chin || ""}
               className="h-full w-full object-cover blur-2xl opacity-50 scale-110"
             />
-            {!showReview && (
+            {!submitError && (
               <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
                 <div className="h-16 w-16 mb-6 rounded-full border-4 border-white/20 border-t-white animate-spin" />
                 <p className="text-xl font-medium text-white tracking-widest">正在分析</p>
@@ -1995,7 +1974,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                 {nextStepInstruction
                   ? `请准备：${nextStepInstruction}`
                   : showSuccessForStep === "chin"
-                    ? "拍摄完成，请确认照片"
+                    ? "拍摄完成，正在进入分析"
                     : isInCooldown
                       ? "请稍候，即将进入下一步"
                       : currentStepConfig?.instruction}
@@ -2098,80 +2077,40 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         </div>
       )}
 
-      {/* 拍后确认：四角度缩略图 + 单张/全部重拍，避免进入分析后才发现问题 */}
+      {/* 提交失败才显示重试层；正常流程拍完即自动分析 */}
       <AnimatePresence>
-        {showReview && reviewImages && (
+        {submitError && (
           <m.div
-            key="review"
-            role="dialog"
+            key="submit-error"
+            role="alertdialog"
             aria-modal="true"
-            aria-label="确认拍摄照片"
+            aria-label="提交未成功"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0, transition: { duration: 0.24, ease: [0.22, 1, 0.36, 1] } }}
             exit={{ opacity: 0, y: 12, pointerEvents: "none" as const, transition: { duration: 0.16, ease: "easeIn" } }}
-            className="absolute inset-0 z-[60] flex flex-col bg-black/90 p-5 overflow-y-auto"
+            className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 p-6 text-center"
           >
-            <div className="mx-auto w-full max-w-md">
-              <h3 className="text-center text-white text-lg font-medium mb-2">确认拍摄照片</h3>
-              <p className="text-center text-white/55 text-xs mb-5 leading-relaxed">
-                请检查光线、清晰度和构图。确认后将开始 AI 分析。
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {CAPTURE_STEPS.map((item) => {
-                  const src = reviewImages[item.step];
-                  return (
-                    <div key={item.step} className="overflow-hidden rounded-xl border border-white/15 bg-card/5">
-                      <div className="relative aspect-[3/4]">
-                        {src ? (
-                          <div
-                            role="img"
-                            aria-label={`${item.label}照片`}
-                            className="h-full w-full bg-cover bg-center"
-                            style={{ backgroundImage: `url(${src})` }}
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-xs text-white/40">缺失</div>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between gap-2 px-3 py-2">
-                        <span className="text-[12px] text-white/70">{item.label}</span>
-                        <button
-                          type="button"
-                          onClick={() => void resetForRetake(item.step)}
-                          disabled={submittingReview}
-                          className="text-[12px] text-white/80 underline underline-offset-2 hover:text-white disabled:opacity-40 disabled:no-underline"
-                        >
-                          重拍
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {reviewError && (
-                <p role="alert" className="mt-4 rounded-lg border border-red-300/30 bg-red-500/15 px-3 py-2 text-center text-[12px] leading-relaxed text-red-100">
-                  {reviewError}
-                </p>
-              )}
-              <div className="mt-6 flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={handleConfirmReview}
-                  disabled={submittingReview}
-                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-card px-6 text-[14px] font-medium text-black disabled:opacity-50"
-                >
-                  {submittingReview && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {submittingReview ? "正在提交..." : "开始分析"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void resetForRetake("front")}
-                  disabled={submittingReview}
-                  className="min-h-[44px] rounded-full border border-white/25 px-6 text-[13px] text-white/70 transition-colors hover:bg-card/10 disabled:opacity-50"
-                >
-                  全部重拍
-                </button>
-              </div>
+            <AlertCircle className="mb-4 h-10 w-10 text-red-400" />
+            <h3 className="text-lg font-medium text-white">提交未成功</h3>
+            <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/60">{submitError}</p>
+            <div className="mt-6 flex w-full max-w-xs flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const images = pendingImagesRef.current;
+                  if (images) void submitImages(images);
+                }}
+                className="min-h-[48px] rounded-full bg-card px-6 text-[14px] font-medium text-black"
+              >
+                重试提交
+              </button>
+              <button
+                type="button"
+                onClick={() => void restartCapture("front")}
+                className="min-h-[44px] rounded-full border border-white/25 px-6 text-[13px] text-white/70 transition-colors hover:bg-card/10"
+              >
+                重新拍摄
+              </button>
             </div>
           </m.div>
         )}

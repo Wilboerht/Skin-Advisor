@@ -207,7 +207,7 @@ export default function FaceScanPage() {
         }
 
         trackFaceScanComplete();
-        // 保持 isSubmitting=true 直到导航完成，避免确认页在跳转前重新可交互、发生二次提交
+        // 保持 isSubmitting=true 直到导航完成，避免提交期间重复触发
         router.push(resultUrl);
         } catch (err) {
             // 捕获动态导入失败（ChunkLoadError）等未预期异常，避免 UI 卡在转圈
@@ -219,7 +219,7 @@ export default function FaceScanPage() {
                 toast.error(isChunkError ? "加载未成功，请刷新后重试。" : "处理未成功，请重试。");
             }
             setIsSubmitting(false);
-            throw err; // 通知 FaceCapture 保留确认页/照片，允许重试
+            throw err; // 通知 FaceCapture 保留照片并显示重试层
         }
     };
 
