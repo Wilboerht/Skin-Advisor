@@ -209,7 +209,7 @@ export function CheckInModal({
                                 className={cn(
                                     "flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border py-2.5 text-center transition-colors",
                                     selected
-                                        ? "border-primary bg-accent"
+                                        ? "border-primary/40 bg-accent ring-1 ring-primary/10"
                                         : "border-transparent hover:bg-accent/50",
                                 )}
                             >

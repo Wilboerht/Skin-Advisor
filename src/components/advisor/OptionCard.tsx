@@ -4,6 +4,10 @@ import { useId } from "react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroupItem } from "@/components/ui/radio-group";
+import {
+    SELECTABLE_CARD,
+    SELECTABLE_CARD_SELECTED,
+} from "@/components/ui/selection-styles";
 
 interface OptionCardProps {
     value: string;
@@ -31,8 +35,9 @@ export function OptionCard({
         <label
             htmlFor={id}
             className={cn(
-                "flex cursor-pointer items-start gap-3 rounded-xl border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:bg-accent/50",
-                isSelected && "border-primary bg-accent",
+                "flex cursor-pointer items-start gap-3 rounded-xl p-4 text-card-foreground",
+                SELECTABLE_CARD,
+                isSelected && SELECTABLE_CARD_SELECTED,
             )}
         >
             {role === "radio" ? (

@@ -4,6 +4,10 @@ import Image from "next/image";
 import { certImageUrl, type CertVariant } from "@/lib/cert-image";
 import { ResponsiveDialog } from "@/components/ui/ResponsiveDialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+    SELECTABLE_CARD,
+    SELECTABLE_CARD_SELECTED,
+} from "@/components/ui/selection-styles";
 import { cn } from "@/lib/utils";
 
 interface CertVariantPickerProps {
@@ -56,8 +60,9 @@ export function CertVariantPicker({
                             key={variant.id}
                             htmlFor={id}
                             className={cn(
-                                "relative flex cursor-pointer flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm transition-colors hover:bg-accent/50",
-                                active && "border-primary bg-accent",
+                                "relative flex cursor-pointer flex-col gap-2 rounded-xl p-3",
+                                SELECTABLE_CARD,
+                                active && SELECTABLE_CARD_SELECTED,
                             )}
                         >
                             <RadioGroupItem

@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { type Question } from "@/config/questions";
 import { Button } from "@/components/ui/Button";
 import { RadioGroup } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 import { OptionCard } from "./OptionCard";
 
 interface QuestionStepProps {
@@ -115,9 +116,14 @@ export function QuestionStep({
       <div className="mt-8 flex justify-center">
         <Button
           type="button"
+          variant={isNextDisabled ? "outline" : "default"}
           onClick={onNext}
           disabled={isNextDisabled}
-          className="min-w-40"
+          className={cn(
+            "min-w-40",
+            isNextDisabled &&
+              "border-border/80 bg-transparent text-muted-foreground/60 shadow-none hover:bg-transparent disabled:opacity-100",
+          )}
         >
           {currentStep === totalSteps ? "开始面部检测" : "下一步"}
         </Button>

@@ -2,7 +2,7 @@
 
 import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useEffect, useState, useRef, useCallback, useSyncExternalStore } from "react";
-import { Check, LogOut, ArrowRight, Loader2 } from "lucide-react";
+import { LogOut, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -32,7 +32,7 @@ interface AnalyzingOverlayProps {
     onShowSkinTypes?: () => void;
 }
 
-export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, queuePosition, queueWaitSeconds, onShowSkinTypes }: AnalyzingOverlayProps) {
+export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitSeconds, onShowSkinTypes }: AnalyzingOverlayProps) {
     const [showCancel, setShowCancel] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -134,17 +134,6 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
     }, []);
 
     const statusText = getStatusText(progress, stuckTime, queuePosition);
-    const stageIndex =
-        status === 'preparing' || status === 'idle'
-            ? 0
-            : status === 'analyzing_face'
-                ? 1
-                : status === 'analyzing_skin'
-                    ? 2
-                    : status === 'completed'
-                        ? 3
-                        : 2;
-    const stages = ["准备", "视觉分析", "报告生成", "保存"];
     const isWaitingLLM = progress >= 75 && progress < 90;
     const hasQueued = (queuePosition !== undefined && queuePosition > 0);
 
@@ -243,14 +232,14 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.5 }}
-                        className="text-[12px] text-muted-foreground/80 font-light tracking-[0.15em] mb-12"
+                        className="mb-8 text-xs text-muted-foreground"
                     >
                         {PERSONAS[personaIdx].name}
                     </m.span>
                 </AnimatePresence>
 
                 {/* Status text */}
-                <div className="h-7 flex items-center justify-center mb-8" aria-live="polite">
+                <div className="mb-6 flex min-h-7 items-center justify-center" aria-live="polite">
                     <AnimatePresence mode="wait">
                         <m.span
                             key={statusText}
@@ -258,7 +247,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -8 }}
                             transition={{ duration: 0.5 }}
-                            className="text-[14px] text-foreground/75 font-light tracking-[0.08em] text-center"
+                            className="text-center text-sm text-muted-foreground"
                         >
                             {statusText}
                         </m.span>
@@ -290,43 +279,26 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                     )}
                 </div>
 
-                {/* Stage checklist + elapsed：让用户知道“到哪一步了” */}
-                <div className="mt-6 flex items-center gap-3 text-[11px] font-light text-muted-foreground/80">
-                    {stages.map((label, index) => {
-                        const done = index < stageIndex || (index === 3 && status === 'completed');
-                        const active = index === stageIndex && status !== 'completed';
-                        return (
-                            <span key={label} className="inline-flex items-center gap-1.5">
-                                {done ? (
-                                    <Check className="h-3 w-3 text-emerald-600" strokeWidth={2.5} />
-                                ) : active ? (
-                                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                                ) : (
-                                    <span className="h-1.5 w-1.5 rounded-full bg-brand-charcoal/20" />
-                                )}
-                                {label}
-                            </span>
-                        );
-                    })}
-                </div>
-                <p className="mt-2 text-[11px] font-light tabular-nums text-muted-foreground/70">
-                    已等待 {elapsedSeconds} 秒
-                </p>
+                {elapsedSeconds >= 8 && (
+                    <p className="mt-4 text-xs tabular-nums text-muted-foreground/70">
+                        已等待 {elapsedSeconds} 秒
+                    </p>
+                )}
 
-                {/* Queue / wait hints */}
-                {isMounted && (hasQueued || (isWaitingLLM && stuckTime >= 5)) && (
+                {isMounted && hasQueued && (
                     <m.p
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="mt-6 text-[11px] text-muted-foreground/80 font-light tracking-[0.06em] text-center"
+                        className="mt-4 text-center text-xs text-muted-foreground/80"
                     >
-                        {hasQueued
-                            ? `当前使用人数较多${queueWaitSeconds ? `，预计还需约 ${queueWaitSeconds} 秒` : ""}`
-                            : "AI 顾问正在全力为您分析，请再稍候片刻"}
+                        当前使用人数较多
+                        {queueWaitSeconds
+                            ? `，预计还需约 ${queueWaitSeconds} 秒`
+                            : ""}
                     </m.p>
                 )}
 
-                {/* 等待期入口：派系介绍（延迟淡入，不抢进度文案的首屏注意力） */}
+                {/* 等待期入口：派系介绍（弱化为文字链，避免与离开按钮抢注意力） */}
                 {onShowSkinTypes && (
                     <m.button
                         type="button"
@@ -334,17 +306,17 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                         animate={{ opacity: 1 }}
                         transition={{ delay: prefersReducedMotion ? 0 : 1.2, duration: prefersReducedMotion ? 0 : 0.8 }}
                         onClick={onShowSkinTypes}
-                        className="mt-8 inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-brand-charcoal/[0.15] text-muted-foreground text-[12px] font-light tracking-[0.08em] transition-colors duration-300 hover:text-foreground hover:border-brand-charcoal/35 hover:bg-brand-charcoal/[0.03] cursor-pointer"
+                        className="mt-6 inline-flex h-10 cursor-pointer items-center gap-1.5 text-xs text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
                     >
                         <span>等待时，了解 8 大肌肤派系</span>
-                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        <ArrowRight className="size-3.5" strokeWidth={1.5} />
                     </m.button>
                 )}
             </div>
 
             {/* Footer: privacy reassurance */}
             <div className="absolute bottom-10 text-center px-6">
-                <p className="text-[11px] text-muted-foreground/70 font-light tracking-[0.06em] leading-relaxed">
+                <p className="text-xs leading-relaxed text-muted-foreground/70">
                     您的面部图像仅用于本次分析，会加密传输给 AI 服务处理；成功后立即删除，异常最长保留 6 小时。
                 </p>
             </div>

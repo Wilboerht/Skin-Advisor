@@ -6,6 +6,7 @@ import { Shield, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
 import { recordClientConsent } from "@/lib/consent-client";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface PrivacyConsentProps {
     onConsent: () => void;
@@ -18,6 +19,8 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
     const [saving, setSaving] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const { openLegalDoc } = useLegalDocModal();
+    const consentCheckboxClass =
+        "mt-0.5 size-5 shrink-0 rounded-[5px] border-olive/30 bg-card shadow-none focus-visible:ring-olive/30 data-[state=checked]:border-olive data-[state=checked]:bg-olive";
 
     return (
         <div className="flex w-full flex-col items-center">
@@ -115,27 +118,15 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
 
                 {/* 同意操作区 */}
                 <div className="pt-2 space-y-4">
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                        <div className="relative flex items-center">
-                            <input
-                                type="checkbox"
-                                checked={agreed}
-                                onChange={(e) => setAgreed(e.target.checked)}
-                                className="peer sr-only"
-                            />
-                            <div className={cn(
-                                "h-5 w-5 rounded border transition-all duration-200 flex items-center justify-center shrink-0 mt-0.5",
-                                agreed
-                                    ? "bg-olive border-olive"
-                                    : "border-olive/20 bg-card group-hover:border-olive/40"
-                            )}>
-                                {agreed && (
-                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                        <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                )}
-                            </div>
-                        </div>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                        <Checkbox
+                            id="consent-privacy"
+                            checked={agreed}
+                            onCheckedChange={(checked) =>
+                                setAgreed(checked === true)
+                            }
+                            className={consentCheckboxClass}
+                        />
                         <span className="text-xs text-brand-ink-muted leading-relaxed">
                             我已阅读并同意
                             {/* 位于 <label> 内：preventDefault 阻止触发达成勾选，stopPropagation 阻止冒泡 */}
@@ -147,12 +138,14 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                     </label>
 
                     {/* 敏感个人信息单独同意：不能与隐私政策/服务条款合并为一个勾选 */}
-                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-brand-ink-muted leading-relaxed">
-                        <input
-                            type="checkbox"
+                    <label className="flex items-start gap-3 cursor-pointer text-xs text-brand-ink-muted leading-relaxed">
+                        <Checkbox
+                            id="consent-sensitive"
                             checked={sensitiveAgreed}
-                            onChange={(e) => setSensitiveAgreed(e.target.checked)}
-                            className="mt-0.5 h-4 w-4 shrink-0 accent-olive"
+                            onCheckedChange={(checked) =>
+                                setSensitiveAgreed(checked === true)
+                            }
+                            className={consentCheckboxClass}
                         />
                         <span>
                             我单独同意处理我的敏感个人信息（面部照片、肤质与健康状况），仅用于本次 AI 肤质分析与报告生成。

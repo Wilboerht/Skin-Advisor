@@ -6,6 +6,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+    SELECTABLE_CARD,
+    SELECTABLE_CARD_SELECTED,
+} from "@/components/ui/selection-styles";
 
 type Gender = "female" | "male";
 
@@ -67,11 +71,10 @@ export function GenderSelection({
                             key={value}
                             htmlFor={id}
                             className={cn(
-                                "flex min-h-[88px] cursor-pointer items-center gap-4 rounded-xl border bg-card p-5 text-card-foreground shadow-sm transition-colors",
-                                "hover:bg-accent/40 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/30",
-                                isSelected
-                                    ? "border-primary/40 bg-accent ring-1 ring-primary/10 hover:bg-accent"
-                                    : "border-border/80 hover:border-primary/20",
+                                "flex min-h-[88px] cursor-pointer items-center gap-4 rounded-xl p-5 text-card-foreground",
+                                "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/30",
+                                SELECTABLE_CARD,
+                                isSelected && SELECTABLE_CARD_SELECTED,
                             )}
                         >
                             <span

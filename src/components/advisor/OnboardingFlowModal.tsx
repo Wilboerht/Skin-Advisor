@@ -8,6 +8,10 @@ import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const consentCheckboxClass =
+    "mt-0.5 size-5 shrink-0 rounded-[5px] border-brand-bronze/30 bg-card shadow-none focus-visible:ring-brand-bronze/30 data-[state=checked]:border-brand-bronze data-[state=checked]:bg-brand-bronze";
 
 interface OnboardingFlowProps {
     isOpen: boolean;
@@ -496,110 +500,74 @@ export function OnboardingFlowModal({
                                         服务确认与授权
                                     </h3>
 
-                                    <div
-                                        className={`p-5 md:p-6 mb-7 text-left max-w-lg mx-auto rounded-xl border cursor-pointer transition-all duration-300 ${
+                                    <label
+                                        className={`mb-7 block max-w-lg cursor-pointer rounded-xl border p-5 text-left transition-colors md:p-6 ${
                                             isAgreed
-                                                ? "bg-card/60 border-brand-bronze/25 shadow-[0_2px_12px_rgba(139,115,85,0.06)]"
-                                                : "bg-card/40 border-olive/8 hover:border-brand-bronze/15 hover:bg-card/50"
+                                                ? "border-brand-bronze/40 bg-accent ring-1 ring-brand-bronze/10"
+                                                : "border-border/80 bg-card/60 hover:border-brand-bronze/20 hover:bg-accent/40"
                                         }`}
-                                        onClick={(e) => {
-                                            if ((e.target as HTMLElement).tagName !== "A") {
-                                                setIsAgreed((prev) => !prev);
-                                            }
-                                        }}
                                     >
                                         <div className="flex items-start gap-3.5 md:gap-4">
-                                            <label
-                                                htmlFor="legal-agree"
-                                                className="mt-0.5 relative flex items-center cursor-pointer group"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <input
-                                                    id="legal-agree"
-                                                    type="checkbox"
-                                                    checked={isAgreed}
-                                                    onChange={(e) => setIsAgreed(e.target.checked)}
-                                                    className="sr-only"
-                                                />
-                                                <m.div
-                                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors duration-300 ${
-                                                        isAgreed
-                                                            ? "bg-brand-bronze border-brand-bronze"
-                                                            : "bg-transparent border-olive/15 group-hover:border-brand-bronze/60 group-focus-visible:ring-2 group-focus-visible:ring-[#8B7355]/30 group-focus-visible:ring-offset-2"
-                                                    }`}
-                                                    animate={isAgreed ? { scale: [1, 0.92, 1.04, 1] } : { scale: 1 }}
-                                                    transition={{ duration: 0.4, ease: "easeOut" }}
-                                                >
-                                                    {isAgreed && (
-                                                        <m.svg
-                                                            className="w-3 h-3 text-white"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="3"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                        >
-                                                            <m.polyline
-                                                                initial={{ pathLength: 0 }}
-                                                                animate={{ pathLength: 1 }}
-                                                                transition={{ duration: 0.25, ease: "easeOut", delay: 0.05 }}
-                                                                points="4 12 9 17 20 6"
-                                                            />
-                                                        </m.svg>
-                                                    )}
-                                                </m.div>
-                                            </label>
-                                            <span
-                                                className="text-[13px] md:text-base text-muted-foreground font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] select-none"
-                                                onClick={(e) => {
-                                                    if ((e.target as HTMLElement).tagName !== "A") {
-                                                        e.stopPropagation();
-                                                        setIsAgreed((prev) => !prev);
-                                                    }
-                                                }}
-                                            >
+                                            <Checkbox
+                                                id="legal-agree"
+                                                checked={isAgreed}
+                                                onCheckedChange={(checked) =>
+                                                    setIsAgreed(checked === true)
+                                                }
+                                                className={consentCheckboxClass}
+                                            />
+                                            <span className="text-sm leading-relaxed text-muted-foreground select-none md:text-base">
                                                 根据相关法律法规，请确认您已年满 14 周岁，且已阅读并同意我们的
                                                 <button
                                                     type="button"
-                                                    onClick={(e) => { e.stopPropagation(); openLegalDoc("privacy"); }}
-                                                    className="text-foreground/75 mx-1 underline decoration-brand-charcoal/20 underline-offset-2 hover:text-foreground transition-colors cursor-pointer"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        openLegalDoc("privacy");
+                                                    }}
+                                                    className="mx-1 text-foreground/75 underline decoration-brand-charcoal/20 underline-offset-2 transition-colors hover:text-foreground cursor-pointer"
                                                 >
                                                     隐私政策
                                                 </button>
                                                 与
                                                 <button
                                                     type="button"
-                                                    onClick={(e) => { e.stopPropagation(); openLegalDoc("terms"); }}
-                                                    className="text-foreground/75 mx-1 underline decoration-brand-charcoal/20 underline-offset-2 hover:text-foreground transition-colors cursor-pointer"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        openLegalDoc("terms");
+                                                    }}
+                                                    className="mx-1 text-foreground/75 underline decoration-brand-charcoal/20 underline-offset-2 transition-colors hover:text-foreground cursor-pointer"
                                                 >
                                                     服务条款
                                                 </button>
-                                                 。
-                                             </span>
-                                         </div>
-                                     </div>
+                                                。
+                                            </span>
+                                        </div>
+                                    </label>
 
-                                     <div
-                                         className={`p-5 md:p-6 mb-7 text-left max-w-lg mx-auto rounded-xl border transition-all duration-300 ${
-                                             isSensitiveAgreed
-                                                 ? "bg-card/60 border-brand-bronze/25 shadow-[0_2px_12px_rgba(139,115,85,0.06)]"
-                                                 : "bg-card/40 border-olive/8 hover:border-brand-bronze/15 hover:bg-card/50"
-                                         }`}
-                                     >
-                                         <label className="flex items-start gap-3.5 md:gap-4 cursor-pointer">
-                                             <input
-                                                 type="checkbox"
-                                                 checked={isSensitiveAgreed}
-                                                 onChange={(e) => setIsSensitiveAgreed(e.target.checked)}
-                                                 className="mt-1 h-4 w-4 shrink-0 accent-[#8B7355]"
-                                             />
-                                             <span className="text-[13px] md:text-base text-muted-foreground font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] select-none">
-                                                 我单独同意处理我的面部照片、肤质与健康状况，并用于第三方 AI 服务（DeepSeek/Qwen）分析。
-                                                 我理解此类信息属于敏感个人信息；如拒绝，将无法使用 AI 测肤，但不影响其他服务。
-                                             </span>
-                                         </label>
-                                     </div>
+                                    <label
+                                        className={`mb-7 block max-w-lg cursor-pointer rounded-xl border p-5 text-left transition-colors md:p-6 ${
+                                            isSensitiveAgreed
+                                                ? "border-brand-bronze/40 bg-accent ring-1 ring-brand-bronze/10"
+                                                : "border-border/80 bg-card/60 hover:border-brand-bronze/20 hover:bg-accent/40"
+                                        }`}
+                                    >
+                                        <div className="flex items-start gap-3.5 md:gap-4">
+                                            <Checkbox
+                                                id="legal-sensitive-agree"
+                                                checked={isSensitiveAgreed}
+                                                onCheckedChange={(checked) =>
+                                                    setIsSensitiveAgreed(checked === true)
+                                                }
+                                                className={consentCheckboxClass}
+                                            />
+                                            <span className="text-sm leading-relaxed text-muted-foreground select-none md:text-base">
+                                                我单独同意处理我的面部照片、肤质与健康状况，并用于第三方 AI 服务（DeepSeek/Qwen）分析。
+                                                我理解此类信息属于敏感个人信息；如拒绝，将无法使用 AI 测肤，但不影响其他服务。
+                                            </span>
+                                        </div>
+                                    </label>
 
                                      <div className="flex flex-col items-center space-y-4">
                                         <button
