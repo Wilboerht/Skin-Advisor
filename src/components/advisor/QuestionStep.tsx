@@ -69,7 +69,7 @@ export function QuestionStep({
   return (
     <div className="mx-auto w-full max-w-3xl">
       <div className="mb-10 space-y-3 text-center">
-        <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
+        <h2 className="text-2xl font-light tracking-tight md:text-3xl">
           {question.question}
         </h2>
 

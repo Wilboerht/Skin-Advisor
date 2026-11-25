@@ -34,6 +34,7 @@ export function GenderSelection({
     const [selected, setSelected] = useState<Gender | "">(
         selectedGender ?? "",
     );
+    const [manuallySelected, setManuallySelected] = useState(false);
 
     useEffect(() => {
         if (selectedGender) setSelected(selectedGender);
@@ -42,7 +43,7 @@ export function GenderSelection({
     return (
         <div className="flex w-full max-w-2xl flex-col items-center gap-8">
             <div className="space-y-2 text-center">
-                <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
+                <h2 className="text-xl font-light tracking-tight md:text-2xl">
                     {title}
                 </h2>
                 <p
@@ -57,7 +58,10 @@ export function GenderSelection({
 
             <RadioGroup
                 value={selected}
-                onValueChange={(value) => setSelected(value as Gender)}
+                onValueChange={(value) => {
+                    setManuallySelected(true);
+                    setSelected(value as Gender);
+                }}
                 className="grid w-full gap-3 sm:grid-cols-2"
                 aria-label="选择性别"
                 aria-describedby={helperId}
@@ -65,13 +69,19 @@ export function GenderSelection({
                 {options.map(({ value, label, Icon }) => {
                     const id = `gender-${value}`;
                     const isSelected = selected === value;
-                    const isPreselected = isSelected && selectedGender === value;
+                    const isPreselected =
+                        !manuallySelected &&
+                        isSelected &&
+                        selectedGender === value;
                     return (
                         <label
                             key={value}
                             htmlFor={id}
+                            onClick={() => {
+                                if (isPreselected) setManuallySelected(true);
+                            }}
                             className={cn(
-                                "relative flex min-h-[96px] cursor-pointer items-center gap-4 rounded-xl p-6 text-card-foreground",
+                                "flex min-h-[88px] cursor-pointer items-center gap-4 rounded-xl p-5 text-card-foreground",
                                 "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/30",
                                 SELECTABLE_CARD,
                                 isSelected && SELECTABLE_CARD_SELECTED,
@@ -87,18 +97,21 @@ export function GenderSelection({
                             >
                                 <Icon className="size-6" aria-hidden="true" />
                             </span>
-                            <span className="min-w-0 flex-1 text-sm font-medium">
+                            <span className="min-w-0 flex-1 text-[15px] font-normal text-foreground/90">
                                 {label}
                             </span>
                             <RadioGroupItem
                                 value={value}
                                 id={id}
-                                className="shrink-0"
+                                className={cn(
+                                    "shrink-0 shadow-none",
+                                    isPreselected && "sr-only",
+                                )}
                             />
                             {isPreselected && (
                                 <Badge
                                     variant="default"
-                                    className="absolute -top-2.5 right-5 border border-primary/20 bg-card px-2.5 py-0.5 text-[10px] leading-none text-primary shadow-none"
+                                    className="shrink-0 rounded-full border border-primary/20 bg-card px-2.5 py-1 text-[11px] font-normal leading-none text-primary shadow-none"
                                 >
                                     当前
                                 </Badge>

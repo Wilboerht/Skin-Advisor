@@ -35,27 +35,27 @@ export function OptionCard({
         <label
             htmlFor={id}
             className={cn(
-                "flex cursor-pointer items-start gap-4 rounded-xl p-5 text-card-foreground",
+                "flex cursor-pointer items-center gap-3.5 rounded-xl px-4 py-4 text-card-foreground",
                 SELECTABLE_CARD,
                 isSelected && SELECTABLE_CARD_SELECTED,
             )}
         >
             {role === "radio" ? (
-                <RadioGroupItem value={value} id={id} className="mt-0.5" />
+                <RadioGroupItem value={value} id={id} className="shadow-none" />
             ) : (
                 <Checkbox
                     id={id}
                     checked={isSelected}
                     onCheckedChange={() => onSelect()}
-                    className="mt-0.5"
+                    className="shadow-none"
                 />
             )}
-            <span className="grid gap-1.5">
-                <span className="text-[15px] leading-snug font-medium">
+            <span className="flex min-w-0 flex-col gap-1">
+                <span className="text-sm leading-snug font-normal text-foreground/90">
                     {label}
                 </span>
                 {description && (
-                    <span className="text-sm leading-relaxed text-muted-foreground">
+                    <span className="text-[13px] leading-relaxed text-muted-foreground/85">
                         {description}
                     </span>
                 )}
