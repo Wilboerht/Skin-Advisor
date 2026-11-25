@@ -35,7 +35,7 @@ export function OptionCard({
         <label
             htmlFor={id}
             className={cn(
-                "flex cursor-pointer items-start gap-3 rounded-xl p-4 text-card-foreground",
+                "flex cursor-pointer items-start gap-4 rounded-xl p-5 text-card-foreground",
                 SELECTABLE_CARD,
                 isSelected && SELECTABLE_CARD_SELECTED,
             )}
@@ -51,11 +51,11 @@ export function OptionCard({
                 />
             )}
             <span className="grid gap-1.5">
-                <span className="text-sm leading-none font-medium">
+                <span className="text-[15px] leading-snug font-medium">
                     {label}
                 </span>
                 {description && (
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm leading-relaxed text-muted-foreground">
                         {description}
                     </span>
                 )}

@@ -67,8 +67,8 @@ export function QuestionStep({
   });
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
-      <div className="mb-8 space-y-2 text-center">
+    <div className="mx-auto w-full max-w-3xl">
+      <div className="mb-10 space-y-3 text-center">
         <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
           {question.question}
         </h2>
@@ -92,7 +92,7 @@ export function QuestionStep({
         <div
           role="group"
           aria-label={question.question}
-          className="grid grid-cols-1 gap-3 md:grid-cols-2"
+          className="grid grid-cols-1 gap-4 md:grid-cols-2"
         >
           {options}
         </div>
@@ -107,20 +107,20 @@ export function QuestionStep({
             pointerSelectRef.current = false;
           }}
           aria-label={question.question}
-          className="grid grid-cols-1 gap-3 md:grid-cols-2"
+          className="grid grid-cols-1 gap-4 md:grid-cols-2"
         >
           {options}
         </RadioGroup>
       )}
 
-      <div className="mt-8 flex justify-center">
+      <div className="mt-10 flex justify-center">
         <Button
           type="button"
           variant={isNextDisabled ? "outline" : "default"}
           onClick={onNext}
           disabled={isNextDisabled}
           className={cn(
-            "min-w-40",
+            "h-11 min-w-48",
             isNextDisabled &&
               "border-border/80 bg-transparent text-muted-foreground/60 shadow-none hover:bg-transparent disabled:opacity-100",
           )}

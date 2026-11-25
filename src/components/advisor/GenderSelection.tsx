@@ -40,9 +40,9 @@ export function GenderSelection({
     }, [selectedGender]);
 
     return (
-        <div className="flex w-full max-w-md flex-col items-center gap-6">
+        <div className="flex w-full max-w-2xl flex-col items-center gap-8">
             <div className="space-y-2 text-center">
-                <h2 className="text-lg font-semibold tracking-tight md:text-2xl">
+                <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
                     {title}
                 </h2>
                 <p
@@ -71,7 +71,7 @@ export function GenderSelection({
                             key={value}
                             htmlFor={id}
                             className={cn(
-                                "flex min-h-[88px] cursor-pointer items-center gap-4 rounded-xl p-5 text-card-foreground",
+                                "relative flex min-h-[96px] cursor-pointer items-center gap-4 rounded-xl p-6 text-card-foreground",
                                 "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/30",
                                 SELECTABLE_CARD,
                                 isSelected && SELECTABLE_CARD_SELECTED,
@@ -87,21 +87,22 @@ export function GenderSelection({
                             >
                                 <Icon className="size-6" aria-hidden="true" />
                             </span>
-                            <span className="flex min-w-0 flex-1 items-center gap-2">
-                                <span className="text-sm font-medium">
-                                    {label}
-                                </span>
-                                {isPreselected && (
-                                    <Badge variant="default" className="shrink-0">
-                                        当前
-                                    </Badge>
-                                )}
+                            <span className="min-w-0 flex-1 text-sm font-medium">
+                                {label}
                             </span>
                             <RadioGroupItem
                                 value={value}
                                 id={id}
                                 className="shrink-0"
                             />
+                            {isPreselected && (
+                                <Badge
+                                    variant="default"
+                                    className="absolute -top-2.5 right-5 border border-primary/20 bg-card px-2.5 py-0.5 text-[10px] leading-none text-primary shadow-none"
+                                >
+                                    当前
+                                </Badge>
+                            )}
                         </label>
                     );
                 })}
@@ -113,7 +114,7 @@ export function GenderSelection({
                 onClick={() => {
                     if (selected) onSelect(selected);
                 }}
-                className="w-full sm:w-auto sm:min-w-40"
+                className="w-full sm:w-auto sm:min-w-[200px]"
             >
                 确认并继续
             </Button>

@@ -28,6 +28,7 @@ interface SelectProps {
     required?: boolean;
     disabled?: boolean;
     className?: string;
+    portalContainer?: HTMLElement | null;
     "aria-label"?: string;
 }
 
@@ -47,6 +48,7 @@ export function Select({
     required,
     disabled,
     className,
+    portalContainer,
     "aria-label": ariaLabel,
 }: SelectProps) {
     const generatedId = useId();
@@ -102,7 +104,7 @@ export function Select({
                         <ChevronDown className="size-4 opacity-50" />
                     </SelectPrimitive.Icon>
                 </SelectPrimitive.Trigger>
-                <SelectPrimitive.Portal>
+                <SelectPrimitive.Portal container={portalContainer ?? undefined}>
                     <SelectPrimitive.Content
                         position="popper"
                         sideOffset={4}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut, ChevronDown } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut } from "lucide-react";
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { useToast } from "@/components/ui/Toast";
@@ -9,6 +9,7 @@ import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select } from "@/components/ui/Select";
 
 const consentCheckboxClass =
     "mt-0.5 size-5 shrink-0 rounded-[5px] border-brand-bronze/30 bg-card shadow-none focus-visible:ring-brand-bronze/30 data-[state=checked]:border-brand-bronze data-[state=checked]:bg-brand-bronze";
@@ -70,6 +71,7 @@ export function OnboardingFlowModal({
     const [isSensitiveAgreed, setIsSensitiveAgreed] = useState(false);
     const [isFinishing, setIsFinishing] = useState(false);
     const [maxVisitedIndex, setMaxVisitedIndex] = useState(0);
+    const [portalRoot, setPortalRoot] = useState<HTMLDivElement | null>(null);
     const prefersReducedMotion = useReducedMotion();
     const screens = getScreens();
     const totalScreens = screens.length;
@@ -84,6 +86,11 @@ export function OnboardingFlowModal({
     const advanceUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // 焦点圈定：Tab 在弹层内循环、关闭后焦点归还触发元素（原实现只 focus 容器，Tab 会跑到背景页）
     const modalRef = useFocusTrap<HTMLDivElement>(isOpen);
+
+    // Select 的下拉层挂到弹层内部，避免焦点圈定把 portal 内容视为背景页
+    useEffect(() => {
+        setPortalRoot(isOpen ? modalRef.current : null);
+    }, [isOpen, modalRef]);
 
     // 屏幕列表可能中途收缩：弹窗按游客流程打开后登录态才落地（昵称/授权屏被移除），
     // 钳制 activeIndex 防止越界渲染空白；maxVisitedIndex 由 goTo 的边界检查兜底
@@ -443,20 +450,25 @@ export function OnboardingFlowModal({
                                             <p className="text-sm md:text-base text-foreground/75 font-light leading-relaxed tracking-[0.06em] md:tracking-[0.12em] mt-3">结合当地气候情况，为您提供更精准的分析建议</p>
                                         </div>
 
-                                        {/* Province Select (native) */}
-                                        <div className="shrink-0 relative">
-                                            <select
-                                                value=""
-                                                onChange={(e) => { if (e.target.value) handleRegionOption(e.target.value); }}
+                                        {/* Province Select */}
+                                        <div className="shrink-0">
+                                            <Select
                                                 aria-label="选择所在地区"
-                                                className="w-full appearance-none bg-card/70 border border-border rounded-xl py-3.5 pl-5 pr-12 text-[15px] text-foreground focus:outline-none focus:border-brand-charcoal/35 transition-colors duration-300 cursor-pointer"
-                                            >
-                                                <option value="" disabled>选择省份</option>
-                                                {regionOptions.flatMap((group) => group.regions).map((region) => (
-                                                    <option key={region} value={region}>{region}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/80 pointer-events-none" />
+                                                placeholder="选择省份"
+                                                options={regionOptions
+                                                    .flatMap((group) => group.regions)
+                                                    .map((region) => ({
+                                                        value: region,
+                                                        label: region,
+                                                    }))}
+                                                onChange={(event) => {
+                                                    if (event.target.value) {
+                                                        handleRegionOption(event.target.value);
+                                                    }
+                                                }}
+                                                portalContainer={portalRoot}
+                                                className="h-12 rounded-xl bg-card/70 text-base"
+                                            />
                                         </div>
 
                                         {/* Skip */}

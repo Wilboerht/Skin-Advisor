@@ -13,7 +13,6 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
-import { cn } from "@/lib/utils";
 import { scheduleFaceModelPreload } from "@/lib/face-models";
 import { hasPrivacyConsent } from "@/lib/consent-storage";
 import {
@@ -79,9 +78,6 @@ export default function QuestionsPage() {
     // 用户是否已在性别页确认（含直接点卡片）。未确认时始终停留在性别页：
     // 预选只是高亮 + 分情况文案，必须由用户显式点击才进入问卷
     const [genderConfirmed, setGenderConfirmed] = useState(false);
-    // 性别来自官网资料默认值（而非用户手动选择/本地恢复）时，
-    // 第一题顶部显示"测肤对象"切换入口——代家人测肤场景的纠偏通道
-    const [genderFromProfile, setGenderFromProfile] = useState(false);
     // 资料性别默认值是否已决策（套用/不套用）。未决时性别页位置渲染加载态，
     // 避免先闪出"无预选"标题再切换为"个人账号信息"文案
     const [profileGenderResolved, setProfileGenderResolved] = useState(false);
@@ -508,8 +504,6 @@ export default function QuestionsPage() {
         safeStorage.set(STORAGE_KEYS.ADVISOR_GENDER, selectedGender);
         setGenderSource(null);
         setGenderConfirmed(true);
-        // 用户改选了与资料默认值不同的项：纠偏已完成，第一题顶部不再显示"测肤对象"切换入口
-        if (genderFromProfile && gender && selectedGender !== gender) setGenderFromProfile(false);
         // 面部识别模型改为空闲时预加载：face-api/TF.js 的解析编译是主线程长任务，
         // 同步启动会卡住紧随其后的"上一题"/"退出"点击（交互优先于预加载）
         scheduleFaceModelPreload();
@@ -567,20 +561,8 @@ export default function QuestionsPage() {
         // 排队提示被用户点掉（queueDismissed）或服务恢复后本 effect 会重新评估
         if (aiConfigured !== true || limitExceeded || (queueBusy && !queueDismissed)) return;
         setProfileGenderResolved(true);
-        setGenderFromProfile(true);
         applyPresetGender(profileGender, "profile");
     }, [profileGenderResolved, isUserInitialized, user?.gender, gender, aiConfigured, limitExceeded, queueBusy, queueDismissed]);
-
-    // 第一题顶部的"测肤对象"一键切换：仅在采用资料默认值时提供，
-    // 不影响手动选择路径（GenderSelection 页本就由用户显式确认）
-    const handleGenderSwitch = () => {
-        const next = gender === "female" ? "male" : "female";
-        setGender(next);
-        setAnswers(prev => applyGenderToAnswers(prev, next));
-        safeStorage.set(STORAGE_KEYS.ADVISOR_GENDER, next);
-        // 已经手动切换过：再回到性别页时不再显示"根据账号信息"的来源文案
-        setGenderSource(null);
-    };
 
     // 调度自动切题：回调里通过 answersRef 校验该题答案未被改动（闭包捕获的是旧 state，必须读 ref），
     // 防止 500ms 内改选/回退后 pending 的定时器把用户推到错误位置
@@ -1046,7 +1028,7 @@ export default function QuestionsPage() {
 
             {/* 进度条：动态题数（含条件题），让用户随时知道所处位置 */}
             <div className="shrink-0 px-4 pb-4 md:px-12 lg:px-20">
-                <div className="mx-auto flex max-w-2xl items-center gap-3">
+                <div className="mx-auto flex max-w-3xl items-center gap-3">
                     <Progress
                         value={((currentStepIndex + 1) / questions.length) * 100}
                         aria-label={`第 ${currentStepIndex + 1} 题，共 ${questions.length} 题`}
@@ -1062,30 +1044,8 @@ export default function QuestionsPage() {
             </div>
 
             {/* Main Content Area */}
-            <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scrollbar-hide relative w-full max-w-2xl mx-auto z-10 px-4 mb-4">
+            <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scrollbar-hide relative w-full max-w-3xl mx-auto z-10 px-4 mb-4">
                 <div className="min-h-full flex flex-col justify-start md:justify-center">
-                    {/* 资料性别默认值提示：仅第一题展示，一键切换（代家人测肤的纠偏通道）；
-                        固定高度折叠动画避免切题时布局跳动 */}
-                    <div
-                        className={cn(
-                            "flex justify-center overflow-hidden transition-all duration-300",
-                            genderFromProfile && currentStepIndex === 0 && gender
-                                ? "h-10 opacity-100"
-                                : "h-0 opacity-0"
-                        )}
-                    >
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleGenderSwitch}
-                            className="h-8 gap-1.5"
-                        >
-                            本次测肤对象：{gender === "female" ? "女性" : "男性"}
-                            <span className="text-muted-foreground">·</span>
-                            <span className="text-muted-foreground">切换</span>
-                        </Button>
-                    </div>
                     <AnimatePresence mode="wait" custom={direction}>
                         <m.div
                             key={currentStepIndex}
