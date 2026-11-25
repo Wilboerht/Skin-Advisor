@@ -11,28 +11,28 @@ const CURRENT_YEAR = new Date().getFullYear();
 export function SiteFooter() {
   return (
     <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
-      <div className="flex flex-col items-center justify-center gap-2 text-xs font-light text-brand-charcoal/70 tracking-[0.12em]">
+      <div className="flex flex-col items-center justify-center gap-2 text-xs font-light text-foreground/75 tracking-[0.12em]">
         {/* 版权与政策链接同一行（窄屏自动换行居中）；移动端版权用简写避免拥挤 */}
         <nav aria-label="法律信息" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           <p suppressHydrationWarning>
             <span className="hidden sm:inline">© {CURRENT_YEAR} NIHPLOD. All Rights Reserved.</span>
             <span className="sm:hidden">© {CURRENT_YEAR} NIHPLOD</span>
           </p>
-          <span aria-hidden="true" className="text-brand-charcoal/30">·</span>
+          <span aria-hidden="true" className="text-muted-foreground/70">·</span>
           <a
             href="https://nihplod.cn/privacy"
             target="_blank"
             rel="noopener noreferrer"
-            className="transition-colors duration-300 hover:text-brand-charcoal"
+            className="transition-colors duration-300 hover:text-foreground"
           >
             隐私政策
           </a>
-          <span aria-hidden="true" className="text-brand-charcoal/30">·</span>
+          <span aria-hidden="true" className="text-muted-foreground/70">·</span>
           <a
             href="https://nihplod.cn/terms"
             target="_blank"
             rel="noopener noreferrer"
-            className="transition-colors duration-300 hover:text-brand-charcoal"
+            className="transition-colors duration-300 hover:text-foreground"
           >
             服务条款
           </a>
@@ -42,16 +42,16 @@ export function SiteFooter() {
             href="https://beian.miit.gov.cn/"
             target="_blank"
             rel="noopener noreferrer"
-            className="transition-colors duration-300 hover:text-brand-charcoal"
+            className="transition-colors duration-300 hover:text-foreground"
           >
             沪ICP备2026014764号-1
           </a>
-          <span aria-hidden="true" className="hidden sm:inline text-brand-charcoal/30">|</span>
+          <span aria-hidden="true" className="hidden sm:inline text-muted-foreground/70">|</span>
           <a
             href="http://www.beian.gov.cn/portal/registerSystemInfo"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 transition-colors duration-300 hover:text-brand-charcoal"
+            className="flex items-center gap-1 transition-colors duration-300 hover:text-foreground"
           >
             <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
             <span>沪公网安备31010702010178号</span>

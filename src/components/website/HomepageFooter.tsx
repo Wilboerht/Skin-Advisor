@@ -17,15 +17,15 @@ const LegalModal = dynamic(() => import("@/components/website/LegalModal").then(
  * 「隐私政策 / 服务条款」打开站内简版弹窗（LegalModal），完整版在弹窗内链至官网；「常见问题」由父级回调打开 FaqModal。
  */
 export function HomepageFooter({ onOpenFaq }: { onOpenFaq: () => void }) {
-    const linkClass = "flex !min-h-0 !min-w-0 items-center hover:text-brand-charcoal/60 transition-colors cursor-pointer";
-    const separatorClass = "text-brand-charcoal/40 select-none";
+    const linkClass = "flex !min-h-0 !min-w-0 items-center hover:text-muted-foreground transition-colors cursor-pointer";
+    const separatorClass = "text-muted-foreground/80 select-none";
 
     // 简版法律文本弹窗：隐私政策 / 服务条款共用一个 LegalModal，同时只开一个
     const [legalDoc, setLegalDoc] = useState<"privacy" | "terms" | null>(null);
     const shouldRenderLegal = useLazyOpen(legalDoc !== null);
 
     return (
-        <footer className="w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/70 max-pc:gap-x-2.5 pc:flex-nowrap pc:justify-start">
+        <footer className="w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] font-light tracking-[0.12em] text-foreground/75 max-pc:gap-x-2.5 pc:flex-nowrap pc:justify-start">
             {/* 公安备案：手机端与宽屏左组均为第一项 */}
             <Link
                 href="http://www.beian.gov.cn/portal/registerSystemInfo"

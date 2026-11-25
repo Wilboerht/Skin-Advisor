@@ -263,7 +263,7 @@ export default function ReportPage({
                         key={item.id}
                         href={`#${item.id}`}
                         onClick={() => handleNavClick(item.id)}
-                        className="inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--color-brand-espresso)]/12 bg-white/55 px-3 text-[11px] font-medium text-[var(--color-brand-cocoa)] transition-colors hover:border-[var(--color-brand-espresso)]/30 hover:bg-white active:scale-[0.98]"
+                        className="inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--color-brand-espresso)]/12 bg-card/55 px-3 text-[11px] font-medium text-[var(--color-brand-cocoa)] transition-colors hover:border-[var(--color-brand-espresso)]/30 hover:bg-card active:scale-[0.98]"
                     >
                         {item.label}
                     </a>
@@ -296,7 +296,7 @@ export default function ReportPage({
                     compact
                 />
                 {result.safetyNotes && (
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-brand-espresso)]/12 bg-white/55 px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-brand-espresso)]/12 bg-card/55 px-4 py-3">
                         <p className="text-[12px] leading-relaxed text-[var(--color-brand-cocoa)]">
                             安全摘要：{safetySummaryParts.length > 0 ? safetySummaryParts.join(" · ") : "复测与注意事项"}
                         </p>
@@ -359,7 +359,7 @@ export default function ReportPage({
                                 return (
                                     <div
                                         key={`${condition.condition}-${index}`}
-                                        className="rounded-xl border border-[var(--color-brand-espresso)]/10 bg-white/60 px-4 py-3"
+                                        className="rounded-xl border border-[var(--color-brand-espresso)]/10 bg-card/60 px-4 py-3"
                                     >
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className="text-[13px] font-medium text-[var(--color-brand-espresso)]">
@@ -495,13 +495,13 @@ export default function ReportPage({
                             <button
                                 type="button"
                                 onClick={handleAddRetestReminder}
-                                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-brand-cocoa/25 bg-white px-4 text-[13px] font-medium text-brand-cocoa transition-colors hover:border-brand-cocoa/45 hover:bg-brand-cocoa/[0.06]"
+                                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-brand-cocoa/25 bg-card px-4 text-[13px] font-medium text-brand-cocoa transition-colors hover:border-brand-cocoa/45 hover:bg-brand-cocoa/[0.06]"
                             >
                                 <CalendarPlus className="h-4 w-4" strokeWidth={1.8} />
                                 添加到日历
                             </button>
                             {reTestBlockedReason ? (
-                                <span className="inline-flex h-10 items-center justify-center rounded-full border border-brand-cocoa/15 bg-white/60 px-5 text-[12px] font-light text-brand-cocoa/55">
+                                <span className="inline-flex h-10 items-center justify-center rounded-full border border-brand-cocoa/15 bg-card/60 px-5 text-[12px] font-light text-brand-cocoa/55">
                                     {reTestBlockedReason === "login"
                                         ? "登录后可重新测肤"
                                         : reTestBlockedReason === "lifetime"
@@ -511,7 +511,7 @@ export default function ReportPage({
                             ) : (
                                 <Link
                                     href="/questions?edit=true"
-                                    className="inline-flex h-10 items-center justify-center rounded-full border border-brand-cocoa/25 bg-white px-5 text-[13px] font-medium text-brand-cocoa transition-colors hover:border-brand-cocoa/45 hover:bg-brand-cocoa/[0.06]"
+                                    className="inline-flex h-10 items-center justify-center rounded-full border border-brand-cocoa/25 bg-card px-5 text-[13px] font-medium text-brand-cocoa transition-colors hover:border-brand-cocoa/45 hover:bg-brand-cocoa/[0.06]"
                                 >
                                     重新测肤
                                 </Link>

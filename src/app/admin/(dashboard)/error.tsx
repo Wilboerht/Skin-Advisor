@@ -22,14 +22,14 @@ export default function AdminDashboardError({
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-500">
                     <AlertTriangle className="h-7 w-7" />
                 </div>
-                <h2 className="text-base font-medium text-brand-charcoal">
+                <h2 className="text-base font-medium text-foreground">
                     数据加载失败
                 </h2>
-                <p className="mt-1 text-sm text-brand-charcoal/65">
+                <p className="mt-1 text-sm text-muted-foreground">
                     加载后台数据时出现异常，请稍后重试。
                 </p>
                 {error.digest && (
-                    <p className="mt-3 font-mono text-xs text-brand-charcoal/55">
+                    <p className="mt-3 font-mono text-xs text-muted-foreground">
                         Error ID: {error.digest}
                     </p>
                 )}

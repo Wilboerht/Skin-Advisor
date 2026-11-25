@@ -29,7 +29,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                 <span className="mb-3 inline-block rounded-md bg-olive/5 px-4 py-1.5 text-[11px] font-medium tracking-wider text-olive">
                     开始之前
                 </span>
-                <h2 className="font-serif text-2xl md:text-3xl text-text-primary">
+                <h2 className="font-sans text-2xl md:text-3xl text-text-primary">
                     您的隐私对我们至关重要
                 </h2>
                 <p className="mt-2 text-sm text-brand-ink-muted font-light max-w-md mx-auto">
@@ -45,7 +45,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                 className="w-full max-w-lg space-y-4"
             >
                 {/* 核心摘要卡片 */}
-                <div className="rounded-xl border border-olive/10 bg-white/60 backdrop-blur-md p-5 sm:p-6 space-y-4">
+                <div className="rounded-xl border border-olive/10 bg-card/60 backdrop-blur-md p-5 sm:p-6 space-y-4">
                     <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-olive/5">
                             <Shield className="h-5 w-5 text-olive" strokeWidth={1.5} />
@@ -127,7 +127,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                                 "h-5 w-5 rounded border transition-all duration-200 flex items-center justify-center shrink-0 mt-0.5",
                                 agreed
                                     ? "bg-olive border-olive"
-                                    : "border-olive/20 bg-white group-hover:border-olive/40"
+                                    : "border-olive/20 bg-card group-hover:border-olive/40"
                             )}>
                                 {agreed && (
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -176,7 +176,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         className={cn(
                             "w-full py-3.5 rounded-xl text-sm font-medium tracking-wide transition-all duration-300",
                             agreed && sensitiveAgreed && !saving
-                                ? "bg-text-primary text-white hover:bg-[#333] shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                                ? "bg-text-primary text-white hover:bg-[#333] shadow-sm hover:shadow-md hover:-translate-y-0.5"
                                 : "bg-text-primary/10 text-text-primary/30 cursor-not-allowed"
                         )}
                     >

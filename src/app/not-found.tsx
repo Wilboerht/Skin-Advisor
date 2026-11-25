@@ -10,16 +10,16 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-brand-canvas text-text-primary px-6 text-center">
-      <p className="text-[80px] md:text-[120px] font-serif text-brand-bronze/30 leading-none mb-4">
+      <p className="text-[80px] md:text-[120px] font-sans text-brand-bronze/30 leading-none mb-4">
         404
       </p>
-      <h1 className="text-xl md:text-2xl font-serif mb-3">页面未找到</h1>
+      <h1 className="text-xl md:text-2xl font-sans mb-3">页面未找到</h1>
       <p className="text-[14px] text-brand-ink-muted font-light max-w-md mb-8 leading-relaxed">
          您访问的页面可能已移动或暂时不可用。不如回到首页，开始一次 AI 肤质分析？
       </p>
       <Link
         href="/"
-        className="inline-flex items-center gap-2 px-8 py-3 border border-brand-charcoal text-brand-charcoal rounded-lg text-[13px] tracking-[0.12em] font-light hover:bg-brand-charcoal hover:text-white focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] transition-all duration-500"
+        className="inline-flex items-center gap-2 px-8 py-3 border border-brand-charcoal text-foreground rounded-lg text-[13px] tracking-[0.12em] font-light hover:bg-brand-charcoal hover:text-white focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] transition-all duration-500"
       >
         回到首页
         <ArrowRight className="w-4 h-4" />

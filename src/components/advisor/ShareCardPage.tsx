@@ -229,7 +229,7 @@ export default function ShareCardPage({
                         <button
                             type="button"
                             onClick={() => setShowFactionIntro(true)}
-                            className="mt-3 inline-flex h-[30px] items-center gap-1.5 rounded-full border border-[#22364B]/15 bg-white/70 px-3.5 text-[11px] font-medium tracking-[0.08em] text-[#22364B]/75 transition-colors hover:bg-white hover:border-[#22364B]/30 active:scale-[0.98] cursor-pointer"
+                            className="mt-3 inline-flex h-[30px] items-center gap-1.5 rounded-full border border-[#22364B]/15 bg-card/70 px-3.5 text-[11px] font-medium tracking-[0.08em] text-[#22364B]/75 transition-colors hover:bg-card hover:border-[#22364B]/30 active:scale-[0.98] cursor-pointer"
                         >
                             <Info className="h-3.5 w-3.5 flex-none" strokeWidth={1.75} />
                             查看派系介绍
@@ -295,7 +295,7 @@ export default function ShareCardPage({
                         alt={skinTypeName}
                         width={480}
                         height={640}
-                        className="absolute right-[-60px] bottom-[3px] z-[3] h-[420px] w-auto object-contain drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
+                        className="absolute right-[-60px] bottom-[3px] z-[3] h-[420px] w-auto object-contain drop-shadow-[0_14px_20px_rgba(35,54,75,0.16)]"
                         priority
                         onError={handleCharacterImageError}
                     />
@@ -318,7 +318,7 @@ export default function ShareCardPage({
                         <button
                             type="button"
                             onClick={onOpenReport}
-                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#22304E]/10 bg-white px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#22304E] shadow-[3px_4px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] cursor-pointer"
+                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#22304E]/10 bg-card px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#22304E] shadow-[3px_4px_0_0_rgba(34,48,78,0.85)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(34,48,78,0.85)] cursor-pointer"
                         >
                             查看完整报告
                             <ArrowRight className="h-[13px] w-[13px] flex-none" strokeWidth={1.75} />
@@ -329,7 +329,7 @@ export default function ShareCardPage({
                         onClick={onDownloadPoster}
                         disabled={posterDisabled}
                         aria-busy={posterDisabled}
-                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#22304E]/10 bg-white px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#22304E]/75 shadow-[2px_3px_0_0_rgba(34,48,78,0.28)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[1px_2px_0_0_rgba(34,48,78,0.28)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#22304E]/10 bg-card px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#22304E]/75 shadow-[2px_3px_0_0_rgba(34,48,78,0.28)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[1px_2px_0_0_rgba(34,48,78,0.28)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                     >
                         {posterDisabled ? (
                             <Loader2 className="h-[13px] w-[13px] flex-none animate-spin" strokeWidth={2} />
@@ -349,7 +349,7 @@ export default function ShareCardPage({
                             onClick={onGift}
                             onMouseEnter={fireGiftConfetti}
                             onFocus={fireGiftConfetti}
-                            className="relative inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#C9A86C]/55 bg-white px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#8B6914] shadow-[3px_4px_0_0_rgba(201,168,108,0.95)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(201,168,108,0.95)] cursor-pointer"
+                            className="relative inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#C9A86C]/55 bg-card px-[14px] text-[13px] font-bold tracking-[0.15em] text-[#8B6914] shadow-[3px_4px_0_0_rgba(201,168,108,0.95)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_3px_0_0_rgba(201,168,108,0.95)] cursor-pointer"
                         >
                             {/* 悬浮彩带：从按钮中心向上扇形迸发，指针事件穿透不影响点击 */}
                             <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2">
@@ -431,7 +431,7 @@ export default function ShareCardPage({
                         alt={skinTypeName}
                         width={480}
                         height={640}
-                        className="absolute left-[-28%] bottom-[-15%] z-[3] h-[130%] w-auto object-contain object-bottom drop-shadow-[0_18px_24px_rgba(35,54,75,0.28)]"
+                        className="absolute left-[-28%] bottom-[-15%] z-[3] h-[130%] w-auto object-contain object-bottom drop-shadow-[0_14px_20px_rgba(35,54,75,0.16)]"
                         priority
                         onError={handleCharacterImageError}
                     />
@@ -476,7 +476,7 @@ export default function ShareCardPage({
                             onClick={onGift}
                             onMouseEnter={fireGiftConfetti}
                             onFocus={fireGiftConfetti}
-                            className="relative inline-flex h-[3.4cqw] min-h-[32px] items-center justify-center border border-[#22364B]/15 bg-white px-[2.2cqw] text-[1.7cqw] font-medium tracking-[0.1em] text-[#22364B] shadow-[0_3px_10px_rgba(35,54,75,0.16)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                            className="relative inline-flex h-[3.4cqw] min-h-[32px] items-center justify-center border border-[#22364B]/15 bg-card px-[2.2cqw] text-[1.7cqw] font-medium tracking-[0.1em] text-[#22364B] shadow-[0_3px_10px_rgba(35,54,75,0.16)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                         >
                             {/* 悬浮彩带：从按钮中心向上扇形迸发，指针事件穿透不影响点击 */}
                             <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2">

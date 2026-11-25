@@ -20,6 +20,8 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
+    DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
 import { useFaceModels } from "@/hooks/use-face-models";
@@ -224,8 +226,8 @@ export default function FaceScanPage() {
     if (!entryReady) {
         return (
             <div className="fixed inset-0 z-0 flex flex-col items-center justify-center bg-brand-canvas-warm">
-                <Loader2 className="h-6 w-6 animate-spin text-brand-charcoal/60" />
-                <p className="mt-3 text-[13px] font-light text-brand-charcoal/55">正在检查测肤状态…</p>
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <p className="mt-3 text-[13px] font-light text-muted-foreground">正在检查测肤状态…</p>
             </div>
         );
     }
@@ -233,8 +235,10 @@ export default function FaceScanPage() {
     return (
         <div className="relative h-dvh overflow-hidden w-full bg-brand-canvas-warm flex flex-col items-center">
             {/* Top Bar —— 复用 /questions 统一样式 */}
-            <header className={`w-full relative flex items-center justify-center pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-brand-charcoal/5 transition-colors duration-300 ${isModalOpen ? 'bg-brand-canvas-soft' : 'bg-brand-canvas-warm'}`}>
-                <button
+            <header className={`w-full relative flex items-center justify-center pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-4 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-4 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-border transition-colors duration-300 ${isModalOpen ? 'bg-brand-canvas-soft' : 'bg-brand-canvas-warm'}`}>
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                         if (isSubmitting) return;
                         if (hasStarted) {
@@ -245,12 +249,12 @@ export default function FaceScanPage() {
                         }
                     }}
                     disabled={isNavigating || isSubmitting}
-                    className="absolute left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 touch-manipulation active:scale-95 disabled:opacity-40"
+                    className="absolute left-4 gap-1.5 md:left-12 lg:left-20"
                     aria-label="返回"
                 >
-                    <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
-                    <span className="hidden sm:inline text-[14px] font-light tracking-[0.08em]">返回</span>
-                </button>
+                    <ChevronLeft />
+                    <span className="hidden sm:inline">返回</span>
+                </Button>
 
                 <Image
                     src="/NIHPLOD-logo.svg"
@@ -261,19 +265,21 @@ export default function FaceScanPage() {
                     priority
                 />
 
-                <button
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                         if (isSubmitting) return;
                         setExitTarget("/");
                         setShowExitConfirm(true);
                     }}
                     disabled={isNavigating || isSubmitting}
-                    className="absolute right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 touch-manipulation active:scale-95 disabled:opacity-40"
+                    className="absolute right-4 gap-1.5 md:right-12 lg:right-20"
                     aria-label="退出测试"
                 >
-                    <LogOut className="w-5 h-5" strokeWidth={1.5} />
-                    <span className="hidden sm:inline text-[14px] font-light tracking-[0.08em]">退出</span>
-                </button>
+                    <LogOut />
+                    <span className="hidden sm:inline">退出</span>
+                </Button>
             </header>
 
             {/* Main Content: Mirror Container pushed to center */}
@@ -301,18 +307,18 @@ export default function FaceScanPage() {
                 transition={{ delay: 0.5, duration: 1 }}
                 className="hidden sm:flex justify-center pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-4 shrink-0"
             >
-                <div className="flex flex-col items-center gap-2 text-[11px] font-light text-brand-charcoal/[0.48] leading-tight">
+                <div className="flex flex-col items-center gap-2 text-[11px] font-light text-foreground/[0.48] leading-tight">
                     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 tracking-[0.1em] md:tracking-[0.12em]">
                         <p suppressHydrationWarning>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-                        <span className="text-brand-charcoal/20">·</span>
-                        <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-brand-charcoal/70">隐私政策</a>
-                        <span className="text-brand-charcoal/20">·</span>
-                        <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-brand-charcoal/70">服务条款</a>
+                        <span className="text-muted-foreground/50">·</span>
+                        <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-foreground/75">隐私政策</a>
+                        <span className="text-muted-foreground/50">·</span>
+                        <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-foreground/75">服务条款</a>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 tracking-[0.12em]">
-                        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-brand-charcoal/70">沪ICP备2026014764号-1</a>
-                        <span aria-hidden="true" className="hidden sm:inline text-brand-charcoal/20">|</span>
-                        <a href="http://www.beian.gov.cn/portal/registerSystemInfo" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 transition-colors duration-300 hover:text-brand-charcoal/70">
+                        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-foreground/75">沪ICP备2026014764号-1</a>
+                        <span aria-hidden="true" className="hidden sm:inline text-muted-foreground/50">|</span>
+                        <a href="http://www.beian.gov.cn/portal/registerSystemInfo" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 transition-colors duration-300 hover:text-foreground/75">
                             <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
                             <span>沪公网安备31010702010178号</span>
                         </a>
@@ -331,58 +337,48 @@ export default function FaceScanPage() {
                         transition={{ duration: 0.4 }}
                         className="fixed inset-0 z-[9999] bg-brand-canvas flex flex-col items-center justify-center"
                     >
-                        <Loader2 className="w-10 h-10 text-brand-bronze animate-spin mb-8" />
-                        <p className="text-brand-charcoal text-xl md:text-2xl font-serif font-light tracking-[0.02em]">正在准备 AI 面部扫描</p>
-                        <p className="text-brand-charcoal/60 text-[13px] md:text-sm mt-3 font-light max-w-xs text-center leading-[1.8] tracking-[0.06em]">首次加载模型可能需要 10–30 秒；若加载较慢，可先进入相机使用手动拍照</p>
-                        <button
+                        <Loader2 className="mb-8 h-10 w-10 animate-spin text-primary" />
+                        <p className="text-xl font-semibold tracking-tight md:text-2xl">正在准备 AI 面部扫描</p>
+                        <p className="mt-3 max-w-xs text-center text-sm text-muted-foreground">首次加载模型可能需要 10–30 秒；若加载较慢，可先进入相机使用手动拍照</p>
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={() => setIsPreparing(false)}
-                            className="mt-6 inline-flex min-h-[44px] min-w-[160px] items-center justify-center rounded-full border border-brand-charcoal/20 px-5 text-[13px] font-light tracking-[0.08em] text-brand-charcoal/70 transition-colors hover:bg-brand-charcoal/5"
+                            className="mt-6"
                         >
                             先进入相机
-                        </button>
+                        </Button>
                     </m.div>
                 )}
             </AnimatePresence>
 
             {/* Exit Confirmation Modal —— 复用 /questions 风格 */}
             <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
-                <DialogContent
-                    showCloseButton={false}
-                    className="max-w-lg gap-0 overflow-hidden border-brand-beige bg-white/95 p-8 shadow-sm backdrop-blur-sm"
-                >
-                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-                        <div className="text-center sm:w-[60%] sm:text-left">
-                            <DialogTitle className="mb-3 text-lg tracking-[0.02em] text-brand-charcoal sm:mb-2">
-                                退出测试？
-                            </DialogTitle>
-                            <DialogDescription className="font-light text-brand-charcoal/60">
-                                退出后将清除已拍摄的照片，下次进入需重新拍摄；问卷答案会保留。
-                            </DialogDescription>
-                        </div>
-                        <div className="flex w-full shrink-0 flex-col gap-3 sm:w-[40%] sm:gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowExitConfirm(false)}
-                                className="h-10 w-full rounded-lg border-brand-charcoal/60 text-[13px] tracking-[0.1em] text-brand-charcoal hover:border-brand-charcoal hover:bg-brand-charcoal/[0.07]"
-                            >
-                                继续测试
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={async () => {
-                                    // 仅清除人脸照片缓存，保留问卷答案和进度供用户返回修改
-                                    const { advisorStorage } = await import("@/lib/advisor-storage");
-                                    await advisorStorage.clearFaceImages();
-                                    navPush(exitTarget);
-                                }}
-                                className="h-10 w-full rounded-lg border border-brand-charcoal/20 text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:border-brand-charcoal/40 hover:text-brand-charcoal"
-                            >
-                                {exitTarget === "/questions?edit=true" ? "离开并返回问卷" : "退出并返回首页"}
-                            </Button>
-                        </div>
-                    </div>
-                    <Image src="/images/watermark.webp" alt="" width={200} height={200} className="pointer-events-none absolute bottom-4 left-1/2 h-auto w-32 -translate-x-1/2 object-contain opacity-15" unoptimized />
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>退出测试？</DialogTitle>
+                        <DialogDescription>
+                            退出后将清除已拍摄的照片，下次进入需重新拍摄；问卷答案会保留。
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowExitConfirm(false)}
+                        >
+                            继续测试
+                        </Button>
+                        <Button
+                            onClick={async () => {
+                                // 仅清除人脸照片缓存，保留问卷答案和进度供用户返回修改
+                                const { advisorStorage } = await import("@/lib/advisor-storage");
+                                await advisorStorage.clearFaceImages();
+                                navPush(exitTarget);
+                            }}
+                        >
+                            {exitTarget === "/questions?edit=true" ? "离开并返回问卷" : "退出并返回首页"}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
@@ -396,45 +392,34 @@ export default function FaceScanPage() {
                     }
                 }}
             >
-                <DialogContent
-                    showCloseButton={false}
-                    className="max-w-lg gap-0 overflow-hidden border-brand-beige bg-white/95 p-8 shadow-sm backdrop-blur-sm"
-                >
-                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-                        <div className="text-center sm:w-[60%] sm:text-left">
-                            <DialogTitle className="mb-3 text-lg tracking-[0.02em] text-brand-charcoal sm:mb-2">
-                                存储空间不足
-                            </DialogTitle>
-                            <DialogDescription className="font-light text-brand-charcoal/60">
-                                浏览器存储空间已满，无法保存照片。请清理浏览器缓存后重新尝试。
-                            </DialogDescription>
-                        </div>
-                        <div className="flex w-full shrink-0 flex-col gap-3 sm:w-[40%] sm:gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    setStorageError(false);
-                                    setIsSubmitting(false);
-                                }}
-                                className="h-10 w-full rounded-lg border-brand-charcoal/60 text-[13px] tracking-[0.1em] text-brand-charcoal hover:border-brand-charcoal hover:bg-brand-charcoal/[0.07]"
-                            >
-                                重新尝试拍照
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={async () => {
-                                    // 仅清理人脸照片缓存，保留问卷答案/隐私同意
-                                    const { advisorStorage } = await import("@/lib/advisor-storage");
-                                    await advisorStorage.clearFaceImages();
-                                    navPush("/");
-                                }}
-                                className="h-10 w-full rounded-lg border border-brand-charcoal/20 text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:border-brand-charcoal/40 hover:text-brand-charcoal"
-                            >
-                                退出并返回首页
-                            </Button>
-                        </div>
-                    </div>
-                    <Image src="/images/watermark.webp" alt="" width={200} height={200} className="pointer-events-none absolute bottom-4 left-1/2 h-auto w-32 -translate-x-1/2 object-contain opacity-15" unoptimized />
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>存储空间不足</DialogTitle>
+                        <DialogDescription>
+                            浏览器存储空间已满，无法保存照片。请清理浏览器缓存后重新尝试。
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setStorageError(false);
+                                setIsSubmitting(false);
+                            }}
+                        >
+                            重新尝试拍照
+                        </Button>
+                        <Button
+                            onClick={async () => {
+                                // 仅清理人脸照片缓存，保留问卷答案/隐私同意
+                                const { advisorStorage } = await import("@/lib/advisor-storage");
+                                await advisorStorage.clearFaceImages();
+                                navPush("/");
+                            }}
+                        >
+                            退出并返回首页
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

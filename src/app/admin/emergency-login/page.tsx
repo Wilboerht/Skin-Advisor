@@ -20,12 +20,12 @@ export default async function EmergencyLoginPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-white px-6">
-            <div className="w-full max-w-sm rounded-2xl border border-brand-charcoal/10 bg-white p-8 shadow-sm">
-                <h1 className="text-xl font-semibold tracking-tight text-brand-charcoal">
+        <div className="flex min-h-screen items-center justify-center bg-card px-6">
+            <div className="w-full max-w-sm rounded-2xl border border-border/80 bg-card p-8 shadow-sm">
+                <h1 className="text-xl font-semibold tracking-tight text-foreground">
                     应急登录
                 </h1>
-                <p className="mt-2 text-sm leading-relaxed text-brand-charcoal/50">
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     仅用于主站管理员 SSO 不可用时的紧急维护。需要应急账号密码与
                     Authenticator 动态验证码。
                 </p>

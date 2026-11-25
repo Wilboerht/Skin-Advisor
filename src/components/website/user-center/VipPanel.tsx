@@ -57,27 +57,27 @@ const CARD_BG_IMAGES: Partial<Record<string, string>> = {
 // 四档卡片配色（border/gradient/文字）
 const TIER_CARD_STYLES: Record<string, { card: string; title: string; bar: string }> = {
   REGULAR: {
-    card: "border-stone-200/60 bg-white/40",
-    title: "text-stone-800",
-    bar: "bg-stone-400",
+    card: "border-border/60 bg-card/40",
+    title: "text-foreground",
+    bar: "bg-muted-foreground",
   },
   SILVER: {
-    card: "border-zinc-200/70 bg-gradient-to-br from-zinc-50/80 to-stone-50/40",
+    card: "border-border/70 bg-gradient-to-br from-muted/80 to-muted/40",
     title: "text-zinc-700",
     bar: "bg-zinc-400",
   },
   GOLD: {
-    card: "border-amber-200/70 bg-gradient-to-br from-amber-50/80 to-stone-50/40",
+    card: "border-amber-200/70 bg-gradient-to-br from-amber-50/80 to-muted/40",
     title: "text-amber-800",
     bar: "bg-amber-400",
   },
   ADVANCED: {
-    card: "border-amber-200/70 bg-gradient-to-br from-amber-50/80 to-stone-50/40",
+    card: "border-amber-200/70 bg-gradient-to-br from-amber-50/80 to-muted/40",
     title: "text-amber-800",
     bar: "bg-amber-400",
   },
   DIAMOND: {
-    card: "border-indigo-200/70 bg-gradient-to-br from-indigo-50/80 to-stone-50/40",
+    card: "border-indigo-200/70 bg-gradient-to-br from-indigo-50/80 to-muted/40",
     title: "text-indigo-800",
     bar: "bg-indigo-400",
   },
@@ -355,7 +355,7 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
   if (!vipData && loading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-stone-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/80" />
       </div>
     );
   }
@@ -363,11 +363,11 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
   if (!vipData) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3">
-        <p className="text-sm text-stone-400">会员信息加载失败</p>
+        <p className="text-sm text-muted-foreground/80">会员信息加载失败</p>
         <button
           type="button"
           onClick={() => void loadVIPData()}
-          className="rounded-full border border-stone-200 px-4 py-1.5 text-xs text-stone-600 transition-colors hover:bg-white/60 cursor-pointer"
+          className="rounded-full border border-border px-4 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-card/60 cursor-pointer"
         >
           重试
         </button>
@@ -452,14 +452,14 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                   )}
 
                   {/* 上半区文字底色：薄白纱保证可读性（图色仍然透出） */}
-                  <div className="relative bg-white/25 p-5">
+                  <div className="relative bg-card/25 p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-xs tracking-wider text-stone-500">当前等级</p>
-                        <h3 className="mt-1 text-xl font-medium text-stone-800">
+                        <p className="text-xs tracking-wider text-muted-foreground">当前等级</p>
+                        <h3 className="mt-1 text-xl font-medium text-foreground">
                           {currentLevel.name}
                         </h3>
-                        <p className="mt-1 text-[11px] font-light tracking-wider text-stone-500">
+                        <p className="mt-1 text-[11px] font-light tracking-wider text-muted-foreground">
                           NO.{memberId}
                         </p>
                       </div>
@@ -468,8 +468,8 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                         onClick={onNavigateMall}
                         className="text-right transition-opacity hover:opacity-70"
                       >
-                        <p className="text-xs text-stone-500">我的积分</p>
-                        <p className="mt-1 text-xl font-light text-stone-800">
+                        <p className="text-xs text-muted-foreground">我的积分</p>
+                        <p className="mt-1 text-xl font-light text-foreground">
                           {pointsData ? pointsData.available.toLocaleString() : "—"}
                         </p>
                       </button>
@@ -490,43 +490,43 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
 
                 {/* 右栏：提升引导卡（进度 + 如何提升 + 录入入口）与 AI 测肤用量卡 */}
                 <div className="contents lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:flex lg:flex-col lg:gap-6">
-                  <div className="rounded-xl border border-stone-200/60 bg-white/40 p-5">
-                    <h4 className="flex items-center gap-2 text-sm font-medium text-stone-700">
-                      <TrendingUp className="h-[18px] w-[18px] text-brand-charcoal" />
+                  <div className="rounded-xl border border-border/60 bg-card/40 p-5">
+                    <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <TrendingUp className="h-[18px] w-[18px] text-foreground" />
                       提升会员等级
                     </h4>
 
                     {nextLevel ? (
-                      <div className="mt-3 rounded-xl border border-stone-200/60 bg-white/50 p-4">
+                      <div className="mt-3 rounded-xl border border-border/60 bg-card/50 p-4">
                         <div className="flex items-baseline justify-between gap-2">
-                          <p className="text-sm text-stone-600">
+                          <p className="text-sm text-muted-foreground">
                             再消费{" "}
-                            <span className="text-base font-semibold leading-none text-brand-charcoal">
+                            <span className="text-base font-semibold leading-none text-foreground">
                               ¥{nextLevel.spentNeeded.toLocaleString()}
                             </span>
                           </p>
-                          <p className="shrink-0 text-xs text-stone-400">升级{nextLevel.name}</p>
+                          <p className="shrink-0 text-xs text-muted-foreground/80">升级{nextLevel.name}</p>
                         </div>
-                        <div className="mt-3 h-1 overflow-hidden rounded-full bg-stone-200/70">
+                        <div className="mt-3 h-1 overflow-hidden rounded-full bg-muted/70">
                           <div
                             className="h-full rounded-full bg-brand-charcoal/80 transition-all duration-500"
                             style={{ width: `${nextLevel.progress}%` }}
                           />
                         </div>
-                        <p className="mt-1.5 text-right text-xs text-stone-400">
+                        <p className="mt-1.5 text-right text-xs text-muted-foreground/80">
                           {nextLevel.progress}%
                         </p>
                       </div>
                     ) : (
-                      <p className="mt-2 text-xs leading-relaxed text-stone-400">
+                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground/80">
                         您已是最高等级会员，全渠道消费记录可随时补录留存。
                       </p>
                     )}
 
                     {/* 如何提升会员等级：三步流程 + 录入消费 / 查看录入历史 */}
-                    <div className="mt-6 border-t border-stone-300/70 pt-6">
-                      <h5 className="flex items-center gap-2 text-sm font-medium text-stone-700">
-                        <Info className="h-[18px] w-[18px] text-brand-charcoal" />
+                    <div className="mt-6 border-t border-input/70 pt-6">
+                      <h5 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                        <Info className="h-[18px] w-[18px] text-foreground" />
                         如何提升会员等级
                       </h5>
                       {/* 步骤列表与官方渠道说明互斥交叉淡入淡出（问号图标切换，带点击防抖） */}
@@ -540,12 +540,12 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                               exit={{ opacity: 0 }}
                               transition={{ duration: 0.18 }}
                             >
-                              <p className="text-xs leading-relaxed text-stone-400">
+                              <p className="text-xs leading-relaxed text-muted-foreground/80">
                                 <button
                                   type="button"
                                   onClick={toggleChannelTip}
                                   aria-label="返回步骤说明"
-                                  className="mr-1 inline-flex translate-y-[2px] text-brand-charcoal transition-opacity hover:opacity-70"
+                                  className="mr-1 inline-flex translate-y-[2px] text-foreground transition-opacity hover:opacity-70"
                                 >
                                   <ChevronLeft className="h-3.5 w-3.5" />
                                 </button>
@@ -567,8 +567,8 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                                 "登录中国官网 > 会员中心录入消费 > 提交订单编号与凭证",
                               ].map((step, i) => (
                                 <div key={i} className="flex items-baseline gap-2">
-                                  <span className="shrink-0 text-xs text-stone-400">{i + 1}.</span>
-                                  <p className="text-xs leading-relaxed text-stone-500">
+                                  <span className="shrink-0 text-xs text-muted-foreground/80">{i + 1}.</span>
+                                  <p className="text-xs leading-relaxed text-muted-foreground">
                                     {step}
                                     {i === 0 && (
                                       <button
@@ -576,7 +576,7 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                                         onClick={toggleChannelTip}
                                         aria-label="查看官方渠道说明"
                                         aria-expanded={showChannelTip}
-                                        className="relative ml-1 inline-flex translate-y-[2px] text-stone-400 transition-colors after:absolute after:-inset-2 after:content-[''] hover:text-brand-charcoal active:opacity-60"
+                                        className="relative ml-1 inline-flex translate-y-[2px] text-muted-foreground/80 transition-colors after:absolute after:-inset-2 after:content-[''] hover:text-foreground active:opacity-60"
                                       >
                                         <CircleHelp className="h-3.5 w-3.5" />
                                       </button>
@@ -592,7 +592,7 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                         <button
                           type="button"
                           onClick={focusSpentForm}
-                          className="inline-flex w-fit items-center gap-1.5 rounded-full border border-brand-charcoal/30 bg-white/40 px-5 py-2 text-xs text-brand-charcoal transition-colors hover:border-brand-charcoal/60 hover:bg-brand-charcoal/5 active:opacity-70"
+                          className="inline-flex w-fit items-center gap-1.5 rounded-full border border-brand-charcoal/30 bg-card/40 px-5 py-2 text-xs text-foreground transition-colors hover:border-brand-charcoal/60 hover:bg-brand-charcoal/5 active:opacity-70"
                         >
                           录入消费
                           <ChevronRight className="h-3.5 w-3.5" />
@@ -600,7 +600,7 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                         <button
                           type="button"
                           onClick={openSpentHistory}
-                          className="py-1.5 text-xs text-stone-500 transition-colors hover:text-stone-800 active:opacity-60"
+                          className="py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground active:opacity-60"
                         >
                           查看录入历史
                         </button>
@@ -609,20 +609,20 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                   </div>
 
                   {/* AI 测肤用量卡：不可用时弱提示 + 手动刷新 */}
-                  <div className="order-last rounded-xl border border-stone-200/60 bg-white/40 p-5 lg:order-none">
-                    <h5 className="flex items-center gap-2 text-sm font-medium text-stone-700">
-                      <ScanFace className="h-[18px] w-[18px] text-brand-charcoal" />
+                  <div className="order-last rounded-xl border border-border/60 bg-card/40 p-5 lg:order-none">
+                    <h5 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <ScanFace className="h-[18px] w-[18px] text-foreground" />
                       AI 测肤
                     </h5>
                     {!skinTestUsage ? (
                       <div className="mt-2 flex items-center gap-1.5">
-                        <p className="text-xs leading-relaxed text-stone-400">测肤用量暂不可用</p>
+                        <p className="text-xs leading-relaxed text-muted-foreground/80">测肤用量暂不可用</p>
                         <button
                           type="button"
                           onClick={() => void refreshSkinTestUsage()}
                           disabled={refreshingUsage}
                           aria-label="刷新测肤用量"
-                          className="text-stone-400 transition-colors hover:text-stone-600 disabled:cursor-not-allowed"
+                          className="text-muted-foreground/80 transition-colors hover:text-muted-foreground disabled:cursor-not-allowed"
                         >
                           <RefreshCw
                             className={`h-3.5 w-3.5 ${refreshingUsage ? "animate-spin" : ""}`}
@@ -632,13 +632,13 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                     ) : (
                       <div className="mt-3 space-y-2">
                         {skinTestUsage.quota.unlimited ? (
-                          <p className="text-sm text-stone-700">
-                            AI 测肤 <span className="font-medium text-stone-800">不限次</span>
+                          <p className="text-sm text-foreground">
+                            AI 测肤 <span className="font-medium text-foreground">不限次</span>
                           </p>
                         ) : (
-                          <p className="text-sm text-stone-700">
+                          <p className="text-sm text-foreground">
                             已用{" "}
-                            <span className="font-medium text-stone-800">
+                            <span className="font-medium text-foreground">
                               {skinTestUsage.totalUsed}
                             </span>
                             {" / 共 "}
@@ -646,7 +646,7 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                           </p>
                         )}
                         {skinTestUsage.quota.dailyLimit != null && (
-                          <p className="text-xs text-stone-500">
+                          <p className="text-xs text-muted-foreground">
                             今日已用 {skinTestUsage.todayUsed}/{skinTestUsage.quota.dailyLimit}
                           </p>
                         )}
@@ -654,7 +654,7 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                           skinTestUsage.remaining != null &&
                           skinTestUsage.remaining <= 0 && (
                             <div className="pt-1">
-                              <p className="text-xs leading-relaxed text-stone-500">
+                              <p className="text-xs leading-relaxed text-muted-foreground">
                                 {vipData.membershipLevel === "SILVER"
                                   ? "测肤次数已用完，升级金卡会员可享不限次 AI 测肤"
                                   : "测肤次数已用完，升级银卡会员可获更多测肤次数"}
@@ -670,10 +670,10 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                           )}
                       </div>
                     )}
-                    <div className="mt-4 border-t border-stone-100 pt-3">
+                    <div className="mt-4 border-t border-border pt-3">
                       <Link
                         href="/questions"
-                        className="inline-flex items-center gap-1 text-xs text-brand-charcoal/70 transition-colors hover:text-brand-charcoal"
+                        className="inline-flex items-center gap-1 text-xs text-foreground/75 transition-colors hover:text-foreground"
                       >
                         去测肤
                         <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.8} />
@@ -685,14 +685,14 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                 {/* 会员权益 - 直接展示当前等级权益；「全部等级」入口进入四档对比 */}
                 <div className="flex flex-col lg:col-start-1 lg:row-start-2 lg:min-h-0 lg:self-stretch lg:overflow-hidden lg:[contain:size]">
                   <div className="mb-3 flex items-center justify-between gap-2">
-                    <h4 className="flex items-center gap-2 text-sm font-medium text-stone-700">
-                      <Crown className="h-[18px] w-[18px] text-brand-charcoal" />
+                    <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <Crown className="h-[18px] w-[18px] text-foreground" />
                       会员权益
                     </h4>
                     <button
                       type="button"
                       onClick={() => setView("levels")}
-                      className="inline-flex items-center gap-0.5 rounded-full border border-stone-200 bg-white/40 px-3.5 py-1.5 text-xs text-stone-500 transition-colors hover:border-stone-300 hover:bg-white/70 hover:text-stone-800 active:opacity-70"
+                      className="inline-flex items-center gap-0.5 rounded-full border border-border bg-card/40 px-3.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-input hover:bg-card/70 hover:text-foreground active:opacity-70"
                     >
                       全部等级
                       <ChevronRight className="h-3.5 w-3.5" />
@@ -702,16 +702,16 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                     <div
                       ref={benefitsScrollRef}
                       onScroll={updateBenefitsScroll}
-                      className="scrollbar-hide min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-stone-200/60 bg-white/40 p-5"
+                      className="scrollbar-hide min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border/60 bg-card/40 p-5"
                     >
                       {currentLevel.benefits.map((b, i) => {
                         const BenefitIcon = benefitIcon(b.title);
                         return (
                           <div key={i} className="flex items-start gap-2.5">
-                            <BenefitIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-charcoal" />
+                            <BenefitIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-stone-800">{b.title}</p>
-                              <p className="mt-0.5 text-[13px] leading-relaxed text-stone-400 md:text-xs">
+                              <p className="text-sm font-medium text-foreground">{b.title}</p>
+                              <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground/80 md:text-xs">
                                 {b.desc}
                               </p>
                             </div>
@@ -749,17 +749,17 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
             >
               {/* 头部：标题 + 返回 */}
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-lg font-medium text-stone-800">等级权益对比</h4>
+                <h4 className="text-lg font-medium text-foreground">等级权益对比</h4>
                 <button
                   type="button"
                   onClick={() => setView("main")}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-stone-200 bg-white/40 px-3 py-1.5 text-xs text-stone-600 transition-colors hover:border-stone-300 hover:bg-white/70 hover:text-stone-900"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card/40 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-input hover:bg-card/70 hover:text-foreground"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                   返回
                 </button>
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-stone-400">
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground/80">
                 会员等级按官方店铺累计消费实时判定，可升可降；当前权益以当前等级为准。
               </p>
 
@@ -780,10 +780,10 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                       key={level.level}
                       className={`relative overflow-hidden rounded-xl border ${
                         isCurrent
-                          ? "border-brand-charcoal bg-white/70"
+                          ? "border-brand-charcoal bg-card/70"
                           : isUnlocked
-                            ? "border-stone-200/60 bg-white/50"
-                            : "border-stone-200/50 bg-white/40"
+                            ? "border-border/60 bg-card/50"
+                            : "border-border/50 bg-card/40"
                       }`}
                     >
                       {tierBgImage && (
@@ -806,32 +806,32 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                             <p
                               className={`text-base font-medium ${
                                 isCurrent
-                                  ? "text-stone-900"
+                                  ? "text-foreground"
                                   : isUnlocked
-                                    ? "text-stone-700"
-                                    : "text-stone-400"
+                                    ? "text-foreground"
+                                    : "text-muted-foreground/80"
                               }`}
                             >
                               {level.name}
                             </p>
                             {isCurrent ? (
-                              <span className="flex shrink-0 items-center gap-1 rounded-full bg-brand-charcoal/10 px-2.5 py-0.5 text-[11px] font-medium text-brand-charcoal">
+                              <span className="flex shrink-0 items-center gap-1 rounded-full bg-brand-charcoal/10 px-2.5 py-0.5 text-[11px] font-medium text-foreground">
                                 <Crown className="h-3 w-3" />
                                 当前
                               </span>
                             ) : isUnlocked ? (
-                              <span className="flex shrink-0 items-center gap-1 rounded-full border border-stone-200/80 bg-white/60 px-2.5 py-0.5 text-[11px] text-stone-500">
-                                <Check className="h-3 w-3 text-brand-charcoal" />
+                              <span className="flex shrink-0 items-center gap-1 rounded-full border border-border/80 bg-card/60 px-2.5 py-0.5 text-[11px] text-muted-foreground">
+                                <Check className="h-3 w-3 text-foreground" />
                                 已解锁
                               </span>
                             ) : (
-                              <span className="flex shrink-0 items-center gap-1 rounded-full border border-stone-200/60 bg-white/40 px-2.5 py-0.5 text-[11px] text-stone-400">
+                              <span className="flex shrink-0 items-center gap-1 rounded-full border border-border/60 bg-card/40 px-2.5 py-0.5 text-[11px] text-muted-foreground/80">
                                 <Lock className="h-3 w-3" />
                                 未解锁
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-stone-400">
+                          <p className="text-xs text-muted-foreground/80">
                             {level.minSpent > 0
                               ? `消费满 ¥${level.minSpent.toLocaleString()}`
                               : "注册即享"}
@@ -839,25 +839,25 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                         </div>
 
                         {/* 权益列表：适配图标 + 标题 + 描述；宽卡片两列（窄屏单列） */}
-                        <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-3 border-t border-stone-200/60 pt-4 md:grid-cols-2">
+                        <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-3 border-t border-border/60 pt-4 md:grid-cols-2">
                           {level.benefits.map((b, i) => {
                             const BenefitIcon = benefitIcon(b.title);
                             return (
                               <div key={i} className="flex items-start gap-2.5">
                                 <BenefitIcon
                                   className={`mt-0.5 h-4 w-4 shrink-0 ${
-                                    isLocked ? "text-stone-400" : "text-brand-charcoal"
+                                    isLocked ? "text-muted-foreground/80" : "text-foreground"
                                   }`}
                                 />
                                 <div className="min-w-0">
                                   <p
                                     className={`text-sm font-medium ${
-                                      isLocked ? "text-stone-500" : "text-stone-800"
+                                      isLocked ? "text-muted-foreground" : "text-foreground"
                                     }`}
                                   >
                                     {b.title}
                                   </p>
-                                  <p className="mt-0.5 text-[13px] leading-relaxed text-stone-400 md:text-xs">
+                                  <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground/80 md:text-xs">
                                     {b.desc}
                                   </p>
                                 </div>
@@ -868,13 +868,13 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
 
                         {/* 未达档等级：解锁进度 + 补录引导（直达录入表单） */}
                         {isLocked && (
-                          <div className="-mx-5 -mb-5 mt-4 border-t border-stone-200/60 bg-stone-500/[0.04] px-5 py-4">
+                          <div className="-mx-5 -mb-5 mt-4 border-t border-border/60 bg-muted/500/[0.04] px-5 py-4">
                             <div className="flex items-center justify-between gap-3">
-                              <p className="flex min-w-0 items-center gap-1.5 text-xs text-stone-600">
-                                <Lock className="h-3.5 w-3.5 shrink-0 text-stone-400" />
+                              <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                                <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground/80" />
                                 <span>
                                   还差{" "}
-                                  <span className="text-sm font-medium text-brand-charcoal">
+                                  <span className="text-sm font-medium text-foreground">
                                     ¥{(level.minSpent - totalSpent).toLocaleString()}
                                   </span>{" "}
                                   解锁该等级
@@ -889,7 +889,7 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                               </button>
                             </div>
                             <div className="mt-3 flex items-center gap-2">
-                              <div className="h-1 flex-1 overflow-hidden rounded-full bg-stone-200/70">
+                              <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted/70">
                                 <div
                                   className={`h-full rounded-full transition-all duration-500 ${
                                     TIER_CARD_STYLES[level.level]?.bar ?? "bg-brand-charcoal/80"
@@ -897,7 +897,7 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
                                   style={{ width: `${tierProgress}%` }}
                                 />
                               </div>
-                              <span className="shrink-0 text-[11px] text-stone-400">
+                              <span className="shrink-0 text-[11px] text-muted-foreground/80">
                                 {tierProgress}%
                               </span>
                             </div>
@@ -906,10 +906,10 @@ export function VipPanel({ active = true, onRequestLogin, onNavigateMall }: VipP
 
                         {/* 当前为普通档：升级引导（解锁银卡全部权益） */}
                         {isCurrent && level.level === "REGULAR" && (
-                          <div className="-mx-5 -mb-5 mt-4 border-t border-stone-200/60 bg-stone-500/[0.04] px-5 py-4">
+                          <div className="-mx-5 -mb-5 mt-4 border-t border-border/60 bg-muted/500/[0.04] px-5 py-4">
                             <div className="flex items-start gap-2">
-                              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-stone-400" />
-                              <p className="text-xs leading-relaxed text-stone-600">
+                              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/80" />
+                              <p className="text-xs leading-relaxed text-muted-foreground">
                                 累计消费满 ¥1,000 升级银卡会员，解锁档案保留、AI
                                 顾问、积分兑礼与生日礼遇等权益
                               </p>

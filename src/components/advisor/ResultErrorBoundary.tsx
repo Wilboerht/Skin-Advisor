@@ -66,7 +66,7 @@ export class ResultErrorBoundary extends Component<Props, State> {
                             </button>
                             <Link
                                 href="/"
-                                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#5c4937]/30 bg-white px-6 py-3 text-sm font-medium text-[#5c4937] hover:bg-[#5c4937]/5 transition-colors"
+                                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#5c4937]/30 bg-card px-6 py-3 text-sm font-medium text-[#5c4937] hover:bg-[#5c4937]/5 transition-colors"
                             >
                                 返回首页
                             </Link>

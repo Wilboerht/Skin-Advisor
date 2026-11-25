@@ -10,8 +10,8 @@ import type { ReactNode, Ref, UIEventHandler } from "react";
 
 export const PANEL_ROOT_CLASS = "flex h-full flex-col pt-4 md:pt-10";
 export const PANEL_HEADER_CLASS =
-  "hidden flex-shrink-0 border-b border-stone-200/60 px-6 pb-6 md:flex md:px-16";
-export const PANEL_TITLE_CLASS = "text-xl font-medium tracking-wide text-stone-800";
+  "hidden flex-shrink-0 border-b border-border/60 px-6 pb-6 md:flex md:px-16";
+export const PANEL_TITLE_CLASS = "text-xl font-medium tracking-wide text-foreground";
 export const PANEL_SCROLL_CLASS =
   "scrollbar-hide flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-16";
 

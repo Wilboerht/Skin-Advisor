@@ -5,6 +5,74 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ========================================
+   NIHPLOD 品牌字体（来自 NIHPLOD Fonts Pack）
+   Latin: Futura LT；中文: 思源黑体 CN
+   ======================================== */
+@font-face {
+  font-family: "NIHPLOD Futura";
+  src: url("/fonts/futura-lt-light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NIHPLOD Futura";
+  src: url("/fonts/futura-lt-light-oblique.woff2") format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NIHPLOD Futura";
+  src: url("/fonts/futura-lt-medium.woff2") format("woff2");
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NIHPLOD Futura";
+  src: url("/fonts/futura-lt-heavy.woff2") format("woff2");
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NIHPLOD Han Sans";
+  src: url("/fonts/source-han-sans-cn-light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NIHPLOD Han Sans";
+  src: url("/fonts/source-han-sans-cn-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NIHPLOD Han Sans";
+  src: url("/fonts/source-han-sans-cn-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NIHPLOD Han Sans";
+  src: url("/fonts/source-han-sans-cn-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ========================================
    MyskinToday Brand Design System
    ========================================
    颜色规范：
@@ -73,12 +141,18 @@
   --color-brand-surface-warm: #F8F5EE;  /* 选项选中/暖表面 */
   --color-brand-bronze: #8B7355;        /* 测评流程主强调（暖棕） */
   --color-brand-bronze-light: #A68B6A;  /* 选中态渐变高光 */
-  --color-brand-ink-soft: #5A7282;      /* 次级文字（charcoal 65% on white） */
+  --color-brand-ink-soft: #6E655B;      /* 暖调次级文字，替代冷灰 */
   --color-brand-ink-muted: #5E5E5E;     /* 中性正文次级色 */
   --color-brand-gold-soft: #C8A97E;     /* 产品卡徽标暖金 */
   --color-brand-line-muted: #D4CFC5;    /* 浅分割线 */
+  --color-brand-dialog: #FAF7F1;        /* 全站模态框米色底 */
+  --color-brand-dialog-foreground: #00263E;
+  --color-brand-surface: #FFFDF9;       /* 暖白卡片，替代纯白 */
   --shadow-brand-soft: 0 8px 30px -8px rgba(139, 115, 85, 0.18);
   --shadow-brand-check: 0 2px 8px rgba(139, 115, 85, 0.3);
+  --shadow-card: 0 1px 2px rgba(61, 47, 37, 0.03), 0 8px 20px -18px rgba(61, 47, 37, 0.12);
+  --shadow-dialog: 0 18px 44px -24px rgba(61, 47, 37, 0.2), 0 1px 4px rgba(61, 47, 37, 0.04);
+  --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 2px rgba(0, 38, 62, 0.14);
   /* 肌智派结果页暖色系 token（result 组件使用） */
   --color-brand-espresso: #3d2f25;
   --color-brand-cocoa: #5c4937;
@@ -102,9 +176,9 @@
   --color-text-secondary: #00263E;
   --color-white: #ffffff;
 
-  /* 注意：未打包 Futura LT 字体文件（public/fonts 为空、无 @font-face），
-     实际渲染依赖系统字体兜底（PingFang SC / Microsoft YaHei 等） */
-  --font-sans: "Futura LT", "Futura", "PingFang SC", "Source Han Sans", "Microsoft YaHei", sans-serif;
+  /* 全局品牌字体：Futura LT（Latin）+ 思源黑体 CN（中文）
+     public/fonts 内的 woff2 由 NIHPLOD Fonts Pack 子集化生成 */
+  --font-sans: "NIHPLOD Futura", "NIHPLOD Han Sans", "PingFang SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   --animate-fade-in-up: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -151,10 +225,8 @@
   --color-brand-beige: #E8E2D9;
   --color-brand-beige-dark: #D9D0C3;
 
-  /* Legacy Fonts */
-  /* 命名误导注意：--font-serif 的内容实际是无衬线字体栈（历史遗留），
-     font-serif 类渲染的并非衬线字体 */
-  --font-serif: "Futura LT", "Futura", "PingFang SC", "Source Han Sans", "Microsoft YaHei", serif;
+  /* 项目没有独立衬线字体：font-serif 与正文保持同一品牌字体，避免中英文混排跳字体 */
+  --font-serif: "NIHPLOD Futura", "NIHPLOD Han Sans", "PingFang SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif;
 }
 
 /* shadcn/ui 语义 token 映射：所有值引用上面的品牌色板，保持现有配色不变 */
@@ -165,6 +237,8 @@
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-dialog: var(--dialog);
+  --color-dialog-foreground: var(--dialog-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -191,36 +265,43 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* 全站圆角规范：从控件到卡片逐级变圆，朝向与模态框一致的圆润风格 */
+  --radius-xs: 0.25rem;   /* 4px */
+  --radius-sm: 0.5rem;    /* 8px */
+  --radius-md: 0.875rem;  /* 14px 按钮/输入框/下拉项 */
+  --radius-lg: 1.125rem;  /* 18px 选项卡/小卡片 */
+  --radius-xl: 1.5rem;    /* 24px 常规卡片 */
+  --radius-2xl: 1.75rem;  /* 28px 大卡片/移动端弹层 */
+  --radius-3xl: 2rem;     /* 32px 强调面板 */
+  --radius-4xl: 2.5rem;   /* 40px 桌面弹窗 */
 }
 
 :root {
   /* 语义映射：background=页面底、foreground=品牌主文字、primary=主操作、
      border=分割线、input=表单边框、ring=焦点、muted/accent=浅暖表面、
      destructive=危险操作；组件里不再直接写 hex。 */
-  --radius: 0.5rem;
+  --radius: 0.875rem;
   --background: var(--color-brand-canvas);
   --foreground: var(--color-brand-charcoal);
-  --card: #FFFFFF;
+  --card: var(--color-brand-surface);
   --card-foreground: var(--color-brand-charcoal);
-  --popover: #FFFFFF;
+  --popover: var(--color-brand-surface);
   --popover-foreground: var(--color-brand-charcoal);
+  --dialog: var(--color-brand-dialog);
+  --dialog-foreground: var(--color-brand-dialog-foreground);
   --primary: var(--color-brand-primary);
   --primary-foreground: #FFFFFF;
   --secondary: var(--color-cream);
   --secondary-foreground: var(--color-olive);
-  --muted: var(--color-brand-cream);
+  --muted: #F4EFE6;
   --muted-foreground: var(--color-brand-ink-soft);
-  --accent: var(--color-brand-cream);
+  --accent: #F5F0E7;
   --accent-foreground: var(--color-brand-charcoal);
   --destructive: var(--color-brand-danger);
   --destructive-foreground: #FFFFFF;
   --border: var(--color-brand-beige);
-  --input: var(--color-brand-beige-dark);
-  --ring: var(--color-brand-primary);
+  --input: #DED5C7;
+  --ring: var(--color-brand-bronze);
   --chart-1: var(--color-brand-gold);
   --chart-2: var(--color-olive);
   --chart-3: var(--color-brand-bronze);
@@ -297,6 +378,8 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    /* shadcn 基础规则：未显式指定颜色的 border 统一使用语义边框色 */
+    border-color: var(--border);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* 消除 iOS 点击时的灰色高亮闪块 */

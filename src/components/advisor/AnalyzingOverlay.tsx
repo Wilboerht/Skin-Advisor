@@ -191,7 +191,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                             setShowLeaveConfirm(true);
                         }}
                         disabled={isExiting}
-                        className="absolute top-8 right-4 md:right-12 lg:right-20 z-50 flex min-h-[44px] items-center gap-1.5 px-3 rounded-full border border-brand-charcoal/[0.12] text-brand-charcoal/50 transition-colors duration-300 hover:text-brand-charcoal hover:border-brand-charcoal/30 hover:bg-brand-charcoal/[0.03] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                        className="absolute top-8 right-4 md:right-12 lg:right-20 z-50 flex min-h-[44px] items-center gap-1.5 px-3 rounded-full border border-brand-charcoal/[0.12] text-muted-foreground transition-colors duration-300 hover:text-foreground hover:border-brand-charcoal/30 hover:bg-brand-charcoal/[0.03] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                         aria-label="离开此页（停止等待本次分析）"
                     >
                         <span className="text-[12px] font-light tracking-[0.08em]">
@@ -243,7 +243,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.5 }}
-                        className="text-[12px] text-brand-charcoal/40 font-light tracking-[0.15em] mb-12"
+                        className="text-[12px] text-muted-foreground/80 font-light tracking-[0.15em] mb-12"
                     >
                         {PERSONAS[personaIdx].name}
                     </m.span>
@@ -258,7 +258,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -8 }}
                             transition={{ duration: 0.5 }}
-                            className="text-[14px] text-brand-charcoal/70 font-light tracking-[0.08em] text-center"
+                            className="text-[14px] text-foreground/75 font-light tracking-[0.08em] text-center"
                         >
                             {statusText}
                         </m.span>
@@ -291,7 +291,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                 </div>
 
                 {/* Stage checklist + elapsed：让用户知道“到哪一步了” */}
-                <div className="mt-6 flex items-center gap-3 text-[11px] font-light text-brand-charcoal/45">
+                <div className="mt-6 flex items-center gap-3 text-[11px] font-light text-muted-foreground/80">
                     {stages.map((label, index) => {
                         const done = index < stageIndex || (index === 3 && status === 'completed');
                         const active = index === stageIndex && status !== 'completed';
@@ -300,7 +300,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                                 {done ? (
                                     <Check className="h-3 w-3 text-emerald-600" strokeWidth={2.5} />
                                 ) : active ? (
-                                    <Loader2 className="h-3 w-3 animate-spin text-brand-charcoal/55" />
+                                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                                 ) : (
                                     <span className="h-1.5 w-1.5 rounded-full bg-brand-charcoal/20" />
                                 )}
@@ -309,7 +309,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                         );
                     })}
                 </div>
-                <p className="mt-2 text-[11px] font-light tabular-nums text-brand-charcoal/35">
+                <p className="mt-2 text-[11px] font-light tabular-nums text-muted-foreground/70">
                     已等待 {elapsedSeconds} 秒
                 </p>
 
@@ -318,7 +318,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                     <m.p
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="mt-6 text-[11px] text-brand-charcoal/40 font-light tracking-[0.06em] text-center"
+                        className="mt-6 text-[11px] text-muted-foreground/80 font-light tracking-[0.06em] text-center"
                     >
                         {hasQueued
                             ? `当前使用人数较多${queueWaitSeconds ? `，预计还需约 ${queueWaitSeconds} 秒` : ""}`
@@ -334,7 +334,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
                         animate={{ opacity: 1 }}
                         transition={{ delay: prefersReducedMotion ? 0 : 1.2, duration: prefersReducedMotion ? 0 : 0.8 }}
                         onClick={onShowSkinTypes}
-                        className="mt-8 inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-brand-charcoal/[0.15] text-brand-charcoal/55 text-[12px] font-light tracking-[0.08em] transition-colors duration-300 hover:text-brand-charcoal hover:border-brand-charcoal/35 hover:bg-brand-charcoal/[0.03] cursor-pointer"
+                        className="mt-8 inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-brand-charcoal/[0.15] text-muted-foreground text-[12px] font-light tracking-[0.08em] transition-colors duration-300 hover:text-foreground hover:border-brand-charcoal/35 hover:bg-brand-charcoal/[0.03] cursor-pointer"
                     >
                         <span>等待时，了解 8 大肌肤派系</span>
                         <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -344,7 +344,7 @@ export function AnalyzingOverlay({ progress, status = 'preparing', onCancel, que
 
             {/* Footer: privacy reassurance */}
             <div className="absolute bottom-10 text-center px-6">
-                <p className="text-[11px] text-brand-charcoal/35 font-light tracking-[0.06em] leading-relaxed">
+                <p className="text-[11px] text-muted-foreground/70 font-light tracking-[0.06em] leading-relaxed">
                     您的面部图像仅用于本次分析，会加密传输给 AI 服务处理；成功后立即删除，异常最长保留 6 小时。
                 </p>
             </div>

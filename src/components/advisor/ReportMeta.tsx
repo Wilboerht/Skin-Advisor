@@ -39,7 +39,7 @@ export function ReportMeta({ result, faceAnalysis }: ReportMetaProps) {
         : null;
 
     return (
-        <section className="rounded-2xl border border-[var(--color-brand-espresso)]/10 bg-white/55 px-4 py-3 lg:px-5 lg:py-4" aria-label="报告信息">
+        <section className="rounded-2xl border border-[var(--color-brand-espresso)]/10 bg-card/55 px-4 py-3 lg:px-5 lg:py-4" aria-label="报告信息">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] lg:text-[12px] text-[var(--color-brand-cocoa)]">
                 {date && (
                     <span className="inline-flex items-center gap-1.5">

@@ -1952,7 +1952,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                         <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
                       </m.div>
                     ) : (
-                      <div className={cn("h-1.5 w-1.5 rounded-full transition-all", isCurrent ? "bg-white scale-125" : "bg-white")} />
+                      <div className={cn("h-1.5 w-1.5 rounded-full transition-all", isCurrent ? "bg-card scale-125" : "bg-card")} />
                     )}
                     <span className="text-[12px] font-medium tracking-widest uppercase text-white shadow-black drop-shadow-sm">
                       {step.label}
@@ -1990,7 +1990,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.18, ease: "easeOut" }}
-                className="text-2xl md:text-3xl font-serif text-white mb-2 drop-shadow-md"
+                className="text-2xl md:text-3xl font-sans text-white mb-2 drop-shadow-md"
               >
                 {nextStepInstruction
                   ? `请准备：${nextStepInstruction}`
@@ -2037,7 +2037,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
               <div className="flex items-center gap-1.5 border-l border-white/20 pl-4">
                 <div className={cn(
                   "w-2 h-2 rounded-full",
-                  faceStatus === 'ready' ? "bg-green-400 animate-pulse" : "bg-white/40"
+                  faceStatus === 'ready' ? "bg-green-400 animate-pulse" : "bg-card/40"
                 )} />
                 <span>{facingMode === "environment" ? "后置摄像头 · 可请他人帮拍" : "自动拍摄"}</span>
               </div>
@@ -2056,7 +2056,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             <div className="pointer-events-auto mt-4">
               <button
                 onClick={() => takePhotoAuto("manual")}
-                className="px-6 py-2 min-h-[44px] rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors backdrop-blur-sm touch-manipulation"
+                className="px-6 py-2 min-h-[44px] rounded-full border border-white/30 text-white text-sm hover:bg-card/10 transition-colors backdrop-blur-sm touch-manipulation"
               >
                 {manualHint}
               </button>
@@ -2084,7 +2084,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
               <p className="text-white/50 text-xs">您可以点击下方按钮手动拍照</p>
               <button
                 onClick={retryModelLoad}
-                className="pointer-events-auto mt-5 px-6 py-2.5 min-h-[44px] rounded-full bg-white text-black text-sm font-medium hover:bg-gray-200 shadow-xl transition-colors"
+                className="pointer-events-auto mt-5 px-6 py-2.5 min-h-[44px] rounded-full bg-card text-black text-sm font-medium hover:bg-gray-200 shadow-md transition-colors"
               >
                 重试自动检测
               </button>
@@ -2120,7 +2120,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                 {CAPTURE_STEPS.map((item) => {
                   const src = reviewImages[item.step];
                   return (
-                    <div key={item.step} className="overflow-hidden rounded-xl border border-white/15 bg-white/5">
+                    <div key={item.step} className="overflow-hidden rounded-xl border border-white/15 bg-card/5">
                       <div className="relative aspect-[3/4]">
                         {src ? (
                           <div
@@ -2158,7 +2158,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                   type="button"
                   onClick={handleConfirmReview}
                   disabled={submittingReview}
-                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-white px-6 text-[14px] font-medium text-black disabled:opacity-50"
+                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-card px-6 text-[14px] font-medium text-black disabled:opacity-50"
                 >
                   {submittingReview && <Loader2 className="h-4 w-4 animate-spin" />}
                   {submittingReview ? "正在提交..." : "开始分析"}
@@ -2167,7 +2167,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                   type="button"
                   onClick={() => void resetForRetake("front")}
                   disabled={submittingReview}
-                  className="min-h-[44px] rounded-full border border-white/25 px-6 text-[13px] text-white/70 transition-colors hover:bg-white/10 disabled:opacity-50"
+                  className="min-h-[44px] rounded-full border border-white/25 px-6 text-[13px] text-white/70 transition-colors hover:bg-card/10 disabled:opacity-50"
                 >
                   全部重拍
                 </button>
@@ -2186,13 +2186,13 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           <div className="flex gap-4">
             <button
               onClick={() => router.push("/questions?edit=true")}
-              className="px-8 py-3 bg-white/10 border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/20 backdrop-blur-sm transition-colors"
+              className="px-8 py-3 bg-card/10 border border-white/20 text-white rounded-full text-sm font-medium hover:bg-card/20 backdrop-blur-sm transition-colors"
             >
               返回修改问卷
             </button>
             <button
               onClick={() => initCameraRef.current()}
-              className="px-8 py-3 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-200 shadow-xl transition-colors"
+              className="px-8 py-3 bg-card text-black rounded-full text-sm font-medium hover:bg-gray-200 shadow-md transition-colors"
             >
               重试
             </button>

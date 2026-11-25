@@ -84,14 +84,14 @@ export function AdminModal({
                     </DialogTitle>
                 )}
                 {hasHeader && (
-                    <div className="flex shrink-0 items-start justify-between border-b border-brand-charcoal/10 px-4 py-3 sm:px-6 sm:py-4">
+                    <div className="flex shrink-0 items-start justify-between border-b border-border/70 px-4 py-3 sm:px-6 sm:py-4">
                         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                             {headerIcon}
                             <div className="min-w-0">
                                 {title ? (
                                     <DialogTitle
                                         id={titleId}
-                                        className="text-base font-semibold text-brand-charcoal sm:text-lg"
+                                        className="text-base font-semibold text-foreground sm:text-lg"
                                     >
                                         {title}
                                     </DialogTitle>
@@ -104,7 +104,7 @@ export function AdminModal({
                                     </DialogTitle>
                                 )}
                                 {subtitle && (
-                                    <DialogDescription className="mt-1 text-sm text-brand-charcoal/65">
+                                    <DialogDescription className="mt-1 text-sm text-muted-foreground">
                                         {subtitle}
                                     </DialogDescription>
                                 )}
@@ -120,7 +120,7 @@ export function AdminModal({
                                         size="icon"
                                         aria-label="关闭"
                                         disabled={disabled}
-                                        className="-mt-1 -mr-1 h-9 w-9 sm:h-8 sm:w-8"
+                                        className="-mt-1 -mr-1 h-9 w-9 text-muted-foreground hover:text-foreground sm:h-8 sm:w-8"
                                     >
                                         <X className="h-5 w-5" />
                                     </Button>

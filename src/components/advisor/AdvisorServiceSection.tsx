@@ -75,12 +75,12 @@ export function AdvisorServiceSection({ onLogin, onOpenMembership, className }: 
                     /* 未登录：登录引导 */
                     <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-[#FCFAF4] p-6 md:p-8 flex flex-col items-center text-center">
                         <div className="w-12 h-12 rounded-full bg-brand-charcoal/[0.04] flex items-center justify-center mb-4">
-                            <Sparkles className="w-5 h-5 text-brand-charcoal/65" strokeWidth={1.4} />
+                            <Sparkles className="w-5 h-5 text-muted-foreground" strokeWidth={1.4} />
                         </div>
-                        <h3 className="text-base md:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
+                        <h3 className="text-base md:text-lg font-sans font-light text-foreground tracking-[0.02em] mb-2">
                             登录后查看您的专属顾问服务
                         </h3>
-                        <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] mb-6">
+                        <p className="text-[13px] text-muted-foreground font-light leading-[1.8] tracking-[0.06em] mb-6">
                             报告解读、护理方案与产品搭配的一对一建议
                         </p>
                         {onLogin && (
@@ -102,18 +102,18 @@ export function AdvisorServiceSection({ onLogin, onOpenMembership, className }: 
                                 <span className="inline-flex h-[26px] px-3 items-center rounded-full border border-[var(--color-brand-cocoa)]/[0.3] bg-[var(--color-brand-cocoa)]/[0.06] text-[11px] font-light text-[var(--color-brand-cocoa)] tracking-[0.04em] mb-4">
                                     {LEVEL_LABELS[level] || "会员"} · 已解锁
                                 </span>
-                                <h3 className="text-lg md:text-xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
+                                <h3 className="text-lg md:text-xl font-sans font-light text-foreground tracking-[0.02em] mb-2">
                                     {service.title}
                                 </h3>
-                                <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
+                                <p className="text-[13px] text-muted-foreground font-light leading-[1.8] tracking-[0.06em]">
                                     {service.desc}
                                     <br />
                                     扫码添加顾问，带上本次报告直接聊
                                 </p>
                             </div>
-                            <div className="shrink-0 w-full max-w-[200px] md:w-[160px] mx-auto md:mx-0 rounded-2xl border border-brand-charcoal/[0.08] bg-white p-3">
+                            <div className="shrink-0 w-full max-w-[200px] md:w-[160px] mx-auto md:mx-0 rounded-2xl border border-brand-charcoal/[0.08] bg-card p-3">
                                 {qrFailed ? (
-                                    <div className="aspect-square w-full rounded-xl border border-dashed border-brand-charcoal/20 bg-brand-charcoal/[0.02] flex flex-col items-center justify-center text-brand-charcoal/45">
+                                    <div className="aspect-square w-full rounded-xl border border-dashed border-border bg-brand-charcoal/[0.02] flex flex-col items-center justify-center text-muted-foreground/80">
                                         <QrCode className="w-10 h-10 mb-2" strokeWidth={1.25} />
                                         <p className="text-[12px] font-light tracking-[0.04em]">二维码占位</p>
                                     </div>
@@ -128,7 +128,7 @@ export function AdvisorServiceSection({ onLogin, onOpenMembership, className }: 
                                         onError={() => setQrFailed(true)}
                                     />
                                 )}
-                                <p className="mt-3 mb-1 text-center text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em]">
+                                <p className="mt-3 mb-1 text-center text-[12px] text-muted-foreground font-light tracking-[0.05em]">
                                     微信扫码添加
                                 </p>
                             </div>
@@ -138,17 +138,17 @@ export function AdvisorServiceSection({ onLogin, onOpenMembership, className }: 
                     /* 普通会员：升级引导 */
                     <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-[#FCFAF4] p-6 md:p-8 flex flex-col items-center text-center">
                         <div className="w-12 h-12 rounded-full bg-brand-charcoal/[0.04] flex items-center justify-center mb-4">
-                            <Sparkles className="w-5 h-5 text-brand-charcoal/65" strokeWidth={1.4} />
+                            <Sparkles className="w-5 h-5 text-muted-foreground" strokeWidth={1.4} />
                         </div>
-                        <h3 className="text-base md:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
+                        <h3 className="text-base md:text-lg font-sans font-light text-foreground tracking-[0.02em] mb-2">
                             专属 AI 护肤顾问
                         </h3>
-                        <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] mb-5">
+                        <p className="text-[13px] text-muted-foreground font-light leading-[1.8] tracking-[0.06em] mb-5">
                             银卡及以上会员可添加专属 AI 护肤顾问
                             <br />
                             获得报告解读、护理方案与产品搭配的一对一建议
                         </p>
-                        <span className="inline-flex h-[26px] px-3 items-center rounded-full border border-brand-charcoal/[0.12] text-[11px] font-light text-brand-charcoal/55 tracking-[0.04em] mb-5">
+                        <span className="inline-flex h-[26px] px-3 items-center rounded-full border border-brand-charcoal/[0.12] text-[11px] font-light text-muted-foreground tracking-[0.04em] mb-5">
                             当前等级 · {LEVEL_LABELS[level] || "普通会员"}
                         </span>
                         <div className="w-full rounded-2xl border border-[var(--color-brand-cocoa)]/20 bg-[var(--color-brand-cocoa)]/[0.04] px-5 py-4">
@@ -160,7 +160,7 @@ export function AdvisorServiceSection({ onLogin, onOpenMembership, className }: 
                             <button
                                 type="button"
                                 onClick={onOpenMembership}
-                                className="mt-5 inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[var(--color-brand-cocoa)]/30 bg-white px-5 text-[13px] font-medium text-[var(--color-brand-cocoa)] transition-colors hover:border-[var(--color-brand-cocoa)]/55 hover:bg-[var(--color-brand-cocoa)]/[0.06]"
+                                className="mt-5 inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[var(--color-brand-cocoa)]/30 bg-card px-5 text-[13px] font-medium text-[var(--color-brand-cocoa)] transition-colors hover:border-[var(--color-brand-cocoa)]/55 hover:bg-[var(--color-brand-cocoa)]/[0.06]"
                             >
                                 去会员中心
                                 <ArrowRight className="h-4 w-4" strokeWidth={1.8} />

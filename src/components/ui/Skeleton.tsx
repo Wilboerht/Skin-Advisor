@@ -21,8 +21,8 @@ export function Skeleton({
     animation = "pulse",
 }: SkeletonProps) {
     const variantStyles = {
-        text: "rounded",
-        rectangular: "rounded-lg",
+        text: "rounded-md",
+        rectangular: "rounded-md",
         circular: "rounded-full",
     };
 
@@ -41,7 +41,7 @@ export function Skeleton({
         <div
             data-slot="skeleton"
             className={cn(
-                "bg-brand-charcoal/10",
+                "bg-muted",
                 variantStyles[variant],
                 animationStyles[animation],
                 className,

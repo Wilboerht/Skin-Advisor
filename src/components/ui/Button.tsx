@@ -6,29 +6,36 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-    "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium tracking-wider outline-none transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium outline-none transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     {
         variants: {
             variant: {
-                primary: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-                secondary:
-                    "bg-brand-charcoal/8 text-brand-charcoal hover:bg-brand-charcoal/15",
-                outline:
-                    "border border-brand-charcoal/20 bg-white text-brand-charcoal/80 hover:bg-brand-charcoal/[0.03]",
-                ghost: "text-brand-charcoal/80 hover:bg-brand-charcoal/[0.06]",
+                default:
+                    "bg-gradient-to-b from-primary to-brand-primary-dark text-primary-foreground shadow-button hover:from-primary/95 hover:to-brand-primary-dark/95 active:translate-y-px",
+                primary:
+                    "bg-gradient-to-b from-primary to-brand-primary-dark text-primary-foreground shadow-button hover:from-primary/95 hover:to-brand-primary-dark/95 active:translate-y-px",
+                destructive:
+                    "bg-destructive text-destructive-foreground shadow-button hover:bg-destructive/90 focus-visible:ring-destructive/30",
                 danger:
-                    "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
+                    "bg-destructive text-destructive-foreground shadow-button hover:bg-destructive/90 focus-visible:ring-destructive/30",
+                outline:
+                    "border border-border/80 bg-card/50 text-foreground shadow-xs hover:border-border hover:bg-accent hover:text-accent-foreground",
+                secondary:
+                    "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+                ghost: "text-foreground hover:bg-accent hover:text-accent-foreground",
+                link: "text-primary underline-offset-4 hover:underline",
             },
             size: {
-                sm: "h-9 px-3 text-sm",
-                md: "h-11 px-4 text-sm",
-                lg: "h-12 px-6 text-base",
+                default: "h-9 px-4 py-2",
+                sm: "h-8 gap-1.5 rounded-md px-3",
+                md: "h-9 px-4 py-2",
+                lg: "h-10 rounded-md px-6",
                 icon: "size-9",
             },
         },
         defaultVariants: {
-            variant: "primary",
-            size: "md",
+            variant: "default",
+            size: "default",
         },
     },
 );
@@ -42,14 +49,16 @@ interface ButtonProps
 }
 
 /**
- * 通用按钮组件（shadcn/ui Button 规范实现，保持原 API）
+ * shadcn/ui Button 规范实现
+ * - 原生 variant：default / destructive / outline / secondary / ghost / link
+ * - 兼容旧别名：primary / danger
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     (
         {
             className,
-            variant = "primary",
-            size = "md",
+            variant = "default",
+            size = "default",
             loading = false,
             leftIcon,
             rightIcon,

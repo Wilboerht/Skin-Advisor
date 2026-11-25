@@ -179,7 +179,7 @@ function ToastContainer() {
                                           }
                                 }
                                 onClick={() => removeToast(t.id)}
-                                className="flex w-full cursor-pointer select-none items-center gap-2.5 rounded-xl border border-brand-charcoal/10 bg-white px-4 py-3 text-sm leading-snug text-brand-charcoal shadow-xl md:w-auto"
+                                className="flex w-full cursor-pointer select-none items-center gap-2.5 rounded-xl border border-border/80 bg-card px-4 py-3 text-sm leading-snug text-foreground shadow-card md:w-auto"
                             >
                                 <Icon
                                     className={`h-4 w-4 shrink-0 ${iconColor[t.type]}`}

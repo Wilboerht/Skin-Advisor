@@ -470,14 +470,14 @@ export default function RecommendationRulesPage() {
             render: (_, rule) => (
                 <div className="min-w-0">
                     <p
-                        className="truncate font-medium text-brand-charcoal"
+                        className="truncate font-medium text-foreground"
                         title={rule.name}
                     >
                         {rule.name}
                     </p>
                     {rule.message && (
                         <p
-                            className="mt-0.5 truncate text-xs text-brand-charcoal/65"
+                            className="mt-0.5 truncate text-xs text-muted-foreground"
                             title={rule.message}
                         >
                             {rule.message}
@@ -491,7 +491,7 @@ export default function RecommendationRulesPage() {
             title: "优先级",
             width: "92px",
             render: (_, rule) => (
-                <span className="font-mono text-sm tabular-nums text-brand-charcoal/70">
+                <span className="font-mono text-sm tabular-nums text-foreground/75">
                     {rule.priority}
                 </span>
             ),
@@ -510,7 +510,7 @@ export default function RecommendationRulesPage() {
                         ))}
                     </div>
                 ) : (
-                    <span className="text-sm text-brand-charcoal/55">—</span>
+                    <span className="text-sm text-muted-foreground">—</span>
                 );
             },
         },
@@ -519,7 +519,7 @@ export default function RecommendationRulesPage() {
             title: "关联产品",
             width: "100px",
             render: (_, rule) => (
-                <span className="text-sm text-brand-charcoal/70">
+                <span className="text-sm text-foreground/75">
                     {rule.productIds.length} 个
                 </span>
             ),
@@ -537,7 +537,7 @@ export default function RecommendationRulesPage() {
                         aria-label={`启用 ${rule.name}`}
                     />
                     {pendingToggleId === rule.id && (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-charcoal/50" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                     )}
                 </div>
             ),
@@ -620,11 +620,11 @@ export default function RecommendationRulesPage() {
                     <div className="space-y-3">
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                                <p className="truncate font-medium text-brand-charcoal">
+                                <p className="truncate font-medium text-foreground">
                                     {rule.name}
                                 </p>
                                 {rule.message && (
-                                    <p className="mt-0.5 truncate text-xs text-brand-charcoal/65">
+                                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
                                         {rule.message}
                                     </p>
                                 )}
@@ -637,7 +637,7 @@ export default function RecommendationRulesPage() {
                                     aria-label={`启用 ${rule.name}`}
                                 />
                                 {pendingToggleId === rule.id && (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-charcoal/50" />
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                                 )}
                             </div>
                         </div>
@@ -648,7 +648,7 @@ export default function RecommendationRulesPage() {
                                 </Badge>
                             ))}
                         </div>
-                        <div className="flex items-center justify-between gap-2 border-t border-brand-charcoal/10 pt-2 text-xs text-brand-charcoal/65">
+                        <div className="flex items-center justify-between gap-2 border-t border-border/80 pt-2 text-xs text-muted-foreground">
                             <span>
                                 优先级 {rule.priority} ·{" "}
                                 {rule.productIds.length} 个产品
@@ -707,7 +707,7 @@ export default function RecommendationRulesPage() {
                     </div>
 
                     <div>
-                        <p className="mb-2 text-sm font-medium text-brand-charcoal/80">
+                        <p className="mb-2 text-sm font-medium text-foreground/80">
                             肤质
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -736,7 +736,7 @@ export default function RecommendationRulesPage() {
                     </div>
 
                     <div>
-                        <p className="mb-2 text-sm font-medium text-brand-charcoal/80">
+                        <p className="mb-2 text-sm font-medium text-foreground/80">
                             主要诉求
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -765,7 +765,7 @@ export default function RecommendationRulesPage() {
                     </div>
 
                     <div>
-                        <p className="mb-2 text-sm font-medium text-brand-charcoal/80">
+                        <p className="mb-2 text-sm font-medium text-foreground/80">
                             人群标签
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -803,22 +803,22 @@ export default function RecommendationRulesPage() {
 
                     <div>
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-sm font-medium text-brand-charcoal/80">
+                            <p className="text-sm font-medium text-foreground/80">
                                 关联产品
                             </p>
-                            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-brand-charcoal/65">
+                            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
                                 <input
                                     type="checkbox"
                                     checked={onlyNeedsConfig}
                                     onChange={(event) => setOnlyNeedsConfig(event.target.checked)}
-                                    className="h-3.5 w-3.5 rounded border-brand-charcoal/20 text-brand-primary focus:ring-brand-primary"
+                                    className="h-3.5 w-3.5 rounded border-border text-brand-primary focus:ring-brand-primary"
                                 />
                                 只看待配置推荐属性
                             </label>
                         </div>
                         <div className="mb-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem]">
                             <div className="relative">
-                                <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-brand-charcoal/55" />
+                                <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     aria-label="搜索产品名称"
                                     placeholder="搜索产品名称"
@@ -844,13 +844,13 @@ export default function RecommendationRulesPage() {
                                 }
                             />
                         </div>
-                        <div className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-brand-charcoal/10 p-2">
+                        <div className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-border/80 p-2">
                             {products.length === 0 ? (
-                                <p className="px-2 py-1 text-xs text-brand-charcoal/55">
+                                <p className="px-2 py-1 text-xs text-muted-foreground">
                                     暂无产品
                                 </p>
                             ) : filteredProducts.length === 0 ? (
-                                <p className="px-2 py-1 text-xs text-brand-charcoal/55">
+                                <p className="px-2 py-1 text-xs text-muted-foreground">
                                     没有匹配的产品
                                 </p>
                             ) : (
@@ -871,12 +871,12 @@ export default function RecommendationRulesPage() {
                                                     setSelectedProductIds,
                                                 )
                                             }
-                                            className="h-4 w-4 rounded border-brand-charcoal/20 text-brand-primary focus:ring-brand-primary"
+                                            className="h-4 w-4 rounded border-border text-brand-primary focus:ring-brand-primary"
                                         />
-                                        <span className="min-w-0 flex-1 truncate text-brand-charcoal">
+                                        <span className="min-w-0 flex-1 truncate text-foreground">
                                             {product.name}
                                         </span>
-                                        <span className="text-xs text-brand-charcoal/55">
+                                        <span className="text-xs text-muted-foreground">
                                             {product.category}
                                         </span>
                                         <span
@@ -884,7 +884,7 @@ export default function RecommendationRulesPage() {
                                                 "shrink-0 text-xs",
                                                 product.active
                                                     ? "text-emerald-600"
-                                                    : "text-brand-charcoal/45",
+                                                    : "text-muted-foreground/80",
                                             )}
                                         >
                                             {product.active
@@ -895,7 +895,7 @@ export default function RecommendationRulesPage() {
                                 ))
                             )}
                         </div>
-                        <p className="mt-1 text-xs text-brand-charcoal/65">
+                        <p className="mt-1 text-xs text-muted-foreground">
                             已选择 {selectedProductIds.length} 个产品
                             {(normalizedProductSearch ||
                                 productCategory !== "all" ||

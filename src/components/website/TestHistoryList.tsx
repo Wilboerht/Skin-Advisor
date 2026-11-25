@@ -131,8 +131,8 @@ export function TestHistoryList({
     <div>
       {title && (
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-[15px] font-medium text-brand-charcoal">{title}</h3>
-          {total > 0 && <span className="text-[12px] text-brand-charcoal/60">共 {total} 条</span>}
+          <h3 className="text-[15px] font-medium text-foreground">{title}</h3>
+          {total > 0 && <span className="text-[12px] text-muted-foreground">共 {total} 条</span>}
         </div>
       )}
 
@@ -148,7 +148,7 @@ export function TestHistoryList({
         </div>
       ) : authExpired ? (
         <div className="h-48 flex flex-col items-center justify-center gap-4">
-          <p className="text-[13px] text-brand-charcoal/60">登录状态已过期，请重新登录后查看</p>
+          <p className="text-[13px] text-muted-foreground">登录状态已过期，请重新登录后查看</p>
           <button
             type="button"
             onClick={() => onRequestLogin?.()}
@@ -159,7 +159,7 @@ export function TestHistoryList({
         </div>
       ) : error ? (
         <div className="h-48 flex flex-col items-center justify-center gap-4">
-          <p className="text-[13px] text-brand-charcoal/60">测肤记录加载失败，请检查网络后重试</p>
+          <p className="text-[13px] text-muted-foreground">测肤记录加载失败，请检查网络后重试</p>
           <button
             type="button"
             onClick={() => {
@@ -172,9 +172,9 @@ export function TestHistoryList({
         </div>
       ) : history.length === 0 ? (
         <div className="text-center py-14 md:py-20">
-          <Clock className="w-7 h-7 mx-auto mb-3 text-brand-charcoal/40" strokeWidth={1.5} />
-          <h3 className="text-[15px] font-medium text-brand-charcoal mb-1.5">暂无测肤记录</h3>
-          <p className="text-[13px] text-brand-charcoal/60 mb-5">开始第一次 AI 皮肤分析</p>
+          <Clock className="w-7 h-7 mx-auto mb-3 text-muted-foreground/80" strokeWidth={1.5} />
+          <h3 className="text-[15px] font-medium text-foreground mb-1.5">暂无测肤记录</h3>
+          <p className="text-[13px] text-muted-foreground mb-5">开始第一次 AI 皮肤分析</p>
           <Link
             href="/questions"
             className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[var(--color-brand-cocoa)] border border-brand-espresso/20 hover:border-brand-espresso/50 hover:bg-brand-espresso/[0.04] transition-all duration-300"
@@ -215,9 +215,9 @@ export function TestHistoryList({
               <div key={session.sessionId}>
                 {isNewDay && (
                   <div className="pt-4 pb-1.5 first:pt-0 flex items-center gap-2.5">
-                    <span className="shrink-0 text-[12px] font-medium text-brand-charcoal/70 tabular-nums">
+                    <span className="shrink-0 text-[12px] font-medium text-foreground/75 tabular-nums">
                       {showYear ? `${year}.${day}` : day}
-                      <span className="ml-1 font-normal text-brand-charcoal/55">{weekday}</span>
+                      <span className="ml-1 font-normal text-muted-foreground">{weekday}</span>
                     </span>
                     <span className="flex-1 h-px bg-brand-espresso/[0.05]" />
                   </div>
@@ -226,10 +226,10 @@ export function TestHistoryList({
                   href={`/reports/${session.sessionId}?skipCover=1`}
                   className="group flex items-center gap-3 pl-1 py-2.5 rounded-md hover:bg-brand-charcoal/[0.03] transition-colors"
                 >
-                  <span className="shrink-0 w-12 text-[12px] text-brand-charcoal/65 font-light tabular-nums">
+                  <span className="shrink-0 w-12 text-[12px] text-muted-foreground font-light tabular-nums">
                     {time}
                   </span>
-                  <span className="flex-1 min-w-0 truncate text-[13px] text-brand-charcoal/85">
+                  <span className="flex-1 min-w-0 truncate text-[13px] text-foreground/85">
                     {skinType || "肌肤分析"}
                     {isExpired && (
                       <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-normal text-amber-700">
@@ -250,7 +250,7 @@ export function TestHistoryList({
                       "—"
                     )}
                   </span>
-                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/40 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/80 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
                 </Link>
               </div>
             );
@@ -267,13 +267,13 @@ export function TestHistoryList({
               setPage((p) => Math.max(1, p - 1));
             }}
             disabled={page <= 1 || loading}
-            className="inline-flex items-center gap-1 h-10 px-3.5 rounded-full border border-brand-espresso/20 text-[12px] text-brand-charcoal/60 transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center gap-1 h-10 px-3.5 rounded-full border border-brand-espresso/20 text-[12px] text-muted-foreground transition-colors hover:border-brand-espresso/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
             上一页
           </button>
 
-          <span className="text-[12px] text-brand-charcoal/65 tabular-nums">
+          <span className="text-[12px] text-muted-foreground tabular-nums">
             {page} / {totalPages}
           </span>
 
@@ -284,7 +284,7 @@ export function TestHistoryList({
               setPage((p) => Math.min(totalPages, p + 1));
             }}
             disabled={page >= totalPages || loading}
-            className="inline-flex items-center gap-1 h-10 px-3.5 rounded-full border border-brand-espresso/20 text-[12px] text-brand-charcoal/60 transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center gap-1 h-10 px-3.5 rounded-full border border-brand-espresso/20 text-[12px] text-muted-foreground transition-colors hover:border-brand-espresso/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             下一页
             <ChevronRight className="w-3.5 h-3.5" />

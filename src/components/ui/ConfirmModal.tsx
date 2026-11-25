@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useCallback, useId, useRef } from "react";
-import { AlertTriangle } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
 import { Button } from "./Button";
 import {
     AlertDialog,
@@ -11,7 +10,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "./alert-dialog";
-import { cn } from "@/lib/utils";
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -38,8 +36,6 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const titleId = useId();
-    const descId = `${titleId}-desc`;
 
     const handleConfirm = async () => {
         setIsSubmitting(true);
@@ -65,13 +61,6 @@ export function ConfirmModal({
 
     const isLoading = loading || isSubmitting;
 
-    const iconStyles =
-        variant === "danger"
-            ? "bg-brand-danger/10 text-brand-danger"
-            : variant === "warning"
-              ? "bg-brand-ember/10 text-brand-ember"
-              : "bg-primary/10 text-primary";
-
     return (
         <AlertDialog
             open={isOpen}
@@ -79,37 +68,17 @@ export function ConfirmModal({
                 if (!open && !isLoading) onClose();
             }}
         >
-            <AlertDialogContent
-                aria-labelledby={titleId}
-                aria-describedby={descId}
-                className="max-w-sm sm:max-w-sm"
-            >
-                <div className="flex gap-4">
-                    <div
-                        className={cn(
-                            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full",
-                            iconStyles,
-                        )}
-                    >
-                        <AlertTriangle className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle id={titleId}>
-                                {title}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription id={descId}>
-                                {message}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        {error && (
-                            <p className="mt-3 rounded-lg border border-brand-danger/20 bg-brand-danger/10 px-4 py-2.5 text-sm text-brand-danger">
-                                {error}
-                            </p>
-                        )}
-                    </div>
-                </div>
-                <AlertDialogFooter className="mt-1">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
+                    <AlertDialogDescription>{message}</AlertDialogDescription>
+                </AlertDialogHeader>
+                {error && (
+                    <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                        {error}
+                    </p>
+                )}
+                <AlertDialogFooter>
                     <Button
                         type="button"
                         variant="outline"
@@ -120,7 +89,7 @@ export function ConfirmModal({
                     </Button>
                     <Button
                         type="button"
-                        variant={variant === "danger" ? "danger" : "primary"}
+                        variant={variant === "danger" ? "destructive" : "default"}
                         onClick={handleConfirm}
                         loading={isLoading}
                     >

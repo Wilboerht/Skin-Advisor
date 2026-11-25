@@ -30,7 +30,7 @@ function StepList({ steps, tone }: { steps: RoutineStep[]; tone: "morning" | "ni
                     <div className="min-w-0">
                         <p className="text-[13px] leading-[1.7] text-[var(--color-brand-espresso)]">{step.text}</p>
                         {step.productName && (
-                            <p className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full bg-white/70 px-2 py-0.5 text-[10px] text-[var(--color-brand-cocoa)]">
+                            <p className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full bg-card/70 px-2 py-0.5 text-[10px] text-[var(--color-brand-cocoa)]">
                                 <Sparkles className="h-2.5 w-2.5 shrink-0 text-[#C9A86C]" strokeWidth={2} />
                                 <span className="truncate">{step.productName}</span>
                             </p>
@@ -67,15 +67,15 @@ export function RoutinePlan({ plan, routineNote, issues }: RoutinePlanProps) {
 
             {plan ? (
                 <div className="grid gap-3 lg:grid-cols-2">
-                    <div className="rounded-xl border border-brand-charcoal/[0.08] bg-white/80 p-4 lg:p-5">
-                        <p className="mb-3 flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/60">
+                    <div className="rounded-xl border border-brand-charcoal/[0.08] bg-card/80 p-4 lg:p-5">
+                        <p className="mb-3 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
                             <Sun className="h-3.5 w-3.5" strokeWidth={1.8} />
                             晨间
                         </p>
                         <StepList steps={plan.morning} tone="morning" />
                     </div>
-                    <div className="rounded-xl border border-brand-charcoal/[0.08] bg-white/80 p-4 lg:p-5">
-                        <p className="mb-3 flex items-center gap-1.5 text-[12px] font-medium text-brand-charcoal/60">
+                    <div className="rounded-xl border border-brand-charcoal/[0.08] bg-card/80 p-4 lg:p-5">
+                        <p className="mb-3 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
                             <Moon className="h-3.5 w-3.5" strokeWidth={1.8} />
                             夜间
                         </p>
@@ -85,7 +85,7 @@ export function RoutinePlan({ plan, routineNote, issues }: RoutinePlanProps) {
             ) : (
                 <div className="space-y-2">
                     {fallbackPlans.map((issue, index) => (
-                        <div key={`${issue.title}-${index}`} className="rounded-xl border border-brand-charcoal/[0.08] bg-white/80 p-4">
+                        <div key={`${issue.title}-${index}`} className="rounded-xl border border-brand-charcoal/[0.08] bg-card/80 p-4">
                             <p className="text-[12px] font-medium text-[var(--color-brand-espresso)]">{issue.title}</p>
                             <p className="mt-1 text-[12px] leading-[1.75] text-[var(--color-brand-cocoa)]">{issue.skincarePlan}</p>
                         </div>

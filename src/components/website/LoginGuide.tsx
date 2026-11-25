@@ -1,59 +1,76 @@
 "use client";
 
-import { CalendarCheck, CircleUserRound, ScanFace, TrendingUp } from "lucide-react";
+import {
+    CalendarCheck,
+    CircleUserRound,
+    ScanFace,
+    TrendingUp,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 
 /**
- * LoginGuide — 全站统一的"未登录 → 登录引导"视图（样式取自 AccountModal 未登录态）。
- * 使用方：AccountModal（Dock「我的」）、AuthModal（login/register/forgot_password 的 SSO 引导视图）。
- * 登录动作统一整页跳转 NIHPLOD 账号中心（login()）。
+ * 全站统一「未登录 → 登录引导」视图
  */
-export function LoginGuide({ onNavigateLogin, onLoginIntent }: { onNavigateLogin?: () => void; onLoginIntent?: () => void }) {
-  const { login } = useAuth();
-  const toast = useToast();
+export function LoginGuide({
+    onNavigateLogin,
+    onLoginIntent,
+}: {
+    onNavigateLogin?: () => void;
+    onLoginIntent?: () => void;
+}) {
+    const { login } = useAuth();
+    const toast = useToast();
 
-  const handleLogin = () => {
-    // 整页跳转到账号中心，弱网下需数秒——先给出即时反馈，避免用户误以为没点上而连点
-    toast.info("正在前往 NIHPLOD 账号中心…");
-    onLoginIntent?.();
-    onNavigateLogin?.();
-    login();
-  };
+    const handleLogin = () => {
+        toast.info("正在前往 NIHPLOD 账号中心…");
+        onLoginIntent?.();
+        onNavigateLogin?.();
+        login();
+    };
 
-  return (
-    <div className="flex flex-col items-center text-center py-4">
-      <CircleUserRound className="w-16 h-16 text-brand-charcoal/70 mb-5" strokeWidth={1} />
-      <h3 className="text-2xl font-serif font-light text-brand-charcoal tracking-[0.08em] mb-2.5">
-        登录肌智派
-      </h3>
-      <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em] text-center mb-6">
-        肌肤的现在和未来，我们与您同在
-      </p>
-      <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
-        {[
-          { icon: ScanFace, label: "在线测肤" },
-          { icon: TrendingUp, label: "个性化护肤档案" },
-          { icon: CalendarCheck, label: "专属顾问" },
-        ].map((f) => {
-          const Icon = f.icon;
-          return (
-            <span
-              key={f.label}
-              className="inline-flex h-[26px] px-2.5 items-center justify-center gap-1.5 rounded-full border border-brand-charcoal/[0.12] bg-transparent text-[11px] font-light text-brand-charcoal/60 tracking-[0.04em] whitespace-nowrap"
+    const features = [
+        { icon: ScanFace, label: "在线测肤" },
+        { icon: TrendingUp, label: "个性化护肤档案" },
+        { icon: CalendarCheck, label: "专属顾问" },
+    ];
+
+    return (
+        <div className="flex flex-col items-center py-4 text-center">
+            <CircleUserRound
+                className="mb-5 size-16 text-muted-foreground"
+                strokeWidth={1}
+            />
+            <h3 className="mb-2.5 text-2xl font-semibold tracking-tight">
+                登录肌智派
+            </h3>
+            <p className="mb-6 text-sm text-muted-foreground">
+                肌肤的现在和未来，我们与您同在
+            </p>
+            <div className="mb-7 flex flex-wrap items-center justify-center gap-2">
+                {features.map((feature) => {
+                    const Icon = feature.icon;
+                    return (
+                        <Badge
+                            key={feature.label}
+                            variant="outline"
+                            className="h-6 gap-1.5 px-2.5 text-[11px] font-normal"
+                        >
+                            <Icon />
+                            {feature.label}
+                        </Badge>
+                    );
+                })}
+            </div>
+            <Button
+                size="lg"
+                onClick={handleLogin}
+                className="min-w-[200px]"
             >
-              <Icon className="w-3.5 h-3.5 text-brand-charcoal/45" strokeWidth={1.5} />
-              {f.label}
-            </span>
-          );
-        })}
-      </div>
-      <button
-        onClick={handleLogin}
-        className="inline-flex items-center justify-center h-11 px-8 min-w-[200px] rounded-full bg-[var(--color-brand-cocoa)] text-brand-canvas text-[13px] font-normal tracking-[0.08em] cursor-pointer transition-colors duration-300 hover:bg-[#4a3a2c]"
-      >
-        登录 / 注册
-      </button>
-    </div>
-  );
+                登录 / 注册
+            </Button>
+        </div>
+    );
 }

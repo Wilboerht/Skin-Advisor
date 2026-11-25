@@ -39,11 +39,11 @@ class AccountPanelErrorBoundary extends Component<{ children: ReactNode }, { has
     if (this.state.hasError) {
       return (
         <div className="w-full flex flex-col items-center py-10">
-          <p className="text-[13px] text-brand-charcoal/60 mb-4">内容出错了，请重试</p>
+          <p className="text-[13px] text-muted-foreground mb-4">内容出错了，请重试</p>
           <button
             type="button"
             onClick={() => this.setState({ hasError: false })}
-            className="inline-flex items-center h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-brand-charcoal border border-brand-charcoal/20 hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
+            className="inline-flex items-center h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-foreground border border-border hover:bg-brand-charcoal/[0.04] transition-colors cursor-pointer"
           >
             重试
           </button>
@@ -77,7 +77,7 @@ const MENU_ITEMS: { key: AccountTab; label: string; icon: typeof Crown }[] = [
 
 /** 侧边栏等级徽标样式（四档，与主站用户中心一致） */
 const LEVEL_PILL_STYLES: Record<string, string> = {
-  REGULAR: "border-stone-200 bg-stone-100 text-stone-500",
+  REGULAR: "border-border bg-muted text-muted-foreground",
   SILVER: "border-zinc-200 bg-zinc-50 text-zinc-600",
   GOLD: "border-amber-200 bg-amber-50 text-amber-700",
   DIAMOND: "border-indigo-200 bg-indigo-50 text-indigo-700",
@@ -253,7 +253,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleBackdropClick}
-              className="absolute inset-0 bg-black/40 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-charcoal/25 backdrop-blur-md"
             />
 
             {/* 弹窗主体：登录后为主站同款「侧边栏 + 内容」壳；未登录为窄卡片 */}
@@ -278,7 +278,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
               }}
               className={`relative z-10 w-full outline-none ${
                 user
-                  ? "flex h-[calc(100vh-4rem)] items-stretch overflow-hidden rounded-t-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] md:h-[min(680px,calc(100dvh-3rem))] md:max-w-[1100px] md:rounded-[2.5rem] md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)]"
+                  ? "flex h-[calc(100vh-4rem)] items-stretch overflow-hidden rounded-t-[28px] shadow-dialog md:h-[min(680px,calc(100dvh-3rem))] md:max-w-[1100px] md:rounded-[2.5rem]"
                   : `${ACCOUNT_SHELL} flex flex-col overflow-hidden sm:max-w-sm max-h-[85vh] sm:max-h-[80vh]`
               }`}
               style={
@@ -327,18 +327,18 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                       }
                       transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
                       style={{ willChange: "transform" }}
-                      className="absolute h-[110%] w-[110%] rounded-full bg-stone-400/15 blur-[130px]"
+                      className="absolute h-[110%] w-[110%] rounded-full bg-muted-foreground/15 blur-[130px]"
                     />
                   </div>
 
                   {/* 模糊盖层（其下内容被模糊，仅桌面端） */}
-                  <div className="absolute inset-0 z-20 hidden bg-white/5 backdrop-blur-[40px] md:block" />
+                  <div className="absolute inset-0 z-20 hidden bg-card/5 backdrop-blur-[40px] md:block" />
 
                   {/* 内容区域容器：桌面 flex-row（侧边栏 + 内容），移动 flex-col（头 + 内容 + 底部 Tab） */}
                   <div className="relative z-30 flex h-full w-full flex-col items-stretch md:flex-row">
                     {/* 桌面侧边栏（移动端由底部 Tab 栏替代） */}
                     {!isMobile && (
-                      <div className="flex w-full shrink-0 flex-col border-r border-stone-200/60 md:w-64">
+                      <div className="flex w-full shrink-0 flex-col border-r border-border/60 md:w-64">
                         {/* 用户头像区域 */}
                         <div className="px-12 pb-4 pt-10">
                           <div className="flex flex-col items-start gap-4 text-left">
@@ -353,7 +353,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                               />
                             </div>
                             <div className="flex flex-col justify-center">
-                              <p className="truncate text-[15px] font-medium text-stone-800">
+                              <p className="truncate text-[15px] font-medium text-foreground">
                                 {displayName}
                               </p>
                               <button
@@ -383,15 +383,15 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                                 aria-current={isActive ? "page" : undefined}
                                 className={`group relative -mx-2 flex w-[calc(100%_+_1rem)] items-center justify-start gap-5 rounded-2xl px-2 py-3.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
                                   isActive
-                                    ? "font-medium text-stone-800"
-                                    : "font-light text-stone-400 hover:bg-white/30 hover:text-stone-800"
+                                    ? "font-medium text-foreground"
+                                    : "font-light text-muted-foreground/80 hover:bg-card/30 hover:text-foreground"
                                 }`}
                               >
                                 {isActive && (
                                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center">
                                     <m.div
                                       layoutId="activeSideMenu"
-                                      className="h-[18px] w-[2px] rounded-full bg-stone-800"
+                                      className="h-[18px] w-[2px] rounded-full bg-foreground"
                                       transition={
                                         reduceMotion
                                           ? { duration: 0 }
@@ -403,16 +403,16 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                                 <Icon
                                   className={`h-[18px] w-[18px] shrink-0 transition-colors ${
                                     isActive
-                                      ? "text-stone-800"
-                                      : "text-stone-400 group-hover:text-stone-800"
+                                      ? "text-foreground"
+                                      : "text-muted-foreground/80 group-hover:text-foreground"
                                   }`}
                                   strokeWidth={1.5}
                                 />
                                 <span
                                   className={`text-[13px] transition-colors ${
                                     isActive
-                                      ? "font-medium text-stone-800"
-                                      : "font-light text-stone-400 group-hover:text-stone-800"
+                                      ? "font-medium text-foreground"
+                                      : "font-light text-muted-foreground/80 group-hover:text-foreground"
                                   }`}
                                 >
                                   {item.label}
@@ -426,7 +426,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                           <button
                             type="button"
                             onClick={handleLogout}
-                            className="group -mx-2 flex w-[calc(100%_+_1rem)] items-center justify-start gap-5 rounded-2xl px-2 py-3.5 text-stone-600 transition-all hover:bg-white/40 hover:text-stone-900 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
+                            className="group -mx-2 flex w-[calc(100%_+_1rem)] items-center justify-start gap-5 rounded-2xl px-2 py-3.5 text-muted-foreground transition-all hover:bg-card/40 hover:text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
                           >
                             <LogOut className="h-[18px] w-[18px] transition-colors" strokeWidth={1.5} />
                             <span className="text-[13px] font-medium tracking-wide">退出登录</span>
@@ -444,10 +444,10 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                             if (e.button !== undefined && e.button !== 0) return;
                             dragControls.start(e);
                           }}
-                          className="shrink-0 select-none border-b border-stone-200/40 bg-[#FBF8F0] md:hidden"
+                          className="shrink-0 select-none border-b border-border/40 bg-[#FBF8F0] md:hidden"
                         >
                           <div aria-hidden className="flex justify-center pt-2">
-                            <div className="h-1 w-9 rounded-full bg-stone-300/70" />
+                            <div className="h-1 w-9 rounded-full bg-muted-foreground/40" />
                           </div>
                           <div className="grid h-14 grid-cols-[3.5rem_1fr_3.5rem] items-center">
                             {/* 左槽：二级视图返回；主视图留空保证标题居中 */}
@@ -457,19 +457,19 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                                 onClick={() => accountBackRef.current?.()}
                                 onPointerDown={(e) => e.stopPropagation()}
                                 aria-label="返回上一级"
-                                className="flex h-11 w-11 items-center justify-center text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                                className="flex h-11 w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground active:opacity-60 cursor-pointer"
                               >
                                 <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
                               </button>
                             ) : (
                               <div aria-hidden />
                             )}
-                            <h2 className="truncate text-center text-[15px] font-medium tracking-wide text-stone-800">
+                            <h2 className="truncate text-center text-[15px] font-medium tracking-wide text-foreground">
                               {activeTab === "diary" && diaryHistoryView
                                 ? "测肤记录"
                                 : MENU_ITEMS.find((i) => i.key === activeTab)?.label || "个人信息"}
                               {activeTab === "profile" && user && (
-                                <span className="ml-1.5 align-middle rounded-full border border-brand-charcoal/10 bg-brand-charcoal/[0.04] px-1.5 py-0.5 text-[9px] font-light text-brand-charcoal/55">
+                                <span className="ml-1.5 align-middle rounded-full border border-border/80 bg-brand-charcoal/[0.04] px-1.5 py-0.5 text-[9px] font-light text-muted-foreground">
                                   {levelLabel}
                                 </span>
                               )}
@@ -480,7 +480,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                                 onClick={onClose}
                                 onPointerDown={(e) => e.stopPropagation()}
                                 aria-label="关闭用户中心"
-                                className="flex h-11 w-11 items-center justify-center text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                                className="flex h-11 w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground active:opacity-60 cursor-pointer"
                               >
                                 <X className="h-5 w-5" strokeWidth={1.5} />
                               </button>
@@ -563,7 +563,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                       {isMobile && (
                         <nav
                           aria-label="用户中心导航"
-                          className="shrink-0 border-t border-stone-200/40 bg-[#FBF8F0]/95 backdrop-blur-md md:hidden"
+                          className="shrink-0 border-t border-border/40 bg-[#FBF8F0]/95 backdrop-blur-md md:hidden"
                           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
                         >
                           <div className="grid h-16 grid-cols-4">
@@ -577,8 +577,8 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                                   aria-current={isActive ? "page" : undefined}
                                   className={`flex flex-col items-center justify-center gap-1 transition-colors active:opacity-60 cursor-pointer ${
                                     isActive
-                                      ? "text-brand-charcoal"
-                                      : "text-stone-400 hover:text-brand-charcoal"
+                                      ? "text-foreground"
+                                      : "text-muted-foreground/80 hover:text-foreground"
                                   }`}
                                 >
                                   <Icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.5} />
@@ -597,7 +597,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                         type="button"
                         onClick={onClose}
                         aria-label="关闭用户中心"
-                        className="absolute right-10 top-10 z-50 hidden h-9 w-9 items-center justify-center text-stone-400 transition-colors hover:text-stone-800 md:flex cursor-pointer"
+                        className="absolute right-10 top-10 z-50 hidden h-9 w-9 items-center justify-center text-muted-foreground/80 transition-colors hover:text-foreground md:flex cursor-pointer"
                       >
                         <X className="h-5 w-5" strokeWidth={1} />
                       </button>
@@ -609,7 +609,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                   <button
                     onClick={onClose}
                     aria-label="关闭"
-                    className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
+                    className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-muted-foreground hover:text-foreground hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
                   >
                     <X size={16} strokeWidth={2.5} />
                   </button>
@@ -635,28 +635,28 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={() => setShowLogoutConfirm(false)}
-                    className="absolute inset-0 bg-slate-900/50 backdrop-blur-md"
+                    className="absolute inset-0 bg-brand-charcoal/25 backdrop-blur-md"
                   />
                   <m.div
                     initial={{ opacity: 0, scale: 0.96, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.96, y: 10 }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                    className="relative z-10 w-full max-w-xs bg-[#FAF7F1] rounded-[24px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
+                    className="relative z-10 w-full max-w-xs rounded-[28px] bg-[#FAF7F1] shadow-dialog sm:rounded-[40px] px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <h3 id="logout-confirm-title" className="text-base font-semibold text-brand-charcoal mb-2">
+                    <h3 id="logout-confirm-title" className="text-base font-semibold text-foreground mb-2">
                       退出登录
                     </h3>
-                    <p className="text-[13px] font-light text-brand-charcoal/60 leading-relaxed mb-4">
+                    <p className="text-[13px] font-light text-muted-foreground leading-relaxed mb-4">
                       默认仅退出本站；勾选后将同时退出主站及所有 NIHPLOD 平台。
                     </p>
-                    <label className="flex items-center gap-2 mb-6 cursor-pointer select-none text-[13px] text-brand-charcoal/70 tracking-[0.03em]">
+                    <label className="flex items-center gap-2 mb-6 cursor-pointer select-none text-[13px] text-foreground/75 tracking-[0.03em]">
                       <input
                         type="checkbox"
                         checked={logoutGlobal}
                         onChange={(e) => setLogoutGlobal(e.target.checked)}
-                        className="w-4 h-4 accent-brand-charcoal"
+                        className="w-4 h-4 accent-primary"
                       />
                       同时退出所有 NIHPLOD 平台
                     </label>
@@ -664,7 +664,7 @@ export function AccountModal({ isOpen, onClose, initialTab, onTabChange, onLogin
                       <button
                         type="button"
                         onClick={() => setShowLogoutConfirm(false)}
-                        className="flex-1 px-4 py-2.5 rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/5 text-[13px] tracking-[0.05em] text-brand-charcoal/70 hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-border/80 bg-brand-charcoal/5 text-[13px] tracking-[0.05em] text-foreground/75 hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
                       >
                         取消
                       </button>

@@ -23,13 +23,13 @@ export function PageHeader({
         <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-xl font-semibold tracking-tight text-brand-charcoal">
+                    <h1 className="text-xl font-semibold tracking-tight text-foreground">
                         {title}
                     </h1>
                     {accessory}
                 </div>
                 {description && (
-                    <p className="text-sm text-brand-charcoal/65">
+                    <p className="text-sm text-muted-foreground">
                         {description}
                     </p>
                 )}

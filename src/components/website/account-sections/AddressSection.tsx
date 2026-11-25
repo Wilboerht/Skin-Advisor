@@ -9,6 +9,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { fetchWithCsrf } from "@/lib/fetch-client";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/Badge";
 
 export interface UserAddressItem {
   id: string;
@@ -25,9 +30,6 @@ interface AddressSectionProps {
   /** 地址数量变化上报（父级「收货地址」行展示 已设置/未设置 用） */
   onCountChange?: (count: number) => void;
 }
-
-const inputClass =
-  "w-full rounded-xl border border-stone-200 bg-white/60 px-4 py-3 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-300 focus:border-stone-400 md:text-sm";
 
 const MAX_ADDRESSES = 20;
 
@@ -180,26 +182,27 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
 
   if (loading) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-stone-400">
-        <Loader2 className="h-3.5 w-3.5 animate-spin" /> 地址加载中...
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Loader2 className="size-3.5 animate-spin" /> 地址加载中...
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="flex items-center gap-3 text-xs text-stone-500">
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <span>地址加载失败</span>
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={() => {
             setLoading(true);
             void load();
           }}
-          className="rounded-full border border-stone-200 px-3 py-1 text-stone-600 transition-colors hover:bg-white/60 cursor-pointer"
         >
           重试
-        </button>
+        </Button>
       </div>
     );
   }
@@ -207,67 +210,76 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
   return (
     <div className="space-y-3">
       {addresses.length === 0 ? (
-        <p className="text-sm text-stone-400">暂无收货地址，积分兑礼寄送前请先添加</p>
+        <p className="text-sm text-muted-foreground">
+          暂无收货地址，积分兑礼寄送前请先添加
+        </p>
       ) : (
         <div className="space-y-3">
-          {addresses.map((a) => (
+          {addresses.map((address) => (
             <div
-              key={a.id}
-              className="flex items-start justify-between gap-3 rounded-xl border border-stone-200/60 bg-white/40 p-4"
+              key={address.id}
+              className="flex items-start justify-between gap-3 rounded-lg border bg-card p-4"
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-stone-800">
-                  {a.recipient}
-                  <span className="ml-2 text-xs font-normal text-stone-400">{a.phone}</span>
-                  {a.isDefault && (
-                    <span className="ml-2 rounded-full bg-brand-charcoal/10 px-2 py-0.5 text-[11px] text-brand-charcoal">
+                <p className="text-sm font-medium">
+                  {address.recipient}
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    {address.phone}
+                  </span>
+                  {address.isDefault && (
+                    <Badge variant="secondary" className="ml-2">
                       默认
-                    </span>
+                    </Badge>
                   )}
                 </p>
-                <p className="mt-1 text-xs leading-relaxed text-stone-500">
-                  {a.region} {a.detail}
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {address.region} {address.detail}
                 </p>
               </div>
-              <div className="flex shrink-0 items-center gap-3">
-                {confirmingDeleteId === a.id ? (
+              <div className="flex shrink-0 items-center gap-1">
+                {confirmingDeleteId === address.id ? (
                   <>
-                    <button
+                    <Button
                       type="button"
-                      onClick={() => handleDelete(a.id)}
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(address.id)}
                       disabled={deleting}
-                      className="flex items-center gap-1 text-xs text-red-500 transition-colors hover:text-red-600 disabled:opacity-50 cursor-pointer"
                     >
-                      {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                      {deleting && <Loader2 className="size-3.5 animate-spin" />}
                       确认删除
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setConfirmingDeleteId(null)}
                       disabled={deleting}
-                      className="text-xs text-stone-500 transition-colors hover:text-stone-800 disabled:opacity-50 cursor-pointer"
                     >
                       取消
-                    </button>
+                    </Button>
                   </>
                 ) : (
                   <>
-                    <button
+                    <Button
                       type="button"
-                      onClick={() => startEdit(a)}
-                      className="flex items-center gap-1 text-xs text-stone-500 transition-colors hover:text-stone-800 cursor-pointer"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startEdit(address)}
                     >
-                      <Pencil className="h-3 w-3" />
+                      <Pencil />
                       编辑
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      onClick={() => setConfirmingDeleteId(a.id)}
-                      className="flex items-center gap-1 text-xs text-stone-400 transition-colors hover:text-red-500 cursor-pointer"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmingDeleteId(address.id)}
+                      className="text-muted-foreground hover:text-destructive"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 />
                       删除
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>
@@ -277,120 +289,106 @@ export function AddressSection({ onSessionExpired, onCountChange }: AddressSecti
       )}
 
       {!showForm && (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={() => {
             if (addresses.length >= MAX_ADDRESSES) {
-              toast.warning(`最多保留 ${MAX_ADDRESSES} 个收货地址`);
+              toast.warning(`最多保存 ${MAX_ADDRESSES} 个收货地址`);
               return;
             }
             resetForm();
             setShowForm(true);
           }}
-          className="inline-flex items-center gap-1 rounded-full border border-stone-200 px-3 py-1.5 text-xs text-stone-600 transition-colors hover:border-stone-300 hover:text-stone-800 cursor-pointer"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus />
           新增地址
-        </button>
+        </Button>
       )}
 
       {showForm && (
         <div className="space-y-4 pt-1">
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-brand-charcoal" />
-            <h4 className="text-sm font-medium text-stone-700">
+            <MapPin className="size-4 text-muted-foreground" />
+            <h4 className="text-sm font-medium">
               {editingId ? "编辑收货地址" : "新增收货地址"}
             </h4>
           </div>
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-muted-foreground">
             地址仅用于积分兑礼礼品寄送，不会用于其他用途；可随时修改或删除。
           </p>
-          <div>
-            <label htmlFor="addr-recipient" className="mb-1 block text-xs text-stone-500">
-              收货人 <span className="text-brand-charcoal">*</span>
-            </label>
-            <input
-              id="addr-recipient"
-              type="text"
-              maxLength={20}
-              value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
-              placeholder="收货人姓名"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label htmlFor="addr-phone" className="mb-1 block text-xs text-stone-500">
-              手机号 <span className="text-brand-charcoal">*</span>
-            </label>
-            <input
-              id="addr-phone"
-              type="text"
-              inputMode="numeric"
-              maxLength={11}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-              placeholder="收货手机号"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label htmlFor="addr-region" className="mb-1 block text-xs text-stone-500">
-              省市区 <span className="text-brand-charcoal">*</span>
-            </label>
-            <input
-              id="addr-region"
-              type="text"
-              maxLength={50}
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              placeholder="如：上海市 浦东新区"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label htmlFor="addr-detail" className="mb-1 block text-xs text-stone-500">
-              详细地址 <span className="text-brand-charcoal">*</span>
-            </label>
-            <input
-              id="addr-detail"
-              type="text"
-              maxLength={120}
-              value={detail}
-              onChange={(e) => setDetail(e.target.value)}
-              placeholder="街道、门牌号等"
-              className={inputClass}
-            />
-          </div>
-          <label className="flex cursor-pointer items-center gap-2 text-xs text-stone-600">
-            <input
-              type="checkbox"
+
+          <Input
+            id="addr-recipient"
+            label="收货人"
+            required
+            type="text"
+            maxLength={20}
+            value={recipient}
+            onChange={(event) => setRecipient(event.target.value)}
+            placeholder="收货人姓名"
+          />
+          <Input
+            id="addr-phone"
+            label="手机号"
+            required
+            type="text"
+            inputMode="numeric"
+            maxLength={11}
+            value={phone}
+            onChange={(event) =>
+              setPhone(event.target.value.replace(/\D/g, ""))
+            }
+            placeholder="收货手机号"
+          />
+          <Input
+            id="addr-region"
+            label="省市区"
+            required
+            type="text"
+            maxLength={50}
+            value={region}
+            onChange={(event) => setRegion(event.target.value)}
+            placeholder="如：上海市 浦东新区"
+          />
+          <Input
+            id="addr-detail"
+            label="详细地址"
+            required
+            type="text"
+            maxLength={120}
+            value={detail}
+            onChange={(event) => setDetail(event.target.value)}
+            placeholder="街道、门牌号等"
+          />
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="addr-default"
               checked={isDefault}
-              onChange={(e) => setIsDefault(e.target.checked)}
-              className="h-3.5 w-3.5 accent-brand-charcoal"
+              onCheckedChange={(checked) => setIsDefault(checked === true)}
             />
-            设为默认地址
-          </label>
+            <Label htmlFor="addr-default" className="text-sm font-normal">
+              设为默认地址
+            </Label>
+          </div>
+
           <div className="flex gap-3 pt-1">
-            <button
+            <Button type="button" onClick={saveAddress} loading={saving}>
+              {editingId ? "保存修改" : "保存地址"}
+            </Button>
+            <Button
               type="button"
-              onClick={saveAddress}
-              disabled={saving}
-              className="rounded-full bg-brand-charcoal px-6 py-2.5 text-sm text-white transition-colors hover:bg-[#0d3b5c] disabled:opacity-50 cursor-pointer"
-            >
-              {saving ? "保存中..." : "保存"}
-            </button>
-            <button
-              type="button"
+              variant="outline"
               onClick={() => {
                 setShowForm(false);
                 resetForm();
               }}
               disabled={saving}
-              className="rounded-full border border-stone-200 px-6 py-2.5 text-sm text-stone-600 transition-colors hover:bg-white/60 disabled:opacity-50 cursor-pointer"
             >
               取消
-            </button>
+            </Button>
           </div>
         </div>
       )}

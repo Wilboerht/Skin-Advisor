@@ -57,7 +57,7 @@ export function ZoneHeatmap({ zoneAnalysis, className }: ZoneHeatmapProps) {
 
     return (
         <div className={className}>
-            <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-brand-espresso)]/10 bg-white/55 p-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-brand-espresso)]/10 bg-card/55 p-4 sm:flex-row sm:items-center">
                 <svg viewBox="0 0 200 260" className="mx-auto h-[220px] w-[170px] shrink-0" role="img" aria-label="区域肌肤状态示意图">
                     <ellipse cx="100" cy="128" rx="78" ry="108" fill="#FBF8F3" stroke="#8B7355" strokeOpacity="0.18" />
                     <path d="M 30 96 Q 100 20 170 96" fill="none" stroke="#8B7355" strokeOpacity="0.12" strokeWidth="1.5" />

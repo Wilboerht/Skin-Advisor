@@ -132,8 +132,8 @@ function BudgetBar({
     return (
         <div>
             <div className="flex items-baseline justify-between gap-2 text-xs">
-                <span className="text-brand-charcoal/65">{label}</span>
-                <span className="font-mono tabular-nums text-brand-charcoal/80">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-mono tabular-nums text-foreground/80">
                     ¥{usage.toFixed(2)}
                     {configured
                         ? ` / ¥${budget.toFixed(2)} · ${percent}%`
@@ -186,7 +186,7 @@ function HealthPanel({
                 title="AI 健康"
                 action={<Badge variant="secondary">未知</Badge>}
             >
-                <p className="text-sm text-brand-charcoal/65">
+                <p className="text-sm text-muted-foreground">
                     AI 健康数据暂不可用。
                 </p>
             </PanelCard>
@@ -231,7 +231,7 @@ function HealthPanel({
                     )}
                 </div>
                 <div>
-                    <p className="mb-2 text-xs text-brand-charcoal/65">
+                    <p className="mb-2 text-xs text-muted-foreground">
                         熔断器
                     </p>
                     {activeCircuits.length === 0 ? (
@@ -247,7 +247,7 @@ function HealthPanel({
                                         key={circuit.service}
                                         className="flex items-center justify-between gap-2 text-sm"
                                     >
-                                        <span className="font-mono text-brand-charcoal">
+                                        <span className="font-mono text-foreground">
                                             {circuit.service}
                                         </span>
                                         <span
@@ -381,7 +381,7 @@ export default function AdminAICostsPage() {
             title: "时间",
             width: "120px",
             render: (_, item) => (
-                <span className="whitespace-nowrap text-xs tabular-nums text-brand-charcoal/65">
+                <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
                     {formatDate(item.createdAt)}
                 </span>
             ),
@@ -391,7 +391,7 @@ export default function AdminAICostsPage() {
             title: "提供商",
             width: "100px",
             render: (_, item) => (
-                <span className="text-sm text-brand-charcoal">
+                <span className="text-sm text-foreground">
                     {item.provider}
                 </span>
             ),
@@ -400,7 +400,7 @@ export default function AdminAICostsPage() {
             key: "model",
             title: "模型",
             render: (_, item) => (
-                <span className="font-mono text-xs text-brand-charcoal/75">
+                <span className="font-mono text-xs text-foreground/75">
                     {item.model}
                 </span>
             ),
@@ -410,7 +410,7 @@ export default function AdminAICostsPage() {
             title: "类型",
             width: "90px",
             render: (_, item) => (
-                <span className="text-sm text-brand-charcoal/65">
+                <span className="text-sm text-muted-foreground">
                     {item.requestType}
                 </span>
             ),
@@ -433,7 +433,7 @@ export default function AdminAICostsPage() {
             width: "90px",
             align: "right",
             render: (_, item) => (
-                <span className="font-mono text-xs tabular-nums text-brand-charcoal/65">
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
                     ¥{item.estimatedCost.toFixed(4)}
                 </span>
             ),
@@ -525,18 +525,18 @@ export default function AdminAICostsPage() {
                                             className="flex items-center justify-between gap-3"
                                         >
                                             <div className="min-w-0">
-                                                <p className="truncate text-sm font-medium text-brand-charcoal">
+                                                <p className="truncate text-sm font-medium text-foreground">
                                                     {item.provider}
                                                 </p>
-                                                <p className="text-xs text-brand-charcoal/65">
+                                                <p className="text-xs text-muted-foreground">
                                                     {item.calls} 次
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm font-medium text-brand-charcoal">
+                                                <p className="text-sm font-medium text-foreground">
                                                     ¥{item.cost.toFixed(3)}
                                                 </p>
-                                                <p className="text-xs text-brand-charcoal/65">
+                                                <p className="text-xs text-muted-foreground">
                                                     {item.totalTokens.toLocaleString(
                                                         "zh-CN",
                                                     )}{" "}
@@ -560,18 +560,18 @@ export default function AdminAICostsPage() {
                                             className="flex items-center justify-between gap-3"
                                         >
                                             <div className="min-w-0">
-                                                <p className="truncate text-sm font-medium text-brand-charcoal">
+                                                <p className="truncate text-sm font-medium text-foreground">
                                                     {item.type === "vision"
                                                         ? "视觉分析"
                                                         : item.type === "text"
                                                           ? "文本分析"
                                                           : item.type}
                                                 </p>
-                                                <p className="text-xs text-brand-charcoal/65">
+                                                <p className="text-xs text-muted-foreground">
                                                     {item.calls} 次
                                                 </p>
                                             </div>
-                                            <span className="text-sm font-medium text-brand-charcoal">
+                                            <span className="text-sm font-medium text-foreground">
                                                 ¥{item.cost.toFixed(3)}
                                             </span>
                                         </div>
@@ -591,18 +591,18 @@ export default function AdminAICostsPage() {
                                             className="flex items-center justify-between gap-3"
                                         >
                                             <div className="min-w-0">
-                                                <p className="truncate font-mono text-sm text-brand-charcoal">
+                                                <p className="truncate font-mono text-sm text-foreground">
                                                     {item.model}
                                                 </p>
-                                                <p className="text-xs text-brand-charcoal/65">
+                                                <p className="text-xs text-muted-foreground">
                                                     {item.calls} 次
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm font-medium text-brand-charcoal">
+                                                <p className="text-sm font-medium text-foreground">
                                                     ¥{item.cost.toFixed(3)}
                                                 </p>
-                                                <p className="text-xs text-brand-charcoal/65">
+                                                <p className="text-xs text-muted-foreground">
                                                     {item.totalTokens.toLocaleString(
                                                         "zh-CN",
                                                     )}{" "}
@@ -625,13 +625,13 @@ export default function AdminAICostsPage() {
                                             key={item.date}
                                             className="flex items-center justify-between gap-3 text-sm"
                                         >
-                                            <span className="text-brand-charcoal/65">
+                                            <span className="text-muted-foreground">
                                                 {item.date}
                                             </span>
-                                            <span className="font-mono tabular-nums text-brand-charcoal">
+                                            <span className="font-mono tabular-nums text-foreground">
                                                 ¥{item.cost.toFixed(3)}
                                             </span>
-                                            <span className="text-xs text-brand-charcoal/55">
+                                            <span className="text-xs text-muted-foreground">
                                                 {item.calls} 次
                                             </span>
                                         </div>
@@ -645,7 +645,7 @@ export default function AdminAICostsPage() {
                         title="最近失败记录"
                         action={
                             data && data.recentFailures.length > 0 ? (
-                                <span className="text-xs text-brand-charcoal/65">
+                                <span className="text-xs text-muted-foreground">
                                     共 {data.recentFailures.length} 条
                                 </span>
                             ) : undefined
@@ -671,17 +671,17 @@ export default function AdminAICostsPage() {
                                 mobileCard={(item) => (
                                     <div className="space-y-2">
                                         <div className="flex items-start justify-between gap-2">
-                                            <span className="text-sm font-medium text-brand-charcoal">
+                                            <span className="text-sm font-medium text-foreground">
                                                 {item.provider}
                                             </span>
                                             <span className="font-mono text-xs text-red-600">
                                                 {item.errorCode || "—"}
                                             </span>
                                         </div>
-                                        <p className="truncate font-mono text-xs text-brand-charcoal/65">
+                                        <p className="truncate font-mono text-xs text-muted-foreground">
                                             {item.model}
                                         </p>
-                                        <div className="flex items-center justify-between gap-2 text-xs text-brand-charcoal/65">
+                                        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                                             <span>
                                                 {formatDate(item.createdAt)}
                                             </span>

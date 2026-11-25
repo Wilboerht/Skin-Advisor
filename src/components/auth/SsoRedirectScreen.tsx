@@ -23,7 +23,7 @@ export function SsoRedirectScreen({ message }: { message: string }) {
             <img src="/NIHPLOD-logo.svg" alt="NIHPLOD" className="h-[52px] object-contain" />
             {timedOut ? (
                 <>
-                    <p className="mt-10 text-sm tracking-wide text-brand-charcoal/70" role="alert">
+                    <p className="mt-10 text-sm tracking-wide text-foreground/75" role="alert">
                         跳转似乎失败了，请检查网络后重试
                     </p>
                     <div className="mt-6 flex items-center gap-4">
@@ -36,7 +36,7 @@ export function SsoRedirectScreen({ message }: { message: string }) {
                         </button>
                         <Link
                             href="/"
-                            className="h-10 px-6 inline-flex items-center rounded-full border border-brand-charcoal/25 text-brand-charcoal text-[13px] tracking-[0.08em] font-light transition-colors hover:border-brand-charcoal/60"
+                            className="h-10 px-6 inline-flex items-center rounded-full border border-brand-charcoal/25 text-foreground text-[13px] tracking-[0.08em] font-light transition-colors hover:border-brand-charcoal/60"
                         >
                             返回首页
                         </Link>
@@ -45,11 +45,11 @@ export function SsoRedirectScreen({ message }: { message: string }) {
             ) : (
                 <>
                     <div
-                        className="mt-10 h-8 w-8 animate-spin rounded-full border-2 border-brand-charcoal/20 border-t-brand-charcoal"
+                        className="mt-10 h-8 w-8 animate-spin rounded-full border-2 border-border border-t-brand-charcoal"
                         role="status"
                         aria-label={message}
                     />
-                    <p className="mt-6 text-sm tracking-wide text-brand-charcoal/70">{message}</p>
+                    <p className="mt-6 text-sm tracking-wide text-foreground/75">{message}</p>
                 </>
             )}
         </div>
@@ -66,10 +66,10 @@ export function SsoCookiesDisabledScreen() {
         <div className="flex min-h-screen flex-col items-center justify-center bg-brand-canvas px-6 text-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/NIHPLOD-logo.svg" alt="NIHPLOD" className="h-[52px] object-contain" />
-            <p className="mt-10 text-sm tracking-wide text-brand-charcoal/70" role="alert">
+            <p className="mt-10 text-sm tracking-wide text-foreground/75" role="alert">
                 请开启浏览器 Cookie 后再登录
             </p>
-            <p className="mt-3 text-xs tracking-wide text-brand-charcoal/50">
+            <p className="mt-3 text-xs tracking-wide text-muted-foreground">
                 登录状态需要通过 Cookie 保存，开启后刷新本页即可继续
             </p>
             <div className="mt-6 flex items-center gap-4">
@@ -82,7 +82,7 @@ export function SsoCookiesDisabledScreen() {
                 </button>
                 <Link
                     href="/"
-                    className="h-10 px-6 inline-flex items-center rounded-full border border-brand-charcoal/25 text-brand-charcoal text-[13px] tracking-[0.08em] font-light transition-colors hover:border-brand-charcoal/60"
+                    className="h-10 px-6 inline-flex items-center rounded-full border border-brand-charcoal/25 text-foreground text-[13px] tracking-[0.08em] font-light transition-colors hover:border-brand-charcoal/60"
                 >
                     返回首页
                 </Link>

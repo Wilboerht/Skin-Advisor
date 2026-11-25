@@ -14,7 +14,7 @@ export const CERT_IMAGE_HEIGHT = 1920;
 
 /** 叠加文字颜色：取样自底图烘焙文字 */
 const TEXT_COLOR = "#324F63";
-const FONT_STACK = '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif';
+const FONT_STACK = '"NIHPLOD Han Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif';
 
 const VALID_PERSONAS = new Set([
     "sensitive", "minimalist", "luxury", "ageless",

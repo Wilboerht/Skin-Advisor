@@ -127,7 +127,7 @@ export function ProductRecommendationSection({
                 <p className="text-sm text-brand-taupe">正在为这个派系甄选产品，也可以先咨询专属顾问</p>
                 <a
                     href="#advisor-service"
-                    className="mt-4 inline-flex h-9 items-center justify-center rounded-full border border-brand-cocoa/25 bg-white px-5 text-[12px] font-medium text-brand-cocoa transition-colors hover:border-brand-cocoa/45 hover:bg-brand-cocoa/[0.06]"
+                    className="mt-4 inline-flex h-9 items-center justify-center rounded-full border border-brand-cocoa/25 bg-card px-5 text-[12px] font-medium text-brand-cocoa transition-colors hover:border-brand-cocoa/45 hover:bg-brand-cocoa/[0.06]"
                 >
                     查看顾问服务
                 </a>
@@ -169,7 +169,7 @@ export function ProductRecommendationSection({
                                     : "flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw]"
                             )}>
                                 {/* 骨架屏：米白背景上 white/10 几乎不可见，用深色低透明度保证可见性 */}
-                                <div className="bg-brand-charcoal/[0.06] rounded-xl border border-brand-charcoal/10 h-[380px] animate-pulse" />
+                                <div className="bg-brand-charcoal/[0.06] rounded-xl border border-border/80 h-[380px] animate-pulse" />
                             </div>
                         ))}
                     </div>

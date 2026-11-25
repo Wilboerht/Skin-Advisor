@@ -21,14 +21,14 @@ export function PanelCard({
     return (
         <section
             className={cn(
-                "rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5",
+                "rounded-2xl border border-border/80 bg-card p-4 sm:p-5",
                 className,
             )}
         >
             {(title || action) && (
                 <div className="mb-3 flex items-center justify-between gap-3">
                     {title && (
-                        <h2 className="text-sm font-semibold text-brand-charcoal">
+                        <h2 className="text-sm font-semibold text-foreground">
                             {title}
                         </h2>
                     )}

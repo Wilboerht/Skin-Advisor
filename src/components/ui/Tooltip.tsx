@@ -40,13 +40,13 @@ export function Tooltip({
                         side={side}
                         sideOffset={8}
                         className={cn(
-                            "pointer-events-none z-[99999] max-w-xs rounded-md bg-brand-charcoal/90 px-2.5 py-1.5 text-xs whitespace-nowrap text-white shadow-lg",
+                            "pointer-events-none z-[99999] max-w-xs rounded-md bg-primary px-3 py-1.5 text-xs whitespace-nowrap text-primary-foreground shadow-card",
                             "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0",
                             className,
                         )}
                     >
                         {content}
-                        <TooltipPrimitive.Arrow className="fill-brand-charcoal/90" />
+                        <TooltipPrimitive.Arrow className="fill-primary" />
                     </TooltipPrimitive.Content>
                 </TooltipPrimitive.Portal>
             </TooltipPrimitive.Root>

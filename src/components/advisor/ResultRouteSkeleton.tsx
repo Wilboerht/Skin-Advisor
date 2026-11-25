@@ -21,7 +21,7 @@ export function ResultRouteSkeleton() {
             {/* 标题 + 证书卡 + 操作按钮骨架 */}
             <div className="mx-auto w-full max-w-[900px] px-6 pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:px-8">
                 <div className="mx-auto mb-5 h-5 w-64 max-w-full animate-pulse rounded-full bg-[#3d2f25]/10" />
-                <div className="mx-auto mb-6 h-[420px] max-h-[52vh] w-full max-w-[560px] animate-pulse rounded-[24px] border border-[#3d2f25]/10 bg-white/45" />
+                <div className="mx-auto mb-6 h-[420px] max-h-[52vh] w-full max-w-[560px] animate-pulse rounded-[24px] border border-[#3d2f25]/10 bg-card/45" />
                 <div className="mx-auto h-11 w-full max-w-[280px] animate-pulse rounded-full bg-[#3d2f25]/[0.08]" />
                 <div className="mx-auto mt-4 h-10 w-full max-w-[240px] animate-pulse rounded-full bg-[#3d2f25]/[0.06]" />
             </div>

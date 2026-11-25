@@ -38,7 +38,7 @@ export default function MyskinPreviewPage() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       <div className="max-w-[1280px] mx-auto bg-[#F4F4E8] min-h-screen">
         {/* ===== Navbar (fixed-top 风格) ===== */}
         <nav className="fixed top-0 inset-x-0 z-50 bg-[#F4F4E8]/95 backdrop-blur-sm border-b border-[#A99A83]/15">

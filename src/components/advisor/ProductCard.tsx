@@ -278,11 +278,11 @@ function DefaultProductCard({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, duration: 0.3 }}
-            className="group relative cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-white/10 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:shadow-lg"
+            className="group relative cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-card/10 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:shadow-card"
             onClick={handleCardClick}
         >
             {/* 图片区域 */}
-            <div className="relative aspect-square overflow-hidden bg-white/5">
+            <div className="relative aspect-square overflow-hidden bg-card/5">
                 <ProductImage
                     product={product}
                     imageError={imageError}
@@ -316,7 +316,7 @@ function DefaultProductCard({
                     <div className="relative" ref={platformRef}>
                         <button
                             onClick={handleBuyClick}
-                            className="flex items-center gap-1 rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/30"
+                            className="flex items-center gap-1 rounded-full bg-card/20 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-card/30"
                         >
                             去购买
                             {allLinks.length > 1 ? (
@@ -331,7 +331,7 @@ function DefaultProductCard({
 
                         {/* 多平台选择下拉 */}
                         {showPlatforms && allLinks.length > 1 && (
-                            <div className="absolute bottom-full right-0 z-20 mb-1 min-w-[120px] rounded-lg border border-white/10 bg-white/10 py-1 shadow-xl backdrop-blur-sm">
+                            <div className="absolute bottom-full right-0 z-20 mb-1 min-w-[120px] rounded-lg border border-white/10 bg-card/10 py-1 shadow-card backdrop-blur-sm">
                                 {allLinks.map(link => (
                                     <button
                                         key={link.platformKey}
@@ -339,7 +339,7 @@ function DefaultProductCard({
                                             e.stopPropagation();
                                             handlePlatformClick(link);
                                         }}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium text-white transition-colors hover:bg-white/10"
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium text-white transition-colors hover:bg-card/10"
                                     >
                                         <PlatformIcon platform={link.platform} />
                                         {link.platform}
@@ -424,11 +424,11 @@ function HorizontalProductCard({
         <m.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="group flex cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-white/10 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:shadow-lg"
+            className="group flex cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-card/10 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:shadow-card"
             onClick={() => onProductClick?.(product.id)}
         >
             {/* 图片 */}
-            <div className="relative h-32 w-32 flex-shrink-0 overflow-hidden bg-white/5">
+            <div className="relative h-32 w-32 flex-shrink-0 overflow-hidden bg-card/5">
                 {!imageError ? (
                     <Image
                         src={product.image}

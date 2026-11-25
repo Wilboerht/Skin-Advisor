@@ -93,9 +93,9 @@ export default function AdminSidebar() {
 
     return (
         <>
-            <header className="fixed inset-x-0 top-0 z-[60] flex h-14 items-center gap-3 border-b border-brand-charcoal/10 bg-white/95 px-4 backdrop-blur md:hidden">
+            <header className="fixed inset-x-0 top-0 z-[60] flex h-14 items-center gap-3 border-b border-border/80 bg-card/95 px-4 backdrop-blur md:hidden">
                 <button
-                    className="-ml-2 flex h-11 w-11 items-center justify-center rounded-lg text-brand-charcoal/70 transition-colors hover:bg-brand-charcoal/[0.05] hover:text-brand-charcoal"
+                    className="-ml-2 flex h-11 w-11 items-center justify-center rounded-lg text-foreground/75 transition-colors hover:bg-brand-charcoal/[0.05] hover:text-foreground"
                     onClick={() => setMobileOpen(!mobileOpen)}
                     aria-label={mobileOpen ? "关闭菜单" : "打开菜单"}
                     aria-expanded={mobileOpen}
@@ -106,7 +106,7 @@ export default function AdminSidebar() {
                         <Menu className="h-5 w-5" />
                     )}
                 </button>
-                <span className="text-sm font-semibold text-brand-charcoal">
+                <span className="text-sm font-semibold text-foreground">
                     {pageTitle}
                 </span>
             </header>
@@ -120,7 +120,7 @@ export default function AdminSidebar() {
 
             <div
                 className={cn(
-                    "z-20 flex h-full flex-col border-r border-brand-charcoal/10 bg-white text-brand-charcoal transition-all duration-300 ease-in-out",
+                    "z-20 flex h-full flex-col border-r border-border/80 bg-card text-foreground transition-all duration-300 ease-in-out",
                     collapsed ? "w-16" : "w-60",
                     "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:w-60",
                     mobileOpen
@@ -130,13 +130,13 @@ export default function AdminSidebar() {
             >
                 <div
                     className={cn(
-                        "flex h-16 items-center justify-center border-b border-brand-charcoal/10 px-3",
+                        "flex h-16 items-center justify-center border-b border-border/80 px-3",
                     )}
                 >
                     <div className="flex items-center gap-2.5 overflow-hidden">
                         <div className="relative flex shrink-0 items-center justify-center">
                             {collapsed ? (
-                                <span className="font-serif text-xl font-bold text-brand-primary">
+                                <span className="font-sans text-xl font-bold text-brand-primary">
                                     N
                                 </span>
                             ) : (
@@ -153,7 +153,7 @@ export default function AdminSidebar() {
                         {!collapsed && (
                             <div className="flex items-center gap-2 shrink-0">
                                 <div className="w-px h-3.5 bg-brand-charcoal/15" />
-                                <span className="whitespace-nowrap text-sm font-medium tracking-tight text-brand-charcoal">
+                                <span className="whitespace-nowrap text-sm font-medium tracking-tight text-foreground">
                                     管理后台
                                 </span>
                             </div>
@@ -166,7 +166,7 @@ export default function AdminSidebar() {
                     aria-label="管理导航"
                 >
                     {!collapsed && (
-                        <div className="px-3 mb-3 text-xs font-medium uppercase tracking-wider text-brand-charcoal/65">
+                        <div className="px-3 mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                             功能导航
                         </div>
                     )}
@@ -184,7 +184,7 @@ export default function AdminSidebar() {
                                     "group flex items-center rounded-lg px-3 py-2 text-sm transition-colors",
                                     isActive
                                         ? "bg-brand-primary/10 font-medium text-brand-primary"
-                                        : "text-brand-charcoal/70 hover:bg-brand-charcoal/[0.04] hover:text-brand-charcoal",
+                                        : "text-foreground/75 hover:bg-brand-charcoal/[0.04] hover:text-foreground",
                                     collapsed ? "justify-center" : "",
                                 )}
                                 title={collapsed ? item.label : undefined}
@@ -194,7 +194,7 @@ export default function AdminSidebar() {
                                         "h-4 w-4 flex-shrink-0 transition-colors",
                                         isActive
                                             ? "text-brand-primary"
-                                            : "text-brand-charcoal/70 group-hover:text-brand-charcoal",
+                                            : "text-foreground/75 group-hover:text-foreground",
                                         collapsed ? "mr-0" : "mr-3",
                                     )}
                                 />
@@ -204,11 +204,11 @@ export default function AdminSidebar() {
                     })}
                 </nav>
 
-                <div className="px-3 pb-2 pt-2 border-t border-brand-charcoal/10">
+                <div className="px-3 pb-2 pt-2 border-t border-border/80">
                     <button
                         onClick={() => setCollapsed(!collapsed)}
                         className={cn(
-                            "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-brand-charcoal/70 hover:bg-brand-charcoal/[0.05] hover:text-brand-charcoal transition-colors",
+                            "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground/75 hover:bg-brand-charcoal/[0.05] hover:text-foreground transition-colors",
                             collapsed ? "justify-center" : "",
                         )}
                         title={collapsed ? "展开" : "收起"}
@@ -223,20 +223,20 @@ export default function AdminSidebar() {
                 </div>
 
                 {admin && !collapsed && (
-                    <div className="px-3 pb-3 border-t border-brand-charcoal/10">
+                    <div className="px-3 pb-3 border-t border-border/80">
                         <div className="flex items-center gap-3 px-3 pt-3">
                             <div className="w-8 h-8 rounded-full bg-brand-charcoal/10 flex items-center justify-center shrink-0">
-                                <span className="text-xs font-bold text-brand-charcoal/70">
+                                <span className="text-xs font-bold text-foreground/75">
                                     {(admin.name || admin.username)
                                         .charAt(0)
                                         .toUpperCase()}
                                 </span>
                             </div>
                             <div className="min-w-0">
-                                <div className="text-sm font-medium text-brand-charcoal truncate">
+                                <div className="text-sm font-medium text-foreground truncate">
                                     {admin.name || admin.username}
                                 </div>
-                                <div className="text-xs text-brand-charcoal/65">
+                                <div className="text-xs text-muted-foreground">
                                     {roleLabel}
                                 </div>
                             </div>
@@ -248,7 +248,7 @@ export default function AdminSidebar() {
                     <button
                         onClick={handleLogout}
                         className={cn(
-                            "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-brand-charcoal/70 hover:bg-brand-charcoal/[0.05] hover:text-red-600 transition-colors",
+                            "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground/75 hover:bg-brand-charcoal/[0.05] hover:text-red-600 transition-colors",
                             collapsed ? "justify-center" : "",
                         )}
                         title={collapsed ? "退出登录" : undefined}

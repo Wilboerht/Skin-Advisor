@@ -7,13 +7,13 @@ export default function ProductsNotFound() {
     return (
         <div className="flex min-h-[60vh] items-center justify-center">
             <PanelCard className="w-full max-w-md text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-charcoal/[0.04] text-brand-charcoal/65">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-charcoal/[0.04] text-muted-foreground">
                     <PackageX className="h-7 w-7" />
                 </div>
-                <h2 className="text-base font-medium text-brand-charcoal">
+                <h2 className="text-base font-medium text-foreground">
                     页面未找到
                 </h2>
-                <p className="mt-1 text-sm text-brand-charcoal/65">
+                <p className="mt-1 text-sm text-muted-foreground">
                     请求的产品页面不存在或已被移除。
                 </p>
                 <div className="mt-5 flex justify-center">

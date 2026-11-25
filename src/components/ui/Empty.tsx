@@ -43,15 +43,13 @@ export function Empty({
                 className,
             )}
         >
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-charcoal/[0.04]">
-                {icon || <Inbox className="h-8 w-8 text-brand-charcoal/65" />}
+            <div className="flex size-16 items-center justify-center rounded-full bg-muted">
+                {icon || <Inbox className="size-8 text-muted-foreground" />}
             </div>
             <div>
-                <p className="text-sm font-medium text-brand-charcoal/70">
-                    {title}
-                </p>
+                <p className="text-sm font-medium text-foreground">{title}</p>
                 {description && (
-                    <p className="mt-1 text-sm text-brand-charcoal/65">
+                    <p className="mt-1 text-sm text-muted-foreground">
                         {description}
                     </p>
                 )}

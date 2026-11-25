@@ -49,7 +49,7 @@ export function SkinTypesMobileList({ types, hideTestCTA = false }: SkinTypesMob
                 type="button"
                 onClick={() => setSelected(type)}
                 aria-label={`${type.typeName}（查看详情）`}
-                className="group flex w-full items-center gap-3.5 rounded-2xl border border-brand-espresso/[0.12] bg-white px-3.5 py-3.5 text-left transition-colors duration-300 hover:border-brand-espresso/[0.22] active:bg-brand-charcoal/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
+                className="group flex w-full items-center gap-3.5 rounded-2xl border border-brand-espresso/[0.12] bg-card px-3.5 py-3.5 text-left transition-colors duration-300 hover:border-brand-espresso/[0.22] active:bg-brand-charcoal/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30"
               >
                 <Image
                   src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
@@ -60,17 +60,17 @@ export function SkinTypesMobileList({ types, hideTestCTA = false }: SkinTypesMob
                   className="w-14 shrink-0 h-auto object-contain pointer-events-none"
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5 text-[15px] font-serif font-light tracking-[0.02em] text-brand-charcoal">
-                    <Icon aria-hidden="true" className="w-4 h-4 text-brand-charcoal/60 shrink-0" strokeWidth={1.75} />
+                  <span className="flex items-center gap-1.5 text-[15px] font-sans font-light tracking-[0.02em] text-foreground">
+                    <Icon aria-hidden="true" className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
                     {type.typeName}
                   </span>
-                  <span className="mt-2 block text-[12px] text-brand-charcoal/60 font-light leading-[1.6] line-clamp-2">
+                  <span className="mt-2 block text-[12px] text-muted-foreground font-light leading-[1.6] line-clamp-2">
                     {type.m1.persona}
                   </span>
                 </span>
                 <ArrowRight
                   aria-hidden="true"
-                  className="w-4 h-4 shrink-0 text-brand-charcoal/30 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none"
+                  className="w-4 h-4 shrink-0 text-muted-foreground/70 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none"
                 />
               </button>
             </li>

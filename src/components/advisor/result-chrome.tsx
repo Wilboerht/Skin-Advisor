@@ -15,7 +15,7 @@ export function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; 
         <div
             role="tablist"
             aria-label="报告页面切换"
-            className="inline-flex rounded-full border border-stone-200 bg-white/40 p-1"
+            className="inline-flex rounded-full border border-border bg-card/40 p-1"
         >
             {RESULT_PAGE_TABS.map(({ index, label }) => (
                 <button
@@ -38,7 +38,7 @@ export function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; 
                     className={`rounded-full px-4 py-2 text-xs transition-colors active:opacity-70 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-charcoal)]/40 focus-visible:ring-offset-1 ${
                         pageIndex === index
                             ? "bg-[var(--color-brand-charcoal)]/10 font-medium text-[var(--color-brand-charcoal)]"
-                            : "text-stone-500 hover:text-stone-800"
+                            : "text-muted-foreground hover:text-foreground"
                     }`}
                 >
                     {label}
@@ -53,7 +53,7 @@ export function ResultPageTabs({ pageIndex, onSwitchPage }: { pageIndex: 0 | 1; 
 export function ResultFooter({ simple = false }: { simple?: boolean }) {
     if (simple) {
         return (
-            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
+            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-muted-foreground">
                 <span suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
                 <span aria-hidden="true" className="hidden sm:inline">|</span>
                 <p>*AI 图像分析结果仅供参考，不构成医疗诊断、治疗建议或处方</p>
@@ -62,14 +62,14 @@ export function ResultFooter({ simple = false }: { simple?: boolean }) {
     }
     return (
         <div className="text-center flex flex-col items-center gap-2">
-            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
+            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-muted-foreground">
                 <span suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
                 <span aria-hidden="true" className="hidden sm:inline">|</span>
                 <a
                     href="https://beian.miit.gov.cn/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="transition-colors hover:text-brand-charcoal/70"
+                    className="transition-colors hover:text-foreground/75"
                 >
                     沪ICP备2026014764号-1
                 </a>
@@ -78,13 +78,13 @@ export function ResultFooter({ simple = false }: { simple?: boolean }) {
                     href="http://www.beian.gov.cn/portal/registerSystemInfo"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 transition-colors hover:text-brand-charcoal/70"
+                    className="flex items-center gap-1 transition-colors hover:text-foreground/75"
                 >
                     <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
                     <span>沪公网安备31010702010178号</span>
                 </a>
             </div>
-            <p className="text-[11px] font-light tracking-[0.12em] text-brand-charcoal/65">
+            <p className="text-[11px] font-light tracking-[0.12em] text-muted-foreground">
                 *AI 图像分析结果仅供参考，不构成医疗诊断、治疗建议或处方。如有皮肤疾病或健康问题，请咨询专业皮肤科医生。
             </p>
         </div>

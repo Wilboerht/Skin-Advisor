@@ -169,7 +169,7 @@ export function UserDetailModal({
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                     <Loader2 className="h-7 w-7 animate-spin text-brand-primary" />
-                    <p className="mt-3 text-sm text-brand-charcoal/65">
+                    <p className="mt-3 text-sm text-muted-foreground">
                         正在加载用户详情...
                     </p>
                 </div>
@@ -192,13 +192,13 @@ export function UserDetailModal({
                 <Empty title="用户不存在" className="py-10" />
             ) : (
                 <div className="space-y-5">
-                    <div className="rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/[0.02] p-4">
+                    <div className="rounded-xl border border-border/80 bg-brand-charcoal/[0.02] p-4">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
-                                <h2 className="truncate text-lg font-semibold text-brand-charcoal">
+                                <h2 className="truncate text-lg font-semibold text-foreground">
                                     {user.name || "未命名用户"}
                                 </h2>
-                                <p className="mt-1 truncate text-sm text-brand-charcoal/65">
+                                <p className="mt-1 truncate text-sm text-muted-foreground">
                                     {user.email || user.phoneNumber || "—"}
                                 </p>
                             </div>
@@ -212,29 +212,29 @@ export function UserDetailModal({
                                 {isDisabledUser(user.role) ? "已禁用" : "活跃"}
                             </Badge>
                         </div>
-                        <dl className="mt-4 grid gap-x-6 gap-y-3 border-t border-brand-charcoal/10 pt-4 text-sm sm:grid-cols-2">
+                        <dl className="mt-4 grid gap-x-6 gap-y-3 border-t border-border/80 pt-4 text-sm sm:grid-cols-2">
                             <div className="min-w-0">
-                                <dt className="text-xs text-brand-charcoal/65">
+                                <dt className="text-xs text-muted-foreground">
                                     账号角色
                                 </dt>
-                                <dd className="mt-0.5 text-brand-charcoal">
+                                <dd className="mt-0.5 text-foreground">
                                     {ROLE_LABELS[user.role] || user.role || "—"}
                                 </dd>
                             </div>
                             <div className="min-w-0">
-                                <dt className="text-xs text-brand-charcoal/65">
+                                <dt className="text-xs text-muted-foreground">
                                     注册时间
                                 </dt>
-                                <dd className="mt-0.5 text-brand-charcoal">
+                                <dd className="mt-0.5 text-foreground">
                                     {formatDateTime(user.createdAt)}
                                 </dd>
                             </div>
                             <div className="min-w-0 sm:col-span-2">
-                                <dt className="text-xs text-brand-charcoal/65">
+                                <dt className="text-xs text-muted-foreground">
                                     用户 ID
                                 </dt>
                                 <dd
-                                    className="mt-0.5 truncate font-mono text-xs text-brand-charcoal/70"
+                                    className="mt-0.5 truncate font-mono text-xs text-foreground/75"
                                     title={user.id}
                                 >
                                     {user.id}
@@ -243,14 +243,14 @@ export function UserDetailModal({
                         </dl>
                     </div>
 
-                    <section className="rounded-xl border border-brand-charcoal/10 bg-white p-4">
+                    <section className="rounded-xl border border-border/80 bg-card p-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <h3 className="flex items-center gap-2 text-sm font-medium text-brand-charcoal">
-                                    <Settings className="h-4 w-4 text-brand-charcoal/65" />
+                                <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                    <Settings className="h-4 w-4 text-muted-foreground" />
                                     每日测试额度
                                 </h3>
-                                <p className="mt-1 text-xs text-brand-charcoal/65">
+                                <p className="mt-1 text-xs text-muted-foreground">
                                     系统默认 10
                                     次；自定义值会覆盖会员默认额度，0
                                     表示禁止测试。
@@ -307,10 +307,10 @@ export function UserDetailModal({
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-3">
-                                    <span className="font-mono text-xl font-semibold tabular-nums text-brand-charcoal">
+                                    <span className="font-mono text-xl font-semibold tabular-nums text-foreground">
                                         {user.dailyTestLimit ?? 10}
                                     </span>
-                                    <span className="text-sm text-brand-charcoal/65">
+                                    <span className="text-sm text-muted-foreground">
                                         次/天
                                     </span>
                                     <Button
@@ -325,13 +325,13 @@ export function UserDetailModal({
                         </div>
                     </section>
 
-                    <section className="rounded-xl border border-brand-charcoal/10 bg-white p-4">
+                    <section className="rounded-xl border border-border/80 bg-card p-4">
                         <div className="mb-3 flex items-center justify-between gap-3">
-                            <h3 className="flex items-center gap-2 text-sm font-medium text-brand-charcoal">
-                                <Clock className="h-4 w-4 text-brand-charcoal/65" />
+                            <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
                                 最近测肤
                             </h3>
-                            <span className="text-xs text-brand-charcoal/65">
+                            <span className="text-xs text-muted-foreground">
                                 共{" "}
                                 {user._count?.advisorSessions ??
                                     user.advisorSessions.length}{" "}
@@ -341,7 +341,7 @@ export function UserDetailModal({
                         {user.advisorSessions.length === 0 ? (
                             <Empty title="暂无测肤记录" className="py-6" />
                         ) : (
-                            <div className="divide-y divide-brand-charcoal/[0.06]">
+                            <div className="divide-y divide-border/70">
                                 {user.advisorSessions
                                     .slice(0, 5)
                                     .map((session) => (
@@ -350,12 +350,12 @@ export function UserDetailModal({
                                             className="flex flex-wrap items-center justify-between gap-2 py-2.5 first:pt-0 last:pb-0"
                                         >
                                             <div className="min-w-0">
-                                                <p className="text-sm text-brand-charcoal">
+                                                <p className="text-sm text-foreground">
                                                     {formatDateTime(
                                                         session.createdAt,
                                                     )}
                                                 </p>
-                                                <p className="mt-0.5 flex items-center gap-1 text-xs text-brand-charcoal/65">
+                                                <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                                                     {session.deviceType ===
                                                     "mobile" ? (
                                                         <Smartphone className="h-3 w-3" />

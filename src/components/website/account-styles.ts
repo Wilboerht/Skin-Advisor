@@ -3,7 +3,7 @@
 
 /** 弹层壳：背景/圆角/暖调阴影 */
 export const ACCOUNT_SHELL =
-  "bg-[#FAF7F1] rounded-t-[28px] sm:rounded-[2.5rem] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)]";
+  "bg-[#FAF7F1] rounded-t-[28px] sm:rounded-[2.5rem] shadow-dialog";
 
 /** 内容卡：纯白底 + 暖色轻阴影 + 细描边（替代旧 bg-white/70，拉开与弹层米底的层次差） */
 export const ACCOUNT_CARD =
@@ -15,9 +15,9 @@ export const ACCOUNT_ENTRY_ROW =
   "text-brand-charcoal/60 hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors cursor-pointer " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30";
 
-/** 区块标题：与全站 font-serif font-light 规范一致 */
+/** 区块标题：与全站 font-sans font-light 规范一致 */
 export const ACCOUNT_SECTION_TITLE =
-  "text-base md:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em]";
+  "text-base md:text-lg font-sans font-light text-brand-charcoal tracking-[0.02em]";
 
 /** 次要说明文字（会员号/用量/进度等） */
 export const ACCOUNT_MUTED_TEXT = "text-[12px] font-light text-brand-charcoal/55 tracking-[0.05em]";

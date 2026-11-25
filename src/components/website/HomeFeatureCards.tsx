@@ -10,7 +10,7 @@ interface HomeFeatureCardsProps {
 }
 
 const cardBaseClass =
-  "hero-card group absolute flex flex-col rounded-[26px] border border-white/70 text-left text-[#172B43] shadow-[0_28px_60px_-28px_rgba(0,38,62,0.36)] cursor-pointer sm:rounded-[32px] sm:px-9 sm:pt-8 sm:pb-7 pc:rounded-[6.78cqh] pc:px-[8.814cqh] pc:pt-[6.78cqh] pc:pb-[5.424cqh]";
+  "hero-card group absolute flex flex-col rounded-[26px] border border-white/70 text-left text-[#172B43] shadow-card cursor-pointer sm:rounded-[32px] sm:px-9 sm:pt-8 sm:pb-7 pc:rounded-[6.78cqh] pc:px-[8.814cqh] pc:pt-[6.78cqh] pc:pb-[5.424cqh]";
 
 const cardStyle = (rotate: string) => ({ "--card-rotate": rotate } as CSSProperties);
 

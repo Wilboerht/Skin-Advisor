@@ -47,14 +47,14 @@ export default async function AdminFunnelPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-xl font-semibold text-brand-charcoal">转化漏斗</h1>
-                <p className="mt-1 text-sm text-brand-charcoal/60">
+                <h1 className="text-xl font-semibold text-foreground">转化漏斗</h1>
+                <p className="mt-1 text-sm text-muted-foreground">
                     近 {ADMIN_FUNNEL_DAYS} 天 · 扫脸事件与分析会话已归并到同一 sessionId · 共{" "}
                     {total.toLocaleString("zh-CN")} 个会话
                 </p>
             </div>
 
-            <div className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-6">
+            <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-6">
                 <div className="space-y-4">
                     {steps.map((step, index) => {
                         const prev = index > 0 ? steps[index - 1] : null;
@@ -64,16 +64,16 @@ export default async function AdminFunnelPage() {
                             <div key={step.key}>
                                 <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
                                     <div className="flex items-baseline gap-2">
-                                        <span className="w-5 text-right text-[11px] tabular-nums text-brand-charcoal/35">
+                                        <span className="w-5 text-right text-[11px] tabular-nums text-muted-foreground/70">
                                             {String(index + 1).padStart(2, "0")}
                                         </span>
-                                        <span className="text-sm font-medium text-brand-charcoal">{step.label}</span>
+                                        <span className="text-sm font-medium text-foreground">{step.label}</span>
                                     </div>
                                     <div className="flex items-baseline gap-3 text-xs">
-                                        <span className="font-semibold tabular-nums text-brand-charcoal">
+                                        <span className="font-semibold tabular-nums text-foreground">
                                             {step.count.toLocaleString("zh-CN")}
                                         </span>
-                                        <span className="w-14 text-right tabular-nums text-brand-charcoal/45">
+                                        <span className="w-14 text-right tabular-nums text-muted-foreground/80">
                                             {fromStart > 0 ? `${(fromStart * 100).toFixed(1)}%` : "0%"}
                                         </span>
                                         {fromPrev !== null && (
@@ -90,7 +90,7 @@ export default async function AdminFunnelPage() {
                                     />
                                 </div>
                                 {index === 3 && (
-                                    <p className="ml-7 mt-1.5 text-[11px] leading-relaxed text-brand-charcoal/45">
+                                    <p className="ml-7 mt-1.5 text-[11px] leading-relaxed text-muted-foreground/80">
                                         “完成扫脸拍摄”来自埋点交互；“面部 AI 完成”来自服务端 face-analyze 持久化。两步分开可定位拍摄失败还是视觉 AI 失败。
                                     </p>
                                 )}

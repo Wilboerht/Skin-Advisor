@@ -5,6 +5,7 @@ import { AlertDialog as AlertDialogPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/Button";
+import { MODAL_RADIUS } from "./modal-styles";
 
 function AlertDialog({
     ...props
@@ -60,7 +61,8 @@ function AlertDialogContent({
             <AlertDialogPrimitive.Content
                 data-slot="alert-dialog-content"
                 className={cn(
-                    "fixed top-[50%] left-[50%] z-[var(--z-modal)] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl border border-brand-beige bg-card p-6 text-card-foreground shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+                    "fixed top-[50%] left-[50%] z-[var(--z-modal)] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 border border-border/80 bg-dialog p-6 text-dialog-foreground shadow-dialog duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+                    MODAL_RADIUS,
                     className,
                 )}
                 {...props}
@@ -108,7 +110,7 @@ function AlertDialogTitle({
     return (
         <AlertDialogPrimitive.Title
             data-slot="alert-dialog-title"
-            className={cn("font-serif text-lg leading-none font-light", className)}
+            className={cn("text-lg leading-none font-semibold", className)}
             {...props}
         />
     );

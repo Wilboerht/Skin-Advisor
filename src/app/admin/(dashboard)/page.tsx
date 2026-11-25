@@ -26,7 +26,7 @@ const DashboardCharts = dynamic(
         ssr: false,
         loading: () => (
             <div className="flex h-72 items-center justify-center">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-charcoal/20 border-t-brand-primary" />
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-brand-primary" />
             </div>
         ),
     }

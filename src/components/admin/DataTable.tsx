@@ -159,7 +159,7 @@ export function DataTable<T extends object>({
 
         const key = String(column.key);
         if (sortConfig?.key !== key) {
-            return <ArrowUpDown className="h-4 w-4 text-brand-charcoal/65" />;
+            return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
         }
         return sortConfig.order === "asc" ? (
             <ArrowUp className="h-4 w-4 text-brand-primary" />
@@ -177,7 +177,7 @@ export function DataTable<T extends object>({
     return (
         <div
             className={cn(
-                "relative overflow-hidden rounded-2xl border border-brand-charcoal/10 bg-white",
+                "relative overflow-hidden rounded-2xl border border-border/80 bg-card",
                 className,
             )}
         >
@@ -193,8 +193,8 @@ export function DataTable<T extends object>({
                             ))}
                         </div>
                     ) : data.length === 0 ? (
-                        <div className="flex flex-col items-center gap-3 px-4 py-12 text-center text-brand-charcoal/65">
-                            <Inbox className="h-10 w-10 text-brand-charcoal/65" />
+                        <div className="flex flex-col items-center gap-3 px-4 py-12 text-center text-muted-foreground">
+                            <Inbox className="h-10 w-10 text-muted-foreground" />
                             <span>{emptyText}</span>
                             {emptyAction && (
                                 <Button
@@ -208,7 +208,7 @@ export function DataTable<T extends object>({
                             )}
                         </div>
                     ) : (
-                        <div className="divide-y divide-brand-charcoal/10">
+                        <div className="divide-y divide-border/80">
                             {data.map((record, index) => (
                                 <div
                                     key={getRowKey(record, index)}
@@ -230,7 +230,7 @@ export function DataTable<T extends object>({
             >
                 <table
                     className={cn(
-                        "w-full divide-y divide-brand-charcoal/10",
+                        "w-full divide-y divide-border/80",
                         tableLayout === "fixed" && "table-fixed",
                     )}
                     style={minWidth ? { minWidth } : undefined}
@@ -251,7 +251,7 @@ export function DataTable<T extends object>({
                                         scope="col"
                                         style={{ width: column.width }}
                                         className={cn(
-                                            "text-sm font-normal text-brand-charcoal",
+                                            "text-sm font-normal text-foreground",
                                             cellDensityCls,
                                             alignStyles[column.align || "left"],
                                             column.sortable &&
@@ -294,7 +294,7 @@ export function DataTable<T extends object>({
                             })}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-brand-charcoal/10 bg-white">
+                    <tbody className="divide-y divide-border/80 bg-card">
                         {loading ? (
                             // 加载状态
                             Array.from({ length: 5 }).map((_, i) => (
@@ -309,10 +309,10 @@ export function DataTable<T extends object>({
                             <tr>
                                 <td
                                     colSpan={columns.length}
-                                    className="px-4 py-12 text-center text-brand-charcoal/65"
+                                    className="px-4 py-12 text-center text-muted-foreground"
                                 >
                                     <div className="flex flex-col items-center gap-3">
-                                        <Inbox className="h-10 w-10 text-brand-charcoal/65" />
+                                        <Inbox className="h-10 w-10 text-muted-foreground" />
                                         <span>{emptyText}</span>
                                         {emptyAction && (
                                             <Button
@@ -380,7 +380,7 @@ export function DataTable<T extends object>({
                                                 <td
                                                     key={String(column.key)}
                                                     className={cn(
-                                                        "whitespace-nowrap text-sm text-brand-charcoal",
+                                                        "whitespace-nowrap text-sm text-foreground",
                                                         cellDensityCls,
                                                         alignStyles[
                                                             column.align ||
@@ -412,7 +412,7 @@ export function DataTable<T extends object>({
             {/* 分页：即使只有一页也展示总数/每页条数（Pagination 内部按需隐藏页码） */}
             {pagination &&
                 (pagination.total > 0 || pagination.onPageSizeChange) && (
-                    <div className="border-t border-brand-charcoal/10 px-4 py-3">
+                    <div className="border-t border-border/80 px-4 py-3">
                         <Pagination
                             page={pagination.page}
                             pageSize={pagination.pageSize}
@@ -427,7 +427,7 @@ export function DataTable<T extends object>({
             {loading && data.length > 0 && (
                 <div
                     className={cn(
-                        "absolute inset-0 flex items-center justify-center bg-white/50",
+                        "absolute inset-0 flex items-center justify-center bg-card/50",
                         pagination ? "bottom-[60px]" : "bottom-0",
                     )}
                 >

@@ -203,8 +203,8 @@ const REDEMPTION_STATUS_ICONS: Record<RedemptionRecord["status"], typeof Clock> 
 
 const REDEMPTION_STATUS_STYLES: Record<RedemptionRecord["status"], string> = {
   PENDING: "bg-amber-50 text-amber-600",
-  FULFILLED: "bg-brand-charcoal/10 text-brand-charcoal",
-  CANCELLED: "bg-stone-100 text-stone-400",
+  FULFILLED: "bg-brand-charcoal/10 text-foreground",
+  CANCELLED: "bg-muted text-muted-foreground/80",
 };
 
 const POINT_TYPE_LABELS: Record<string, string> = {
@@ -675,16 +675,16 @@ export function PointsMallPanel({
     <div className="space-y-2">
       {items.map((r) => (
         <div key={r.id} className="flex items-center justify-between gap-3 text-xs">
-          <span className="min-w-0 truncate text-stone-600">
+          <span className="min-w-0 truncate text-muted-foreground">
             {r.productName}
-            <span className="ml-2 text-stone-400">{r.points.toLocaleString()} 积分</span>
+            <span className="ml-2 text-muted-foreground/80">{r.points.toLocaleString()} 积分</span>
           </span>
           <span className="flex shrink-0 items-center gap-3">
-            <span className="text-stone-400">{formatDate(r.createdAt)}</span>
+            <span className="text-muted-foreground/80">{formatDate(r.createdAt)}</span>
             <button
               type="button"
               onClick={() => openRedemptionDetail(r, from)}
-              className="py-1 text-brand-charcoal transition-opacity hover:opacity-70 active:opacity-60"
+              className="py-1 text-foreground transition-opacity hover:opacity-70 active:opacity-60"
             >
               查看
             </button>
@@ -713,10 +713,10 @@ export function PointsMallPanel({
             >
         {/* 兑换成功提示（面板内，可手动关闭，5 秒自动消失） */}
         {redeemSuccess && (
-          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-brand-charcoal/20 bg-brand-charcoal/5 px-4 py-3">
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-brand-charcoal/5 px-4 py-3">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-charcoal" />
-              <p className="text-xs text-stone-700">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-foreground" />
+              <p className="text-xs text-foreground">
                 兑换成功，礼品将尽快为您寄出，可在「我的兑换记录」中查看发货进度
               </p>
             </div>
@@ -724,7 +724,7 @@ export function PointsMallPanel({
               type="button"
               onClick={() => setRedeemSuccess(false)}
               aria-label="关闭提示"
-              className="shrink-0 text-stone-400 transition-colors hover:text-stone-700"
+              className="shrink-0 text-muted-foreground/80 transition-colors hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -732,19 +732,19 @@ export function PointsMallPanel({
         )}
 
         {/* 积分余额概览：右下角渐隐水印（Sparkles，向卡片内部淡出，纯装饰） */}
-        <div className="relative overflow-hidden rounded-xl border border-stone-200/60 bg-white/40 p-5">
+        <div className="relative overflow-hidden rounded-xl border border-border/60 bg-card/40 p-5">
           <Sparkles
             aria-hidden
             strokeWidth={1}
-            className="pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 text-brand-charcoal/[0.05] [-webkit-mask-image:linear-gradient(to_top_left,black,transparent_75%)] [mask-image:linear-gradient(to_top_left,black,transparent_75%)]"
+            className="pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 text-foreground/[0.05] [-webkit-mask-image:linear-gradient(to_top_left,black,transparent_75%)] [mask-image:linear-gradient(to_top_left,black,transparent_75%)]"
           />
           <div className="relative flex items-center justify-between">
-            <h4 className="text-sm font-medium text-stone-700">积分余额</h4>
+            <h4 className="text-sm font-medium text-foreground">积分余额</h4>
             <button
               type="button"
               onClick={toggleLedger}
               aria-expanded={showLedger}
-              className="flex items-center gap-0.5 rounded-full border border-stone-200 px-3 py-1.5 text-xs font-light text-stone-500 transition-colors hover:border-stone-300 hover:text-stone-800 active:opacity-70"
+              className="flex items-center gap-0.5 rounded-full border border-border px-3 py-1.5 text-xs font-light text-muted-foreground transition-colors hover:border-input hover:text-foreground active:opacity-70"
             >
               明细
               <ChevronRight
@@ -753,10 +753,10 @@ export function PointsMallPanel({
             </button>
           </div>
           <div className="relative mt-4 flex items-baseline gap-1.5">
-            <p className="text-3xl font-light text-stone-800">
+            <p className="text-3xl font-light text-foreground">
               {giftsData ? giftsData.available.toLocaleString() : "—"}
             </p>
-            <span className="text-xs text-stone-400">积分</span>
+            <span className="text-xs text-muted-foreground/80">积分</span>
           </div>
 
           {/* 即将过期提醒（常显，不依赖明细展开） */}
@@ -779,38 +779,38 @@ export function PointsMallPanel({
                 transition={{ duration: 0.22, ease: "easeOut" }}
                 className="relative overflow-hidden"
               >
-            <div className="relative mt-4 border-t border-stone-200/60 pt-3">
+            <div className="relative mt-4 border-t border-border/60 pt-3">
               {pointsError ? (
-                <div className="flex items-center justify-center gap-2 py-4 text-xs text-stone-400">
+                <div className="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground/80">
                   明细加载失败
                   <button
                     type="button"
                     onClick={() => void loadPointsData()}
-                    className="text-brand-charcoal transition-opacity hover:opacity-70"
+                    className="text-foreground transition-opacity hover:opacity-70"
                   >
                     重试
                   </button>
                 </div>
               ) : !pointsData ? (
-                <div className="flex items-center justify-center gap-1.5 py-4 text-xs text-stone-400">
+                <div className="flex items-center justify-center gap-1.5 py-4 text-xs text-muted-foreground/80">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> 明细加载中...
                 </div>
               ) : pointsData.recent.length === 0 ? (
-                <p className="py-4 text-center text-xs text-stone-400">暂无积分明细</p>
+                <p className="py-4 text-center text-xs text-muted-foreground/80">暂无积分明细</p>
               ) : (
                 <div className="space-y-2">
                   {pointsData.recent.map((r) => (
                     <div key={r.id} className="flex items-center justify-between gap-3 text-xs">
-                      <span className="min-w-0 truncate text-stone-500">
+                      <span className="min-w-0 truncate text-muted-foreground">
                         {POINT_TYPE_LABELS[r.type] ?? r.type}
                         {r.note && (r.type === "CONSUME" || r.type === "CHECKIN" || r.type === "ADJUST")
                           ? `（${r.note.slice(0, 20)}）`
                           : ""}
                       </span>
                       <span className="flex shrink-0 items-center gap-3">
-                        <span className="text-stone-400">{formatDate(r.createdAt)}</span>
+                        <span className="text-muted-foreground/80">{formatDate(r.createdAt)}</span>
                         <span
-                          className={`font-medium ${r.amount >= 0 ? "text-stone-700" : "text-stone-400"}`}
+                          className={`font-medium ${r.amount >= 0 ? "text-foreground" : "text-muted-foreground/80"}`}
                         >
                           {r.amount >= 0 ? "+" : ""}
                           {r.amount.toLocaleString()}
@@ -827,35 +827,35 @@ export function PointsMallPanel({
         </div>
 
         {/* 兑换好礼 */}
-        <div className="mt-6 rounded-xl border border-stone-200/60 bg-white/40 p-5">
+        <div className="mt-6 rounded-xl border border-border/60 bg-card/40 p-5">
           <div className="flex items-center justify-between">
-            <h4 className="flex items-center gap-1.5 text-sm font-medium text-stone-700">
+            <h4 className="flex items-center gap-1.5 text-sm font-medium text-foreground">
               <Gift className="h-4 w-4" />
               兑换好礼
             </h4>
             {giftsData && giftsData.redeemRate !== null && (
-              <p className="text-xs text-stone-400">按当前会员等级折算所需积分</p>
+              <p className="text-xs text-muted-foreground/80">按当前会员等级折算所需积分</p>
             )}
           </div>
 
           {giftsLoading ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-stone-300" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/60" />
             </div>
           ) : !giftsData ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <p className="text-xs text-stone-400">礼品加载失败，请稍后重试</p>
+              <p className="text-xs text-muted-foreground/80">礼品加载失败，请稍后重试</p>
               <button
                 type="button"
                 onClick={() => void loadGiftsData()}
-                className="text-xs text-brand-charcoal underline underline-offset-2"
+                className="text-xs text-foreground underline underline-offset-2"
               >
                 重新加载
               </button>
             </div>
           ) : giftsData.redeemRate === null ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <p className="flex items-center gap-1.5 text-xs text-stone-400">
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground/80">
                 <Lock className="h-3.5 w-3.5" />
                 升级银卡会员解锁积分兑换
               </p>
@@ -863,21 +863,21 @@ export function PointsMallPanel({
                 <button
                   type="button"
                   onClick={onNavigateVip}
-                  className="rounded-full border border-brand-charcoal/20 px-4 py-1.5 text-xs text-brand-charcoal/70 transition-colors hover:border-brand-charcoal/40 hover:text-brand-charcoal"
+                  className="rounded-full border border-border px-4 py-1.5 text-xs text-foreground/75 transition-colors hover:border-brand-charcoal/40 hover:text-foreground"
                 >
                   去会员中心
                 </button>
               )}
             </div>
           ) : giftsData.gifts.length === 0 ? (
-            <p className="py-6 text-center text-xs text-stone-400">暂无上架礼品</p>
+            <p className="py-6 text-center text-xs text-muted-foreground/80">暂无上架礼品</p>
           ) : (
             <>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {visibleGifts.map((g) => (
                 <div
                   key={g.id}
-                  className="flex flex-col justify-between rounded-xl border border-stone-200/60 bg-white/60 p-4"
+                  className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <button
@@ -891,33 +891,33 @@ export function PointsMallPanel({
                         <img
                           src={g.image}
                           alt=""
-                          className="h-12 w-12 shrink-0 rounded-lg border border-stone-200/60 object-cover"
+                          className="h-12 w-12 shrink-0 rounded-lg border border-border/60 object-cover"
                         />
                       )}
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-stone-800 transition-colors group-hover:text-brand-charcoal">
+                        <p className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-foreground">
                           {g.name}
                         </p>
                         {g.description && (
-                          <p className="mt-1 line-clamp-2 text-xs text-stone-400">
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground/80">
                             {stripHtml(g.description)}
                           </p>
                         )}
                       </div>
                     </button>
-                    <span className="shrink-0 text-xs text-stone-400">
+                    <span className="shrink-0 text-xs text-muted-foreground/80">
                       价格 ¥{g.priceYuan.toLocaleString()}
                     </span>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-sm font-medium text-stone-700">
+                    <span className="text-sm font-medium text-foreground">
                       {g.cost?.toLocaleString()} 积分
                     </span>
                     <button
                       type="button"
                       disabled={!g.affordable}
                       onClick={() => openRedeem(g)}
-                      className="rounded-full bg-brand-charcoal px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
+                      className="rounded-full bg-brand-charcoal px-4 py-2 text-xs text-white transition-colors hover:bg-[#0d3b5c] active:opacity-80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground/80"
                     >
                       {g.affordable ? "兑换" : "积分不足"}
                     </button>
@@ -930,7 +930,7 @@ export function PointsMallPanel({
                 type="button"
                 onClick={toggleGiftsExpanded}
                 aria-expanded={giftsExpanded}
-                className="mx-auto mt-3 flex items-center gap-1 rounded-full border border-stone-200 px-4 py-1.5 text-xs text-stone-500 transition-colors hover:border-stone-300 hover:text-stone-800 active:opacity-70"
+                className="mx-auto mt-3 flex items-center gap-1 rounded-full border border-border px-4 py-1.5 text-xs text-muted-foreground transition-colors hover:border-input hover:text-foreground active:opacity-70"
               >
                 {giftsExpanded ? "收起" : `展开更多（还有 ${hiddenGiftsCount} 件）`}
                 <ChevronDown
@@ -942,19 +942,19 @@ export function PointsMallPanel({
           )}
 
           {/* 我的兑换记录：主视图仅预览最近 N 条，更多记录进「查看全部」 */}
-          <div className="mt-4 border-t border-stone-200/60 pt-3">
+          <div className="mt-4 border-t border-border/60 pt-3">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs font-medium text-stone-500">
+              <p className="text-xs font-medium text-muted-foreground">
                 我的兑换记录
                 {redemptionTotal > 0 && (
-                  <span className="ml-1 font-normal text-stone-400">（{redemptionTotal}）</span>
+                  <span className="ml-1 font-normal text-muted-foreground/80">（{redemptionTotal}）</span>
                 )}
               </p>
               {redemptionTotal > RECORDS_PREVIEW_COUNT && (
                 <button
                   type="button"
                   onClick={() => setView("records")}
-                  className="inline-flex items-center gap-0.5 rounded-full border border-stone-200 bg-white/40 px-3 py-1 text-xs text-stone-500 transition-colors hover:border-stone-300 hover:bg-white/70 hover:text-stone-800 active:opacity-70"
+                  className="inline-flex items-center gap-0.5 rounded-full border border-border bg-card/40 px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-input hover:bg-card/70 hover:text-foreground active:opacity-70"
                 >
                   查看全部
                   <ChevronRight className="h-3 w-3" />
@@ -962,22 +962,22 @@ export function PointsMallPanel({
               )}
             </div>
             {redemptionsLoading && redemptions.length === 0 ? (
-              <div className="flex items-center gap-1.5 py-3 text-xs text-stone-400">
+              <div className="flex items-center gap-1.5 py-3 text-xs text-muted-foreground/80">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> 记录加载中...
               </div>
             ) : redemptionsError && redemptions.length === 0 ? (
-              <div className="flex items-center gap-2 py-3 text-xs text-stone-400">
+              <div className="flex items-center gap-2 py-3 text-xs text-muted-foreground/80">
                 记录加载失败
                 <button
                   type="button"
                   onClick={() => void loadRedemptions()}
-                  className="text-brand-charcoal transition-opacity hover:opacity-70"
+                  className="text-foreground transition-opacity hover:opacity-70"
                 >
                   重试
                 </button>
               </div>
             ) : redemptions.length === 0 ? (
-              <p className="py-2 text-xs text-stone-400">暂无兑换记录</p>
+              <p className="py-2 text-xs text-muted-foreground/80">暂无兑换记录</p>
             ) : (
               renderRedemptionList(previewRedemptions, "main")
             )}
@@ -994,20 +994,20 @@ export function PointsMallPanel({
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <h4 className="text-lg font-medium text-stone-800">兑换详情</h4>
+                  <h4 className="text-lg font-medium text-foreground">兑换详情</h4>
                   <button
                     type="button"
                     onClick={() => setView(detailFrom)}
-                    className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white/40 px-3 py-1.5 text-xs text-stone-600 transition-colors hover:border-stone-300 hover:bg-white/70 hover:text-stone-900"
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card/40 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-input hover:bg-card/70 hover:text-foreground"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
                     返回
                   </button>
                 </div>
 
-                <div className="mt-4 rounded-xl border border-stone-200/60 bg-white/40 p-5">
+                <div className="mt-4 rounded-xl border border-border/60 bg-card/40 p-5">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="text-lg font-medium text-stone-800">
+                    <p className="text-lg font-medium text-foreground">
                       {selectedRedemption.productName}
                     </p>
                     {(() => {
@@ -1023,27 +1023,27 @@ export function PointsMallPanel({
                     })()}
                   </div>
 
-                  <div className="mt-4 space-y-2.5 border-t border-stone-200/60 pt-4 text-xs">
+                  <div className="mt-4 space-y-2.5 border-t border-border/60 pt-4 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-stone-400">消耗积分</span>
-                      <span className="font-medium text-stone-700">
+                      <span className="text-muted-foreground/80">消耗积分</span>
+                      <span className="font-medium text-foreground">
                         {selectedRedemption.points.toLocaleString()} 积分
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-stone-400">参考价格</span>
-                      <span className="text-stone-700">
+                      <span className="text-muted-foreground/80">参考价格</span>
+                      <span className="text-foreground">
                         ¥{selectedRedemption.priceYuan.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-stone-400">兑换时间</span>
-                      <span className="text-stone-700">{formatDate(selectedRedemption.createdAt)}</span>
+                      <span className="text-muted-foreground/80">兑换时间</span>
+                      <span className="text-foreground">{formatDate(selectedRedemption.createdAt)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-stone-400">发货状态</span>
+                      <span className="text-muted-foreground/80">发货状态</span>
                       {selectedRedemption.status === "FULFILLED" ? (
-                        <span className="text-brand-charcoal">
+                        <span className="text-foreground">
                           已发货
                           {selectedRedemption.fulfilledAt
                             ? ` · ${formatDateTime(selectedRedemption.fulfilledAt)}`
@@ -1052,18 +1052,18 @@ export function PointsMallPanel({
                       ) : selectedRedemption.status === "PENDING" ? (
                         <span className="text-amber-600">待发货</span>
                       ) : (
-                        <span className="text-stone-400">已取消</span>
+                        <span className="text-muted-foreground/80">已取消</span>
                       )}
                     </div>
                     {selectedRedemption.address && (
                       <div className="flex items-start justify-between gap-4">
-                        <span className="shrink-0 text-stone-400">收货信息</span>
-                        <span className="text-right text-stone-700">
+                        <span className="shrink-0 text-muted-foreground/80">收货信息</span>
+                        <span className="text-right text-foreground">
                           {selectedRedemption.recipient}
                           {selectedRedemption.phone && (
-                            <span className="ml-2 text-stone-400">{selectedRedemption.phone}</span>
+                            <span className="ml-2 text-muted-foreground/80">{selectedRedemption.phone}</span>
                           )}
-                          <span className="mt-0.5 block text-stone-500">
+                          <span className="mt-0.5 block text-muted-foreground">
                             {selectedRedemption.address}
                           </span>
                         </span>
@@ -1072,20 +1072,20 @@ export function PointsMallPanel({
 
                     {/* 物流轨迹（有运单号时查询丰桥轨迹） */}
                     {selectedRedemption.waybillNo && (
-                      <div className="border-t border-stone-200/60 pt-4">
-                        <p className="mb-3 flex items-center gap-2 text-xs font-medium tracking-wide text-stone-500">
+                      <div className="border-t border-border/60 pt-4">
+                        <p className="mb-3 flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground">
                           物流轨迹
-                          <span className="font-normal text-stone-400">
+                          <span className="font-normal text-muted-foreground/80">
                             {selectedRedemption.carrier === "SF" ? "顺丰速运" : "快递"} ·{" "}
                             {selectedRedemption.waybillNo}
                           </span>
                           <button
                             type="button"
                             onClick={() => void copyWaybill()}
-                            className="inline-flex items-center gap-0.5 rounded-full border border-stone-200 px-2 py-0.5 text-[10px] text-stone-500 transition-colors hover:border-stone-300 hover:text-stone-800"
+                            className="inline-flex items-center gap-0.5 rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:border-input hover:text-foreground"
                           >
                             {copiedWaybill ? (
-                              <Check className="h-3 w-3 text-brand-charcoal" />
+                              <Check className="h-3 w-3 text-foreground" />
                             ) : (
                               <Copy className="h-3 w-3" />
                             )}
@@ -1094,7 +1094,7 @@ export function PointsMallPanel({
                         </p>
 
                         {trackingLoading ? (
-                          <div className="flex items-center gap-1.5 py-3 text-xs text-stone-400">
+                          <div className="flex items-center gap-1.5 py-3 text-xs text-muted-foreground/80">
                             <Loader2 className="h-3.5 w-3.5 animate-spin" /> 轨迹查询中...
                           </div>
                         ) : tracking && tracking.supported && tracking.routes && tracking.routes.length > 0 ? (
@@ -1102,18 +1102,18 @@ export function PointsMallPanel({
                             {[...tracking.routes].reverse().map((r, i) => (
                               <div key={i} className="relative flex gap-3 pb-4 last:pb-0">
                                 {i < tracking.routes!.length - 1 && (
-                                  <span className="absolute left-[5px] top-4 h-full w-px bg-stone-200" />
+                                  <span className="absolute left-[5px] top-4 h-full w-px bg-muted" />
                                 )}
                                 <span
                                   className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
-                                    i === 0 ? "bg-brand-charcoal" : "bg-stone-300"
+                                    i === 0 ? "bg-brand-charcoal" : "bg-muted-foreground/30"
                                   }`}
                                 />
                                 <div className="min-w-0">
-                                  <p className="text-xs leading-relaxed text-stone-700">
+                                  <p className="text-xs leading-relaxed text-foreground">
                                     {r.description}
                                   </p>
-                                  <p className="mt-0.5 text-[11px] text-stone-400">
+                                  <p className="mt-0.5 text-[11px] text-muted-foreground/80">
                                     {r.location ? `${r.location} · ` : ""}
                                     {formatDateTime(r.time)}
                                   </p>
@@ -1123,22 +1123,22 @@ export function PointsMallPanel({
                           </div>
                         ) : tracking && tracking.error ? (
                           <div className="flex items-center gap-3 py-2">
-                            <p className="text-xs text-stone-400">{tracking.error}</p>
+                            <p className="text-xs text-muted-foreground/80">{tracking.error}</p>
                             <button
                               type="button"
                               onClick={() => void loadTracking(selectedRedemption.id)}
-                              className="text-xs text-brand-charcoal transition-opacity hover:opacity-70"
+                              className="text-xs text-foreground transition-opacity hover:opacity-70"
                             >
                               重试
                             </button>
                           </div>
                         ) : (
                           <div className="flex items-center gap-3 py-2">
-                            <p className="text-xs text-stone-400">物流轨迹暂不可用</p>
+                            <p className="text-xs text-muted-foreground/80">物流轨迹暂不可用</p>
                             <button
                               type="button"
                               onClick={() => void loadTracking(selectedRedemption.id)}
-                              className="text-xs text-brand-charcoal transition-opacity hover:opacity-70"
+                              className="text-xs text-foreground transition-opacity hover:opacity-70"
                             >
                               重新查询
                             </button>
@@ -1159,10 +1159,10 @@ export function PointsMallPanel({
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-lg font-medium text-stone-800">
+                <h4 className="text-lg font-medium text-foreground">
                   我的兑换记录
                   {redemptionTotal > 0 && (
-                    <span className="ml-1.5 text-sm font-normal text-stone-400">
+                    <span className="ml-1.5 text-sm font-normal text-muted-foreground/80">
                       （{redemptionTotal}）
                     </span>
                   )}
@@ -1170,31 +1170,31 @@ export function PointsMallPanel({
                 <button
                   type="button"
                   onClick={() => setView("main")}
-                  className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white/40 px-3 py-1.5 text-xs text-stone-600 transition-colors hover:border-stone-300 hover:bg-white/70 hover:text-stone-900"
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-card/40 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-input hover:bg-card/70 hover:text-foreground"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                   返回
                 </button>
               </div>
 
-              <div className="mt-4 rounded-xl border border-stone-200/60 bg-white/40 p-5">
+              <div className="mt-4 rounded-xl border border-border/60 bg-card/40 p-5">
                 {redemptionsLoading && redemptions.length === 0 ? (
-                  <div className="flex items-center justify-center gap-1.5 py-6 text-xs text-stone-400">
+                  <div className="flex items-center justify-center gap-1.5 py-6 text-xs text-muted-foreground/80">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" /> 记录加载中...
                   </div>
                 ) : redemptionsError && redemptions.length === 0 ? (
-                  <div className="flex items-center justify-center gap-2 py-6 text-xs text-stone-400">
+                  <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground/80">
                     记录加载失败
                     <button
                       type="button"
                       onClick={() => void loadRedemptions()}
-                      className="text-brand-charcoal transition-opacity hover:opacity-70"
+                      className="text-foreground transition-opacity hover:opacity-70"
                     >
                       重试
                     </button>
                   </div>
                 ) : redemptions.length === 0 ? (
-                  <p className="py-6 text-center text-xs text-stone-400">暂无兑换记录</p>
+                  <p className="py-6 text-center text-xs text-muted-foreground/80">暂无兑换记录</p>
                 ) : (
                   <>
                     {renderRedemptionList(redemptions, "records")}
@@ -1203,18 +1203,18 @@ export function PointsMallPanel({
                       <button
                         type="button"
                         onClick={() => void loadMoreRedemptions()}
-                        className="mt-3 w-full rounded-full border border-stone-200 py-2 text-xs text-stone-500 transition-colors hover:border-stone-300 hover:text-stone-800 active:opacity-70"
+                        className="mt-3 w-full rounded-full border border-border py-2 text-xs text-muted-foreground transition-colors hover:border-input hover:text-foreground active:opacity-70"
                       >
                         加载更多
                       </button>
                     )}
                     {loadingMoreRedemptions && (
-                      <div className="flex items-center justify-center gap-1.5 py-3 text-xs text-stone-400">
+                      <div className="flex items-center justify-center gap-1.5 py-3 text-xs text-muted-foreground/80">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" /> 加载中...
                       </div>
                     )}
                     {!hasMoreRedemptions && (
-                      <p className="pt-3 text-center text-[11px] text-stone-300">已加载全部记录</p>
+                      <p className="pt-3 text-center text-[11px] text-muted-foreground/60">已加载全部记录</p>
                     )}
                   </>
                 )}
@@ -1230,7 +1230,7 @@ export function PointsMallPanel({
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <h4 className="text-lg font-medium text-stone-800">确认兑换</h4>
+                  <h4 className="text-lg font-medium text-foreground">确认兑换</h4>
                   <button
                     type="button"
                     onClick={() => {
@@ -1240,7 +1240,7 @@ export function PointsMallPanel({
                       setView("main");
                     }}
                     disabled={redeeming || creatingAddress}
-                    className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white/40 px-3 py-1.5 text-xs text-stone-600 transition-colors hover:border-stone-300 hover:bg-white/70 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card/40 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-input hover:bg-card/70 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
                     返回
@@ -1248,26 +1248,26 @@ export function PointsMallPanel({
                 </div>
 
                 {/* 礼品信息卡 */}
-                <div className="mt-4 flex items-center gap-3 rounded-xl border border-stone-200/60 bg-white/60 p-4">
+                <div className="mt-4 flex items-center gap-3 rounded-xl border border-border/60 bg-card/60 p-4">
                   {confirmGift.image && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={confirmGift.image}
                       alt=""
-                      className="h-12 w-12 shrink-0 rounded-lg border border-stone-200/60 object-cover"
+                      className="h-12 w-12 shrink-0 rounded-lg border border-border/60 object-cover"
                     />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-stone-800">
+                    <p className="truncate text-sm font-medium text-foreground">
                       {confirmGift.name}
                     </p>
-                    <p className="mt-0.5 text-xs text-stone-500">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       消耗{" "}
-                      <span className="font-medium text-brand-charcoal">
+                      <span className="font-medium text-foreground">
                         {confirmGift.cost?.toLocaleString()}
                       </span>{" "}
                       积分
-                      <span className="mx-1.5 text-stone-300">·</span>
+                      <span className="mx-1.5 text-muted-foreground/60">·</span>
                       参考价 ¥{confirmGift.priceYuan.toLocaleString()}
                     </p>
                   </div>
@@ -1275,25 +1275,25 @@ export function PointsMallPanel({
 
                 {/* 收货地址 */}
                 <div className="mt-4">
-                  <p className="flex items-center gap-1.5 text-xs font-medium text-stone-600">
-                    <MapPin className="h-3.5 w-3.5 text-brand-charcoal" />
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 text-foreground" />
                     收货地址
-                    <span className="font-normal text-stone-400">
+                    <span className="font-normal text-muted-foreground/80">
                       （礼品将寄送至所选地址）
                     </span>
                   </p>
 
                   {addressesLoading ? (
-                    <div className="flex items-center gap-1.5 py-4 text-xs text-stone-400">
+                    <div className="flex items-center gap-1.5 py-4 text-xs text-muted-foreground/80">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" /> 地址加载中...
                     </div>
                   ) : addressesError ? (
-                    <div className="flex items-center justify-between gap-3 border-b border-stone-100 py-3">
-                      <p className="text-xs text-stone-400">地址加载失败，请重试</p>
+                    <div className="flex items-center justify-between gap-3 border-b border-border py-3">
+                      <p className="text-xs text-muted-foreground/80">地址加载失败，请重试</p>
                       <button
                         type="button"
                         onClick={() => void loadAddresses()}
-                        className="text-xs text-brand-charcoal underline underline-offset-2"
+                        className="text-xs text-foreground underline underline-offset-2"
                       >
                         重试
                       </button>
@@ -1308,7 +1308,7 @@ export function PointsMallPanel({
                             className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-4 transition-colors ${
                               isSelected
                                 ? "border-brand-charcoal bg-brand-charcoal/5"
-                                : "border-stone-200 hover:border-stone-300"
+                                : "border-border hover:border-input"
                             }`}
                           >
                             <input
@@ -1316,21 +1316,21 @@ export function PointsMallPanel({
                               name="redeem-address"
                               checked={isSelected}
                               onChange={() => setSelectedAddressId(a.id)}
-                              className="mt-0.5 h-3.5 w-3.5 accent-brand-charcoal"
+                              className="mt-0.5 h-3.5 w-3.5 accent-primary"
                             />
                             <div className="min-w-0">
-                              <p className="text-xs font-medium text-stone-800">
+                              <p className="text-xs font-medium text-foreground">
                                 {a.recipient}
-                                <span className="ml-2 font-normal text-stone-400">
+                                <span className="ml-2 font-normal text-muted-foreground/80">
                                   {a.phone}
                                 </span>
                                 {a.isDefault && (
-                                  <span className="ml-2 rounded-full bg-brand-charcoal/10 px-1.5 py-0.5 text-[10px] text-brand-charcoal">
+                                  <span className="ml-2 rounded-full bg-brand-charcoal/10 px-1.5 py-0.5 text-[10px] text-foreground">
                                     默认
                                   </span>
                                 )}
                               </p>
-                              <p className="mt-0.5 text-xs leading-relaxed text-stone-500">
+                              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                                 {a.region} {a.detail}
                               </p>
                             </div>
@@ -1339,7 +1339,7 @@ export function PointsMallPanel({
                       })}
                     </div>
                   ) : showNewAddress ? null : (
-                    <p className="mt-2 py-2 text-xs text-stone-400">
+                    <p className="mt-2 py-2 text-xs text-muted-foreground/80">
                       暂无收货地址，请先填写寄送地址
                     </p>
                   )}
@@ -1350,7 +1350,7 @@ export function PointsMallPanel({
                     onClick={() => setShowNewAddress((v) => !v)}
                     aria-expanded={showNewAddress}
                     aria-controls="new-redeem-address"
-                    className="mt-2 flex items-center gap-1 py-1 text-xs text-brand-charcoal transition-colors hover:opacity-70 active:opacity-60"
+                    className="mt-2 flex items-center gap-1 py-1 text-xs text-foreground transition-colors hover:opacity-70 active:opacity-60"
                   >
                     {showNewAddress ? (
                       <>
@@ -1367,7 +1367,7 @@ export function PointsMallPanel({
                   {showNewAddress && (
                     <div
                       id="new-redeem-address"
-                      className="mt-2 space-y-3 rounded-xl border border-stone-200 bg-white/50 p-4"
+                      className="mt-2 space-y-3 rounded-xl border border-border bg-card/50 p-4"
                     >
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <input
@@ -1376,7 +1376,7 @@ export function PointsMallPanel({
                           value={newRecipient}
                           onChange={(e) => setNewRecipient(e.target.value)}
                           placeholder="收货人姓名"
-                          className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
+                          className="w-full rounded-xl border border-border bg-card/70 px-3 py-2.5 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-brand-charcoal md:text-sm"
                         />
                         <input
                           type="text"
@@ -1385,7 +1385,7 @@ export function PointsMallPanel({
                           value={newPhone}
                           onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ""))}
                           placeholder="收货手机号"
-                          className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
+                          className="w-full rounded-xl border border-border bg-card/70 px-3 py-2.5 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-brand-charcoal md:text-sm"
                         />
                       </div>
                       <input
@@ -1394,7 +1394,7 @@ export function PointsMallPanel({
                         value={newRegion}
                         onChange={(e) => setNewRegion(e.target.value)}
                         placeholder="省市区（如：上海市 浦东新区）"
-                        className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
+                        className="w-full rounded-xl border border-border bg-card/70 px-3 py-2.5 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-brand-charcoal md:text-sm"
                       />
                       <input
                         type="text"
@@ -1402,7 +1402,7 @@ export function PointsMallPanel({
                         value={newDetail}
                         onChange={(e) => setNewDetail(e.target.value)}
                         placeholder="详细地址（街道、门牌号等）"
-                        className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
+                        className="w-full rounded-xl border border-border bg-card/70 px-3 py-2.5 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-brand-charcoal md:text-sm"
                       />
                     </div>
                   )}
@@ -1446,15 +1446,15 @@ export function PointsMallPanel({
         actionArea={
           detailGift ? (
             <div>
-              <div className="mb-4 text-[15px] font-semibold text-brand-charcoal">积分兑换</div>
+              <div className="mb-4 text-[15px] font-semibold text-foreground">积分兑换</div>
               <div className="flex items-baseline justify-between gap-3">
                 <p className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-light leading-none text-brand-charcoal">
+                  <span className="text-3xl font-light leading-none text-foreground">
                     {detailGift.cost?.toLocaleString()}
                   </span>
-                  <span className="text-xs text-brand-charcoal/50">积分</span>
+                  <span className="text-xs text-muted-foreground">积分</span>
                 </p>
-                <span className="shrink-0 text-xs text-brand-charcoal/40">
+                <span className="shrink-0 text-xs text-muted-foreground/80">
                   参考价 ¥{detailGift.priceYuan.toLocaleString()}
                 </span>
               </div>
@@ -1466,11 +1466,11 @@ export function PointsMallPanel({
                   setDetailGift(null);
                   openRedeem(gift);
                 }}
-                className="mt-5 w-full rounded-full bg-brand-charcoal py-3 text-[13px] tracking-[0.06em] text-white transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:bg-brand-charcoal/10 disabled:text-brand-charcoal/40"
+                className="mt-5 w-full rounded-full bg-brand-charcoal py-3 text-[13px] tracking-[0.06em] text-white transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:bg-brand-charcoal/10 disabled:text-muted-foreground/80"
               >
                 {detailGift.affordable ? "立即兑换" : "积分不足"}
               </button>
-              <p className="mt-3 text-center text-[11px] leading-relaxed text-brand-charcoal/40">
+              <p className="mt-3 text-center text-[11px] leading-relaxed text-muted-foreground/80">
                 兑换后可在「我的兑换记录」中查看发货进度
               </p>
             </div>

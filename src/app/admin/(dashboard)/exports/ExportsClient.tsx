@@ -134,7 +134,7 @@ export function ExportsClient({ role }: { role: string }) {
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <h2 className="text-sm font-semibold text-brand-charcoal">
+                                        <h2 className="text-sm font-semibold text-foreground">
                                             {item.title}
                                         </h2>
                                         {item.requiresSuper && (
@@ -152,19 +152,19 @@ export function ExportsClient({ role }: { role: string }) {
                                             </Badge>
                                         )}
                                     </div>
-                                    <p className="mt-1 text-xs leading-relaxed text-brand-charcoal/65">
+                                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                                         {item.description}
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-brand-charcoal/10 pt-3">
+                            <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border/80 pt-3">
                                 <div className="flex flex-col gap-1">
-                                    <span className="text-xs text-brand-charcoal/55">
+                                    <span className="text-xs text-muted-foreground">
                                         {item.limit}
                                     </span>
                                     {item.note && (
-                                        <span className="text-[11px] text-brand-charcoal/50">
+                                        <span className="text-[11px] text-muted-foreground">
                                             {item.note}
                                         </span>
                                     )}
@@ -191,7 +191,7 @@ export function ExportsClient({ role }: { role: string }) {
                 })}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/[0.02] px-4 py-3 text-sm text-brand-charcoal/70">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/80 bg-brand-charcoal/[0.02] px-4 py-3 text-sm text-foreground/75">
                 <span>需要按筛选条件导出审计日志？</span>
                 <Link
                     href="/admin/audit-logs"

@@ -5,22 +5,27 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const badgeVariants = cva(
-    "inline-flex items-center rounded-full font-medium",
+    "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] [&>svg]:pointer-events-none [&>svg]:size-3",
     {
         variants: {
             variant: {
-                default: "bg-brand-charcoal/8 text-brand-charcoal/80",
-                primary: "bg-primary/10 text-primary",
-                secondary: "bg-brand-charcoal/8 text-brand-charcoal/70",
-                success: "bg-state-great/10 text-state-great",
-                warning: "bg-brand-ember/10 text-brand-ember",
-                danger: "bg-brand-danger/10 text-brand-danger",
-                outline:
-                    "border border-brand-charcoal/20 bg-transparent text-brand-charcoal/80",
+                default: "border-primary/15 bg-primary/10 text-primary",
+                primary: "border-primary/15 bg-primary/10 text-primary",
+                secondary:
+                    "border-border/80 bg-secondary text-secondary-foreground",
+                destructive:
+                    "border-destructive/20 bg-destructive/10 text-destructive",
+                danger:
+                    "border-destructive/20 bg-destructive/10 text-destructive",
+                success:
+                    "border-state-great/20 bg-state-great/10 text-state-great",
+                warning:
+                    "border-brand-ember/20 bg-brand-ember/10 text-brand-ember",
+                outline: "border-border/80 text-muted-foreground",
             },
             size: {
-                sm: "px-2.5 py-0.5 text-xs",
-                md: "px-2.5 py-1 text-sm",
+                sm: "",
+                md: "px-2.5 py-0.5 text-xs",
             },
         },
         defaultVariants: {
@@ -36,7 +41,7 @@ interface BadgeProps extends VariantProps<typeof badgeVariants> {
 }
 
 /**
- * 状态徽章组件（shadcn/ui Badge 规范实现，保持原 API）
+ * shadcn/ui Badge 规范实现
  */
 export function Badge({
     children,
@@ -67,10 +72,10 @@ export function DotBadge({
     className?: string;
 }) {
     const dotColors = {
-        gray: "bg-brand-charcoal/40",
+        gray: "bg-muted-foreground",
         green: "bg-state-great",
         yellow: "bg-brand-ember",
-        red: "bg-brand-danger",
+        red: "bg-destructive",
         primary: "bg-primary",
     };
 

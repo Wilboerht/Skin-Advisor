@@ -48,12 +48,12 @@ function AdminLoginForm() {
     const error = ssoErrorMessage(searchParams.get("error"));
 
     return (
-        <div className="flex min-h-dvh flex-col bg-white">
+        <div className="flex min-h-dvh flex-col bg-card">
             <main className="flex flex-1 items-center justify-center px-4 py-8">
                 <div className="flex w-full max-w-sm flex-col gap-6">
                     <div className="flex flex-col items-center gap-3 text-center">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/[0.04]">
-                            <Lock className="h-5 w-5 text-brand-charcoal/65" />
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-border/80 bg-brand-charcoal/[0.04]">
+                            <Lock className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div className="flex flex-col items-center gap-2">
                             <Image
@@ -64,10 +64,10 @@ function AdminLoginForm() {
                                 className="h-6 w-auto"
                                 priority
                             />
-                            <h1 className="text-xl font-semibold tracking-tight text-brand-charcoal">
+                            <h1 className="text-xl font-semibold tracking-tight text-foreground">
                                 管理后台
                             </h1>
-                            <p className="text-sm text-brand-charcoal/65">
+                            <p className="text-sm text-muted-foreground">
                                 使用主站管理员账号登录
                             </p>
                         </div>
@@ -83,7 +83,7 @@ function AdminLoginForm() {
                         </div>
                     )}
 
-                    <div className="flex flex-col gap-4 rounded-2xl border border-brand-charcoal/10 bg-white p-6">
+                    <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-card p-6">
                         <Button
                             className="w-full"
                             leftIcon={<LogIn className="h-4 w-4" />}
@@ -101,15 +101,15 @@ function AdminLoginForm() {
                         >
                             使用 NIHPLOD 管理员账号登录
                         </Button>
-                        <p className="text-center text-xs leading-relaxed text-brand-charcoal/65">
+                        <p className="text-center text-xs leading-relaxed text-muted-foreground">
                             管理员账号、密码和二次验证统一由主站管理。
                         </p>
                     </div>
 
-                    <div className="flex items-center justify-center gap-2 text-xs text-brand-charcoal/65">
+                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                         <Link
                             href="/"
-                            className="transition-colors hover:text-brand-charcoal"
+                            className="transition-colors hover:text-foreground"
                         >
                             返回官网
                         </Link>
@@ -118,7 +118,7 @@ function AdminLoginForm() {
             </main>
 
             <footer className="flex flex-col items-center gap-1 px-6 pb-6">
-                <p className="text-[11px] font-light tracking-widest text-brand-charcoal/65">
+                <p className="text-[11px] font-light tracking-widest text-muted-foreground">
                     © {new Date().getFullYear()} NIHPLOD All Rights Reserved.
                 </p>
             </footer>
@@ -130,7 +130,7 @@ export default function AdminLoginPage() {
     return (
         <Suspense
             fallback={
-                <div className="flex min-h-dvh items-center justify-center text-sm text-brand-charcoal/65">
+                <div className="flex min-h-dvh items-center justify-center text-sm text-muted-foreground">
                     加载中...
                 </div>
             }

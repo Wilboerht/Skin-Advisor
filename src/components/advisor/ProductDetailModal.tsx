@@ -14,6 +14,7 @@ import { sanitizeHtml } from "@/lib/html-sanitize";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useModalBackClose } from "@/hooks/use-modal-back-close";
+import { MODAL_RADIUS } from "@/components/ui/modal-styles";
 
 interface ProductDetailModalProps {
     isOpen: boolean;
@@ -129,7 +130,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.35 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-black/55 backdrop-blur-sm"
+                        className="absolute inset-0 bg-brand-charcoal/25 backdrop-blur-sm"
                     />
 
                     {/* Modal Card */}
@@ -143,14 +144,17 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.96, y: -12 }}
                         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative flex max-h-[85vh] w-full max-w-[1080px] flex-col overflow-hidden rounded-[22px] bg-[#FAF6F0] shadow-2xl lg:h-[680px] lg:max-h-[720px] lg:flex-row"
+                        className={cn(
+                            "relative flex max-h-[85vh] w-full max-w-[1080px] flex-col overflow-hidden bg-dialog text-dialog-foreground shadow-dialog lg:h-[680px] lg:max-h-[720px] lg:flex-row",
+                            MODAL_RADIUS,
+                        )}
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Close Button */}
                         <button
                             type="button"
                             onClick={onClose}
-                            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[#3d2f25] shadow-sm transition-all hover:bg-white hover:scale-105 lg:right-5 lg:top-5"
+                            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-card/90 text-[#3d2f25] shadow-sm transition-all hover:bg-card hover:scale-105 lg:right-5 lg:top-5"
                             aria-label="关闭"
                         >
                             <X className="w-4 h-4" />
@@ -189,7 +193,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                             <button
                                                 type="button"
                                                 onClick={goToPrev}
-                                                className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-[#3d2f25] shadow-sm hover:bg-white hover:scale-105 transition-all"
+                                                className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-card/80 text-[#3d2f25] shadow-sm hover:bg-card hover:scale-105 transition-all"
                                                 aria-label="上一张"
                                             >
                                                 <ChevronLeft className="w-4 h-4" />
@@ -197,7 +201,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                             <button
                                                 type="button"
                                                 onClick={goToNext}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-[#3d2f25] shadow-sm hover:bg-white hover:scale-105 transition-all"
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-card/80 text-[#3d2f25] shadow-sm hover:bg-card hover:scale-105 transition-all"
                                                 aria-label="下一张"
                                             >
                                                 <ChevronRight className="w-4 h-4" />
@@ -215,8 +219,8 @@ export function ProductDetailModal({ isOpen, onClose, product, onPurchaseClick }
                                                     className={cn(
                                                         "w-2 h-2 rounded-full transition-all",
                                                         idx === activeImageIndex
-                                                            ? "bg-white shadow-sm w-5"
-                                                            : "bg-white/50 hover:bg-white/70"
+                                                            ? "bg-card shadow-sm w-5"
+                                                            : "bg-card/50 hover:bg-card/70"
                                                     )}
                                                     aria-label={`查看第 ${idx + 1} 张图`}
                                                 />

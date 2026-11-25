@@ -26,7 +26,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                 {label && (
                     <Label
                         htmlFor={textareaId}
-                        className="mb-1 text-sm font-medium text-brand-charcoal/80"
+                        className="mb-1 text-sm font-medium text-foreground/80"
                     >
                         {label}
                         {required && (
@@ -47,11 +47,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                     aria-invalid={error ? true : undefined}
                     aria-describedby={describedBy}
                     className={cn(
-                        "flex min-h-16 w-full rounded-lg border border-input bg-white px-4 py-2.5 text-base text-brand-charcoal shadow-xs transition-[color,box-shadow] outline-none",
-                        "placeholder:text-muted-foreground",
-                        "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                        "flex min-h-16 w-full rounded-md border border-input bg-card/60 px-3 py-2 text-base text-foreground shadow-[inset_0_1px_2px_rgba(61,47,37,0.04)] transition-[color,box-shadow,border-color] outline-none",
+                        "placeholder:text-muted-foreground/60 selection:bg-primary selection:text-primary-foreground",
+                        "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30",
                         "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
-                        "disabled:cursor-not-allowed disabled:bg-brand-charcoal/[0.03] disabled:opacity-50 md:text-sm",
+                        "disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
                         className,
                     )}
                     {...props}

@@ -21,7 +21,7 @@ function Section({
 }) {
     if (items.length === 0) return null;
     return (
-        <div className="rounded-xl border border-[var(--color-brand-espresso)]/10 bg-white/65 p-4">
+        <div className="rounded-xl border border-[var(--color-brand-espresso)]/10 bg-card/65 p-4">
             <p className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-brand-espresso)]">
                 {icon}
                 {title}

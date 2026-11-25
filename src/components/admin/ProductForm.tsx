@@ -56,21 +56,21 @@ function TagInput({
 
     return (
         <div>
-            <label className="block text-sm font-medium text-brand-charcoal/70 mb-2">
+            <label className="block text-sm font-medium text-foreground/75 mb-2">
                 {label}
                 {required && <span className="text-red-500 ml-1">*</span>}
             </label>
-            <div className="flex flex-wrap gap-2 min-h-[42px] p-2 rounded-lg border border-brand-charcoal/10 bg-white focus-within:border-brand-primary focus-within:ring-1 focus-within:ring-brand-primary/20 transition-all">
+            <div className="flex flex-wrap gap-2 min-h-[42px] p-2 rounded-lg border border-border/80 bg-card focus-within:border-brand-primary focus-within:ring-1 focus-within:ring-brand-primary/20 transition-all">
                 {values.map((tag, i) => (
                     <span
                         key={i}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-charcoal/[0.03] text-sm font-medium text-brand-charcoal"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-charcoal/[0.03] text-sm font-medium text-foreground"
                     >
                         {tag}
                         <button
                             type="button"
                             onClick={() => removeTag(i)}
-                            className="min-w-[28px] min-h-[28px] flex items-center justify-center text-brand-charcoal/55 hover:text-red-500 transition-colors"
+                            className="min-w-[28px] min-h-[28px] flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors"
                             aria-label={`删除 ${tag}`}
                         >
                             <X className="h-3 w-3" />
@@ -92,7 +92,7 @@ function TagInput({
                                 addTag();
                             }
                         }}
-                        className="w-full text-sm text-brand-charcoal placeholder:text-brand-charcoal/55 outline-none bg-transparent py-1"
+                        className="w-full text-sm text-foreground placeholder:text-muted-foreground outline-none bg-transparent py-1"
                         placeholder={values.length === 0 ? placeholder : ""}
                         aria-invalid={!!error}
                     />
@@ -100,7 +100,7 @@ function TagInput({
                         <button
                             type="button"
                             onClick={addTag}
-                            className="text-xs px-2 py-1 rounded-md bg-brand-charcoal/[0.03] text-brand-charcoal/65 hover:bg-brand-charcoal/[0.06] transition-colors"
+                            className="text-xs px-2 py-1 rounded-md bg-brand-charcoal/[0.03] text-muted-foreground hover:bg-brand-charcoal/[0.06] transition-colors"
                         >
                             添加
                         </button>
@@ -147,18 +147,18 @@ function Toggle({
                 >
                     <div
                         className={cn(
-                            "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200",
+                            "absolute top-0.5 left-0.5 w-5 h-5 bg-card rounded-full shadow-sm transition-transform duration-200",
                             checked ? "translate-x-5" : "translate-x-0",
                         )}
                     />
                 </div>
-                <span className="text-sm font-medium text-brand-charcoal/70">
+                <span className="text-sm font-medium text-foreground/75">
                     {label}
                 </span>
             </button>
             {tooltip && (
                 <div className="relative">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-brand-charcoal/10 text-[10px] font-bold text-brand-charcoal/65 cursor-help">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-brand-charcoal/10 text-[10px] font-bold text-muted-foreground cursor-help">
                         ?
                     </span>
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 bg-brand-charcoal text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
@@ -178,7 +178,7 @@ export type { ProductFormData };
 type FormErrors = Record<string, string>;
 
 const READ_ONLY_INPUT_CLASS =
-    "block w-full cursor-not-allowed rounded-lg border border-brand-charcoal/10 bg-brand-charcoal/[0.02] p-3 text-sm text-brand-charcoal/70 outline-none";
+    "block w-full cursor-not-allowed rounded-lg border border-border/80 bg-brand-charcoal/[0.02] p-3 text-sm text-foreground/75 outline-none";
 
 export default function ProductForm({
     initialData,
@@ -360,8 +360,8 @@ export default function ProductForm({
 
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="rounded-xl border border-brand-primary/15 bg-brand-primary/[0.04] px-4 py-3 text-sm text-brand-charcoal/75">
-                <div className="font-medium text-brand-charcoal">
+            <div className="rounded-xl border border-brand-primary/15 bg-brand-primary/[0.04] px-4 py-3 text-sm text-foreground/75">
+                <div className="font-medium text-foreground">
                     基础信息由主站同步；子站维护推荐属性
                 </div>
                 <p className="mt-1 leading-relaxed">
@@ -377,7 +377,7 @@ export default function ProductForm({
                         本地历史产品：基础信息已冻结，请由主站创建并同步后迁移/停用。
                     </p>
                 )}
-                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-brand-charcoal/55">
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                     {syncedAtLabel && <span>最近同步：{syncedAtLabel}</span>}
                     {mainEditUrl && !isMissing && (
                         <a
@@ -394,18 +394,18 @@ export default function ProductForm({
 
             <div className="space-y-5">
                 {/* ===== 基本信息（只读） ===== */}
-                <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
+                <section className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5">
                     <div className="mb-4">
-                        <h2 className="text-base font-medium text-brand-charcoal">
+                        <h2 className="text-base font-medium text-foreground">
                             基本信息
                         </h2>
-                        <p className="mt-1 text-sm text-brand-charcoal/65">
+                        <p className="mt-1 text-sm text-muted-foreground">
                             名称、分类、价格、产地、规格、描述、使用方法由主站维护
                         </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                            <label className="block text-sm font-medium text-foreground/75 mb-1.5">
                                 产品名称
                             </label>
                             <input
@@ -418,7 +418,7 @@ export default function ProductForm({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                            <label className="block text-sm font-medium text-foreground/75 mb-1.5">
                                 分类
                             </label>
                             <input
@@ -430,7 +430,7 @@ export default function ProductForm({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                            <label className="block text-sm font-medium text-foreground/75 mb-1.5">
                                 价格
                             </label>
                             <input
@@ -443,7 +443,7 @@ export default function ProductForm({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                            <label className="block text-sm font-medium text-foreground/75 mb-1.5">
                                 产地
                             </label>
                             <input
@@ -456,7 +456,7 @@ export default function ProductForm({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                            <label className="block text-sm font-medium text-foreground/75 mb-1.5">
                                 规格容量
                             </label>
                             <input
@@ -469,7 +469,7 @@ export default function ProductForm({
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                            <label className="block text-sm font-medium text-foreground/75 mb-1.5">
                                 产品状态
                             </label>
                             <div className="flex items-center gap-6 h-[46px]">
@@ -490,7 +490,7 @@ export default function ProductForm({
 
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                            <label className="block text-sm font-medium text-foreground/75 mb-1.5">
                                 产品描述
                             </label>
                             <textarea
@@ -505,7 +505,7 @@ export default function ProductForm({
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-brand-charcoal/70 mb-1.5">
+                            <label className="block text-sm font-medium text-foreground/75 mb-1.5">
                                 使用方法
                             </label>
                             <textarea
@@ -523,12 +523,12 @@ export default function ProductForm({
                 </section>
 
                 {/* ===== 产品图片（只读） ===== */}
-                <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
+                <section className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5">
                     <div className="mb-4">
-                        <h2 className="text-base font-medium text-brand-charcoal">
+                        <h2 className="text-base font-medium text-foreground">
                             产品图片
                         </h2>
-                        <p className="mt-1 text-sm text-brand-charcoal/65">
+                        <p className="mt-1 text-sm text-muted-foreground">
                             图片由主站维护，第 1 张为封面
                         </p>
                     </div>
@@ -541,7 +541,7 @@ export default function ProductForm({
                                         "relative aspect-square rounded-lg overflow-hidden border-2",
                                         index === 0
                                             ? "border-brand-primary"
-                                            : "border-brand-charcoal/10",
+                                            : "border-border/80",
                                     )}
                                 >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -559,19 +559,19 @@ export default function ProductForm({
                             ))}
                         </div>
                     ) : (
-                        <p className="text-sm text-brand-charcoal/45">
+                        <p className="text-sm text-muted-foreground/80">
                             主站暂未配置产品图片
                         </p>
                     )}
                 </section>
 
                 {/* ===== 成分与功效（子站维护） ===== */}
-                <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
+                <section className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5">
                     <div className="mb-4">
-                        <h2 className="text-base font-medium text-brand-charcoal">
+                        <h2 className="text-base font-medium text-foreground">
                             成分与功效
                         </h2>
-                        <p className="mt-1 text-sm text-brand-charcoal/65">
+                        <p className="mt-1 text-sm text-muted-foreground">
                             由子站维护核心成分、功效与不适用人群
                         </p>
                     </div>
@@ -608,17 +608,17 @@ export default function ProductForm({
                 </section>
 
                 {/* ===== 肤质与购买渠道 ===== */}
-                <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
+                <section className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5">
                     <div className="mb-4">
-                        <h2 className="text-base font-medium text-brand-charcoal">
+                        <h2 className="text-base font-medium text-foreground">
                             适用肤质与购买方式
                         </h2>
-                        <p className="mt-1 text-sm text-brand-charcoal/65">
+                        <p className="mt-1 text-sm text-muted-foreground">
                             子站维护适用肤质；购买链接由主站同步
                         </p>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-brand-charcoal/70 mb-3">
+                        <label className="block text-sm font-medium text-foreground/75 mb-3">
                             适用肤质
                         </label>
                         <div className="flex flex-wrap gap-2">
@@ -644,7 +644,7 @@ export default function ProductForm({
                                             "px-3.5 py-2 rounded-lg text-sm font-medium border transition-all",
                                             selected
                                                 ? "bg-brand-primary text-white border-brand-primary shadow-sm"
-                                                : "bg-white text-brand-charcoal/70 border-brand-charcoal/10 hover:border-brand-primary/60",
+                                                : "bg-card text-foreground/75 border-border/80 hover:border-brand-primary/60",
                                         )}
                                     >
                                         <span className="flex items-center gap-1.5">
@@ -661,15 +661,15 @@ export default function ProductForm({
 
                     <div className="mt-6">
                         <div className="mb-3">
-                            <label className="block text-sm font-medium text-brand-charcoal/70">
+                            <label className="block text-sm font-medium text-foreground/75">
                                 购买渠道
                             </label>
-                            <p className="text-xs text-brand-charcoal/55 mt-1">
+                            <p className="text-xs text-muted-foreground mt-1">
                                 购买链接由主站维护，子站不可修改。
                             </p>
                         </div>
                         {purchaseLinks.length === 0 ? (
-                            <p className="text-sm text-brand-charcoal/45">
+                            <p className="text-sm text-muted-foreground/80">
                                 主站暂未配置购买链接
                             </p>
                         ) : (
@@ -677,13 +677,13 @@ export default function ProductForm({
                                 {purchaseLinks.map((link) => (
                                     <div
                                         key={link.platformKey}
-                                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-brand-charcoal/10 bg-brand-charcoal/[0.02] px-3 py-2"
+                                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/80 bg-brand-charcoal/[0.02] px-3 py-2"
                                     >
-                                        <span className="text-sm font-medium text-brand-charcoal/70">
+                                        <span className="text-sm font-medium text-foreground/75">
                                             {link.platform}
                                         </span>
                                         <span
-                                            className="min-w-0 max-w-full truncate font-mono text-xs text-brand-charcoal/60"
+                                            className="min-w-0 max-w-full truncate font-mono text-xs text-muted-foreground"
                                             title={
                                                 link.url ||
                                                 link.miniProgramShortLink ||
@@ -703,18 +703,18 @@ export default function ProductForm({
                 </section>
 
                 {/* ===== 肤质推荐理由（子站维护） ===== */}
-                <section className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-5">
+                <section className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5">
                     <div className="mb-4">
-                        <h2 className="text-base font-medium text-brand-charcoal">
+                        <h2 className="text-base font-medium text-foreground">
                             推荐理由
                         </h2>
-                        <p className="mt-1 text-sm text-brand-charcoal/65">
+                        <p className="mt-1 text-sm text-muted-foreground">
                             为不同肤质配置推荐文案
                         </p>
                     </div>
-                    <label className="block text-sm font-medium text-brand-charcoal/70 mb-3">
+                    <label className="block text-sm font-medium text-foreground/75 mb-3">
                         肤质推荐理由
-                        <span className="text-xs text-brand-charcoal/55 font-normal ml-2">
+                        <span className="text-xs text-muted-foreground font-normal ml-2">
                             为不同肤质配置推荐文案，支持按季节精细化配置
                         </span>
                     </label>
@@ -768,7 +768,7 @@ export default function ProductForm({
                             return (
                                 <div
                                     key={opt.value}
-                                    className="rounded-lg border border-brand-charcoal/10 bg-white p-3"
+                                    className="rounded-lg border border-border/80 bg-card p-3"
                                 >
                                     <div className="flex items-start gap-3">
                                         <span
@@ -796,7 +796,7 @@ export default function ProductForm({
                                                     }
                                                 }}
                                                 placeholder={`为${opt.label}撰写推荐理由...`}
-                                                className="w-full rounded-lg border border-brand-charcoal/10 text-sm p-2 outline-none resize-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all bg-white placeholder:text-brand-charcoal/55"
+                                                className="w-full rounded-lg border border-border/80 text-sm p-2 outline-none resize-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all bg-card placeholder:text-muted-foreground"
                                             />
 
                                             <div className="flex items-center gap-2">
@@ -817,11 +817,11 @@ export default function ProductForm({
                                                             onClick={
                                                                 collapseToString
                                                             }
-                                                            className="text-xs text-brand-charcoal/65/60 hover:text-brand-charcoal/65 underline underline-offset-2"
+                                                            className="text-xs text-muted-foreground/60 hover:text-muted-foreground underline underline-offset-2"
                                                         >
                                                             - 收起季节配置
                                                         </button>
-                                                        <span className="text-[10px] text-brand-charcoal/55">
+                                                        <span className="text-[10px] text-muted-foreground">
                                                             留空则使用默认文案
                                                         </span>
                                                     </>
@@ -856,7 +856,7 @@ export default function ProductForm({
                                                             key={key}
                                                             className="flex flex-col gap-1"
                                                         >
-                                                            <span className="text-[10px] text-brand-charcoal/55">
+                                                            <span className="text-[10px] text-muted-foreground">
                                                                 {label}
                                                             </span>
                                                             <input
@@ -880,7 +880,7 @@ export default function ProductForm({
                                                                     );
                                                                 }}
                                                                 placeholder="可选"
-                                                                className="w-full rounded-md border border-brand-charcoal/10 text-xs p-1.5 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all bg-white placeholder:text-brand-charcoal/55"
+                                                                className="w-full rounded-md border border-border/80 text-xs p-1.5 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all bg-card placeholder:text-muted-foreground"
                                                             />
                                                         </div>
                                                     ))}
@@ -898,7 +898,7 @@ export default function ProductForm({
             <FormActions
                 sticky
                 start={
-                    <p className="text-xs text-brand-charcoal/55">
+                    <p className="text-xs text-muted-foreground">
                         基础信息只读，保存仅更新推荐属性
                     </p>
                 }

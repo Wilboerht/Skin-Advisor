@@ -131,7 +131,7 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
                 "inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12px] tracking-[0.04em] transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 focus-visible:ring-offset-2",
                 active
                   ? "border border-[var(--color-brand-cocoa)]/[0.3] bg-[var(--color-brand-cocoa)]/[0.06] text-[var(--color-brand-cocoa)] font-medium"
-                  : "border border-transparent text-brand-charcoal/70 font-light hover:text-brand-charcoal/75 hover:bg-brand-charcoal/[0.03]"
+                  : "border border-transparent text-foreground/75 font-light hover:text-foreground/75 hover:bg-brand-charcoal/[0.03]"
               )}
             >
               <Icon aria-hidden="true" className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
@@ -183,7 +183,7 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
                 <div
                   key={type.route}
                   aria-hidden={hidden}
-                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.12] bg-white p-4 md:p-5 text-left overflow-hidden hover:border-brand-espresso/[0.22] motion-reduce:transition-none"
+                  className="group absolute left-1/2 top-1/2 w-[280px] md:w-[500px] aspect-[16/10] rounded-2xl border border-brand-espresso/[0.12] bg-card p-4 md:p-5 text-left overflow-hidden hover:border-brand-espresso/[0.22] motion-reduce:transition-none"
                   style={{
                     transform,
                     opacity,
@@ -222,7 +222,7 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
                   {/* 侧卡失焦遮罩：常驻挂载（中央卡 opacity 0），随层级平滑淡入淡出，避免中途卸载造成的"闪变" */}
                   <span
                     aria-hidden="true"
-                    className="absolute inset-0 rounded-2xl bg-white pointer-events-none transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                    className="absolute inset-0 rounded-2xl bg-card pointer-events-none transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
                     style={{ opacity: isCenter ? 0 : veilOpacity }}
                   />
                 {/* 横向结构：左形象 40% + 右文字 60%（4:6）；relative 保证内容在水印之上 */}
@@ -240,20 +240,20 @@ export function SkinTypesClient({ types, hideTestCTA = false }: SkinTypesClientP
                     />
                   </div>
                   <div className="flex-[6_1_0%] min-w-0">
-                      <h2 className="text-lg md:text-xl font-serif font-light tracking-[0.02em] text-brand-charcoal inline-flex items-center gap-1.5">
-                        <Icon className="w-4 h-4 md:w-5 md:h-5 text-brand-charcoal/60 shrink-0" strokeWidth={1.5} />
+                      <h2 className="text-lg md:text-xl font-sans font-light tracking-[0.02em] text-foreground inline-flex items-center gap-1.5">
+                        <Icon className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground shrink-0" strokeWidth={1.5} />
                         {type.typeName}
                       </h2>
                       {/* 简介与入口常驻挂载，随聚焦状态淡入淡出：避免切换瞬间插入 DOM 导致图层重栅格化掉帧；
                           纵向节奏与移动端列表一致：名称→简介 8、简介行高 1.6 */}
                       <p
-                        className="mt-2 text-[12px] md:text-[13px] text-brand-charcoal/65 font-light leading-[1.6] line-clamp-2 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                        className="mt-2 text-[12px] md:text-[13px] text-muted-foreground font-light leading-[1.6] line-clamp-2 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
                         style={{ opacity: isCenter ? 1 : 0 }}
                       >
                         {type.m1.persona}
                       </p>
                       <div
-                        className="mt-3 inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                        className="mt-3 inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-muted-foreground transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
                         style={{ opacity: isCenter ? 1 : 0 }}
                       >
                         查看完整解读

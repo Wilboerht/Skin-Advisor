@@ -104,14 +104,24 @@ export function BottomDock() {
   const tabClass = (active: boolean) =>
     `group relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-[48px] min-h-[48px] rounded-2xl text-[11px] tracking-[0.02em] select-none touch-manipulation [-webkit-tap-highlight-color:transparent] transition duration-300 active:scale-[0.97] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/30 ${
       active
-        ? "text-brand-charcoal before:absolute before:inset-x-1.5 before:inset-y-1 before:rounded-2xl before:bg-brand-charcoal/[0.06] before:content-['']"
-        : "text-brand-charcoal/60 hover:text-brand-charcoal/90 active:text-brand-charcoal"
+        ? "text-foreground before:absolute before:inset-x-1.5 before:inset-y-1 before:rounded-2xl before:bg-brand-charcoal/[0.06] before:content-['']"
+        : "text-muted-foreground hover:text-foreground/90 active:text-foreground"
     }`;
 
   // 打开面板类 tab 对应的弹层（护肤档案 = 账户弹层的档案 tab）
+  const openAdvisorModal = () => {
+    if (!isInitialized) return;
+    if (!user) {
+      // 未登录统一走「我的」账户弹层的登录拦截视图，不展示顾问标题
+      openAccountModal("profile");
+      return;
+    }
+    setShowAdvisorModal(true);
+  };
+
   const openPanel = (panel: DockTab["panel"]) => {
     if (panel === "diary") openAccountModal("diary");
-    else if (panel === "advisor") setShowAdvisorModal(true);
+    else if (panel === "advisor") openAdvisorModal();
     else if (panel === "account") openAccountModal("profile");
   };
 

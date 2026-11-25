@@ -71,7 +71,7 @@ function ProductSectionSkeleton() {
                 {[0, 1, 2].map((i) => (
                     <div
                         key={i}
-                        className="w-full lg:flex-1 lg:min-w-[220px] lg:max-w-[290px] h-[380px] rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/[0.06] animate-pulse"
+                        className="w-full lg:flex-1 lg:min-w-[220px] lg:max-w-[290px] h-[380px] rounded-xl border border-border/80 bg-brand-charcoal/[0.06] animate-pulse"
                     />
                 ))}
             </div>
@@ -1175,16 +1175,16 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-brand-canvas-warm/80 backdrop-blur-sm" />
-                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
+                <div className="relative w-full max-w-lg bg-card/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">未授权访问</h3>
-                            <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em]">请从首页开始皮肤测评，完成问卷后即可查看您的分析报告。</p>
+                            <p className="text-[13px] text-foreground/75 font-light leading-[1.8] tracking-[0.06em]">请从首页开始皮肤测评，完成问卷后即可查看您的分析报告。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
                                 onClick={() => navPush("/")}
-                                className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                className="px-6 h-10 border border-brand-charcoal/60 text-foreground hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 返回首页
                             </button>
@@ -1204,11 +1204,11 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-brand-canvas-warm/80 backdrop-blur-sm" />
-                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
+                <div className="relative w-full max-w-lg bg-card/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">登录后查看报告</h3>
-                            <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em]">测肤报告与您的账户绑定，请登录后查看属于您的分析结果。</p>
+                            <p className="text-[13px] text-foreground/75 font-light leading-[1.8] tracking-[0.06em]">测肤报告与您的账户绑定，请登录后查看属于您的分析结果。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
@@ -1219,7 +1219,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             </button>
                             <button
                                 onClick={() => navPush("/")}
-                                className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                className="px-6 h-10 border border-brand-charcoal/60 text-foreground hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 返回首页
                             </button>
@@ -1280,13 +1280,13 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
             <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
 
-                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
+                <div className="relative w-full max-w-lg bg-card/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">
                                 {errorTitle}
                             </h3>
-                            <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em]">
+                            <p className="text-[13px] text-foreground/75 font-light leading-[1.8] tracking-[0.06em]">
                                 {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
                             </p>
                         </div>
@@ -1301,7 +1301,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     </button>
                                     <button
                                         onClick={() => navPush("/")}
-                                        className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 border border-brand-charcoal/60 text-foreground hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         返回首页
                                     </button>
@@ -1331,7 +1331,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     </button>
                                     <button
                                         onClick={() => navPush("/")}
-                                        className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 border border-brand-charcoal/60 text-foreground hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         返回首页
                                     </button>
@@ -1353,7 +1353,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             ) : isAccountDisabled || isNotFound ? (
                                 <button
                                     onClick={() => navPush("/")}
-                                    className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    className="px-6 h-10 border border-brand-charcoal/60 text-foreground hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                 >
                                     返回首页
                                 </button>
@@ -1374,7 +1374,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             ) : isQuotaError ? (
                                 <button
                                     onClick={() => navPush("/")}
-                                    className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    className="px-6 h-10 border border-brand-charcoal/60 text-foreground hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                 >
                                     返回首页
                                 </button>
@@ -1399,7 +1399,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     </button>
                                     <button
                                         onClick={() => navPush(errorRetryTarget)}
-                                        className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 border border-brand-charcoal/60 text-foreground hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         {errorRetryLabel}
                                     </button>
@@ -1418,16 +1418,16 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-brand-canvas-warm/80 backdrop-blur-sm" />
-                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
+                <div className="relative w-full max-w-lg bg-card/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
                             <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">报告暂时无法加载</h3>
-                            <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em]">请重新开始一次肌肤检测，获取您的专属分析报告。</p>
+                            <p className="text-[13px] text-foreground/75 font-light leading-[1.8] tracking-[0.06em]">请重新开始一次肌肤检测，获取您的专属分析报告。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
                                 onClick={() => navPush(errorRetryTarget)}
-                                className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                className="px-6 h-10 border border-brand-charcoal/60 text-foreground hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 {errorRetryLabel === "重新填写问卷" ? "重新测试" : errorRetryLabel}
                             </button>
@@ -1493,7 +1493,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                             <button
                                 onClick={() => navPush('/')}
                                 disabled={isNavigating}
-                                className="justify-self-start inline-flex items-center gap-1.5 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95 disabled:opacity-40"
+                                className="justify-self-start inline-flex items-center gap-1.5 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95 disabled:opacity-40"
                                 aria-label="回到首页"
                             >
                                 <House className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
@@ -1721,7 +1721,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                     const el = document.getElementById("action-plan");
                                     el?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
                                 }}
-                                className="fixed right-4 bottom-[calc(max(1.5rem,env(safe-area-inset-bottom))+3.5rem)] z-40 inline-flex h-10 items-center justify-center rounded-full border border-brand-espresso/10 bg-white/85 px-4 text-[12px] font-medium text-[var(--color-brand-cocoa)] backdrop-blur-md shadow-[0_6px_20px_rgba(61,47,37,0.14)] transition-all duration-200 hover:bg-[var(--color-brand-cocoa)] hover:text-white"
+                                className="fixed right-4 bottom-[calc(max(1.5rem,env(safe-area-inset-bottom))+3.5rem)] z-40 inline-flex h-10 items-center justify-center rounded-full border border-brand-espresso/10 bg-card/85 px-4 text-[12px] font-medium text-[var(--color-brand-cocoa)] backdrop-blur-md shadow-[0_6px_20px_rgba(61,47,37,0.14)] transition-all duration-200 hover:bg-[var(--color-brand-cocoa)] hover:text-white"
                             >
                                 下一步行动
                             </m.button>
@@ -1736,7 +1736,7 @@ function ResultClientContent({ id, initialData, user: serverUser, previousSummar
                                 exit={{ opacity: 0, scale: 0.8, y: 8 }}
                                 transition={{ duration: 0.18, ease: "easeOut" }}
                                 onClick={() => reportLayerRef.current?.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" })}
-                                className="fixed right-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-40 w-11 h-11 inline-flex items-center justify-center rounded-full border border-brand-espresso/10 bg-white/85 backdrop-blur-md text-[var(--color-brand-cocoa)] shadow-[0_6px_20px_rgba(61,47,37,0.14)] hover:bg-[var(--color-brand-cocoa)] hover:text-white hover:border-transparent hover:shadow-[0_8px_24px_rgba(61,47,37,0.22)] active:scale-95 transition-all duration-200"
+                                className="fixed right-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-40 w-11 h-11 inline-flex items-center justify-center rounded-full border border-brand-espresso/10 bg-card/85 backdrop-blur-md text-[var(--color-brand-cocoa)] shadow-[0_6px_20px_rgba(61,47,37,0.14)] hover:bg-[var(--color-brand-cocoa)] hover:text-white hover:border-transparent hover:shadow-[0_8px_24px_rgba(61,47,37,0.22)] active:scale-95 transition-all duration-200"
                                 aria-label="回到顶部"
                             >
                                 <ArrowUp className="w-5 h-5" strokeWidth={2.25} />

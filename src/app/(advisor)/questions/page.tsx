@@ -32,6 +32,8 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
+    DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
 
@@ -783,7 +785,7 @@ export default function QuestionsPage() {
         // 守卫检查（localStorage + 登录态）尚未完成，先渲染加载态避免闪出性别选择页
         return (
             <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-brand-canvas-warm">
-                <Loader2 className="w-6 h-6 text-brand-charcoal/60 animate-spin" />
+                <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
             </div>
         );
     }
@@ -791,10 +793,10 @@ export default function QuestionsPage() {
     if (accessDenied) {
         return (
             <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-brand-canvas-warm gap-4 px-4">
-                <p className="text-sm text-brand-charcoal/60 font-light tracking-wide text-center leading-relaxed">请从首页同意隐私协议后开始测评。</p>
+                <p className="text-sm text-muted-foreground font-light tracking-wide text-center leading-relaxed">请从首页同意隐私协议后开始测评。</p>
                 <button
                     onClick={() => navPush("/")}
-                    className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                    className="px-6 h-10 rounded-lg border border-brand-charcoal text-foreground hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                 >
                     返回首页
                 </button>
@@ -808,7 +810,7 @@ export default function QuestionsPage() {
     if (!gender && !isUserInitialized) {
         return (
             <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-brand-canvas-warm">
-                <Loader2 className="w-6 h-6 text-brand-charcoal/60 animate-spin" />
+                <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
             </div>
         );
     }
@@ -824,15 +826,17 @@ export default function QuestionsPage() {
                 >
                     {/* Top Bar */}
                     <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 z-20">
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => navPush("/")}
                             disabled={isNavigating}
-                            className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95 disabled:opacity-40"
+                            className="absolute left-2 gap-1.5 sm:left-4 md:left-12 lg:left-20"
                             aria-label="回首页"
                         >
-                            <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
-                            <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">回首页</span>
-                        </button>
+                            <ChevronLeft />
+                            <span className="hidden sm:inline">回首页</span>
+                        </Button>
                         <Image
                             src="/NIHPLOD-logo.svg"
                             alt="NIHPLOD"
@@ -841,7 +845,9 @@ export default function QuestionsPage() {
                             className="h-7 md:h-9 w-auto object-contain"
                             priority
                         />
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => {
                                 // "退出"明确放弃本次进度；左侧"回首页"则保留进度以便下次继续
                                 safeStorage.remove(STORAGE_KEYS.ADVISOR_ANSWERS);
@@ -850,12 +856,12 @@ export default function QuestionsPage() {
                                 navPush("/");
                             }}
                             disabled={isNavigating}
-                            className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95 disabled:opacity-40"
+                            className="absolute right-2 gap-1.5 sm:right-4 md:right-12 lg:right-20"
                             aria-label="退出并清除进度"
                         >
-                            <LogOut className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
-                            <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">退出</span>
-                        </button>
+                            <LogOut />
+                            <span className="hidden sm:inline">退出</span>
+                        </Button>
                     </div>
 
                     <div
@@ -864,37 +870,33 @@ export default function QuestionsPage() {
                     >
                         <div className="h-full min-h-0 py-4 sm:py-0 flex flex-col items-center justify-center">
                             {aiConfigured === null ? (
-                                <div className="flex items-center gap-2 text-brand-charcoal/60">
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
                                     正在检查服务状态...
                                 </div>
                             ) : aiConfigured === false ? (
-                                <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-beige shadow-sm text-center">
-                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
+                                <div className="w-full max-w-lg rounded-lg border bg-card p-6 text-center text-card-foreground shadow-sm">
+                                    <h3 className="mb-2 text-lg font-semibold tracking-tight">
                                         {configNetworkError ? "网络异常" : "敬请期待"}
                                     </h3>
-                                    <p className="text-sm text-brand-charcoal/60 font-light mb-6">{configMessage}</p>
-                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <p className="mb-6 text-sm text-muted-foreground">{configMessage}</p>
+                                    <div className="flex flex-col justify-center gap-3 sm:flex-row">
                                         {configNetworkError && (
-                                            <button
-                                                onClick={checkAiConfig}
-                                                className="px-6 h-10 rounded-lg bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
-                                            >
+                                            <Button onClick={checkAiConfig}>
                                                 重新检查
-                                            </button>
+                                            </Button>
                                         )}
-                                        <button
+                                        <Button
+                                            variant="outline"
                                             onClick={() => navPush("/")}
-                                            className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                         >
                                             返回首页
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             ) : limitExceeded ? (
-                                <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-beige shadow-sm text-center">
-                                    <div className="text-4xl mb-4">⏳</div>
-                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
+                                <div className="w-full max-w-lg rounded-lg border bg-card p-6 text-center text-card-foreground shadow-sm">
+                                    <h3 className="mb-2 text-lg font-semibold tracking-tight">
                                         {limitAccountDisabled
                                             ? "测肤功能已被限制"
                                             : limitRequireLogin
@@ -903,54 +905,47 @@ export default function QuestionsPage() {
                                                 ? "测肤次数已用完"
                                                 : "今日次数已用完"}
                                     </h3>
-                                    <p className="text-sm text-brand-charcoal/60 font-light mb-6">{limitMessage}</p>
-                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <p className="mb-6 text-sm text-muted-foreground">{limitMessage}</p>
+                                    <div className="flex flex-col justify-center gap-3 sm:flex-row">
                                         {limitRequireLogin && (
-                                            <button
-                                                onClick={() => openAuthModal("login")}
-                                                className="px-6 h-10 rounded-lg bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
-                                            >
+                                            <Button onClick={() => openAuthModal("login")}>
                                                 登录 / 注册
-                                            </button>
+                                            </Button>
                                         )}
-                                        <button
+                                        <Button
+                                            variant="outline"
                                             onClick={() => navPush("/")}
-                                            className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                         >
                                             返回首页
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             ) : queueBusy && !queueDismissed ? (
-                                <div className="w-full max-w-lg bg-amber-50/95 backdrop-blur-sm rounded-2xl p-6 border border-amber-200 shadow-sm text-center">
-                                    <div className="text-3xl mb-3">⏳</div>
-                                    <h3 className="text-base font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">当前访问人数较多</h3>
-                                    <p className="text-sm text-brand-charcoal/60 font-light mb-4">
+                                <div className="w-full max-w-lg rounded-lg border bg-card p-6 text-center text-card-foreground shadow-sm">
+                                    <h3 className="mb-2 text-base font-semibold tracking-tight">当前访问人数较多</h3>
+                                    <p className="mb-4 text-sm text-muted-foreground">
                                         预计分析等待{queueWaitSeconds >= 60
                                             ? `约 ${Math.ceil(queueWaitSeconds / 60)} 分钟`
                                             : `约 ${queueWaitSeconds} 秒`}，
                                         您仍可继续，但结果可能需要稍等。
                                     </p>
-                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                        <button
-                                            onClick={() => setQueueDismissed(true)}
-                                            className="px-6 h-10 rounded-lg bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
-                                        >
+                                    <div className="flex flex-col justify-center gap-3 sm:flex-row">
+                                        <Button onClick={() => setQueueDismissed(true)}>
                                             继续测试
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button
+                                            variant="outline"
                                             onClick={() => navPush("/")}
-                                            className="px-6 h-10 rounded-lg border border-brand-charcoal/60 text-brand-charcoal/60 hover:bg-brand-charcoal/[0.07] text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                         >
                                             稍后再来
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             ) : !profileGenderResolved ? (
                                 // 资料性别决策未落定（会话/守卫检查中）：保持加载态，
                                 // 避免对有资料性别的用户闪出 GenderSelection 再跳走
-                                <div className="flex items-center gap-2 text-brand-charcoal/60">
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
                                     正在检查服务状态...
                                 </div>
                             ) : (
@@ -966,13 +961,13 @@ export default function QuestionsPage() {
                         transition={{ duration: 1.2, delay: 1 }}
                         className="hidden sm:flex justify-center pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-4"
                     >
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-[10px] sm:text-[11px] font-light text-brand-charcoal/[0.48] leading-tight">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-[10px] sm:text-[11px] font-light text-foreground/[0.48] leading-tight">
                             <p className="tracking-[0.1em] md:tracking-[0.15em]">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-                            <span className="hidden sm:inline text-brand-charcoal/20">·</span>
+                            <span className="hidden sm:inline text-muted-foreground/50">·</span>
                             <div className="hidden sm:flex items-center gap-4 tracking-[0.12em]">
-                                <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">隐私政策</Link>
-                                <span className="text-brand-charcoal/20">·</span>
-                                <Link href="https://nihplod.cn/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">服务条款</Link>
+                                <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-foreground/75">隐私政策</Link>
+                                <span className="text-muted-foreground/50">·</span>
+                                <Link href="https://nihplod.cn/terms" className="transition-colors duration-300 hover:text-foreground/75">服务条款</Link>
                             </div>
                         </div>
                     </m.div>
@@ -984,10 +979,10 @@ export default function QuestionsPage() {
     if (!currentQuestion) {
         return (
             <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-brand-canvas-warm gap-4 px-4">
-                <p className="text-sm text-brand-charcoal/60 font-light tracking-wide">题目加载异常，请刷新页面或返回首页重试。</p>
+                <p className="text-sm text-muted-foreground font-light tracking-wide">题目加载异常，请刷新页面或返回首页重试。</p>
                 <button
                     onClick={() => navPush("/")}
-                    className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                    className="px-6 h-10 rounded-lg border border-brand-charcoal text-foreground hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                 >
                     返回首页
                 </button>
@@ -996,7 +991,7 @@ export default function QuestionsPage() {
     }
 
     return (
-        <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-brand-canvas-warm text-brand-charcoal overflow-hidden pointer-events-auto">
+        <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-brand-canvas-warm text-foreground overflow-hidden pointer-events-auto">
 
             {/* 提交中加载遮罩 */}
             <AnimatePresence>
@@ -1007,8 +1002,8 @@ export default function QuestionsPage() {
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[60] bg-brand-canvas-warm/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
                     >
-                        <Loader2 className="w-8 h-8 text-brand-charcoal animate-spin" />
-                                <p className="text-sm text-brand-charcoal/60 font-light tracking-wide">
+                        <Loader2 className="w-8 h-8 text-foreground animate-spin" />
+                                <p className="text-sm text-muted-foreground font-light tracking-wide">
                                     正在准备面部扫描...
                                 </p>
                             </m.div>
@@ -1016,57 +1011,58 @@ export default function QuestionsPage() {
             </AnimatePresence>
 
             {/* Top Bar: Back & Logo & Exit */}
-            <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 z-20 shrink-0">
-                <button
+            <div className="relative flex items-center justify-center px-4 pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-4 md:px-12 lg:px-20 z-20 shrink-0">
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={handleBack}
-                    className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95"
+                    className="absolute left-2 gap-1.5 sm:left-4 md:left-12 lg:left-20"
                     aria-label="上一题"
                 >
-                    <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
-                    <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">
-                        上一题
-                    </span>
-                </button>
+                    <ChevronLeft />
+                    <span className="hidden sm:inline">上一题</span>
+                </Button>
 
                 <Image
                     src="/NIHPLOD-logo.svg"
                     alt="NIHPLOD"
                     width={120}
                     height={30}
-                    className="h-7 md:h-9 w-auto object-contain"
+                    className="h-7 w-auto object-contain md:h-9"
                     priority
                 />
 
-                <button
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowExitConfirm(true)}
+                    className="absolute right-2 gap-1.5 sm:right-4 md:right-12 lg:right-20"
                     aria-label="退出测评"
-                    className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-olive/5 touch-manipulation active:scale-95"
                 >
-                    <LogOut className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
-                    <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">退出</span>
-                </button>
+                    <LogOut />
+                    <span className="hidden sm:inline">退出</span>
+                </Button>
             </div>
 
             {/* 进度条：动态题数（含条件题），让用户随时知道所处位置 */}
-            <div className="shrink-0 px-4 md:px-12 lg:px-20 pb-2">
-                <div className="max-w-5xl mx-auto flex items-center gap-3">
+            <div className="shrink-0 px-4 pb-4 md:px-12 lg:px-20">
+                <div className="mx-auto flex max-w-2xl items-center gap-3">
                     <Progress
                         value={((currentStepIndex + 1) / questions.length) * 100}
-                        getValueLabel={() =>
-                            `第 ${currentStepIndex + 1} 题，共 ${questions.length} 题`
-                        }
                         aria-label={`第 ${currentStepIndex + 1} 题，共 ${questions.length} 题`}
-                        className="h-px flex-1 rounded-none bg-brand-charcoal/10"
-                        indicatorClassName="bg-brand-charcoal/50 duration-300 ease-out"
+                        className="h-2 flex-1"
                     />
-                    <span className="text-[11px] text-brand-charcoal/50 font-light tracking-[0.1em] tabular-nums shrink-0" aria-hidden="true">
+                    <span
+                        className="shrink-0 text-xs text-muted-foreground tabular-nums"
+                        aria-hidden="true"
+                    >
                         {currentStepIndex + 1} / {questions.length}
                     </span>
                 </div>
             </div>
 
             {/* Main Content Area */}
-            <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scrollbar-hide relative w-full max-w-5xl mx-auto z-10 px-4 md:px-8 mb-4">
+            <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scrollbar-hide relative w-full max-w-2xl mx-auto z-10 px-4 mb-4">
                 <div className="min-h-full flex flex-col justify-start md:justify-center">
                     {/* 资料性别默认值提示：仅第一题展示，一键切换（代家人测肤的纠偏通道）；
                         固定高度折叠动画避免切题时布局跳动 */}
@@ -1078,15 +1074,17 @@ export default function QuestionsPage() {
                                 : "h-0 opacity-0"
                         )}
                     >
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={handleGenderSwitch}
-                            className="inline-flex items-center gap-1.5 h-8 px-4 rounded-full border border-brand-charcoal/15 text-[12px] font-light text-brand-charcoal/55 tracking-[0.05em] transition-colors hover:border-brand-charcoal/30 hover:text-brand-charcoal touch-manipulation active:scale-95"
+                            className="h-8 gap-1.5"
                         >
                             本次测肤对象：{gender === "female" ? "女性" : "男性"}
-                            <span className="text-brand-charcoal/35">·</span>
-                            <span className="underline underline-offset-2 decoration-brand-charcoal/30">切换</span>
-                        </button>
+                            <span className="text-muted-foreground">·</span>
+                            <span className="text-muted-foreground">切换</span>
+                        </Button>
                     </div>
                     <AnimatePresence mode="wait" custom={direction}>
                         <m.div
@@ -1116,13 +1114,13 @@ export default function QuestionsPage() {
 
             {/* Footer */}
             <div className="hidden sm:flex sm:justify-center pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] shrink-0 text-center px-4">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] font-light text-brand-charcoal/[0.48] leading-tight">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] font-light text-foreground/[0.48] leading-tight">
                     <p className="tracking-[0.1em] md:tracking-[0.15em]">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-                    <span className="hidden sm:inline text-brand-charcoal/20">·</span>
+                    <span className="hidden sm:inline text-muted-foreground/50">·</span>
                     <div className="hidden sm:flex items-center gap-4 tracking-[0.12em]">
-                        <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">隐私政策</Link>
-                        <span className="text-brand-charcoal/20">·</span>
-                        <Link href="https://nihplod.cn/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">服务条款</Link>
+                        <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-foreground/75">隐私政策</Link>
+                        <span className="text-muted-foreground/50">·</span>
+                        <Link href="https://nihplod.cn/terms" className="transition-colors duration-300 hover:text-foreground/75">服务条款</Link>
                     </div>
                 </div>
             </div>
@@ -1130,78 +1128,54 @@ export default function QuestionsPage() {
 
             {/* Exit Modal */}
             <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
-                <DialogContent
-                    showCloseButton={false}
-                    className="max-w-lg gap-0 border-brand-beige bg-white/95 p-8 shadow-sm backdrop-blur-sm"
-                >
-                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-                        <div className="text-center sm:w-[60%] sm:text-left">
-                            <DialogTitle className="mb-3 text-lg tracking-[0.02em] text-brand-charcoal sm:mb-2">
-                                退出测试？
-                            </DialogTitle>
-                            <DialogDescription className="font-light text-brand-charcoal/60">
-                                您的进度已自动保存，下次返回可直接从此处继续。
-                            </DialogDescription>
-                        </div>
-                        <div className="flex w-full shrink-0 flex-col gap-3 sm:w-[40%] sm:gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowExitConfirm(false)}
-                                className="h-10 w-full rounded-lg border-brand-charcoal text-[13px] tracking-[0.1em] text-brand-charcoal hover:bg-brand-charcoal hover:text-white"
-                            >
-                                继续测试
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={() => navPush("/")}
-                                className="h-10 w-full rounded-lg border border-brand-beige text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:border-brand-beige-dark hover:text-brand-charcoal"
-                            >
-                                退出并返回首页
-                            </Button>
-                        </div>
-                    </div>
-                    <Image src="/images/watermark.webp" alt="" width={200} height={200} className="pointer-events-none absolute bottom-4 left-1/2 h-auto w-32 -translate-x-1/2 object-contain opacity-15" unoptimized />
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>退出测试？</DialogTitle>
+                        <DialogDescription>
+                            您的进度已自动保存，下次返回可直接从此处继续。
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowExitConfirm(false)}
+                        >
+                            继续测试
+                        </Button>
+                        <Button onClick={() => navPush("/")}>
+                            退出并返回首页
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
             {/* Quality Check Modal */}
             <Dialog open={showQualityWarning} onOpenChange={setShowQualityWarning}>
-                <DialogContent
-                    showCloseButton={false}
-                    className="max-w-lg gap-0 border-brand-beige bg-white/95 p-8 shadow-sm backdrop-blur-sm"
-                >
-                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-                        <div className="text-center sm:w-[60%] sm:text-left">
-                            <DialogTitle className="mb-3 text-lg tracking-[0.02em] text-brand-charcoal sm:mb-2">
-                                已完成，确认提交？
-                            </DialogTitle>
-                            <DialogDescription className="font-light text-brand-charcoal/60">
-                                您完成得很快，建议再核对关键题；确认无误也可以直接提交。
-                            </DialogDescription>
-                        </div>
-                        <div className="flex w-full shrink-0 flex-col gap-3 sm:w-[40%] sm:gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    setShowQualityWarning(false);
-                                    sessionStartTime.current = Date.now();
-                                    startStepIndex.current = currentStepIndex;
-                                    if (pendingAnswers) processSubmission(pendingAnswers);
-                                }}
-                                className="h-10 w-full rounded-lg border-brand-charcoal text-[13px] tracking-[0.1em] text-brand-charcoal hover:bg-brand-charcoal hover:text-white"
-                            >
-                                确认无误，提交
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={() => setShowQualityWarning(false)}
-                                className="h-10 w-full rounded-lg border border-brand-beige text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:border-brand-beige-dark hover:text-brand-charcoal"
-                            >
-                                返回检查
-                            </Button>
-                        </div>
-                    </div>
-                    <Image src="/images/watermark.webp" alt="" width={200} height={200} className="pointer-events-none absolute bottom-4 left-1/2 h-auto w-32 -translate-x-1/2 object-contain opacity-15" unoptimized />
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>已完成，确认提交？</DialogTitle>
+                        <DialogDescription>
+                            您完成得很快，建议再核对关键题；确认无误也可以直接提交。
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowQualityWarning(false)}
+                        >
+                            返回检查
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setShowQualityWarning(false);
+                                sessionStartTime.current = Date.now();
+                                startStepIndex.current = currentStepIndex;
+                                if (pendingAnswers) processSubmission(pendingAnswers);
+                            }}
+                        >
+                            确认无误，提交
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

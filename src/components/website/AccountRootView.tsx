@@ -341,7 +341,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
             <button
               type="button"
               onClick={onRequestLogin}
-              className="shrink-0 h-7 px-3 rounded-full border border-amber-300 bg-white/70 text-[12px] hover:bg-white transition-colors cursor-pointer"
+              className="shrink-0 h-7 px-3 rounded-full border border-amber-300 bg-card/70 text-[12px] hover:bg-card transition-colors cursor-pointer"
             >
               重新登录
             </button>
@@ -356,7 +356,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
               onClick={() => avatarInputRef.current?.click()}
               disabled={saving !== null}
               aria-label="更换头像"
-              className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-[#FBF8F0]/20 transition-all group-hover:border-stone-300 md:h-20 md:w-20 cursor-pointer disabled:cursor-wait"
+              className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-border bg-[#FBF8F0]/20 transition-all group-hover:border-input md:h-20 md:w-20 cursor-pointer disabled:cursor-wait"
             >
               {/* 未自定义头像的新用户使用默认头像（与主站 / SSO 输出口径一致） */}
               <Image
@@ -384,12 +384,12 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
             />
           </div>
           <div>
-            <p className="text-sm font-medium text-stone-800">{displayName}</p>
+            <p className="text-sm font-medium text-foreground">{displayName}</p>
             <button
               type="button"
               onClick={() => avatarInputRef.current?.click()}
               disabled={saving !== null}
-              className="mt-1 text-xs text-stone-400 transition-colors hover:text-stone-800 cursor-pointer disabled:opacity-50"
+              className="mt-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground cursor-pointer disabled:opacity-50"
             >
               {saving === "avatar" ? "上传中..." : "点击更换头像"}
             </button>
@@ -399,10 +399,10 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
         {/* 信息行列表（行式排版：左侧字段名 + 值，右侧操作；移动端行间细分隔线） */}
         <div className="flex flex-col gap-1">
           {/* 昵称 */}
-          <div className="group -mx-6 flex items-center justify-between rounded-2xl px-6 py-4 transition-all hover:bg-white/40">
+          <div className="group -mx-6 flex items-center justify-between rounded-2xl px-6 py-4 transition-all hover:bg-card/40">
             <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
               <div className="w-[4.5rem] shrink-0 md:w-20">
-                <p className="text-[13px] text-stone-400 md:text-sm md:font-light">昵称</p>
+                <p className="text-[13px] text-muted-foreground/80 md:text-sm md:font-light">昵称</p>
               </div>
               <div className="flex w-full min-w-0 flex-1 items-center gap-2">
                 {editingNickname ? (
@@ -420,10 +420,10 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                         setEditingNickname(false);
                       }
                     }}
-                    className="w-full border-b border-stone-400 bg-transparent py-1 text-base font-medium text-stone-800 outline-none transition-colors placeholder:text-stone-300 md:w-56"
+                    className="w-full border-b border-ring bg-transparent py-1 text-base font-medium text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 md:w-56"
                   />
                 ) : (
-                  <p className="truncate text-[15px] font-medium text-stone-800 md:text-sm">{displayName}</p>
+                  <p className="truncate text-[15px] font-medium text-foreground md:text-sm">{displayName}</p>
                 )}
               </div>
             </div>
@@ -434,7 +434,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                     type="button"
                     onClick={() => setEditingNickname(false)}
                     disabled={saving !== null}
-                    className="text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer disabled:opacity-50"
+                    className="text-xs font-light text-muted-foreground transition-colors hover:text-foreground active:opacity-60 cursor-pointer disabled:opacity-50"
                   >
                     取消
                   </button>
@@ -442,7 +442,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                     type="button"
                     onClick={saveNickname}
                     disabled={saving !== null}
-                    className="text-xs font-medium text-stone-800 transition-colors hover:text-stone-500 disabled:opacity-50 cursor-pointer"
+                    className="text-xs font-medium text-foreground transition-colors hover:text-muted-foreground disabled:opacity-50 cursor-pointer"
                   >
                     {saving === "nickname" ? "保存中..." : "保存"}
                   </button>
@@ -451,26 +451,26 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                 <button
                   type="button"
                   onClick={startEditNickname}
-                  className="group -my-2 flex items-center gap-1.5 py-2 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                  className="group -my-2 flex items-center gap-1.5 py-2 text-xs font-light text-muted-foreground transition-colors hover:text-foreground active:opacity-60 cursor-pointer"
                 >
                   <span className="opacity-100 md:opacity-60 md:group-hover:opacity-100 focus-visible:opacity-100">修改</span>
-                  <ChevronRight className="h-3.5 w-3.5 text-stone-300 md:hidden" />
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 md:hidden" />
                 </button>
               )}
             </div>
           </div>
 
-          <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
+          <div className="h-px w-full bg-muted opacity-40 md:hidden" />
 
           {/* 性别：男/女/保密三态，点击即保存（对齐主站个人信息面板） */}
-          <div className="group -mx-6 rounded-2xl px-6 transition-all hover:bg-white/40">
+          <div className="group -mx-6 rounded-2xl px-6 transition-all hover:bg-card/40">
             <div className="flex items-center justify-between py-4">
               <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
                 <div className="w-[4.5rem] shrink-0 md:w-20">
-                  <p className="text-[13px] text-stone-400 md:text-sm md:font-light">性别</p>
+                  <p className="text-[13px] text-muted-foreground/80 md:text-sm md:font-light">性别</p>
                 </div>
                 <div className="flex w-full min-w-0 flex-1 items-center gap-2">
-                  <p className="truncate text-[15px] font-medium text-stone-800 md:text-sm">{genderLabel}</p>
+                  <p className="truncate text-[15px] font-medium text-foreground md:text-sm">{genderLabel}</p>
                 </div>
               </div>
               <button
@@ -480,15 +480,15 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                   setEditingGender((v) => !v);
                 }}
                 aria-expanded={editingGender}
-                className="group -my-2 flex shrink-0 items-center gap-1.5 py-2 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                className="group -my-2 flex shrink-0 items-center gap-1.5 py-2 text-xs font-light text-muted-foreground transition-colors hover:text-foreground active:opacity-60 cursor-pointer"
               >
                 <span className="opacity-100 md:opacity-60 md:group-hover:opacity-100 focus-visible:opacity-100">修改</span>
-                <ChevronRight className="h-3.5 w-3.5 text-stone-300 md:hidden" />
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 md:hidden" />
               </button>
             </div>
             {editingGender && (
-              <div className="max-w-md border-t border-stone-200/60 pb-5 pt-4">
-                <p className="mb-3 text-xs text-stone-400">用于会员服务与个性化推荐；可随时修改或设为保密。</p>
+              <div className="max-w-md border-t border-border/60 pb-5 pt-4">
+                <p className="mb-3 text-xs text-muted-foreground/80">用于会员服务与个性化推荐；可随时修改或设为保密。</p>
                 <div className="flex flex-wrap gap-2">
                   {(
                     [
@@ -505,7 +505,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                       className={`rounded-full border px-5 py-2 text-sm transition-colors disabled:opacity-50 cursor-pointer ${
                         genderValue === opt.value
                           ? "border-brand-charcoal bg-brand-charcoal text-white"
-                          : "border-stone-200 text-stone-600 hover:border-stone-300 hover:text-stone-800"
+                          : "border-border text-muted-foreground hover:border-input hover:text-foreground"
                       }`}
                     >
                       {opt.label}
@@ -515,7 +515,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                     type="button"
                     onClick={() => setEditingGender(false)}
                     disabled={saving !== null}
-                    className="rounded-full px-3 py-2 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 disabled:opacity-50 cursor-pointer"
+                    className="rounded-full px-3 py-2 text-xs font-light text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50 cursor-pointer"
                   >
                     取消
                   </button>
@@ -524,13 +524,13 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
             )}
           </div>
 
-          <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
+          <div className="h-px w-full bg-muted opacity-40 md:hidden" />
 
           {/* 生日：主站仅允许设置一次，设置后显示「已锁定」（对齐主站个人信息面板） */}
-          <div className="group -mx-6 flex items-center justify-between rounded-2xl px-6 py-4 transition-all hover:bg-white/40">
+          <div className="group -mx-6 flex items-center justify-between rounded-2xl px-6 py-4 transition-all hover:bg-card/40">
             <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
               <div className="w-[4.5rem] shrink-0 md:w-20">
-                <p className="text-[13px] text-stone-400 md:text-sm md:font-light">生日</p>
+                <p className="text-[13px] text-muted-foreground/80 md:text-sm md:font-light">生日</p>
               </div>
               <div className="flex w-full min-w-0 flex-1 items-center gap-2">
                 {editingBirthday ? (
@@ -547,10 +547,10 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                         setEditingBirthday(false);
                       }
                     }}
-                    className="w-full border-b border-stone-400 bg-transparent py-1 text-base font-medium text-stone-800 outline-none transition-colors md:w-56"
+                    className="w-full border-b border-ring bg-transparent py-1 text-base font-medium text-foreground outline-none transition-colors md:w-56"
                   />
                 ) : (
-                  <p className="truncate text-[15px] font-medium text-stone-800 md:text-sm">
+                  <p className="truncate text-[15px] font-medium text-foreground md:text-sm">
                     {profile?.birthday
                       ? profile.birthday.slice(0, 10)
                       : birthdayLockedHint
@@ -567,7 +567,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                     type="button"
                     onClick={() => setEditingBirthday(false)}
                     disabled={saving !== null}
-                    className="text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer disabled:opacity-50"
+                    className="text-xs font-light text-muted-foreground transition-colors hover:text-foreground active:opacity-60 cursor-pointer disabled:opacity-50"
                   >
                     取消
                   </button>
@@ -575,13 +575,13 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                     type="button"
                     onClick={saveBirthday}
                     disabled={saving !== null}
-                    className="text-xs font-medium text-stone-800 transition-colors hover:text-stone-500 disabled:opacity-50 cursor-pointer"
+                    className="text-xs font-medium text-foreground transition-colors hover:text-muted-foreground disabled:opacity-50 cursor-pointer"
                   >
                     {saving === "birthday" ? "保存中..." : "保存"}
                   </button>
                 </div>
               ) : profile?.birthday || birthdayLockedHint ? (
-                <span className="flex items-center gap-1.5 text-xs font-light text-stone-400">
+                <span className="flex items-center gap-1.5 text-xs font-light text-muted-foreground/80">
                   <Lock className="h-3.5 w-3.5" />
                   已锁定
                 </span>
@@ -593,44 +593,44 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
                     setBirthdayDraft("");
                     setEditingBirthday(true);
                   }}
-                  className="group -my-2 flex items-center gap-1.5 py-2 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                  className="group -my-2 flex items-center gap-1.5 py-2 text-xs font-light text-muted-foreground transition-colors hover:text-foreground active:opacity-60 cursor-pointer"
                 >
                   <span className="opacity-100 md:opacity-60 md:group-hover:opacity-100 focus-visible:opacity-100">设置</span>
-                  <ChevronRight className="h-3.5 w-3.5 text-stone-300 md:hidden" />
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 md:hidden" />
                 </button>
               )}
             </div>
           </div>
 
-          <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
+          <div className="h-px w-full bg-muted opacity-40 md:hidden" />
 
           {/* 绑定手机号：双向短信验证换绑（BFF 转发官网 OAuth 端点，成功后需重新登录） */}
-          <div className="group -mx-6 rounded-2xl px-6 transition-all hover:bg-white/40">
+          <div className="group -mx-6 rounded-2xl px-6 transition-all hover:bg-card/40">
             <div className="flex items-center justify-between py-4">
               <div className="mr-4 flex min-w-0 flex-1 items-center gap-3 md:gap-6">
                 <div className="w-[4.5rem] shrink-0 md:w-20">
-                  <p className="text-[13px] text-stone-400 md:text-sm md:font-light">绑定手机号</p>
+                  <p className="text-[13px] text-muted-foreground/80 md:text-sm md:font-light">绑定手机号</p>
                 </div>
                 <div className="flex w-full min-w-0 flex-1 items-center gap-2">
-                  <p className="truncate text-[15px] font-medium text-stone-800 md:text-sm">{phoneLabel}</p>
+                  <p className="truncate text-[15px] font-medium text-foreground md:text-sm">{phoneLabel}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setPhoneOpen((v) => !v)}
                 aria-expanded={phoneOpen}
-                className="flex shrink-0 items-center gap-1.5 text-xs font-light text-stone-500 transition-colors hover:text-stone-800 active:opacity-60 cursor-pointer"
+                className="flex shrink-0 items-center gap-1.5 text-xs font-light text-muted-foreground transition-colors hover:text-foreground active:opacity-60 cursor-pointer"
               >
                 <span className="opacity-100 md:opacity-60 md:group-hover:opacity-100 focus-visible:opacity-100">修改</span>
                 <ChevronRight
-                  className={`h-3.5 w-3.5 text-stone-300 transition-transform duration-200 md:hidden ${
+                  className={`h-3.5 w-3.5 text-muted-foreground/60 transition-transform duration-200 md:hidden ${
                     phoneOpen ? "rotate-90" : ""
                   }`}
                 />
               </button>
             </div>
             {phoneOpen && (
-              <div className="border-t border-stone-200/60 pb-5 pt-4">
+              <div className="border-t border-border/60 pb-5 pt-4">
                 <PhoneSection
                   hasRealPhone={phoneLabel !== "未绑定"}
                   onUpdated={handlePhoneUpdated}
@@ -641,10 +641,10 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
             )}
           </div>
 
-          <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
+          <div className="h-px w-full bg-muted opacity-40 md:hidden" />
 
           {/* 密码：已设置/未设置 + 行内展开修改/首次设置（对齐主站个人信息面板） */}
-          <div className="group -mx-6 rounded-2xl px-6 transition-all hover:bg-white/40">
+          <div className="group -mx-6 rounded-2xl px-6 transition-all hover:bg-card/40">
             <button
               type="button"
               onClick={() => setPasswordOpen((v) => !v)}
@@ -653,20 +653,20 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
             >
               <div className="flex items-center gap-3 md:gap-6">
                 <div className="w-[4.5rem] shrink-0 md:w-20">
-                  <p className="text-left text-[13px] text-stone-400 md:text-sm md:font-light">密码</p>
+                  <p className="text-left text-[13px] text-muted-foreground/80 md:text-sm md:font-light">密码</p>
                 </div>
                 <div>
-                  <p className="text-[15px] font-medium text-stone-800 md:text-sm">{passwordLabel}</p>
+                  <p className="text-[15px] font-medium text-foreground md:text-sm">{passwordLabel}</p>
                 </div>
               </div>
               <ChevronDown
-                className={`h-4 w-4 shrink-0 text-stone-400 transition-transform duration-200 ${
+                className={`h-4 w-4 shrink-0 text-muted-foreground/80 transition-transform duration-200 ${
                   passwordOpen ? "rotate-180" : ""
                 }`}
               />
             </button>
             {passwordOpen && (
-              <div className="border-t border-stone-200/60 pb-5 pt-4">
+              <div className="border-t border-border/60 pb-5 pt-4">
                 <PasswordSection
                   hasPassword={passwordOverride === true ? true : profile?.hasPassword}
                   onUpdated={handlePasswordUpdated}
@@ -676,10 +676,10 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
             )}
           </div>
 
-          <div className="h-px w-full bg-stone-100 opacity-40 md:hidden" />
+          <div className="h-px w-full bg-muted opacity-40 md:hidden" />
 
           {/* 收货地址：积分兑礼寄送用；数据源为主站地址簿（BFF 代理，单一数据源） */}
-          <div className="group -mx-6 rounded-2xl px-6 transition-all hover:bg-white/40">
+          <div className="group -mx-6 rounded-2xl px-6 transition-all hover:bg-card/40">
             <button
               type="button"
               onClick={() => setAddressOpen((v) => !v)}
@@ -688,20 +688,20 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
             >
               <div className="flex items-center gap-3 md:gap-6">
                 <div className="w-[4.5rem] shrink-0 md:w-20">
-                  <p className="text-left text-[13px] text-stone-400 md:text-sm md:font-light">收货地址</p>
+                  <p className="text-left text-[13px] text-muted-foreground/80 md:text-sm md:font-light">收货地址</p>
                 </div>
                 <div>
-                  <p className="text-[15px] font-medium text-stone-800 md:text-sm">{addressLabel}</p>
+                  <p className="text-[15px] font-medium text-foreground md:text-sm">{addressLabel}</p>
                 </div>
               </div>
               <ChevronDown
-                className={`h-4 w-4 shrink-0 text-stone-400 transition-transform duration-200 ${
+                className={`h-4 w-4 shrink-0 text-muted-foreground/80 transition-transform duration-200 ${
                   addressOpen ? "rotate-180" : ""
                 }`}
               />
             </button>
             {addressOpen && (
-              <div className="border-t border-stone-200/60 pb-5 pt-4">
+              <div className="border-t border-border/60 pb-5 pt-4">
                 <AddressSection
                   onSessionExpired={handleSessionExpired}
                   onCountChange={setAddressCount}
@@ -716,7 +716,7 @@ export function AccountRootView({ user, onRequestLogout, onRequestLogin }: Accou
           <button
             type="button"
             onClick={onRequestLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white/40 py-3 text-sm text-stone-500 transition-colors hover:bg-white/70 hover:text-stone-700 active:opacity-70 cursor-pointer"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card/40 py-3 text-sm text-muted-foreground transition-colors hover:bg-card/70 hover:text-foreground active:opacity-70 cursor-pointer"
           >
             <LogOut className="h-4 w-4" strokeWidth={1.5} />
             退出登录

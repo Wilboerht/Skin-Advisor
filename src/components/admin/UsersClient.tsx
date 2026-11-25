@@ -235,18 +235,18 @@ export function UsersClient({
             sortable: true,
             render: (_, user) => (
                 <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-charcoal/[0.04] text-brand-charcoal/65">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-charcoal/[0.04] text-muted-foreground">
                         <UserIcon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
                         <p
-                            className="truncate font-medium text-brand-charcoal"
+                            className="truncate font-medium text-foreground"
                             title={user.name || "未命名用户"}
                         >
                             {user.name || "未命名用户"}
                         </p>
                         <p
-                            className="truncate text-xs text-brand-charcoal/65"
+                            className="truncate text-xs text-muted-foreground"
                             title={user.email}
                         >
                             {user.email}
@@ -273,7 +273,7 @@ export function UsersClient({
             width: "120px",
             sortable: true,
             render: (_, user) => (
-                <span className="whitespace-nowrap text-sm text-brand-charcoal/70">
+                <span className="whitespace-nowrap text-sm text-foreground/75">
                     {formatDate(user.createdAt)}
                 </span>
             ),
@@ -283,7 +283,7 @@ export function UsersClient({
             title: "最近活跃",
             width: "120px",
             render: (_, user) => (
-                <span className="whitespace-nowrap text-sm text-brand-charcoal/70">
+                <span className="whitespace-nowrap text-sm text-foreground/75">
                     {user.advisorSessions[0]
                         ? formatDate(user.advisorSessions[0].createdAt)
                         : "—"}
@@ -297,7 +297,7 @@ export function UsersClient({
             align: "right",
             sortable: true,
             render: (_, user) => (
-                <span className="font-mono text-sm tabular-nums text-brand-charcoal">
+                <span className="font-mono text-sm tabular-nums text-foreground">
                     {user._count.advisorSessions}
                 </span>
             ),
@@ -395,7 +395,7 @@ export function UsersClient({
                             updateParams({ search: searchInput || null });
                         }}
                     >
-                        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-brand-charcoal/65" />
+                        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             aria-label="搜索用户姓名、邮箱或手机号"
                             placeholder="搜索姓名 / 邮箱 / 手机号"
@@ -418,7 +418,7 @@ export function UsersClient({
                         />
                     </div>
 
-                    <span className="text-sm text-brand-charcoal/65 md:ml-auto">
+                    <span className="text-sm text-muted-foreground md:ml-auto">
                         {loading
                             ? "加载中..."
                             : `共 ${pagination?.total ?? 0} 位用户`}
@@ -463,10 +463,10 @@ export function UsersClient({
                             <div className="space-y-3">
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
-                                        <p className="truncate font-medium text-brand-charcoal">
+                                        <p className="truncate font-medium text-foreground">
                                             {user.name || "未命名用户"}
                                         </p>
-                                        <p className="mt-0.5 truncate text-xs text-brand-charcoal/65">
+                                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
                                             {user.email}
                                         </p>
                                     </div>
@@ -482,7 +482,7 @@ export function UsersClient({
                                             : "活跃"}
                                     </Badge>
                                 </div>
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-brand-charcoal/65">
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
                                     <span>
                                         注册：{formatDate(user.createdAt)}
                                     </span>
@@ -499,7 +499,7 @@ export function UsersClient({
                                             : "—"}
                                     </span>
                                 </div>
-                                <div className="flex items-center justify-end gap-1 border-t border-brand-charcoal/10 pt-2">
+                                <div className="flex items-center justify-end gap-1 border-t border-border/80 pt-2">
                                     <IconButton
                                         label={`查看 ${user.name || user.email} 详情`}
                                         onClick={() => setDetailUser(user.id)}

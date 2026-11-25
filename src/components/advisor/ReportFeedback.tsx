@@ -78,11 +78,11 @@ export function ReportFeedback({ sessionId }: ReportFeedbackProps) {
     };
 
     const baseButton = "inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[12px] transition-colors disabled:opacity-50";
-    const idleButton = "border-[var(--color-brand-espresso)]/15 bg-white text-[var(--color-brand-cocoa)]";
+    const idleButton = "border-[var(--color-brand-espresso)]/15 bg-card text-[var(--color-brand-cocoa)]";
 
     return (
         <>
-            <section aria-labelledby="report-feedback-title" className="rounded-2xl border border-[var(--color-brand-espresso)]/12 bg-white/55 px-4 py-3 lg:px-5 lg:py-4">
+            <section aria-labelledby="report-feedback-title" className="rounded-2xl border border-[var(--color-brand-espresso)]/12 bg-card/55 px-4 py-3 lg:px-5 lg:py-4">
                 <h4 id="report-feedback-title" className="text-sm font-medium text-[var(--color-brand-espresso)]">
                     这份报告准确吗？
                 </h4>

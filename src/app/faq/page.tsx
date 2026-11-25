@@ -47,7 +47,7 @@ export default function FAQPage() {
           <p className="text-[11px] tracking-[0.25em] text-brand-bronze uppercase mb-5">
             Frequently Asked Questions
           </p>
-          <h1 className="text-2xl md:text-3xl font-serif text-text-primary mb-5">
+          <h1 className="text-2xl md:text-3xl font-sans text-text-primary mb-5">
             AI 护肤分析 · 常见问题
           </h1>
           <p className="text-[15px] md:text-base text-brand-ink-muted font-light max-w-xl mx-auto leading-relaxed">

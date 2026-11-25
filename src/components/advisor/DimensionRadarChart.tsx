@@ -92,7 +92,7 @@ export function DimensionRadarChart({ dimensions, sessionId }: DimensionRadarCha
 
     if (chartData.length < 3) {
         return (
-            <div className="rounded-xl border border-dashed border-[var(--color-brand-espresso)]/20 bg-white/50 px-4 py-6 text-center">
+            <div className="rounded-xl border border-dashed border-[var(--color-brand-espresso)]/20 bg-card/50 px-4 py-6 text-center">
                 <p className="text-sm text-[var(--color-brand-cocoa)]">本次可判断的维度不足，暂不展示雷达图。</p>
                 <p className="mt-1 text-xs text-[var(--color-brand-taupe)]">建议在自然光下素颜重拍，或直接查看下方文字明细。</p>
             </div>
@@ -166,7 +166,7 @@ export function DimensionRadarChart({ dimensions, sessionId }: DimensionRadarCha
                         <li
                             key={row.key}
                             title={row.description}
-                            className="rounded-lg border border-[var(--color-brand-espresso)]/10 bg-white/60"
+                            className="rounded-lg border border-[var(--color-brand-espresso)]/10 bg-card/60"
                         >
                             {hasExtra ? (
                                 <details className="group">

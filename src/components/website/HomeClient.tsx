@@ -15,7 +15,8 @@ import { hasPrivacyConsent, savePrivacyConsent } from "@/lib/consent-storage";
 import { fetchConsentState, recordClientConsent } from "@/lib/consent-client";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { ResponsiveDialog } from "@/components/ui/ResponsiveDialog";
+import { Button } from "@/components/ui/Button";
 import { useLazyOpen } from "@/hooks/use-lazy-open";
 import { useNavPush } from "@/hooks/use-nav-push";
 import dynamic from "next/dynamic";
@@ -466,7 +467,6 @@ export default function HomeClient() {
   // 限额弹窗打开时锁定背景滚动（整页锁定已随改版移除）
   useBodyScrollLock({ enabled: showLimitModal, iosSafe: true });
   // 限额弹窗焦点圈定 + Escape 关闭
-  const limitModalRef = useFocusTrap<HTMLDivElement>(showLimitModal, () => setShowLimitModal(false));
   const [onboardingOpenCount, setOnboardingOpenCount] = useState(0);
 
   // Check test limit（后端按登录态判额，无需前端指纹参数）
@@ -606,13 +606,23 @@ export default function HomeClient() {
     safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, nickname.trim());
   };
 
+  const openAdvisorModal = () => {
+    if (!isInitialized) return;
+    if (!user) {
+      // 未登录统一走「我的」账户弹层的登录拦截视图，不展示顾问标题
+      openAccountModal("profile");
+      return;
+    }
+    setShowAdvisorModal(true);
+  };
+
   const heroCta = (
     <>
       <button
         type="button"
         onClick={handleStart}
         disabled={isLoading || isNavigating}
-        className="inline-flex h-12 items-center justify-center gap-3 rounded-full border border-[#22304E]/10 bg-white px-8 text-[17px] font-semibold tracking-[0.08em] text-[#22304E] shadow-[0_12px_30px_-16px_rgba(34,48,78,0.45)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(34,48,78,0.5)] active:translate-y-0 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 pc:h-[clamp(52px,4.53vw,58px)] pc:min-w-[clamp(212px,20vw,256px)] pc:px-[clamp(32px,3.75vw,48px)] pc:text-[clamp(18px,1.5625vw,20px)] 2k:h-[clamp(58px,5.37vh,77px)] 2k:min-w-[clamp(256px,23.7vh,341px)] 2k:px-[clamp(48px,4.44vh,64px)] 2k:text-[clamp(20px,1.85vh,27px)] cursor-pointer"
+        className="inline-flex h-12 items-center justify-center gap-3 rounded-full border border-[#22304E]/10 bg-card px-8 text-[17px] font-semibold tracking-[0.08em] text-[#22304E] shadow-card transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-card active:translate-y-0 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E4D9E]/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 pc:h-[clamp(52px,4.53vw,58px)] pc:min-w-[clamp(212px,20vw,256px)] pc:px-[clamp(32px,3.75vw,48px)] pc:text-[clamp(18px,1.5625vw,20px)] 2k:h-[clamp(58px,5.37vh,77px)] 2k:min-w-[clamp(256px,23.7vh,341px)] 2k:px-[clamp(48px,4.44vh,64px)] 2k:text-[clamp(20px,1.85vh,27px)] cursor-pointer"
       >
         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
         <span>{isLoading ? "正在连接" : "开始测肤"}</span>
@@ -660,7 +670,7 @@ export default function HomeClient() {
             className="fixed inset-0 z-[9999] bg-brand-canvas flex flex-col items-center justify-center"
           >
             <Loader2 className="w-10 h-10 text-[var(--color-brand-charcoal)] animate-spin mb-6" />
-            <p className="text-brand-charcoal/70 text-[15px] font-medium tracking-wide">即将进入 AI 问卷...</p>
+            <p className="text-foreground/75 text-[15px] font-medium tracking-wide">即将进入 AI 问卷...</p>
           </m.div>
         )}
       </AnimatePresence>
@@ -760,7 +770,7 @@ export default function HomeClient() {
               <m.div
                 key="menu-panel"
                 id="home-menu"
-                className="absolute inset-x-0 top-full z-50 origin-top rounded-b-[24px] border-b border-black/[0.06] bg-[#FAF7F1] p-2 shadow-[0_16px_40px_-12px_rgba(0,38,62,0.25)] pc:inset-x-auto pc:left-0 pc:w-60 pc:origin-top-left pc:rounded-bl-none pc:rounded-br-2xl pc:border-r"
+                className="absolute inset-x-0 top-full z-50 origin-top rounded-b-[24px] border-b border-black/[0.06] bg-[#FAF7F1] p-2 shadow-card pc:inset-x-auto pc:left-0 pc:w-60 pc:origin-top-left pc:rounded-bl-none pc:rounded-br-2xl pc:border-r"
                 initial={{ opacity: 0, y: -6, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
@@ -770,18 +780,18 @@ export default function HomeClient() {
                   type="button"
                   onClick={() => { setShowMenu(false); handleOpenFaq(); }}
                   aria-haspopup="dialog"
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-foreground transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
                 >
-                  <CircleHelp className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
+                  <CircleHelp className="w-4 h-4 text-foreground/75" strokeWidth={1.75} />
                   常见问题
                 </button>
                 <button
                   type="button"
                   onClick={openSkinTypesModalFromMenu}
                   aria-haspopup="dialog"
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-foreground transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
+                  <Sparkles className="w-4 h-4 text-foreground/75" strokeWidth={1.75} />
                   了解肌智派
                 </button>
                 <div aria-hidden="true" className="mx-3 my-1.5 border-t border-black/[0.06]" />
@@ -789,9 +799,9 @@ export default function HomeClient() {
                 <a
                   href="https://nihplod.cn"
                   onClick={() => setShowMenu(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-brand-charcoal transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[14px] text-foreground transition-colors hover:bg-brand-charcoal/[0.05] focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] cursor-pointer"
                 >
-                  <House className="w-4 h-4 text-brand-charcoal/70" strokeWidth={1.75} />
+                  <House className="w-4 h-4 text-foreground/75" strokeWidth={1.75} />
                   返回 NIHPLOD
                 </a>
               </m.div>
@@ -812,7 +822,7 @@ export default function HomeClient() {
             <HomeMobileHero
               onStartTest={handleStart}
               onOpenProfile={() => openAccountModal("diary")}
-              onOpenAdvisor={() => setShowAdvisorModal(true)}
+              onOpenAdvisor={openAdvisorModal}
             />
             <div className="mx-auto grid w-full max-w-[clamp(1600px,83.33vw,3200px)] flex-1 grid-cols-1 items-center gap-2 px-6 py-8 max-pc:hidden sm:px-10 sm:py-10 pc:max-w-[clamp(1600px,83.33vw,3200px)] pc:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] pc:gap-6 pc:pl-[8%] pc:pr-[1%] pc:py-6 2k:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
               <section className="home-hero-copy relative z-20 flex flex-col items-start text-left opacity-0 animate-fade-in-up">
@@ -846,7 +856,7 @@ export default function HomeClient() {
                 <HomeFeatureCards
                   onStartTest={handleStart}
                   onOpenProfile={() => openAccountModal("diary")}
-                  onOpenAdvisor={() => setShowAdvisorModal(true)}
+                  onOpenAdvisor={openAdvisorModal}
                 />
               </div>
             </div>
@@ -929,115 +939,70 @@ export default function HomeClient() {
         />
       )}
 
-      <AnimatePresence>
-        {showLimitModal && (
-          <div
-            ref={limitModalRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="limit-modal-title"
-            tabIndex={-1}
-            className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4"
-          >
-            {/* Backdrop with Blur */}
-            <m.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowLimitModal(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
-            />
-
-            {/* Modal Content */}
-            <m.div
-              initial={{ opacity: 0, scale: 0.96, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 10 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full max-w-[420px] max-h-[90dvh] bg-brand-canvas rounded-[28px] shadow-[0_45px_80px_-16px_rgba(61,47,37,0.18)] overflow-hidden flex flex-col"
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            >
-              {/* Close Button：与全站弹层规范一致（移动端 44px 触达） */}
-              <button
-                onClick={() => setShowLimitModal(false)}
-                aria-label="关闭"
-                className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/55 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors cursor-pointer"
+            <ResponsiveDialog
+        open={showLimitModal}
+        onOpenChange={setShowLimitModal}
+        title={
+          testLimitInfo?.quotaPeriod === "lifetime"
+            ? "免费测肤次数已用完"
+            : "今日测试次数已用完"
+        }
+        size="md"
+        footer={
+          <>
+            {!user && (
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowLimitModal(false);
+                  openAuthModal("login");
+                }}
               >
-                <X size={16} strokeWidth={2.5} />
-              </button>
+                登录 / 注册
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant={user ? "default" : "outline"}
+              onClick={() => setShowLimitModal(false)}
+            >
+              我知道了
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-2 text-sm leading-relaxed text-muted-foreground">
+          {(() => {
+            const info = testLimitInfo;
+            const dailyLimit = info?.dailyLimit ?? 10;
+            const remaining = info?.remaining ?? 0;
+            if (remaining > 0) {
+              return <>{info?.error || "当前暂时无法开始测肤，请稍后再试"}</>;
+            }
+            if (info?.quotaPeriod === "lifetime") {
+              return (
+                <>
+                  免费测肤次数已用完（共 {dailyLimit} 次）
+                  <br />
+                  升级金卡会员，享不限次测肤
+                </>
+              );
+            }
+            return (
+              <>
+                今日测试次数已用完（共 {dailyLimit} 次）
+                {!user && (
+                  <>
+                    <br />
+                    注册即享 10 次免费测肤，会员升级可获更多次数，金卡及以上不限次
+                  </>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      </ResponsiveDialog>
 
-              {/* Header */}
-              <div className="p-10 pt-14 text-center pb-2">
-                <div className="mb-7 flex justify-center">
-                  <Image
-                    src="/NIHPLOD-logo.svg"
-                    alt="NIHPLOD"
-                    width={136}
-                    height={34}
-                    className="h-[34px] w-auto object-contain"
-                  />
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-10 pb-10 pt-2 flex flex-col items-center gap-6">
-                <div className="text-center space-y-2">
-                  <h2 id="limit-modal-title" className="text-base font-semibold text-brand-charcoal">
-                    {testLimitInfo?.quotaPeriod === 'lifetime' ? '免费测肤次数已用完' : '今日测试次数已用完'}
-                  </h2>
-                  <p className="text-sm leading-relaxed text-brand-charcoal/75">
-                    {(() => {
-                      const info = testLimitInfo;
-                      const dailyLimit = info?.dailyLimit ?? 10;
-                      const remaining = info?.remaining ?? 0;
-                      // 被封禁/限制但仍有剩余次数：展示限制原因而非次数信息
-                      if (remaining > 0) {
-                        return <>{info?.error || "当前暂时无法开始测肤，请稍后再试"}</>;
-                      }
-                      if (info?.quotaPeriod === 'lifetime') {
-                        return (
-                          <>
-                            免费测肤次数已用完（共 {dailyLimit} 次）
-                            <br />升级金卡会员，享不限次测肤
-                          </>
-                        );
-                      }
-                      return (
-                        <>
-                          今日测试次数已用完（共 {dailyLimit} 次）
-                          {!user && (
-                            <><br />注册即享 10 次免费测肤，会员升级可获更多次数，金卡及以上不限次</>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-3 w-full">
-                  {!user && (
-                    <button
-                      onClick={() => {
-                        setShowLimitModal(false);
-                        openAuthModal('login');
-                      }}
-                      className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-brand-charcoal)] py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95 hover:bg-[var(--color-brand-charcoal)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 cursor-pointer"
-                    >
-                      登录 / 注册
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowLimitModal(false)}
-                    className="flex w-full items-center justify-center gap-2 rounded-full border border-brand-charcoal/15 bg-white py-3 text-sm font-medium text-brand-charcoal transition-colors hover:bg-brand-charcoal/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 cursor-pointer"
-                  >
-                    我知道了
-                  </button>
-                </div>
-              </div>
-            </m.div>
-          </div>
-        )}
-      </AnimatePresence>
 
     </LazyMotion>
   );

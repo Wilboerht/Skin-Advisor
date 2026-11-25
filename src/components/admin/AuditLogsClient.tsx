@@ -292,7 +292,7 @@ export default function AuditLogsClient({ role }: { role: string }) {
             width: "176px",
             sortable: true,
             render: (_, log) => (
-                <span className="whitespace-nowrap text-sm tabular-nums text-brand-charcoal/70">
+                <span className="whitespace-nowrap text-sm tabular-nums text-foreground/75">
                     {formatTime(log.createdAt)}
                 </span>
             ),
@@ -304,11 +304,11 @@ export default function AuditLogsClient({ role }: { role: string }) {
             sortable: true,
             render: (_, log) => (
                 <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-brand-charcoal">
+                    <p className="truncate text-sm font-medium text-foreground">
                         {log.admin?.name || log.admin?.username || "系统"}
                     </p>
                     {log.ip && (
-                        <p className="truncate font-mono text-xs text-brand-charcoal/55">
+                        <p className="truncate font-mono text-xs text-muted-foreground">
                             {log.ip}
                         </p>
                     )}
@@ -332,11 +332,11 @@ export default function AuditLogsClient({ role }: { role: string }) {
             sortable: true,
             render: (_, log) => (
                 <div className="min-w-0">
-                    <p className="truncate text-sm text-brand-charcoal">
+                    <p className="truncate text-sm text-foreground">
                         {log.resource}
                     </p>
                     {log.resourceId && (
-                        <p className="truncate font-mono text-xs text-brand-charcoal/55">
+                        <p className="truncate font-mono text-xs text-muted-foreground">
                             {log.resourceId.slice(0, 12)}
                         </p>
                     )}
@@ -472,7 +472,7 @@ export default function AuditLogsClient({ role }: { role: string }) {
                 </div>
 
                 {timePreset === "custom" && (
-                    <div className="mt-3 grid gap-3 border-t border-brand-charcoal/10 pt-3 sm:grid-cols-2">
+                    <div className="mt-3 grid gap-3 border-t border-border/80 pt-3 sm:grid-cols-2">
                         <DatePicker
                             label="开始日期"
                             value={startDate}
@@ -533,12 +533,12 @@ export default function AuditLogsClient({ role }: { role: string }) {
                     >
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                                <p className="truncate text-sm font-medium text-brand-charcoal">
+                                <p className="truncate text-sm font-medium text-foreground">
                                     {log.admin?.name ||
                                         log.admin?.username ||
                                         "系统"}
                                 </p>
-                                <p className="mt-0.5 truncate text-xs text-brand-charcoal/65">
+                                <p className="mt-0.5 truncate text-xs text-muted-foreground">
                                     {log.resource}
                                     {log.resourceId
                                         ? ` · ${log.resourceId.slice(0, 8)}`
@@ -549,7 +549,7 @@ export default function AuditLogsClient({ role }: { role: string }) {
                                 {ACTION_LABELS[log.action] || log.action}
                             </Badge>
                         </div>
-                        <div className="mt-2 flex items-center justify-between gap-2 text-xs text-brand-charcoal/65">
+                        <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
                             <span>{formatTime(log.createdAt)}</span>
                             {log.ip && (
                                 <span className="font-mono">{log.ip}</span>

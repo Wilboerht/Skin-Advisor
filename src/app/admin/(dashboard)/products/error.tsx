@@ -25,14 +25,14 @@ export default function ProductsErrorBoundary({
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-500">
                     <AlertTriangle className="h-7 w-7" />
                 </div>
-                <h2 className="text-base font-medium text-brand-charcoal">
+                <h2 className="text-base font-medium text-foreground">
                     产品列表加载失败
                 </h2>
-                <p className="mt-1 text-sm text-brand-charcoal/65">
+                <p className="mt-1 text-sm text-muted-foreground">
                     加载产品数据时出现异常，请重试或返回产品列表。
                 </p>
                 {error.digest && (
-                    <p className="mt-3 font-mono text-xs text-brand-charcoal/55">
+                    <p className="mt-3 font-mono text-xs text-muted-foreground">
                         Error ID: {error.digest}
                     </p>
                 )}

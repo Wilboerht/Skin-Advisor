@@ -16,7 +16,7 @@ import sharp from "sharp";
 const CERT_WIDTH = 1440;
 const CERT_HEIGHT = 1920;
 const TEXT_COLOR = "#324F63";
-const FONT_FAMILY = "Noto Sans SC, Microsoft YaHei, PingFang SC, sans-serif";
+const FONT_FAMILY = "NIHPLOD Han Sans, Noto Sans SC, Microsoft YaHei, PingFang SC, sans-serif";
 
 const VALID_PERSONAS = new Set([
     "sensitive", "minimalist", "luxury", "ageless",

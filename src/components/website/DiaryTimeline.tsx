@@ -178,7 +178,7 @@ export function DiaryTimeline({
         /* 空态引导：无框居中（与左列"解锁引导"同一种样式语言，全站弹层一致）；
            min-h 撑起时间线区域高度，提示文字在区域内垂直居中 */
         <div className="flex min-h-[240px] flex-col items-center justify-center py-10 text-center mb-6">
-          <p className="text-[13px] text-brand-charcoal/70 font-light leading-[1.8] tracking-[0.06em] mb-4">
+          <p className="text-[13px] text-foreground/75 font-light leading-[1.8] tracking-[0.06em] mb-4">
             完成一次测肤后，这里会自动生成你的护肤记录
           </p>
           <div className="flex items-center justify-center gap-3">
@@ -194,7 +194,7 @@ export function DiaryTimeline({
               <button
                 type="button"
                 onClick={() => onCheckIn(null, todayStr)}
-                className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-full border border-brand-espresso/20 text-brand-charcoal/60 text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-brand-charcoal cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-full border border-brand-espresso/20 text-muted-foreground text-[12px] transition-colors hover:border-brand-espresso/50 hover:text-foreground cursor-pointer"
               >
                 <CalendarCheck className="w-3.5 h-3.5" strokeWidth={1.8} />
                 今日打卡
@@ -236,7 +236,7 @@ export function DiaryTimeline({
           <div key={group.dateStr}>
             {monthDivider && (
               <div className="mb-4 mt-2 first:mt-0">
-                <span className="text-[12px] tracking-[0.2em] text-brand-charcoal/70">
+                <span className="text-[12px] tracking-[0.2em] text-foreground/75">
                   {monthDivider}
                 </span>
               </div>
@@ -244,7 +244,7 @@ export function DiaryTimeline({
             <div className="flex gap-3 md:gap-4">
               {/* 左轴：日号（极简，无星期）；今天以「今日」字面标注 */}
               <div className="w-10 shrink-0 pt-0.5 text-center">
-                <div className={`text-base font-serif leading-tight ${isToday ? "text-brand-charcoal font-medium" : "text-brand-charcoal/75"}`}>
+                <div className={`text-base font-sans leading-tight ${isToday ? "text-foreground font-medium" : "text-foreground/75"}`}>
                   {isToday ? "今日" : `${dayOf(group.dateStr)}日`}
                 </div>
               </div>
@@ -258,12 +258,12 @@ export function DiaryTimeline({
                       <span className="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-dashed border-brand-espresso/25 bg-[#FAF7F1]" />
                       {hideTodayCta ? (
                         /* 打卡 CTA 由「打卡记录」区标题承载：此处仅留文字提示，避免同屏重复入口 */
-                        <span className="text-[13px] text-brand-charcoal/65 font-light">
+                        <span className="text-[13px] text-muted-foreground font-light">
                           今天还没有记录
                         </span>
                       ) : (
                       <div className="flex items-center gap-3">
-                        <span className="flex-1 text-[13px] text-brand-charcoal/65 font-light">
+                        <span className="flex-1 text-[13px] text-muted-foreground font-light">
                           今天还没有记录
                         </span>
                         {onCheckIn && (
@@ -278,7 +278,7 @@ export function DiaryTimeline({
                         )}
                         <Link
                           href="/questions"
-                          className="shrink-0 inline-flex items-center gap-1 h-8 px-1 text-[12px] text-brand-charcoal/65 transition-colors hover:text-brand-charcoal"
+                          className="shrink-0 inline-flex items-center gap-1 h-8 px-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
                         >
                           去测肤
                           <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.8} />
@@ -323,7 +323,7 @@ export function DiaryTimeline({
                       <button
                         type="button"
                         onClick={() => onCheckIn(manualDiaryEntry, group.dateStr)}
-                        className="text-left text-[12px] text-brand-charcoal/65 font-light hover:text-brand-charcoal transition-colors cursor-pointer"
+                        className="text-left text-[12px] text-muted-foreground font-light hover:text-foreground transition-colors cursor-pointer"
                       >
                         {manualDiaryEntry ? "编辑记录 →" : "补打卡 →"}
                       </button>
@@ -364,7 +364,7 @@ export function DiaryTimeline({
                               type="button"
                               onClick={() => onCheckIn?.(ev.entry, group.dateStr)}
                               aria-label={isToday ? "编辑今日记录" : "编辑记录"}
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/65 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
                             >
                               <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
                             </button>
@@ -382,7 +382,7 @@ export function DiaryTimeline({
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteId(null)}
-                                className="h-8 px-3 flex items-center rounded-full text-brand-charcoal/70 text-[12px] font-light hover:bg-brand-charcoal/[0.05] cursor-pointer"
+                                className="h-8 px-3 flex items-center rounded-full text-foreground/75 text-[12px] font-light hover:bg-brand-charcoal/[0.05] cursor-pointer"
                               >
                                 取消
                               </button>
@@ -392,7 +392,7 @@ export function DiaryTimeline({
                               type="button"
                               onClick={() => setConfirmDeleteId(ev.entry.id)}
                               aria-label="删除记录"
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/65 hover:text-brand-danger hover:bg-brand-danger/[0.06] transition-colors cursor-pointer"
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-brand-danger hover:bg-brand-danger/[0.06] transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
                             </button>
@@ -407,7 +407,7 @@ export function DiaryTimeline({
                                 <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
                                 {meta.label}
                               </span>
-                              <span className="inline-flex items-center gap-0.5 text-[12px] text-brand-charcoal/65 group-hover:text-brand-charcoal transition-colors">
+                              <span className="inline-flex items-center gap-0.5 text-[12px] text-muted-foreground group-hover:text-foreground transition-colors">
                                 查看报告
                                 <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                               </span>
@@ -428,7 +428,7 @@ export function DiaryTimeline({
                               {ev.entry.tags?.map((tag) => (
                                 <span
                                   key={tag}
-                                  className="text-[12px] text-brand-charcoal/65"
+                                  className="text-[12px] text-muted-foreground"
                                 >
                                   {tag}
                                 </span>
@@ -441,7 +441,7 @@ export function DiaryTimeline({
                             )}
                             {/* 同日冲突提示：手动打卡与测肤评分同屏时，补一句客观评分帮助对照 */}
                             {!auto && maxDayScore != null && (
-                              <p className="mt-1 text-[12px] text-brand-charcoal/65 font-light">
+                              <p className="mt-1 text-[12px] text-muted-foreground font-light">
                                 同日测肤 {maxDayScore} 分
                               </p>
                             )}
@@ -462,14 +462,14 @@ export function DiaryTimeline({
                         href={`/reports/${ev.test.sessionId}?skipCover=1`}
                         className="group flex items-center gap-2 pr-4"
                       >
-                        <span className="text-[12px] font-medium text-brand-charcoal">完成测肤</span>
+                        <span className="text-[12px] font-medium text-foreground">完成测肤</span>
                         {skinType && (
-                          <span className="text-[12px] text-brand-charcoal/65 font-light truncate">{skinType}</span>
+                          <span className="text-[12px] text-muted-foreground font-light truncate">{skinType}</span>
                         )}
                         {score != null && score > 0 && (
-                          <span className="text-[12px] text-brand-charcoal/60 font-light shrink-0">{score} 分</span>
+                          <span className="text-[12px] text-muted-foreground font-light shrink-0">{score} 分</span>
                         )}
-                        <ChevronRight className="w-3 h-3 shrink-0 text-brand-charcoal/55 group-hover:text-brand-charcoal/60 group-hover:translate-x-0.5 transition-all" />
+                        <ChevronRight className="w-3 h-3 shrink-0 text-muted-foreground group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
                       </Link>
                     </div>
                   );
@@ -489,7 +489,7 @@ export function DiaryTimeline({
             onLoadMoreEntries?.();
           }}
           disabled={testsLoadingMore || entriesLoadingMore}
-          className="w-full h-10 inline-flex items-center justify-center gap-2 rounded-full border border-brand-espresso/25 text-[12px] text-brand-charcoal/70 font-light tracking-[0.08em] hover:border-brand-espresso/50 hover:text-brand-charcoal transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+          className="w-full h-10 inline-flex items-center justify-center gap-2 rounded-full border border-brand-espresso/25 text-[12px] text-foreground/75 font-light tracking-[0.08em] hover:border-brand-espresso/50 hover:text-foreground transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait"
         >
           {(testsLoadingMore || entriesLoadingMore) && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {hiddenCount > 0 ? `加载更早的记录（还有 ${hiddenCount} 天）` : "加载更早的记录"}

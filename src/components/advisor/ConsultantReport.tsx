@@ -62,7 +62,7 @@ function EvidenceChips({ issue, dimensions }: { issue: ConsultantIssue; dimensio
                 return (
                     <span
                         key={chip.key}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand-espresso)]/10 bg-white px-2.5 py-1 text-[11px] text-[var(--color-brand-espresso)]/70 font-light"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand-espresso)]/10 bg-card px-2.5 py-1 text-[11px] text-[var(--color-brand-espresso)]/70 font-light"
                     >
                         {chip.label}
                         <span className={cn("font-medium", band.toneClass)}>
@@ -146,8 +146,8 @@ function IssueCard({ issue, dimensions, expanded, onToggle, bodyId, index, sessi
             "relative rounded-xl border overflow-hidden motion-safe:transition-all motion-safe:duration-200",
             // 重点问题：白底 + 实色红描边（左侧色条/徽章已足够传达严重度），避免半透明红底显脏
             isSevere
-                ? "border-red-200 bg-white"
-                : "border-[var(--color-brand-espresso)]/[0.10] bg-white",
+                ? "border-red-200 bg-card"
+                : "border-[var(--color-brand-espresso)]/[0.10] bg-card",
             expanded ? "shadow-[0_8px_24px_rgba(61,47,37,0.06)]" : "hover:shadow-[0_4px_16px_rgba(61,47,37,0.04)] hover:border-[var(--color-brand-espresso)]/[0.18]"
         )}>
             {/* 严重度色条 */}
@@ -410,7 +410,7 @@ export function ConsultantReport({ report, dimensions, personaRoute, sessionId }
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-sm leading-[1.85] text-brand-charcoal/75">
+                        <p className="text-sm leading-[1.85] text-foreground/75">
                             <span className="font-medium text-[var(--color-brand-espresso)]">{safeAdvantage!.title}：</span>
                             {safeAdvantage!.content}
                         </p>

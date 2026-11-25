@@ -29,7 +29,7 @@ export default async function AdminDashboardLayout({
 
     return (
         <ToastProvider>
-            <div className="flex h-screen bg-white text-brand-charcoal font-sans">
+            <div className="flex h-screen bg-card text-foreground font-sans">
                 <a
                     href="#admin-main-content"
                     className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-brand-primary focus:text-white focus:rounded-lg focus:text-sm"

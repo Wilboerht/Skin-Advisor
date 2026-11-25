@@ -79,12 +79,12 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
             return (
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-2">
-                        <History className="w-4 h-4 text-brand-charcoal/65" />
-                        <span className="text-sm font-medium text-brand-charcoal/70">
+                        <History className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground/75">
                             属性变更对比
                         </span>
                     </div>
-                    <div className="border border-brand-charcoal/10 rounded-xl overflow-hidden divide-y divide-brand-charcoal/10">
+                    <div className="border border-border/80 rounded-xl overflow-hidden divide-y divide-border/80">
                         {keys.map((key) => {
                             const prevVal = prevObj[key];
                             const nextVal = nextObj[key];
@@ -95,9 +95,9 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                             return (
                                 <div
                                     key={key}
-                                    className="grid grid-cols-12 gap-4 bg-white p-3 text-xs"
+                                    className="grid grid-cols-12 gap-4 bg-card p-3 text-xs"
                                 >
-                                    <div className="col-span-12 md:col-span-2 font-mono font-bold text-brand-charcoal/65 truncate py-1">
+                                    <div className="col-span-12 md:col-span-2 font-mono font-bold text-muted-foreground truncate py-1">
                                         {key}
                                     </div>
                                     <div className="col-span-5 md:col-span-4 bg-rose-50/50 p-2 rounded border border-rose-100 text-rose-700 min-h-[40px] flex items-center overflow-hidden">
@@ -108,7 +108,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                         </div>
                                     </div>
                                     <div className="col-span-2 flex items-center justify-center">
-                                        <ArrowRight className="w-4 h-4 text-brand-charcoal/55" />
+                                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
                                     </div>
                                     <div className="col-span-5 md:col-span-4 bg-emerald-50/50 p-2 rounded border border-emerald-100 text-emerald-700 min-h-[40px] flex items-center overflow-hidden">
                                         <div className="truncate w-full font-medium">
@@ -129,14 +129,14 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Terminal className="w-4 h-4 text-brand-charcoal/65" />
-                        <span className="text-sm font-medium text-brand-charcoal/70">
+                        <Terminal className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground/75">
                             详细数据内容 (JSON)
                         </span>
                     </div>
                     <button
                         onClick={handleCopy}
-                        className="p-1.5 hover:bg-brand-primary/5 rounded-lg text-brand-charcoal/65 hover:text-brand-charcoal/70 transition-colors"
+                        className="p-1.5 hover:bg-brand-primary/5 rounded-lg text-muted-foreground hover:text-foreground/75 transition-colors"
                         title="复制内容"
                     >
                         {copied ? (
@@ -171,41 +171,41 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         >
             <div className="space-y-6">
                 {!log ? (
-                    <p className="text-sm text-brand-charcoal/65 text-center py-8">
+                    <p className="text-sm text-muted-foreground text-center py-8">
                         无日志数据
                     </p>
                 ) : (
                     <>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="p-3 rounded-xl bg-brand-charcoal/[0.02] border border-brand-charcoal/10">
-                                <span className="block text-xs text-brand-charcoal/65 mb-1">
+                            <div className="p-3 rounded-xl bg-brand-charcoal/[0.02] border border-border/80">
+                                <span className="block text-xs text-muted-foreground mb-1">
                                     操作行为
                                 </span>
-                                <span className="text-sm font-semibold text-brand-charcoal/70">
+                                <span className="text-sm font-semibold text-foreground/75">
                                     {log.action}
                                 </span>
                             </div>
-                            <div className="p-3 rounded-xl bg-brand-charcoal/[0.02] border border-brand-charcoal/10">
-                                <span className="block text-xs text-brand-charcoal/65 mb-1">
+                            <div className="p-3 rounded-xl bg-brand-charcoal/[0.02] border border-border/80">
+                                <span className="block text-xs text-muted-foreground mb-1">
                                     资源标识
                                 </span>
-                                <span className="text-sm font-mono text-brand-charcoal/70 truncate">
+                                <span className="text-sm font-mono text-foreground/75 truncate">
                                     {log.resourceId || "N/A"}
                                 </span>
                             </div>
-                            <div className="p-3 rounded-xl bg-brand-charcoal/[0.02] border border-brand-charcoal/10">
-                                <span className="block text-xs text-brand-charcoal/65 mb-1">
+                            <div className="p-3 rounded-xl bg-brand-charcoal/[0.02] border border-border/80">
+                                <span className="block text-xs text-muted-foreground mb-1">
                                     IP 地址
                                 </span>
-                                <span className="text-sm font-mono text-brand-charcoal/70">
+                                <span className="text-sm font-mono text-foreground/75">
                                     {log.ip || "Unknown"}
                                 </span>
                             </div>
-                            <div className="p-3 rounded-xl bg-brand-charcoal/[0.02] border border-brand-charcoal/10">
-                                <span className="block text-xs text-brand-charcoal/65 mb-1">
+                            <div className="p-3 rounded-xl bg-brand-charcoal/[0.02] border border-border/80">
+                                <span className="block text-xs text-muted-foreground mb-1">
                                     执行时间
                                 </span>
-                                <span className="text-sm font-semibold text-brand-charcoal/70">
+                                <span className="text-sm font-semibold text-foreground/75">
                                     {formatBeijingDateTime(log.createdAt)}
                                 </span>
                             </div>

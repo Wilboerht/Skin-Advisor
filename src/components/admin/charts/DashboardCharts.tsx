@@ -29,7 +29,7 @@ const CHART_COLORS = [
 function ChartSkeleton() {
     return (
         <div className="flex h-72 items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-charcoal/20 border-t-brand-primary" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-brand-primary" />
         </div>
     );
 }
@@ -58,7 +58,7 @@ export function DashboardCharts({
             <PanelCard
                 title="肤质分布"
                 action={
-                    <span className="text-xs tabular-nums text-brand-charcoal/65">
+                    <span className="text-xs tabular-nums text-muted-foreground">
                         共 {distributionTotal} 条
                     </span>
                 }
@@ -68,7 +68,7 @@ export function DashboardCharts({
                 ) : !mounted ? (
                     <ChartSkeleton />
                 ) : !hasDistribution ? (
-                    <p className="py-10 text-center text-sm text-brand-charcoal/65">
+                    <p className="py-10 text-center text-sm text-muted-foreground">
                         暂无肤质数据
                     </p>
                 ) : (
@@ -121,7 +121,7 @@ export function DashboardCharts({
                             {distribution.map((entry, index) => (
                                 <span
                                     key={entry.name}
-                                    className="inline-flex items-center gap-1.5 text-xs text-brand-charcoal/70"
+                                    className="inline-flex items-center gap-1.5 text-xs text-foreground/75"
                                 >
                                     <span
                                         className="h-2 w-2 rounded-full"
@@ -145,7 +145,7 @@ export function DashboardCharts({
             <PanelCard
                 title="近 7 日趋势"
                 action={
-                    <span className="text-xs text-brand-charcoal/65">
+                    <span className="text-xs text-muted-foreground">
                         开始 / 完成
                     </span>
                 }
@@ -155,7 +155,7 @@ export function DashboardCharts({
                 ) : !mounted ? (
                     <ChartSkeleton />
                 ) : !hasGrowth ? (
-                    <p className="py-10 text-center text-sm text-brand-charcoal/65">
+                    <p className="py-10 text-center text-sm text-muted-foreground">
                         暂无趋势数据
                     </p>
                 ) : (

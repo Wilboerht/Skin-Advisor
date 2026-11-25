@@ -274,7 +274,7 @@ export default function ProductsClient({ role }: { role: string }) {
                         )
                     }
                     aria-label="全选本页产品"
-                    className="h-4 w-4 rounded border-brand-charcoal/20 text-brand-primary focus:ring-brand-primary"
+                    className="h-4 w-4 rounded border-border text-brand-primary focus:ring-brand-primary"
                 />
             ),
             width: "48px",
@@ -291,7 +291,7 @@ export default function ProductsClient({ role }: { role: string }) {
                         )
                     }
                     aria-label={`选择 ${product.name}`}
-                    className="h-4 w-4 rounded border-brand-charcoal/20 text-brand-primary focus:ring-brand-primary"
+                    className="h-4 w-4 rounded border-border text-brand-primary focus:ring-brand-primary"
                 />
             ),
         },
@@ -312,7 +312,7 @@ export default function ProductsClient({ role }: { role: string }) {
                             unoptimized={product.image.startsWith("/")}
                         />
                     ) : (
-                        <div className="flex h-full w-full items-center justify-center text-brand-charcoal/55">
+                        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                             <ImageOff className="h-5 w-5" />
                         </div>
                     )}
@@ -330,7 +330,7 @@ export default function ProductsClient({ role }: { role: string }) {
                         href={`/admin/products/${product.id}/edit?returnTo=${encodeURIComponent(
                             `${pathname}${searchParams.toString() ? `?${searchParams}` : ""}`,
                         )}`}
-                        className="min-w-0 truncate font-medium text-brand-charcoal transition-colors hover:text-brand-primary"
+                        className="min-w-0 truncate font-medium text-foreground transition-colors hover:text-brand-primary"
                         title={product.name}
                     >
                         {product.name}
@@ -359,7 +359,7 @@ export default function ProductsClient({ role }: { role: string }) {
             width: "100px",
             sortable: true,
             render: (_, product) => (
-                <span className="text-sm tabular-nums text-brand-charcoal/70">
+                <span className="text-sm tabular-nums text-foreground/75">
                     {product.price}
                 </span>
             ),
@@ -380,7 +380,7 @@ export default function ProductsClient({ role }: { role: string }) {
             width: "120px",
             sortable: true,
             render: (_, product) => (
-                <span className="whitespace-nowrap text-sm text-brand-charcoal/65">
+                <span className="whitespace-nowrap text-sm text-muted-foreground">
                     {new Date(product.createdAt).toLocaleDateString("zh-CN")}
                 </span>
             ),
@@ -435,7 +435,7 @@ export default function ProductsClient({ role }: { role: string }) {
                             updateParams({ search: searchInput || null });
                         }}
                     >
-                        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-brand-charcoal/65" />
+                        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             aria-label="搜索产品名称"
                             placeholder="搜索产品名称"
@@ -496,7 +496,7 @@ export default function ProductsClient({ role }: { role: string }) {
 
             {selectedIds.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-brand-primary/15 bg-brand-primary/[0.03] px-4 py-3">
-                    <span className="mr-1 text-sm font-medium text-brand-charcoal">
+                    <span className="mr-1 text-sm font-medium text-foreground">
                         已选 {selectedIds.length} 项
                     </span>
                     <Button
@@ -552,7 +552,7 @@ export default function ProductsClient({ role }: { role: string }) {
                     <button
                         type="button"
                         onClick={() => setSelectedIds([])}
-                        className="ml-auto text-sm text-brand-charcoal/65 hover:text-brand-charcoal"
+                        className="ml-auto text-sm text-muted-foreground hover:text-foreground"
                     >
                         取消选择
                     </button>
@@ -608,13 +608,13 @@ export default function ProductsClient({ role }: { role: string }) {
                                                 )}
                                             />
                                         ) : (
-                                            <div className="flex h-full w-full items-center justify-center text-brand-charcoal/55">
+                                            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                                                 <ImageOff className="h-5 w-5" />
                                             </div>
                                         )}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="truncate font-medium text-brand-charcoal">
+                                        <p className="truncate font-medium text-foreground">
                                             {product.name}
                                         </p>
                                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -641,8 +641,8 @@ export default function ProductsClient({ role }: { role: string }) {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between border-t border-brand-charcoal/10 pt-2">
-                                    <span className="text-sm tabular-nums text-brand-charcoal/70">
+                                <div className="flex items-center justify-between border-t border-border/80 pt-2">
+                                    <span className="text-sm tabular-nums text-foreground/75">
                                         {product.price}
                                     </span>
                                     <div className="flex items-center gap-1">

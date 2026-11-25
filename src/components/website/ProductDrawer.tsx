@@ -205,7 +205,7 @@ export function ProductDrawer({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="absolute inset-0 bg-[#FFFFFF] lg:bg-black/40 lg:backdrop-blur-sm"
+              className="absolute inset-0 bg-card lg:bg-brand-charcoal/25 lg:backdrop-blur-sm"
             />
             <m.div
               ref={dialogRef}
@@ -213,7 +213,7 @@ export function ProductDrawer({
               aria-modal="true"
               aria-label={product.name}
               tabIndex={-1}
-              className="relative flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-none bg-transparent shadow-2xl outline-none lg:h-[min(700px,calc(100dvh_-_3rem))] lg:flex-row lg:rounded-3xl lg:bg-[#FBF8F0]"
+              className="relative flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-t-[28px] bg-transparent shadow-dialog outline-none lg:h-[min(700px,calc(100dvh_-_3rem))] lg:flex-row lg:rounded-[40px] lg:bg-dialog"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -224,7 +224,7 @@ export function ProductDrawer({
               <button
                 type="button"
                 onClick={onClose}
-                className="absolute right-4 top-4 z-[220] hidden h-10 w-10 items-center justify-center rounded-full text-2xl font-light text-brand-charcoal transition-colors hover:bg-brand-charcoal/5 active:bg-brand-charcoal/10 lg:flex"
+                className="absolute right-4 top-4 z-[220] hidden h-10 w-10 items-center justify-center rounded-full text-2xl font-light text-foreground transition-colors hover:bg-brand-charcoal/5 active:bg-brand-charcoal/10 lg:flex"
                 aria-label="关闭"
               >
                 &times;
@@ -248,7 +248,7 @@ export function ProductDrawer({
                   onClick={onClose}
                   className="absolute bottom-0 left-0 top-0 flex items-center justify-center px-4 py-[10px]"
                 >
-                  <ChevronLeft className="h-6 w-6 text-brand-charcoal" />
+                  <ChevronLeft className="h-6 w-6 text-foreground" />
                 </button>
                 {brandLinkEnabled ? (
                   <Link href="/" className="flex items-center justify-center py-[30px]">
@@ -282,7 +282,7 @@ export function ProductDrawer({
                       />
                     </m.div>
                   ) : (
-                    <div className="flex h-full items-center justify-center text-brand-charcoal/30">
+                    <div className="flex h-full items-center justify-center text-muted-foreground/70">
                       <span className="text-sm">暂无图片</span>
                     </div>
                   )}
@@ -294,14 +294,14 @@ export function ProductDrawer({
                     <button
                       type="button"
                       onClick={handlePrevImage}
-                      className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-brand-charcoal/50 transition-all hover:text-brand-charcoal lg:left-4"
+                      className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-muted-foreground transition-all hover:text-foreground lg:left-4"
                     >
                       <ChevronLeft className="h-6 w-6 lg:h-8 lg:w-8" />
                     </button>
                     <button
                       type="button"
                       onClick={handleNextImage}
-                      className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-brand-charcoal/50 transition-all hover:text-brand-charcoal lg:right-4"
+                      className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-muted-foreground transition-all hover:text-foreground lg:right-4"
                     >
                       <ChevronRight className="h-6 w-6 lg:h-8 lg:w-8" />
                     </button>
@@ -318,7 +318,7 @@ export function ProductDrawer({
                         onClick={() => setCurrentImageIndex(index)}
                         className={cn(
                           "h-[2px] rounded-full border-none p-0 shadow-[0_1px_3px_rgba(0,38,62,0.4)] transition-all duration-300",
-                          currentImageIndex === index ? "w-5 bg-white" : "w-2 bg-white/60"
+                          currentImageIndex === index ? "w-5 bg-card" : "w-2 bg-card/60"
                         )}
                       />
                     ))}
@@ -333,13 +333,13 @@ export function ProductDrawer({
                   <div className="max-w-none">
                     {/* 基本信息 */}
                     <section className="mb-8">
-                      <h2 className="mb-3 text-2xl font-bold leading-tight text-brand-charcoal lg:text-3xl">
+                      <h2 className="mb-3 text-2xl font-bold leading-tight text-foreground lg:text-3xl">
                         {product.name}
                       </h2>
-                      <div className="mb-3 text-xs tracking-wide text-brand-charcoal/50">
+                      <div className="mb-3 text-xs tracking-wide text-muted-foreground">
                         规格: {product.capacity || "N/A"} | 产地: 法国
                       </div>
-                      <div className="text-lg font-medium text-brand-charcoal">
+                      <div className="text-lg font-medium text-foreground">
                         {formatPrice(product.price)}
                       </div>
                     </section>
@@ -347,7 +347,7 @@ export function ProductDrawer({
                     {/* 描述 */}
                     <section className="mb-8">
                       <div
-                        className="text-justify text-[15px] leading-[1.8] text-brand-charcoal/70"
+                        className="text-justify text-[15px] leading-[1.8] text-foreground/75"
                         dangerouslySetInnerHTML={{
                           __html: sanitizeHtml(product.description),
                         }}
@@ -360,14 +360,14 @@ export function ProductDrawer({
                     </section>
 
                     {/* 折叠面板 */}
-                    <section className="border-t border-brand-charcoal/10">
+                    <section className="border-t border-border/80">
                       {product.ingredients && (
-                        <div className="border-b border-brand-charcoal/10">
+                        <div className="border-b border-border/80">
                           <button
                             type="button"
                             aria-expanded={openAccordion === "ingredients"}
                             onClick={() => toggleAccordion("ingredients")}
-                            className="flex w-full cursor-pointer items-center justify-between py-4 text-left text-[15px] font-semibold uppercase tracking-wider text-brand-charcoal"
+                            className="flex w-full cursor-pointer items-center justify-between py-4 text-left text-[15px] font-semibold uppercase tracking-wider text-foreground"
                           >
                             <span>主要成分</span>
                             <span
@@ -388,7 +388,7 @@ export function ProductDrawer({
                                 className="overflow-hidden"
                               >
                                 <div
-                                  className="pb-4 text-[15px] leading-[1.8] text-brand-charcoal/60"
+                                  className="pb-4 text-[15px] leading-[1.8] text-muted-foreground"
                                   dangerouslySetInnerHTML={{
                                     __html: sanitizeHtml(product.ingredients),
                                   }}
@@ -400,12 +400,12 @@ export function ProductDrawer({
                       )}
 
                       {product.usage && (
-                        <div className="border-b border-brand-charcoal/10">
+                        <div className="border-b border-border/80">
                           <button
                             type="button"
                             aria-expanded={openAccordion === "usage"}
                             onClick={() => toggleAccordion("usage")}
-                            className="flex w-full cursor-pointer items-center justify-between py-4 text-left text-[15px] font-semibold uppercase tracking-wider text-brand-charcoal"
+                            className="flex w-full cursor-pointer items-center justify-between py-4 text-left text-[15px] font-semibold uppercase tracking-wider text-foreground"
                           >
                             <span>使用方法</span>
                             <span
@@ -426,7 +426,7 @@ export function ProductDrawer({
                                 className="overflow-hidden"
                               >
                                 <div
-                                  className="pb-4 text-[15px] leading-[1.8] text-brand-charcoal/60"
+                                  className="pb-4 text-[15px] leading-[1.8] text-muted-foreground"
                                   dangerouslySetInnerHTML={{
                                     __html: sanitizeHtml(product.usage),
                                   }}
@@ -441,7 +441,7 @@ export function ProductDrawer({
                       <div className="py-4">
                         {actionArea ?? (
                           <>
-                            <div className="mb-4 text-[15px] font-semibold text-brand-charcoal">
+                            <div className="mb-4 text-[15px] font-semibold text-foreground">
                               官方旗舰店
                             </div>
 
@@ -459,7 +459,7 @@ export function ProductDrawer({
                                   </a>
                                 ))
                               ) : (
-                                <span className="text-[14px] text-brand-charcoal/50">
+                                <span className="text-[14px] text-muted-foreground">
                                   暂无购买链接
                                 </span>
                               )}
@@ -478,18 +478,18 @@ export function ProductDrawer({
                 >
                   {/* 标题与规格 */}
                   <div className="mb-1 flex items-start justify-between">
-                    <h2 className="text-xl font-medium text-brand-charcoal">{product.name}</h2>
-                    <span className="mt-0.5 text-sm text-brand-charcoal/60">
+                    <h2 className="text-xl font-medium text-foreground">{product.name}</h2>
+                    <span className="mt-0.5 text-sm text-muted-foreground">
                       {product.capacity || "N/A"}
                     </span>
                   </div>
 
                   {/* 价格与产地 */}
                   <div className="mb-5 flex items-center justify-between">
-                    <span className="text-lg font-medium text-brand-charcoal">
+                    <span className="text-lg font-medium text-foreground">
                       {formatPrice(product.price)}
                     </span>
-                    <span className="text-xs text-brand-charcoal/50">产地：法国</span>
+                    <span className="text-xs text-muted-foreground">产地：法国</span>
                   </div>
 
                   {/* Tab 切换 */}
@@ -497,7 +497,7 @@ export function ProductDrawer({
                     <div
                       role="tablist"
                       aria-label="产品信息"
-                      className="flex h-[37px] items-center rounded-full bg-[#FFFFFF] p-[4px]"
+                      className="flex h-[37px] items-center rounded-full bg-card p-[4px]"
                     >
                       <button
                         type="button"
@@ -509,15 +509,15 @@ export function ProductDrawer({
                         className={cn(
                           "relative flex flex-1 items-center justify-center whitespace-nowrap text-[13px] font-normal leading-[20px] transition-all duration-300",
                           activeTab === "description"
-                            ? "text-brand-charcoal"
+                            ? "text-foreground"
                             : "text-[#4A6272]/60 hover:text-[#4A6272]/80"
                         )}
-                        style={{ fontFamily: "'Source Han Sans SC', 'PingFang SC', sans-serif" }}
+                        style={{ fontFamily: "var(--font-sans)" }}
                       >
                         <span
                           className={cn(
                             activeTab === "description"
-                              ? "rounded-full bg-white px-2 py-[3px] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+                              ? "rounded-full bg-card px-2 py-[3px] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
                               : ""
                           )}
                         >
@@ -535,15 +535,15 @@ export function ProductDrawer({
                           className={cn(
                             "relative flex flex-1 items-center justify-center whitespace-nowrap text-[13px] font-normal leading-[20px] transition-all duration-300",
                             activeTab === "ingredients"
-                              ? "text-brand-charcoal"
+                              ? "text-foreground"
                               : "text-[#4A6272]/60 hover:text-[#4A6272]/80"
                           )}
-                          style={{ fontFamily: "'Source Han Sans SC', 'PingFang SC', sans-serif" }}
+                          style={{ fontFamily: "var(--font-sans)" }}
                         >
                           <span
                             className={cn(
                               activeTab === "ingredients"
-                                ? "rounded-full bg-white px-2 py-[3px] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+                                ? "rounded-full bg-card px-2 py-[3px] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
                                 : ""
                             )}
                           >
@@ -562,15 +562,15 @@ export function ProductDrawer({
                           className={cn(
                             "relative flex flex-1 items-center justify-center whitespace-nowrap text-[13px] font-normal leading-[20px] transition-all duration-300",
                             activeTab === "usage"
-                              ? "text-brand-charcoal"
+                              ? "text-foreground"
                               : "text-[#4A6272]/60 hover:text-[#4A6272]/80"
                           )}
-                          style={{ fontFamily: "'Source Han Sans SC', 'PingFang SC', sans-serif" }}
+                          style={{ fontFamily: "var(--font-sans)" }}
                         >
                           <span
                             className={cn(
                               activeTab === "usage"
-                                ? "rounded-full bg-white px-2 py-[3px] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+                                ? "rounded-full bg-card px-2 py-[3px] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
                                 : ""
                             )}
                           >
@@ -590,7 +590,7 @@ export function ProductDrawer({
                       hidden={activeTab !== "description"}
                     >
                       <div
-                        className="mb-4 text-[13px] leading-[1.8] text-brand-charcoal/70"
+                        className="mb-4 text-[13px] leading-[1.8] text-foreground/75"
                         dangerouslySetInnerHTML={{
                           __html: sanitizeHtml(product.description),
                         }}
@@ -605,7 +605,7 @@ export function ProductDrawer({
                         hidden={activeTab !== "ingredients"}
                       >
                         <div
-                          className="text-[13px] leading-[1.8] text-brand-charcoal/70"
+                          className="text-[13px] leading-[1.8] text-foreground/75"
                           dangerouslySetInnerHTML={{
                             __html: sanitizeHtml(product.ingredients),
                           }}
@@ -620,7 +620,7 @@ export function ProductDrawer({
                         hidden={activeTab !== "usage"}
                       >
                         <div
-                          className="text-[13px] leading-[1.8] text-brand-charcoal/70"
+                          className="text-[13px] leading-[1.8] text-foreground/75"
                           dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.usage) }}
                         />
                       </div>
@@ -639,7 +639,7 @@ export function ProductDrawer({
                               href={link.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 rounded-full bg-[#FFFFFF] px-3 py-1.5 text-[12px] text-brand-charcoal"
+                              className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[12px] text-foreground"
                             >
                               <PlatformIcon platform={link.platform} />
                               <span>{link.platform}</span>

@@ -2,6 +2,8 @@
 
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "./Button";
+import { Select } from "./Select";
 
 interface PaginationProps {
     page: number;
@@ -14,10 +16,38 @@ interface PaginationProps {
     onPageSizeChange?: (pageSize: number) => void;
 }
 
-const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100].map((size) => ({
+    value: String(size),
+    label: String(size),
+}));
+
+function PageSizeSelect({
+    pageSize,
+    onPageSizeChange,
+}: {
+    pageSize: number;
+    onPageSizeChange: (pageSize: number) => void;
+}) {
+    return (
+        <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            每页
+            <span className="inline-block w-[76px]">
+                <Select
+                    aria-label="每页条数"
+                    options={PAGE_SIZE_OPTIONS}
+                    value={String(pageSize)}
+                    onChange={(event) =>
+                        onPageSizeChange(Number(event.target.value))
+                    }
+                />
+            </span>
+            条
+        </label>
+    );
+}
 
 /**
- * 分页控件组件
+ * shadcn/ui 分页：统一 Button / Select / 语义色
  */
 export function Pagination({
     page,
@@ -30,209 +60,134 @@ export function Pagination({
 }: PaginationProps) {
     const totalPages = Math.ceil(total / pageSize);
 
-    // 单页时仍显示"共 N 条 + 每页条数选择器"（只有一页时隐藏页码）
+    const pageNumbers: (number | "ellipsis")[] = [];
+    if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+    } else {
+        pageNumbers.push(1);
+        if (page > 3) pageNumbers.push("ellipsis");
+        const start = Math.max(2, page - 1);
+        const end = Math.min(totalPages - 1, page + 1);
+        for (let i = start; i <= end; i++) pageNumbers.push(i);
+        if (page < totalPages - 2) pageNumbers.push("ellipsis");
+        pageNumbers.push(totalPages);
+    }
+
     if (totalPages <= 1) {
         if (!onPageSizeChange && !showTotal) return null;
         return (
-            <div className={cn("flex flex-wrap items-center gap-2", className)}>
+            <div className={cn("flex flex-wrap items-center gap-3", className)}>
                 {showTotal && (
-                    <span className="mr-2 text-sm text-brand-charcoal/65">
+                    <span className="text-sm text-muted-foreground">
                         共 {total} 条
                     </span>
                 )}
                 {onPageSizeChange && (
-                    <label className="mr-2 flex items-center gap-1 text-sm text-brand-charcoal/65">
-                        每页
-                        <select
-                            value={pageSize}
-                            onChange={(e) =>
-                                onPageSizeChange(Number(e.target.value))
-                            }
-                            className="rounded-lg border border-brand-charcoal/20 bg-white px-2 py-1 text-sm text-brand-charcoal focus:border-brand-primary focus:outline-none"
-                        >
-                            {PAGE_SIZE_OPTIONS.map((size) => (
-                                <option key={size} value={size}>
-                                    {size}
-                                </option>
-                            ))}
-                        </select>
-                        条
-                    </label>
+                    <PageSizeSelect
+                        pageSize={pageSize}
+                        onPageSizeChange={onPageSizeChange}
+                    />
                 )}
             </div>
         );
     }
 
-    // 生成页码数组
-    const getPageNumbers = () => {
-        const pages: (number | "ellipsis")[] = [];
-        const showEllipsis = totalPages > 7;
-
-        if (!showEllipsis) {
-            for (let i = 1; i <= totalPages; i++) {
-                pages.push(i);
-            }
-        } else {
-            // 总是显示第一页
-            pages.push(1);
-
-            if (page > 3) {
-                pages.push("ellipsis");
-            }
-
-            // 显示当前页附近的页码
-            const start = Math.max(2, page - 1);
-            const end = Math.min(totalPages - 1, page + 1);
-
-            for (let i = start; i <= end; i++) {
-                pages.push(i);
-            }
-
-            if (page < totalPages - 2) {
-                pages.push("ellipsis");
-            }
-
-            // 总是显示最后一页
-            if (totalPages > 1) {
-                pages.push(totalPages);
-            }
-        }
-
-        return pages;
-    };
-
-    const pageNumbers = getPageNumbers();
-
-    const pageButtonStyles =
-        "flex h-9 min-w-[36px] items-center justify-center rounded-lg text-sm font-medium transition-colors";
-    const compactButtonStyles =
-        "flex h-11 min-w-[44px] items-center justify-center rounded-lg border border-brand-charcoal/20 bg-white text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 sm:min-w-[36px]";
-
-    const pageSizeSelector = onPageSizeChange ? (
-        <label className="flex items-center gap-1 text-sm text-brand-charcoal/65">
-            每页
-            <select
-                value={pageSize}
-                onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                className="rounded-lg border border-brand-charcoal/20 bg-white px-2 py-1 text-sm text-brand-charcoal focus:border-brand-primary focus:outline-none"
-            >
-                {PAGE_SIZE_OPTIONS.map((size) => (
-                    <option key={size} value={size}>
-                        {size}
-                    </option>
-                ))}
-            </select>
-            条
-        </label>
-    ) : null;
-
     return (
         <div
             className={cn(
-                "flex flex-wrap items-center justify-between gap-2",
+                "flex flex-wrap items-center justify-between gap-3",
                 className,
             )}
         >
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
                 {showTotal && (
-                    <span className="text-sm text-brand-charcoal/65">
+                    <span className="text-sm text-muted-foreground">
                         共 {total} 条
                     </span>
                 )}
-                {pageSizeSelector}
+                {onPageSizeChange && (
+                    <PageSizeSelect
+                        pageSize={pageSize}
+                        onPageSizeChange={onPageSizeChange}
+                    />
+                )}
             </div>
 
-            {totalPages > 1 && (
-                <>
-                    {/* 移动端紧凑分页 */}
-                    <div className="flex items-center gap-2 sm:hidden">
-                        <button
-                            onClick={() => onChange(page - 1)}
-                            disabled={page === 1}
-                            className={compactButtonStyles}
-                            aria-label="上一页"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <span className="min-w-[4rem] text-center text-sm text-brand-charcoal/70">
-                            {page}/{totalPages}
-                        </span>
-                        <button
-                            onClick={() => onChange(page + 1)}
-                            disabled={page === totalPages}
-                            className={compactButtonStyles}
-                            aria-label="下一页"
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
-                    </div>
+            <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 sm:hidden">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => onChange(page - 1)}
+                        disabled={page === 1}
+                        aria-label="上一页"
+                    >
+                        <ChevronLeft />
+                    </Button>
+                    <span className="min-w-16 text-center text-sm text-muted-foreground tabular-nums">
+                        {page}/{totalPages}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => onChange(page + 1)}
+                        disabled={page === totalPages}
+                        aria-label="下一页"
+                    >
+                        <ChevronRight />
+                    </Button>
+                </div>
 
-                    {/* 桌面端完整分页 */}
-                    <div className="hidden items-center gap-2 sm:flex">
-                        <button
-                            onClick={() => onChange(page - 1)}
-                            disabled={page === 1}
-                            className={cn(
-                                pageButtonStyles,
-                                "border border-brand-charcoal/20 bg-white px-2",
-                                page === 1
-                                    ? "cursor-not-allowed opacity-50"
-                                    : "hover:bg-brand-charcoal/[0.03]",
-                            )}
-                            aria-label="上一页"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
+                <div className="hidden items-center gap-1 sm:flex">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => onChange(page - 1)}
+                        disabled={page === 1}
+                        aria-label="上一页"
+                    >
+                        <ChevronLeft />
+                    </Button>
 
-                        <div className="flex gap-1">
-                            {pageNumbers.map((item, index) =>
-                                item === "ellipsis" ? (
-                                    <span
-                                        key={`ellipsis-${index}`}
-                                        aria-hidden="true"
-                                        className="flex h-9 w-9 items-center justify-center text-brand-charcoal/65"
-                                    >
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </span>
-                                ) : (
-                                    <button
-                                        key={item}
-                                        onClick={() => onChange(item)}
-                                        aria-current={
-                                            page === item ? "page" : undefined
-                                        }
-                                        aria-label={`第 ${item} 页`}
-                                        className={cn(
-                                            pageButtonStyles,
-                                            "px-3",
-                                            page === item
-                                                ? "bg-brand-primary text-white"
-                                                : "border border-brand-charcoal/20 bg-white hover:bg-brand-charcoal/[0.03]",
-                                        )}
-                                    >
-                                        {item}
-                                    </button>
-                                ),
-                            )}
-                        </div>
+                    {pageNumbers.map((item, index) =>
+                        item === "ellipsis" ? (
+                            <span
+                                key={`ellipsis-${index}`}
+                                aria-hidden="true"
+                                className="flex size-9 items-center justify-center text-muted-foreground"
+                            >
+                                <MoreHorizontal className="size-4" />
+                            </span>
+                        ) : (
+                            <Button
+                                key={item}
+                                variant={
+                                    page === item ? "default" : "ghost"
+                                }
+                                size="icon"
+                                onClick={() => onChange(item)}
+                                aria-current={
+                                    page === item ? "page" : undefined
+                                }
+                                aria-label={`第 ${item} 页`}
+                                className="tabular-nums"
+                            >
+                                {item}
+                            </Button>
+                        ),
+                    )}
 
-                        <button
-                            onClick={() => onChange(page + 1)}
-                            disabled={page === totalPages}
-                            className={cn(
-                                pageButtonStyles,
-                                "border border-brand-charcoal/20 bg-white px-2",
-                                page === totalPages
-                                    ? "cursor-not-allowed opacity-50"
-                                    : "hover:bg-brand-charcoal/[0.03]",
-                            )}
-                            aria-label="下一页"
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
-                    </div>
-                </>
-            )}
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => onChange(page + 1)}
+                        disabled={page === totalPages}
+                        aria-label="下一页"
+                    >
+                        <ChevronRight />
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 }

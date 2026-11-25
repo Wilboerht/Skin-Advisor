@@ -23,7 +23,7 @@ export function LegacyReportDetails({ result }: LegacyReportDetailsProps) {
             </h4>
             <div className="grid gap-3 md:grid-cols-2">
                 {details.length > 0 && (
-                    <div className="rounded-xl border border-[var(--color-brand-espresso)]/10 bg-white/65 p-4">
+                    <div className="rounded-xl border border-[var(--color-brand-espresso)]/10 bg-card/65 p-4">
                         <p className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-brand-espresso)]">
                             <BookOpen className="h-3.5 w-3.5" strokeWidth={1.8} />
                             分析详情
@@ -38,7 +38,7 @@ export function LegacyReportDetails({ result }: LegacyReportDetailsProps) {
                     </div>
                 )}
                 {tips.length > 0 && (
-                    <div className="rounded-xl border border-[var(--color-brand-espresso)]/10 bg-white/65 p-4">
+                    <div className="rounded-xl border border-[var(--color-brand-espresso)]/10 bg-card/65 p-4">
                         <p className="mb-2 text-[12px] font-medium text-[var(--color-brand-espresso)]">生活建议</p>
                         <ul className="space-y-1.5">
                             {tips.map((item, index) => (

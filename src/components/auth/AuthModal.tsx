@@ -1,50 +1,44 @@
 "use client";
 
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useAuthModal } from "./AuthModalContext";
 import { useToast } from "@/components/ui/Toast";
-import { LazyMotion, domAnimation, m, AnimatePresence, useAnimationControls, useReducedMotion } from "framer-motion";
-import { X, Eye, EyeOff, CheckCircle, Check, ChevronLeft } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { validatePasswordStrength, PASSWORD_MIN_LENGTH } from "@/lib/password";
 import { fetchWithCsrf } from "@/lib/fetch-client";
-import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
-import { useModalBackClose } from "@/hooks/use-modal-back-close";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { isSafeInternalPath } from "@/lib/url-utils";
 import { LoginGuide } from "@/components/website/LoginGuide";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
-
-// SSO 迁移后，login / register / forgot_password 统一引导至主站账号中心，
-// 仅 wechat_bind 仍在弹窗内完成。
+import {
+    Sheet,
+    SheetBody,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export function AuthModal() {
     const { isOpen, view, closeAuthModal } = useAuthModal();
     const { openLegalDoc } = useLegalDocModal();
     const toast = useToast();
 
-    // 说明：?login=wechat_bind 深链接检测已上移至常驻的 AuthUrlDetector
-    // （本组件改为懒挂载后，挂载前无法自行感知 URL 参数）
-
-    // Form States
     const [loading, setLoading] = useState(false);
-
-    // WeChat Bind Fields
     const [regPhone, setRegPhone] = useState("");
     const [regCode, setRegCode] = useState("");
     const [regPassword, setRegPassword] = useState("");
     const [regCodeSending, setRegCodeSending] = useState(false);
     const [regCountdown, setRegCountdown] = useState(0);
-
     const [showPassword, setShowPassword] = useState(false);
     const [mobileAgreed, setMobileAgreed] = useState(false);
-    // 协议抖动动画：用 animate controls 触发，仅在未勾选提交时播一次
-    const agreementShakeControls = useAnimationControls();
-    const prefersReducedMotion = useReducedMotion();
 
-    // Reset states when modal opens/closes
     useEffect(() => {
         if (!isOpen) {
             setLoading(false);
@@ -58,7 +52,6 @@ export function AuthModal() {
         }
     }, [isOpen]);
 
-    // Reset shared fields when entering WeChat Bind
     useEffect(() => {
         if (view === "wechat_bind") {
             setRegPhone("");
@@ -68,67 +61,26 @@ export function AuthModal() {
         }
     }, [view]);
 
-    // Cleanup interval for countdown
     useEffect(() => {
         let timer: NodeJS.Timeout;
         if (regCountdown > 0) {
-            timer = setTimeout(() => setRegCountdown(prev => prev - 1), 1000);
+            timer = setTimeout(
+                () => setRegCountdown((previous) => previous - 1),
+                1000,
+            );
         }
         return () => clearTimeout(timer);
     }, [regCountdown]);
 
-    // 禁止背景滚动（移动端使用 fixed 定位防止 iOS 弹性滚动）
-    useBodyScrollLock({ enabled: isOpen, iosSafe: true });
-
     const handleCancelWechatBind = () => {
-        // 微信绑定凭证由 httpOnly Cookie（见 @/lib/wechat-constants）管理，前端 JS 无法清除；
-        // 这里仅关闭弹窗、放弃本次绑定流程，Cookie 到期后由后端自动失效
         toast.info("已退出微信登录，您可以使用手机号登录。");
         closeAuthModal();
     };
 
-    // Escape 关闭弹窗（wechat_bind 视图下与"取消绑定"同义）
-    const handleEscape = () => {
-        if (loading) return;
-        if (view === "wechat_bind") {
-            handleCancelWechatBind();
-        } else {
-            closeAuthModal();
-        }
-    };
-    const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, handleEscape);
-    useModalBackClose(isOpen, handleEscape);
-
-    // 桌面/移动面板按断点条件渲染（而非 CSS 隐藏同时挂载两个 aria-modal dialog）。
-    // SSR 快照固定为 false（移动面板），避免水合不匹配
-    const isDesktop = useSyncExternalStore(
-        (cb) => {
-            const mq = window.matchMedia("(min-width: 768px)");
-            mq.addEventListener("change", cb);
-            return () => mq.removeEventListener("change", cb);
-        },
-        () => window.matchMedia("(min-width: 768px)").matches,
-        () => false
-    );
-
-    // 打开时焦点进入首个可见输入框（触屏设备跳过，避免弹出虚拟键盘）
-    useEffect(() => {
-        if (!isOpen || view !== "wechat_bind") return;
-        if (window.matchMedia("(hover: none)").matches) return;
-        const inputs = dialogRef.current?.querySelectorAll<HTMLInputElement>('input[type="tel"]');
-        const visible = Array.from(inputs ?? []).find((el) => el.offsetParent !== null);
-        visible?.focus({ preventScroll: true });
-    }, [isOpen, view, dialogRef]);
-
-    const handleWechatBind = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!mobileAgreed) {
-            if (!prefersReducedMotion) {
-                agreementShakeControls.start({ x: [-5, 5, -5, 5, -3, 3, 0], transition: { duration: 0.4 } });
-            }
-            return;
-        }
-        if (!regPassword || regPassword.length === 0) {
+    const handleWechatBind = async (event: React.FormEvent) => {
+        event.preventDefault();
+        if (!mobileAgreed) return;
+        if (!regPassword) {
             toast.error("请设置登录密码");
             return;
         }
@@ -147,32 +99,38 @@ export function AuthModal() {
                     code: regCode,
                     password: regPassword,
                     allowAutoPassword: false,
-                })
+                }),
             });
-
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
                 const message =
                     typeof data.error?.message === "string"
                         ? data.error.message
                         : typeof data.error === "string"
-                            ? data.error
-                            : typeof data.message === "string"
-                                ? data.message
-                                : "绑定未成功";
+                          ? data.error
+                          : typeof data.message === "string"
+                            ? data.message
+                            : "绑定未成功";
                 throw new Error(message);
             }
-
             toast.success("绑定成功！");
-
-            // 检查是否有 pending redirect（仅允许站内路径）
-            const redirectUrl = sessionStorage.getItem(STORAGE_KEYS.AUTH_REDIRECT);
+            const redirectUrl = sessionStorage.getItem(
+                STORAGE_KEYS.AUTH_REDIRECT,
+            );
             sessionStorage.removeItem(STORAGE_KEYS.AUTH_REDIRECT);
-            window.location.href = isSafeInternalPath(redirectUrl) ? redirectUrl : "/";
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-            console.error("[WechatBind]", err.message);
-            toast.error(err.message || "绑定未成功，请稍后重试");
+            window.location.href = isSafeInternalPath(redirectUrl)
+                ? redirectUrl
+                : "/";
+        } catch (error) {
+            console.error(
+                "[WechatBind]",
+                error instanceof Error ? error.message : error,
+            );
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "绑定未成功，请稍后重试",
+            );
         } finally {
             setLoading(false);
         }
@@ -188,389 +146,234 @@ export function AuthModal() {
             const res = await fetch("/api/auth/send-code", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone: regPhone, type: "register" })
+                body: JSON.stringify({ phone: regPhone, type: "register" }),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error?.message || data.error || "验证码发送未成功");
+            if (!res.ok)
+                throw new Error(
+                    data.error?.message || data.error || "验证码发送未成功",
+                );
             toast.success("验证码已发送");
             setRegCountdown(60);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            console.error("[SendRegCode]", error.message);
-            toast.error(error.message || "验证码发送未成功，请稍后再试。");
+        } catch (error) {
+            console.error(
+                "[SendRegCode]",
+                error instanceof Error ? error.message : error,
+            );
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "验证码发送未成功，请稍后再试。",
+            );
         } finally {
             setRegCodeSending(false);
         }
     };
 
-    // ===== PC 端输入框通用样式 =====
-    const pcInputClass = "w-full bg-transparent border-0 border-b border-brand-charcoal/20 rounded-none py-4 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider placeholder:uppercase focus:outline-none focus:border-brand-charcoal/40 transition-colors";
-    const pcBtnClass = "w-full py-4 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2";
-
     const isSsoView = view === "login" || view === "register";
 
-    // login / register / forgot_password：SSO 迁移后统一引导至主站账号中心。
-    // 引导视图与 AccountModal 未登录态共用 LoginGuide（全站统一视觉）
-    const ssoPanel = (
-        <LoginGuide onNavigateLogin={closeAuthModal} />
-    );
-
     return (
-        <LazyMotion features={domAnimation}>
-        <AnimatePresence>
-            {isOpen && (
-                <div key="auth-modal-container" ref={dialogRef} className="contents">
-                <m.div
-                    key="backdrop"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    onClick={view === "wechat_bind" ? undefined : closeAuthModal}
-                    className="fixed inset-0 z-[100002] bg-black/20 backdrop-blur-md"
-                />
-                {isDesktop ? (
-                <m.div
-                    key={`pc-panel-${view}`}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="auth-modal-title-desktop"
-                    initial={{ x: "100%" }}
-                    animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
-                    exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
-                    className="fixed inset-y-0 right-0 w-full bg-white flex flex-col z-[100003]"
-                >
-                        {/* 关闭/取消按钮 */}
-                        {view === "wechat_bind" ? (
-                            <button
-                                onClick={handleCancelWechatBind}
-                                disabled={loading}
-                                className="absolute top-8 right-8 z-20 flex items-center gap-1.5 px-4 py-2 text-sm tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal/70 transition-colors"
-                            >
-                                取消绑定
-                            </button>
-                        ) : (
-                            <button
-                                onClick={closeAuthModal}
-                                disabled={loading}
-                                aria-label="关闭"
-                                className="absolute top-8 right-8 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 backdrop-blur-sm transition-all hover:bg-brand-charcoal/10 hover:text-brand-charcoal/70"
-                            >
-                                <X size={20} strokeWidth={1.5} />
-                            </button>
-                        )}
+        <Sheet
+            open={isOpen}
+            onOpenChange={(open) => {
+                if (open) return;
+                if (view === "wechat_bind") {
+                    handleCancelWechatBind();
+                } else {
+                    closeAuthModal();
+                }
+            }}
+        >
+            <SheetContent
+                side="right"
+                className="w-full sm:max-w-md"
+                showCloseButton
+            >
+                <SheetHeader className="items-center">
+                    <Image
+                        src="/NIHPLOD-logo.svg"
+                        alt="NIHPLOD"
+                        width={160}
+                        height={52}
+                        className="h-[52px] w-auto object-contain"
+                        priority
+                    />
+                    <SheetTitle className="sr-only">
+                        {view === "wechat_bind"
+                            ? "绑定手机号"
+                            : view === "forgot_password"
+                              ? "找回密码"
+                              : "登录或注册"}
+                    </SheetTitle>
+                    <SheetDescription className="sr-only">
+                        NIHPLOD 账号
+                    </SheetDescription>
+                </SheetHeader>
 
-                        {/* 内容区域 */}
-                        <div className="flex-1 flex flex-col items-center justify-center px-6 overflow-y-auto">
-                            <div className="w-full max-w-[480px] py-12">
-                                {/* Logo */}
-                                <div className="mb-14 flex justify-center">
-                                    <Image
-                                        src="/NIHPLOD-logo.svg"
-                                        alt="NIHPLOD"
-                                        width={160}
-                                        height={52}
-                                        className="h-[52px] w-auto object-contain"
-                                        priority
-                                    />
-                                </div>
+                <SheetBody className="flex flex-col justify-center px-6 py-8">
+                    {view === "forgot_password" && (
+                        <ForgotPasswordForm onBackToLogin={closeAuthModal} />
+                    )}
 
-                                {/* ====== 找回密码（站内 BFF 表单） ====== */}
-                                {view === "forgot_password" && (
-                                    <>
-                                        <h1 id="auth-modal-title-desktop" className="sr-only">找回密码</h1>
-                                        <ForgotPasswordForm onBackToLogin={closeAuthModal} />
-                                    </>
-                                )}
+                    {isSsoView && (
+                        <LoginGuide onNavigateLogin={closeAuthModal} />
+                    )}
 
-                                {/* ====== SSO（login / register） ====== */}
-                                {isSsoView && (
-                                    <>
-                                        {/* 对话框可访问名称：SSO 视图无可见标题，故用 sr-only 标题补齐 aria-labelledby 指向 */}
-                                        <h1 id="auth-modal-title-desktop" className="sr-only">登录或注册</h1>
-                                        {ssoPanel}
-                                    </>
-                                )}
-
-                                {/* ====== WECHAT BIND ====== */}
-                                {view === "wechat_bind" && (
-                                    <>
-                                        <h1 id="auth-modal-title-desktop" className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-10">
-                                            绑定手机号
-                                        </h1>
-                                        <p className="text-center text-sm text-brand-charcoal/50 tracking-wide mb-10">
-                                            微信授权成功，请绑定手机号以完成登录。
-                                        </p>
-                                        <form onSubmit={handleWechatBind} className="space-y-8">
-                                            <input
-                                                type="tel"
-                                                inputMode="numeric"
-                                                pattern="[0-9]*"
-                                                autoComplete="tel"
-                                                required
-                                                value={regPhone}
-                                                onChange={(e) => setRegPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                                                className={pcInputClass}
-                                                placeholder="手机号"
-                                                aria-label="手机号"
-                                            />
-                                            <div className="relative flex gap-3">
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    maxLength={6}
-                                                    autoComplete="one-time-code"
-                                                    value={regCode}
-                                                    onChange={(e) => setRegCode(e.target.value)}
-                                                    className={`${pcInputClass} flex-1`}
-                                                    placeholder="验证码"
-                                                    aria-label="验证码"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={handleSendRegCode}
-                                                    disabled={regCodeSending || regCountdown > 0 || !regPhone}
-                                                    className="shrink-0 self-end mb-2 px-4 py-2 text-xs font-medium tracking-wider text-brand-charcoal/60 border border-brand-charcoal/25 disabled:opacity-30 transition-all hover:bg-brand-charcoal/[0.02]"
-                                                >
-                                                    {regCountdown > 0 ? `${regCountdown}s` : "获取"}
-                                                </button>
-                                            </div>
-                                            <div className="relative">
-                                                <input
-                                                    type={showPassword ? "text" : "password"}
-                                                    required
-                                                    minLength={PASSWORD_MIN_LENGTH}
-                                                    maxLength={32}
-                                                    autoComplete="new-password"
-                                                    value={regPassword}
-                                                    onChange={(e) => setRegPassword(e.target.value)}
-                                                    className={`${pcInputClass} pr-10`}
-                                                    placeholder="密码（8位且含大写/小写/数字）"
-                                                    aria-label="密码"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    aria-label={showPassword ? "隐藏密码" : "显示密码"}
-                                                    className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
-                                                >
-                                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                                </button>
-                                            </div>
-                                            <m.div
-                                                initial={{ x: 0 }}
-                                                animate={agreementShakeControls}
-                                            >
-                                                <label className="flex cursor-pointer items-center gap-2.5 group/agreement">
-                                                    <div className="relative flex-shrink-0">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={mobileAgreed}
-                                                            onChange={(e) => setMobileAgreed(e.target.checked)}
-                                                            className="peer sr-only"
-                                                        />
-                                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-charcoal/50 peer-checked:border-brand-charcoal/50 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-gold/60 peer-focus-visible:ring-offset-2" />
-                                                        <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
-                                                    </div>
-                                                    <span className="text-xs text-brand-charcoal/50 tracking-wide">
-                                                        我已阅读并同意
-                                                        {/* 位于 <label> 内：preventDefault 阻止触发达成勾选，stopPropagation 阻止冒泡 */}
-                                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openLegalDoc("terms"); }} className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer">《用户协议》</button>
-                                                        和
-                                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openLegalDoc("privacy"); }} className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer">《隐私政策》</button>
-                                                    </span>
-                                                </label>
-                                            </m.div>
-                                            <button
-                                                type="submit"
-                                                disabled={loading || !mobileAgreed}
-                                                className={pcBtnClass}
-                                            >
-                                                {loading ? (
-                                                    <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
-                                                ) : (
-                                                    <>绑定手机号 <CheckCircle size={16} /></>
-                                                )}
-                                            </button>
-                                        </form>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </m.div>
-                ) : (
-                <m.div
-                    key={`mobile-modal-${view}`}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="auth-modal-title-mobile"
-                    initial={{ x: "100%" }}
-                    animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
-                    exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
-                    className="fixed inset-0 z-[100003] pl-4 pr-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] bg-brand-canvas flex flex-col"
-                >
-                    {/* 手机端顶部栏 */}
-                    <div className="flex-shrink-0 h-[56px] w-full flex items-center justify-center relative">
-                        <button
-                            type="button"
-                            onClick={view === "wechat_bind" ? handleCancelWechatBind : closeAuthModal}
-                            aria-label={view === "wechat_bind" ? "取消绑定" : "关闭"}
-                            className="absolute left-0 top-0 bottom-0 flex items-center justify-center px-4 py-[10px]"
-                        >
-                            <ChevronLeft className="h-6 w-6 text-[#00263E]" />
-                        </button>
-                        {view !== "login" && (
-                            <Image
-                                src="/NIHPLOD-logo.svg"
-                                alt="NIHPLOD"
-                                width={110}
-                                height={36}
-                                className="object-contain h-auto w-[110px]"
-                            />
-                        )}
-                    </div>
-
-                    <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
-                        <div className="min-h-full flex flex-col px-6
-                                        before:content-[''] before:flex-[1_0_0]
-                                        after:content-[''] after:flex-[1_0_0]">
-
-                        {/* ====== 找回密码（站内 BFF 表单） ====== */}
-                        {view === "forgot_password" && (
-                            <>
-                                <h2 id="auth-modal-title-mobile" className="sr-only">找回密码</h2>
-                                <ForgotPasswordForm onBackToLogin={closeAuthModal} />
-                            </>
-                        )}
-
-                        {/* ====== SSO（login / register） ====== */}
-                        {isSsoView && (
-                            <>
-                                {/* 对话框可访问名称：SSO 视图无可见标题，用 sr-only 标题补齐 aria-labelledby 指向 */}
-                                <h2 id="auth-modal-title-mobile" className="sr-only">登录或注册</h2>
-                                <LoginGuide onNavigateLogin={closeAuthModal} />
-                            </>
-                        )}
-
-                        {/* ====== WECHAT BIND ====== */}
-                        {view === "wechat_bind" && (
-                            <div className="flex flex-col gap-10">
-                                <div className="text-center pt-[6px] pb-4">
-                                    <h2 id="auth-modal-title-mobile" className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">绑定手机号</h2>
-                                    <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
-                                </div>
-                            <form onSubmit={handleWechatBind} className="w-full space-y-6">
-                                <p className="text-center text-sm text-brand-charcoal/60 tracking-wide">
+                    {view === "wechat_bind" && (
+                        <div className="space-y-6">
+                            <div className="space-y-2 text-center">
+                                <h2 className="text-xl font-semibold tracking-tight">
+                                    绑定手机号
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
                                     微信授权成功，请绑定手机号以完成登录。
                                 </p>
-                                <div>
-                                    <input
-                                        type="tel"
-                                        inputMode="numeric"
-                                        pattern="[0-9]*"
-                                        autoComplete="tel"
-                                        required
-                                        value={regPhone}
-                                        onChange={(e) => setRegPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                                        placeholder="手机号"
-                                        aria-label="手机号"
-                                        className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
-                                    />
-                                </div>
-                                <div className="relative flex gap-2">
-                                    <input
+                            </div>
+
+                            <form
+                                onSubmit={handleWechatBind}
+                                className="space-y-4"
+                            >
+                                <Input
+                                    type="tel"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    autoComplete="tel"
+                                    required
+                                    value={regPhone}
+                                    onChange={(event) =>
+                                        setRegPhone(
+                                            event.target.value
+                                                .replace(/\D/g, "")
+                                                .slice(0, 11),
+                                        )
+                                    }
+                                    placeholder="手机号"
+                                    aria-label="手机号"
+                                />
+
+                                <div className="flex gap-2">
+                                    <Input
                                         type="text"
                                         required
                                         maxLength={6}
                                         autoComplete="one-time-code"
                                         value={regCode}
-                                        onChange={(e) => setRegCode(e.target.value)}
+                                        onChange={(event) =>
+                                            setRegCode(event.target.value)
+                                        }
                                         placeholder="验证码"
                                         aria-label="验证码"
-                                        className="flex-1 bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                        className="flex-1"
                                     />
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="outline"
                                         onClick={handleSendRegCode}
-                                        disabled={regCodeSending || regCountdown > 0 || !regPhone}
-                                        className="shrink-0 self-end mb-2 min-h-[44px] px-3 py-1 text-xs font-medium tracking-wider text-brand-charcoal/60 border border-brand-charcoal/25 disabled:opacity-30 transition-all"
+                                        disabled={
+                                            regCodeSending ||
+                                            regCountdown > 0 ||
+                                            !regPhone
+                                        }
+                                        className="shrink-0"
                                     >
-                                        {regCountdown > 0 ? `${regCountdown}s` : "获取"}
-                                    </button>
+                                        {regCountdown > 0
+                                            ? `${regCountdown}s`
+                                            : "获取"}
+                                    </Button>
                                 </div>
-                                <div className="relative">
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        required
-                                        minLength={PASSWORD_MIN_LENGTH}
-                                        value={regPassword}
-                                        onChange={(e) => setRegPassword(e.target.value)}
-                                        placeholder="密码（8位且含大写/小写/数字）"
-                                        maxLength={32}
-                                        autoComplete="new-password"
-                                        aria-label="密码"
-                                        className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 pr-10 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        aria-label={showPassword ? "隐藏密码" : "显示密码"}
-                                        className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                    </button>
-                                </div>
-                                <label className="flex cursor-pointer items-center gap-2.5 pt-2 group/agreement">
-                                    <div className="relative flex-shrink-0">
-                                        <input
-                                            type="checkbox"
-                                            checked={mobileAgreed}
-                                            onChange={(e) => setMobileAgreed(e.target.checked)}
-                                            className="peer sr-only"
-                                        />
-                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-gold peer-checked:border-brand-gold peer-focus-visible:ring-2 peer-focus-visible:ring-brand-gold/60 peer-focus-visible:ring-offset-2" />
-                                        <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
-                                    </div>
-                                    <span className="text-xs text-brand-charcoal/50 tracking-wide">
-                                        我已阅读并同意
-                                        {/* 位于 <label> 内：preventDefault 阻止触发达成勾选，stopPropagation 阻止冒泡 */}
-                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openLegalDoc("terms"); }} className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer">《用户协议》</button>
-                                        和
-                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openLegalDoc("privacy"); }} className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors cursor-pointer">《隐私政策》</button>
-                                    </span>
-                                </label>
-                                <div className="pt-2">
-                                    <button
-                                        type="submit"
-                                        disabled={loading || !mobileAgreed}
-                                        className="w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
-                                    >
-                                        <span className="relative z-10 flex items-center justify-center gap-2">
-                                            {loading ? (
-                                                <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
-                                            ) : (
-                                                <>绑定手机号 <CheckCircle size={16} /></>
-                                            )}
-                                        </span>
-                                    </button>
-                                </div>
-                            </form>
-                            </div>
-                        )}
-                        </div>
-                    </div>
 
-                    {/* 手机端页脚 */}
-                    <div className="flex-shrink-0 pt-4 pb-4 text-center mx-6">
-                        <p className="text-[10px] font-medium tracking-[0.12em] text-[rgba(123,114,108,0.3)] uppercase">
-                            &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-                        </p>
-                    </div>
-                </m.div>
-                )}
-                </div>
-            )}
-        </AnimatePresence>
-        </LazyMotion>
+                                <Input
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    minLength={PASSWORD_MIN_LENGTH}
+                                    maxLength={32}
+                                    autoComplete="new-password"
+                                    value={regPassword}
+                                    onChange={(event) =>
+                                        setRegPassword(event.target.value)
+                                    }
+                                    placeholder="密码（8位且含大写/小写/数字）"
+                                    aria-label="密码"
+                                    rightElement={
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() =>
+                                                setShowPassword(
+                                                    (previous) => !previous,
+                                                )
+                                            }
+                                            aria-label={
+                                                showPassword
+                                                    ? "隐藏密码"
+                                                    : "显示密码"
+                                            }
+                                            className="size-8"
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff />
+                                            ) : (
+                                                <Eye />
+                                            )}
+                                        </Button>
+                                    }
+                                />
+
+                                <div className="flex items-start gap-2.5">
+                                    <Checkbox
+                                        id="wechat-bind-agreement"
+                                        checked={mobileAgreed}
+                                        onCheckedChange={(checked) =>
+                                            setMobileAgreed(checked === true)
+                                        }
+                                        className="mt-0.5"
+                                    />
+                                    <Label
+                                        htmlFor="wechat-bind-agreement"
+                                        className="text-xs leading-relaxed font-normal text-muted-foreground"
+                                    >
+                                        我已阅读并同意
+                                        <button
+                                            type="button"
+                                            onClick={(event) => {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                                openLegalDoc("terms");
+                                            }}
+                                            className="mx-0.5 underline underline-offset-4"
+                                        >
+                                            《用户协议》
+                                        </button>
+                                        和
+                                        <button
+                                            type="button"
+                                            onClick={(event) => {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                                openLegalDoc("privacy");
+                                            }}
+                                            className="mx-0.5 underline underline-offset-4"
+                                        >
+                                            《隐私政策》
+                                        </button>
+                                    </Label>
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    loading={loading}
+                                    disabled={!mobileAgreed}
+                                    className="w-full"
+                                >
+                                    绑定手机号
+                                </Button>
+                            </form>
+                        </div>
+                    )}
+                </SheetBody>
+            </SheetContent>
+        </Sheet>
     );
 }

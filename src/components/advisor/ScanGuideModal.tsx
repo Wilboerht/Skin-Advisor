@@ -8,6 +8,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useLegalDocModal } from "@/components/website/LegalDocModalContext";
+import { Button } from "@/components/ui/Button";
 import { SKIN_STATE_OPTIONS, DEFAULT_SKIN_STATE, isMakeupState, type SkinStateValue } from "@/lib/skin-state";
 
 interface ScanGuideModalProps {
@@ -82,15 +83,17 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinS
                     className="fixed inset-0 z-[320] bg-brand-canvas-soft flex flex-col overscroll-contain"
                 >
                     {/* ---- Header（随流布局，内容区独立滚动，矮屏/横屏不再靠固定 padding 避让） ---- */}
-                    <header className="relative w-full shrink-0 flex items-center justify-center px-6 md:px-12 lg:px-20 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-5 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-6 bg-brand-canvas-soft/95 backdrop-blur-sm border-b border-brand-charcoal/5 z-10">
-                        <button
+                    <header className="relative w-full shrink-0 flex items-center justify-center px-6 md:px-12 lg:px-20 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-5 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-6 bg-brand-canvas-soft/95 backdrop-blur-sm border-b border-border/70 z-10">
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={handleClose}
-                            className="absolute left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 cursor-pointer bg-transparent border-none touch-manipulation active:scale-95"
+                            className="absolute left-4 gap-1.5 md:left-12 lg:left-20"
                             aria-label="返回"
                         >
-                            <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
-                            <span className="hidden sm:inline text-[14px] font-light tracking-[0.08em]">返回</span>
-                        </button>
+                            <ChevronLeft />
+                            <span className="hidden sm:inline">返回</span>
+                        </Button>
 
                         <Image
                             src="/NIHPLOD-logo.svg"
@@ -111,7 +114,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinS
                                 transition={{ delay: 0.08, duration: 0.45 }}
                                 className="flex w-full flex-col items-center text-center"
                             >
-                                <h1 id="scan-guide-title" className="text-2xl md:text-3xl font-light text-brand-charcoal tracking-[0.02em]">
+                                <h1 id="scan-guide-title" className="text-2xl md:text-3xl font-light text-foreground tracking-[0.02em]">
                                     开始面部扫描
                                 </h1>
 
@@ -135,14 +138,14 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinS
                                 </div>
                             )}
 
-                            <div className="mt-6 grid w-full max-w-md grid-cols-2 gap-2 text-left text-[12px] leading-relaxed text-brand-charcoal/65">
+                            <div className="mt-6 grid w-full max-w-md grid-cols-2 gap-2 text-left text-[12px] leading-relaxed text-muted-foreground">
                                 {[
                                     "摘掉眼镜、口罩，确保单人入镜",
                                     "面向光源，避免逆光或强阴影",
                                     "头发不遮挡额头与脸颊",
                                     "接下来会引导完成 4 个角度拍摄",
                                 ].map((tip) => (
-                                    <p key={tip} className="flex items-start gap-1.5 rounded-lg border border-brand-charcoal/[0.08] bg-white/55 px-2.5 py-2">
+                                    <p key={tip} className="flex items-start gap-1.5 rounded-lg border border-brand-charcoal/[0.08] bg-card/55 px-2.5 py-2">
                                         <Check className="mt-0.5 h-3 w-3 shrink-0 text-[var(--color-brand-cocoa)]" strokeWidth={2.5} />
                                         {tip}
                                     </p>
@@ -156,7 +159,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinS
                                 transition={{ delay: 0.16, duration: 0.45 }}
                                 className="mt-8 md:mt-9 w-full flex flex-col items-center"
                             >
-                                <p className="mb-4 text-center text-[13px] font-light tracking-[0.06em] text-brand-charcoal/60">
+                                <p className="mb-4 text-center text-[13px] font-light tracking-[0.06em] text-muted-foreground">
                                     请选择您的面部状态：
                                 </p>
                                 <div
@@ -180,20 +183,20 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinS
                                                 aria-label={option.label}
                                                 onClick={() => setSkinState(option.value)}
                                                 className={cn(
-                                                    "flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[14px] border bg-white px-1 py-2 transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/25",
+                                                    "flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[14px] border bg-card px-1 py-2 transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/25",
                                                     selected
                                                         ? "border-[var(--color-brand-cocoa)] bg-[var(--color-brand-cocoa)]/[0.05]"
                                                         : "border-brand-charcoal/[0.12] hover:border-brand-charcoal/25"
                                                 )}
                                             >
                                                 <Icon
-                                                    className={cn("h-[22px] w-[22px]", selected ? "text-[var(--color-brand-cocoa)]" : "text-brand-charcoal/45")}
+                                                    className={cn("h-[22px] w-[22px]", selected ? "text-[var(--color-brand-cocoa)]" : "text-muted-foreground/80")}
                                                     strokeWidth={1.8}
                                                     aria-hidden="true"
                                                 />
                                                 <span className={cn(
                                                     "text-[11.5px] tracking-[0.02em]",
-                                                    selected ? "font-medium text-brand-charcoal" : "text-brand-charcoal/60"
+                                                    selected ? "font-medium text-foreground" : "text-muted-foreground"
                                                 )}>
                                                     {CHIP_LABELS[option.value]}
                                                 </span>
@@ -228,11 +231,12 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinS
                                 transition={{ delay: 0.26, duration: 0.45 }}
                                 className="w-full flex flex-col items-center mt-8 md:mt-9"
                             >
-                                <p className="text-center text-[12px] font-light text-brand-charcoal/60 leading-relaxed tracking-[0.02em]">
+                                <p className="text-center text-[12px] font-light text-muted-foreground leading-relaxed tracking-[0.02em]">
                                     照片仅用于本次分析，分析成功后立即删除；失败或中断时本地最多保留 6 小时
                                 </p>
 
-                                <button
+                                <Button
+                                    size="lg"
                                     onClick={() => {
                                         // 关键体验修复：利用用户的首次显式点击解锁 iOS Safari 的语音合成引擎
                                         if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -246,24 +250,24 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit, gender, initialSkinS
                                         }
                                         onConfirm(skinState);
                                     }}
-                                    className="group mt-5 inline-flex h-12 items-center justify-center gap-3 rounded-full bg-[var(--color-brand-cocoa)] px-10 sm:px-12 text-[14px] font-normal tracking-[0.08em] text-white cursor-pointer transition-colors duration-300 hover:bg-brand-cocoa-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-cocoa)]/40 focus-visible:ring-offset-2"
+                                    rightIcon={<ArrowRight />}
+                                    className="mt-5 w-full max-w-xs"
                                 >
-                                    <span>开始扫描</span>
-                                    <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
-                                </button>
+                                    开始扫描
+                                </Button>
                             </m.div>
                         </div>
                     </div>
 
                     {/* ---- Footer：法律链接手机端也展示 ---- */}
-                    <div className="shrink-0 w-full border-t border-brand-charcoal/5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] px-4">
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[11px] font-light tracking-[0.1em] md:tracking-[0.12em] text-brand-charcoal/55 leading-tight">
+                    <div className="shrink-0 w-full border-t border-border/70 py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] px-4">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[11px] font-light tracking-[0.1em] md:tracking-[0.12em] text-muted-foreground leading-tight">
                             <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-                            <span className="hidden sm:inline text-brand-charcoal/30">·</span>
+                            <span className="hidden sm:inline text-muted-foreground/70">·</span>
                             <div className="flex items-center gap-4 tracking-[0.12em]">
-                                <button type="button" onClick={() => openLegalDoc("privacy")} className="hover:text-brand-charcoal/80 transition-colors duration-300 cursor-pointer">隐私政策</button>
-                                <span className="text-brand-charcoal/30">·</span>
-                                <button type="button" onClick={() => openLegalDoc("terms")} className="hover:text-brand-charcoal/80 transition-colors duration-300 cursor-pointer">服务条款</button>
+                                <button type="button" onClick={() => openLegalDoc("privacy")} className="hover:text-foreground/80 transition-colors duration-300 cursor-pointer">隐私政策</button>
+                                <span className="text-muted-foreground/70">·</span>
+                                <button type="button" onClick={() => openLegalDoc("terms")} className="hover:text-foreground/80 transition-colors duration-300 cursor-pointer">服务条款</button>
                             </div>
                         </div>
                     </div>

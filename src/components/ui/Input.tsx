@@ -8,6 +8,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
     hint?: string;
+    /** 输入框左侧附加内容（如手机号/锁图标） */
+    leftElement?: ReactNode;
     /** 输入框右侧附加内容（如密码可见按钮） */
     rightElement?: ReactNode;
 }
@@ -19,6 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             label,
             error,
             hint,
+            leftElement,
             rightElement,
             id,
             disabled,
@@ -38,7 +41,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 {label && (
                     <Label
                         htmlFor={inputId}
-                        className="mb-1 text-sm font-medium text-brand-charcoal/80"
+                        className="mb-1 text-sm font-medium text-foreground/80"
                     >
                         {label}
                         {required && (
@@ -52,6 +55,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     </Label>
                 )}
                 <div className="relative">
+                    {leftElement && (
+                        <div className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
+                            {leftElement}
+                        </div>
+                    )}
                     <input
                         ref={ref}
                         id={inputId}
@@ -60,12 +68,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         aria-invalid={error ? true : undefined}
                         aria-describedby={describedBy}
                         className={cn(
-                            "flex h-11 w-full min-w-0 rounded-lg border border-input bg-white px-4 py-2.5 text-base text-brand-charcoal shadow-xs transition-[color,box-shadow] outline-none",
-                            "placeholder:text-muted-foreground",
-                            "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                            "flex h-9 w-full min-w-0 rounded-md border border-input bg-card/60 px-3 py-1 text-base text-foreground shadow-[inset_0_1px_2px_rgba(61,47,37,0.04)] transition-[color,box-shadow,border-color] outline-none",
+                            "placeholder:text-muted-foreground/60 selection:bg-primary selection:text-primary-foreground",
+                            "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30",
                             "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
-                            "disabled:cursor-not-allowed disabled:bg-brand-charcoal/[0.03] disabled:opacity-50 md:text-sm",
-                            rightElement && "pr-12",
+                            "disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+                            leftElement && "pl-9",
+                            rightElement && "pr-10",
                             className,
                         )}
                         {...props}

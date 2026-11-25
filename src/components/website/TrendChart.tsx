@@ -105,14 +105,14 @@ export function TrendChart({ trends, totalTests, label = "综合评分" }: { tre
       {/* 摘要：最新评分 + 测评日期 + 与上次差值 */}
       <div className="flex items-end justify-between mb-3">
         <div>
-          <p className="text-[12px] tracking-[0.15em] text-brand-charcoal/60 font-light mb-1">
+          <p className="text-[12px] tracking-[0.15em] text-muted-foreground font-light mb-1">
             最新{label}
           </p>
-          <p className="text-3xl md:text-4xl font-serif font-light text-brand-charcoal leading-none">
+          <p className="text-3xl md:text-4xl font-sans font-light text-foreground leading-none">
             {latest}
-            <span className="text-sm text-brand-charcoal/55 ml-1.5">分</span>
+            <span className="text-sm text-muted-foreground ml-1.5">分</span>
           </p>
-          <p className="mt-1.5 text-[12px] text-brand-charcoal/55 font-light tracking-[0.08em]">
+          <p className="mt-1.5 text-[12px] text-muted-foreground font-light tracking-[0.08em]">
             {latestDate} 测
           </p>
         </div>
@@ -121,7 +121,7 @@ export function TrendChart({ trends, totalTests, label = "综合评分" }: { tre
             <span
               className={`text-[12px] font-light px-2.5 py-1 rounded-full ${
                 Math.abs(delta) <= 2
-                  ? "bg-brand-charcoal/[0.06] text-brand-charcoal/55"
+                  ? "bg-brand-charcoal/[0.06] text-muted-foreground"
                   : delta > 0
                     ? "bg-[#4C8055]/10 text-[#4C8055]"
                     : "bg-[#D44C47]/10 text-[#D44C47]"
@@ -131,14 +131,14 @@ export function TrendChart({ trends, totalTests, label = "综合评分" }: { tre
             </span>
           )}
           {typeof totalTests === "number" && totalTests > 0 && (
-            <p className="text-[12px] text-brand-charcoal/55 font-light tracking-[0.08em]">
+            <p className="text-[12px] text-muted-foreground font-light tracking-[0.08em]">
               累计测肤 {totalTests} 次
             </p>
           )}
         </div>
       </div>
 
-      <p className="mb-2 min-h-5 text-[12px] font-light text-brand-charcoal/60" aria-live="polite">
+      <p className="mb-2 min-h-5 text-[12px] font-light text-muted-foreground" aria-live="polite">
         {activePoint
           ? `${fmtDay(activePoint.date)} · ${activePoint.score} 分`
           : <span className="sm:hidden">点按数据点查看当日分数</span>}

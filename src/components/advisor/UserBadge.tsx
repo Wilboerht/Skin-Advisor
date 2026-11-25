@@ -72,7 +72,7 @@ export default function UserBadge({ compact = false, accountOpenSeq = 0, account
       <>
         <button
           onClick={() => openAuthModal("login")}
-          className="inline-flex items-center justify-center h-8 px-3.5 rounded-full border border-brand-charcoal/20 text-[12px] font-light tracking-[0.08em] text-brand-charcoal/70 hover:text-brand-charcoal hover:border-brand-charcoal/40 transition-colors whitespace-nowrap"
+          className="inline-flex items-center justify-center h-8 px-3.5 rounded-full border border-border text-[12px] font-light tracking-[0.08em] text-foreground/75 hover:text-foreground hover:border-brand-charcoal/40 transition-colors whitespace-nowrap"
         >
           登录 / 注册
         </button>
@@ -100,11 +100,11 @@ export default function UserBadge({ compact = false, accountOpenSeq = 0, account
               width={28}
               height={28}
               unoptimized
-              className="w-7 h-7 lg:w-8 lg:h-8 rounded-full object-cover border border-brand-charcoal/10"
+              className="w-7 h-7 lg:w-8 lg:h-8 rounded-full object-cover border border-border/80"
               onError={() => setAvatarFailed(true)}
             />
           ) : (
-            <span className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-[var(--color-brand-cocoa)]/15 border border-brand-charcoal/10 flex items-center justify-center text-[12px] lg:text-[13px] font-medium text-[var(--color-brand-cocoa)]">
+            <span className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-[var(--color-brand-cocoa)]/15 border border-border/80 flex items-center justify-center text-[12px] lg:text-[13px] font-medium text-[var(--color-brand-cocoa)]">
               {initial}
             </span>
           )}
@@ -112,7 +112,7 @@ export default function UserBadge({ compact = false, accountOpenSeq = 0, account
 
         {/* 用户名（compact 小屏隐藏，避免与居中 logo 拥挤） */}
         <span
-          className={`${compact ? "hidden md:inline" : ""} max-w-[110px] lg:max-w-[160px] truncate text-[13px] lg:text-[14px] font-medium text-brand-charcoal group-hover:text-[var(--color-brand-cocoa)] transition-colors`}
+          className={`${compact ? "hidden md:inline" : ""} max-w-[110px] lg:max-w-[160px] truncate text-[13px] lg:text-[14px] font-medium text-foreground group-hover:text-[var(--color-brand-cocoa)] transition-colors`}
         >
           {nickname}
         </span>

@@ -140,7 +140,7 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
 
       {/* 图例：5 色点 + 两端语义词（中间档位由颜色深浅自然表达），未打卡以灰点示意 */}
       <div className="flex items-center justify-center gap-1.5 mt-2">
-        <span className="text-[12px] text-brand-charcoal/65 font-light mr-0.5">很好</span>
+        <span className="text-[12px] text-muted-foreground font-light mr-0.5">很好</span>
         {(["great", "good", "normal", "bad", "terrible"] as const).map((key) => (
           <span
             key={key}
@@ -148,13 +148,13 @@ export function CheckInTrend({ entries, todayStr }: { entries: DiaryEntry[]; tod
             style={{ backgroundColor: STATE_META[key].color }}
           />
         ))}
-        <span className="text-[12px] text-brand-charcoal/65 font-light ml-0.5">很差</span>
+        <span className="text-[12px] text-muted-foreground font-light ml-0.5">很差</span>
         <span className="w-px h-3 bg-brand-espresso/[0.1] mx-1.5" />
         <span className="w-2 h-2 rounded-full bg-brand-charcoal/10" />
-        <span className="text-[12px] text-brand-charcoal/65 font-light">未打卡</span>
+        <span className="text-[12px] text-muted-foreground font-light">未打卡</span>
       </div>
       {/* 触屏没有 hover 提示，给出点按发现性引导（桌面端 <title> 提示已覆盖） */}
-      <p className="md:hidden mt-1.5 text-center text-[12px] text-brand-charcoal/55 font-light">
+      <p className="md:hidden mt-1.5 text-center text-[12px] text-muted-foreground font-light">
         点按色带查看每日状态
       </p>
     </div>

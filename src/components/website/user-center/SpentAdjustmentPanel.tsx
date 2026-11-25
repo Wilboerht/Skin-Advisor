@@ -71,13 +71,13 @@ const STATUS_ICONS = {
 } as const;
 
 const STATUS_COLORS = {
-  PENDING: "text-stone-500",
-  APPROVED: "text-brand-charcoal",
+  PENDING: "text-muted-foreground",
+  APPROVED: "text-foreground",
   REJECTED: "text-red-500",
 } as const;
 
 const STATUS_BG = {
-  PENDING: "bg-stone-100",
+  PENDING: "bg-muted",
   APPROVED: "bg-brand-charcoal/10",
   REJECTED: "bg-red-50",
 } as const;
@@ -334,22 +334,22 @@ export function SpentAdjustmentPanel({
       {view === "form" && (
         <div>
           <div className="flex items-center justify-between gap-2">
-            <h4 className="text-lg font-medium text-stone-800">录入消费</h4>
+            <h4 className="text-lg font-medium text-foreground">录入消费</h4>
             <button
               type="button"
               onClick={() => onViewChange("default")}
-              className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white/40 px-3 py-1.5 text-xs text-stone-600 transition-colors hover:border-stone-300 hover:bg-white/70 hover:text-stone-900"
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card/40 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-input hover:bg-card/70 hover:text-foreground"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               返回
             </button>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-stone-400">
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground/80">
             提交订单号与小票凭证，审核通过后计入历史消费并自动更新会员等级。
           </p>
 
           {/* 申请表单（外层卡片容器 + 内部分区标题） */}
-          <div className="mt-4 space-y-6 rounded-xl border border-stone-200/60 bg-white/40 p-5">
+          <div className="mt-4 space-y-6 rounded-xl border border-border/60 bg-card/40 p-5">
             {/* 待审核上限提示 */}
             {reachedPendingLimit && (
               <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-xs text-amber-700">
@@ -361,8 +361,8 @@ export function SpentAdjustmentPanel({
             {/* 核心必填：渠道 + 订单号 */}
             <div className="space-y-4">
               <div>
-                <p className="mb-2 text-xs text-stone-600">
-                  购买渠道 <span className="text-brand-charcoal">*</span>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  购买渠道 <span className="text-foreground">*</span>
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {SPENT_CHANNELS.map((c) => {
@@ -375,8 +375,8 @@ export function SpentAdjustmentPanel({
                         aria-pressed={selected}
                         className={`relative inline-flex items-center rounded-full border px-3.5 py-2 text-xs transition-colors active:opacity-70 ${
                           selected
-                            ? "border-brand-charcoal/40 font-medium text-brand-charcoal"
-                            : "border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-800"
+                            ? "border-brand-charcoal/40 font-medium text-foreground"
+                            : "border-border text-muted-foreground hover:border-input hover:text-foreground"
                         }`}
                       >
                         {/* 选中底色：淡品牌色 + layoutId 弹簧滑动，避免实心色块过重 */}
@@ -401,10 +401,10 @@ export function SpentAdjustmentPanel({
               {channel === "DEALER" && (
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <label htmlFor="spent-dealer" className="text-xs text-stone-600">
-                      经销商名称 <span className="text-brand-charcoal">*</span>
+                    <label htmlFor="spent-dealer" className="text-xs text-muted-foreground">
+                      经销商名称 <span className="text-foreground">*</span>
                     </label>
-                    <span className="text-[11px] text-stone-400">
+                    <span className="text-[11px] text-muted-foreground/80">
                       {dealerName.length}/{MAX_DEALER_NAME_LENGTH}
                     </span>
                   </div>
@@ -415,7 +415,7 @@ export function SpentAdjustmentPanel({
                     value={dealerName}
                     onChange={(e) => setDealerName(e.target.value)}
                     placeholder="如：XX 美妆集合店 / XX 贸易有限公司"
-                    className="w-full rounded-xl border border-stone-200 bg-white/70 px-4 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
+                    className="w-full rounded-xl border border-border bg-card/70 px-4 py-2.5 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-brand-charcoal md:text-sm"
                   />
                 </div>
               )}
@@ -424,10 +424,10 @@ export function SpentAdjustmentPanel({
               {channel === "OTHER" && (
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <label htmlFor="spent-other-note" className="text-xs text-stone-600">
-                      说明 <span className="font-normal text-stone-400">（选填）</span>
+                    <label htmlFor="spent-other-note" className="text-xs text-muted-foreground">
+                      说明 <span className="font-normal text-muted-foreground/80">（选填）</span>
                     </label>
-                    <span className="text-[11px] text-stone-400">
+                    <span className="text-[11px] text-muted-foreground/80">
                       {note.length}/{MAX_NOTE_LENGTH}
                     </span>
                   </div>
@@ -438,17 +438,17 @@ export function SpentAdjustmentPanel({
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="请说明购买渠道与订单信息（如平台名称、购买方式等）"
-                    className="w-full resize-none rounded-xl border border-stone-200 bg-white/70 px-4 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
+                    className="w-full resize-none rounded-xl border border-border bg-card/70 px-4 py-2.5 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-brand-charcoal md:text-sm"
                   />
                 </div>
               )}
 
               <div>
                 <div className="mb-1 flex items-center justify-between">
-                  <label htmlFor="spent-order-no" className="text-xs text-stone-600">
-                    订单号 / 小票号 <span className="text-brand-charcoal">*</span>
+                  <label htmlFor="spent-order-no" className="text-xs text-muted-foreground">
+                    订单号 / 小票号 <span className="text-foreground">*</span>
                   </label>
-                  <span className="text-[11px] text-stone-400">
+                  <span className="text-[11px] text-muted-foreground/80">
                     {orderNo.length}/{MAX_ORDER_NO_LENGTH}
                   </span>
                 </div>
@@ -459,7 +459,7 @@ export function SpentAdjustmentPanel({
                   value={orderNo}
                   onChange={(e) => setOrderNo(e.target.value)}
                   placeholder="如：天猫订单号 / 线下小票号"
-                  className="w-full rounded-xl border border-stone-200 bg-white/70 px-4 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
+                  className="w-full rounded-xl border border-border bg-card/70 px-4 py-2.5 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-brand-charcoal md:text-sm"
                 />
               </div>
             </div>
@@ -467,11 +467,11 @@ export function SpentAdjustmentPanel({
             {/* 金额与日期（选填） */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="min-w-0">
-                <label htmlFor="spent-amount" className="mb-1 block text-xs text-stone-600">
-                  消费金额 <span className="font-normal text-stone-400">（选填，以人工核实为准）</span>
+                <label htmlFor="spent-amount" className="mb-1 block text-xs text-muted-foreground">
+                  消费金额 <span className="font-normal text-muted-foreground/80">（选填，以人工核实为准）</span>
                 </label>
                 <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-stone-400">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/80">
                     ¥
                   </span>
                   <input
@@ -482,13 +482,13 @@ export function SpentAdjustmentPanel({
                     value={amountClaimed}
                     onChange={(e) => setAmountClaimed(e.target.value)}
                     placeholder="1280"
-                    className="w-full rounded-xl border border-stone-200 bg-white/70 py-2.5 pl-8 pr-4 text-base text-stone-800 outline-none transition-colors [appearance:textfield] placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-full rounded-xl border border-border bg-card/70 py-2.5 pl-8 pr-4 text-base text-foreground outline-none transition-colors [appearance:textfield] placeholder:text-muted-foreground/80 focus:border-brand-charcoal md:text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </div>
               </div>
               <div className="min-w-0">
-                <label htmlFor="spent-date" className="mb-1 block text-xs text-stone-600">
-                  消费日期 <span className="font-normal text-stone-400">（选填）</span>
+                <label htmlFor="spent-date" className="mb-1 block text-xs text-muted-foreground">
+                  消费日期 <span className="font-normal text-muted-foreground/80">（选填）</span>
                 </label>
                 {/* date 输入框在 iOS/WKWebView 有原生最小宽度，会撑破网格列：
                     网格项 min-w-0 + 输入框 appearance-none/min-w-0 让其遵守 w-full */}
@@ -498,7 +498,7 @@ export function SpentAdjustmentPanel({
                   value={purchasedAt}
                   max={localDateStr(new Date())}
                   onChange={(e) => setPurchasedAt(e.target.value)}
-                  className="w-full min-w-0 appearance-none rounded-xl border border-stone-200 bg-white/70 px-4 py-2.5 text-base text-stone-800 outline-none transition-colors focus:border-brand-charcoal md:text-sm"
+                  className="w-full min-w-0 appearance-none rounded-xl border border-border bg-card/70 px-4 py-2.5 text-base text-foreground outline-none transition-colors focus:border-brand-charcoal md:text-sm"
                 />
               </div>
             </div>
@@ -506,10 +506,10 @@ export function SpentAdjustmentPanel({
             {/* 凭证截图（选填） */}
             <section>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs font-medium text-stone-600">
-                  凭证截图 <span className="font-normal text-stone-400">（选填）</span>
+                <p className="text-xs font-medium text-muted-foreground">
+                  凭证截图 <span className="font-normal text-muted-foreground/80">（选填）</span>
                 </p>
-                <span className="text-[11px] text-stone-400">
+                <span className="text-[11px] text-muted-foreground/80">
                   {images.length}/{MAX_IMAGES}
                 </span>
               </div>
@@ -517,7 +517,7 @@ export function SpentAdjustmentPanel({
                 {images.map((url, i) => (
                   <div
                     key={url}
-                    className="group relative h-20 w-20 overflow-hidden rounded-lg border border-stone-200"
+                    className="group relative h-20 w-20 overflow-hidden rounded-lg border border-border"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -540,7 +540,7 @@ export function SpentAdjustmentPanel({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="flex h-20 w-40 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-stone-300 text-stone-400 transition-colors hover:border-stone-400 hover:text-stone-600 disabled:opacity-50"
+                    className="flex h-20 w-40 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-input text-muted-foreground/80 transition-colors hover:border-ring hover:text-muted-foreground disabled:opacity-50"
                   >
                     {uploading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -567,10 +567,10 @@ export function SpentAdjustmentPanel({
             {channel !== "OTHER" && (
               <section>
                 <div className="mb-1 flex items-center justify-between">
-                  <label htmlFor="spent-note" className="text-xs font-medium text-stone-600">
-                    备注 <span className="font-normal text-stone-400">（选填）</span>
+                  <label htmlFor="spent-note" className="text-xs font-medium text-muted-foreground">
+                    备注 <span className="font-normal text-muted-foreground/80">（选填）</span>
                   </label>
-                  <span className="text-[11px] text-stone-400">
+                  <span className="text-[11px] text-muted-foreground/80">
                     {note.length}/{MAX_NOTE_LENGTH}
                   </span>
                 </div>
@@ -581,7 +581,7 @@ export function SpentAdjustmentPanel({
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="补充说明（如订单含多个商品、退款情况等）"
-                  className="w-full resize-none rounded-xl border border-stone-200 bg-white/70 px-4 py-2.5 text-base text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-brand-charcoal md:text-sm"
+                  className="w-full resize-none rounded-xl border border-border bg-card/70 px-4 py-2.5 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-brand-charcoal md:text-sm"
                 />
               </section>
             )}
@@ -609,11 +609,11 @@ export function SpentAdjustmentPanel({
       {view === "history" && (
         <div>
           <div className="flex items-center justify-between gap-2">
-            <h4 className="text-lg font-medium text-stone-800">录入历史</h4>
+            <h4 className="text-lg font-medium text-foreground">录入历史</h4>
             <button
               type="button"
               onClick={() => onViewChange("default")}
-              className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white/40 px-3 py-1.5 text-xs text-stone-600 transition-colors hover:border-stone-300 hover:bg-white/70 hover:text-stone-900"
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card/40 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-input hover:bg-card/70 hover:text-foreground"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               返回
@@ -624,28 +624,28 @@ export function SpentAdjustmentPanel({
           <div className="mt-4 space-y-3">
             {loading ? (
               <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-stone-300" />
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/60" />
               </div>
             ) : loadError ? (
-              <div className="flex items-center justify-center gap-3 py-4 text-xs text-stone-400">
+              <div className="flex items-center justify-center gap-3 py-4 text-xs text-muted-foreground/80">
                 加载申请记录失败
                 <button
                   type="button"
                   onClick={() => void loadApplications()}
-                  className="text-brand-charcoal underline underline-offset-2"
+                  className="text-foreground underline underline-offset-2"
                 >
                   重试
                 </button>
               </div>
             ) : applications.length === 0 ? (
-              <p className="py-4 text-center text-xs text-stone-400">暂无录入提交</p>
+              <p className="py-4 text-center text-xs text-muted-foreground/80">暂无录入提交</p>
             ) : (
               applications.map((a) => {
                 const StatusIcon = STATUS_ICONS[a.status];
                 return (
                   <div
                     key={a.id}
-                    className="rounded-xl border border-stone-200/60 bg-white/40 p-4"
+                    className="rounded-xl border border-border/60 bg-card/40 p-4"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2">
@@ -655,14 +655,14 @@ export function SpentAdjustmentPanel({
                           <StatusIcon className="h-3 w-3" />
                           {SPENT_STATUS_LABELS[a.status]}
                         </span>
-                        <span className="truncate text-sm text-stone-700">{a.orderNo}</span>
+                        <span className="truncate text-sm text-foreground">{a.orderNo}</span>
                       </div>
-                      <span className="shrink-0 text-[11px] text-stone-400">
+                      <span className="shrink-0 text-[11px] text-muted-foreground/80">
                         {formatDate(a.createdAt)}
                       </span>
                     </div>
 
-                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-stone-400">
+                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground/80">
                       <span>{SPENT_CHANNEL_LABELS[a.channel] ?? a.channel}</span>
                       {a.dealerName && <span>经销商 {a.dealerName}</span>}
                       {a.amountClaimed != null && (
@@ -676,7 +676,7 @@ export function SpentAdjustmentPanel({
                             setExpandedImages((prev) => (prev === a.id ? null : a.id))
                           }
                           aria-expanded={expandedImages === a.id}
-                          className="flex items-center gap-1 transition-colors hover:text-stone-600 active:opacity-60"
+                          className="flex items-center gap-1 transition-colors hover:text-muted-foreground active:opacity-60"
                         >
                           <Camera className="h-3 w-3" /> {a.images.length} 张凭证
                           <ChevronDown
@@ -697,7 +697,7 @@ export function SpentAdjustmentPanel({
                             href={receiptImageSrc(url)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="relative block h-16 w-16 overflow-hidden rounded-lg border border-stone-200"
+                            className="relative block h-16 w-16 overflow-hidden rounded-lg border border-border"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -711,7 +711,7 @@ export function SpentAdjustmentPanel({
                     )}
 
                     {a.status === "APPROVED" && a.reviewAmount != null && (
-                      <p className="mt-1.5 text-xs text-brand-charcoal">
+                      <p className="mt-1.5 text-xs text-foreground">
                         已入账 ¥{a.reviewAmount.toLocaleString()}，会员等级已更新
                       </p>
                     )}

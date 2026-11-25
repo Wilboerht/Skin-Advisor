@@ -82,7 +82,7 @@ export default async function ReportQualityPage() {
     const verdictTone = (value: string) => {
         if (value === "accurate") return "text-emerald-700 bg-emerald-50 border-emerald-200/60";
         if (value === "inaccurate") return "text-rose-700 bg-rose-50 border-rose-200/60";
-        return "text-brand-charcoal/60 bg-brand-charcoal/[0.04] border-brand-charcoal/10";
+        return "text-muted-foreground bg-brand-charcoal/[0.04] border-border/80";
     };
 
     const feedbackStats = [
@@ -121,41 +121,41 @@ export default async function ReportQualityPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-xl font-semibold text-brand-charcoal">报告质量</h1>
-                <p className="mt-1 text-sm text-brand-charcoal/60">
+                <h1 className="text-xl font-semibold text-foreground">报告质量</h1>
+                <p className="mt-1 text-sm text-muted-foreground">
                     近 {ADMIN_REPORT_QUALITY_DAYS} 天 · 聚焦 AI 文案与规则兜底比例、报告篇幅与有效维度覆盖
                 </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
                 {stats.map((stat) => (
-                    <div key={stat.label} className="rounded-xl border border-brand-charcoal/10 bg-white p-4">
-                        <p className="text-[11px] text-brand-charcoal/50">{stat.label}</p>
-                        <p className="mt-1 text-xl font-semibold tabular-nums text-brand-charcoal">{stat.value}</p>
+                    <div key={stat.label} className="rounded-xl border border-border/80 bg-card p-4">
+                        <p className="text-[11px] text-muted-foreground">{stat.label}</p>
+                        <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{stat.value}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-6">
+            <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-6">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <h2 className="text-sm font-medium text-brand-charcoal">用户反馈</h2>
-                    <span className="text-[11px] text-brand-charcoal/45">
+                    <h2 className="text-sm font-medium text-foreground">用户反馈</h2>
+                    <span className="text-[11px] text-muted-foreground/80">
                         近 {feedback.days} 天 · 来自结果页报告反馈
                     </span>
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {feedbackStats.map((stat) => (
-                        <div key={stat.label} className="rounded-xl border border-brand-charcoal/10 bg-brand-charcoal/[0.015] p-3">
-                            <p className="text-[11px] text-brand-charcoal/50">{stat.label}</p>
-                            <p className="mt-1 text-lg font-semibold tabular-nums text-brand-charcoal">{stat.value}</p>
+                        <div key={stat.label} className="rounded-xl border border-border/80 bg-brand-charcoal/[0.015] p-3">
+                            <p className="text-[11px] text-muted-foreground">{stat.label}</p>
+                            <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">{stat.value}</p>
                         </div>
                     ))}
                 </div>
 
                 <div className="mt-5 grid gap-5 lg:grid-cols-2">
                     <div>
-                        <h3 className="text-xs font-medium text-brand-charcoal/70">被标记「不准确」最多的位置</h3>
+                        <h3 className="text-xs font-medium text-foreground/75">被标记「不准确」最多的位置</h3>
                         <div className="mt-2 flex flex-wrap gap-2">
                             {feedback.topInaccurateTargets.length > 0 ? feedback.topInaccurateTargets.map((target) => (
                                 <span
@@ -164,14 +164,14 @@ export default async function ReportQualityPage() {
                                 >
                                     {targetTypeLabel(target.targetType)} · {target.targetKey} · {target.count}
                                 </span>
-                            )) : <span className="text-sm text-brand-charcoal/45">暂无反馈</span>}
+                            )) : <span className="text-sm text-muted-foreground/80">暂无反馈</span>}
                         </div>
                     </div>
 
                     <div>
                         <div className="flex items-center justify-between gap-2">
-                            <h3 className="text-xs font-medium text-brand-charcoal/70">近 14 天趋势</h3>
-                            <div className="flex items-center gap-2 text-[10px] text-brand-charcoal/45">
+                            <h3 className="text-xs font-medium text-foreground/75">近 14 天趋势</h3>
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/80">
                                 <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-emerald-500" />准确</span>
                                 <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-rose-400" />不准确</span>
                                 <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-brand-charcoal/25" />不确定</span>
@@ -186,72 +186,72 @@ export default async function ReportQualityPage() {
                                             <div className="w-full bg-brand-charcoal/25" style={{ height: `${(day.unsure / trendMax) * 64}px` }} />
                                             <div className="w-full bg-rose-400" style={{ height: `${(day.inaccurate / trendMax) * 64}px` }} />
                                         </div>
-                                        <span className="text-[9px] tabular-nums text-brand-charcoal/40">{day.date.slice(5)}</span>
+                                        <span className="text-[9px] tabular-nums text-muted-foreground/80">{day.date.slice(5)}</span>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <p className="mt-3 text-sm text-brand-charcoal/45">暂无反馈</p>
+                            <p className="mt-3 text-sm text-muted-foreground/80">暂无反馈</p>
                         )}
                     </div>
                 </div>
 
                 <div className="mt-5 grid gap-4 border-t border-brand-charcoal/[0.06] pt-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div>
-                        <h3 className="text-xs font-medium text-brand-charcoal/70">反馈准确率 · 按文案来源</h3>
+                        <h3 className="text-xs font-medium text-foreground/75">反馈准确率 · 按文案来源</h3>
                         <div className="mt-2 space-y-1.5">
                             {feedback.byNarrativeSource.length > 0 ? feedback.byNarrativeSource.map((item) => (
                                 <div key={item.source} className="flex items-center justify-between rounded-lg bg-brand-charcoal/[0.02] px-3 py-1.5 text-xs">
-                                    <span className="text-brand-charcoal/65">
+                                    <span className="text-muted-foreground">
                                         {item.source === "unknown" ? "未记录" : narrativeSourceLabel(item.source)}
                                     </span>
-                                    <span className="tabular-nums text-brand-charcoal/55">
+                                    <span className="tabular-nums text-muted-foreground">
                                         {item.accuracyRate}% 准确 · {item.total} 条
                                     </span>
                                 </div>
-                            )) : <span className="text-sm text-brand-charcoal/45">暂无数据</span>}
+                            )) : <span className="text-sm text-muted-foreground/80">暂无数据</span>}
                         </div>
                     </div>
                     <div>
-                        <h3 className="text-xs font-medium text-brand-charcoal/70">反馈准确率 · 按模型</h3>
+                        <h3 className="text-xs font-medium text-foreground/75">反馈准确率 · 按模型</h3>
                         <div className="mt-2 space-y-1.5">
                             {feedback.byModel.length > 0 ? feedback.byModel.map((item) => (
                                 <div key={item.model} className="flex items-center justify-between rounded-lg bg-brand-charcoal/[0.02] px-3 py-1.5 text-xs">
-                                    <span className="truncate text-brand-charcoal/65">
+                                    <span className="truncate text-muted-foreground">
                                         {item.model === "unknown" ? "未记录" : item.model}
                                     </span>
-                                    <span className="shrink-0 tabular-nums text-brand-charcoal/55">
+                                    <span className="shrink-0 tabular-nums text-muted-foreground">
                                         {item.accuracyRate}% 准确 · {item.total} 条
                                     </span>
                                 </div>
-                            )) : <span className="text-sm text-brand-charcoal/45">暂无数据</span>}
+                            )) : <span className="text-sm text-muted-foreground/80">暂无数据</span>}
                         </div>
                     </div>
                     <div>
-                        <h3 className="text-xs font-medium text-brand-charcoal/70">反馈准确率 · 按 prompt 版本</h3>
+                        <h3 className="text-xs font-medium text-foreground/75">反馈准确率 · 按 prompt 版本</h3>
                         <div className="mt-2 space-y-1.5">
                             {feedback.byPromptVersion.length > 0 ? feedback.byPromptVersion.map((item) => (
                                 <div key={item.promptVersion} className="flex items-center justify-between rounded-lg bg-brand-charcoal/[0.02] px-3 py-1.5 text-xs">
-                                    <span className="truncate text-brand-charcoal/65">
+                                    <span className="truncate text-muted-foreground">
                                         {item.promptVersion === "unknown" ? "未记录" : item.promptVersion}
                                     </span>
-                                    <span className="shrink-0 tabular-nums text-brand-charcoal/55">
+                                    <span className="shrink-0 tabular-nums text-muted-foreground">
                                         {item.accuracyRate}% 准确 · {item.total} 条
                                     </span>
                                 </div>
-                            )) : <span className="text-sm text-brand-charcoal/45">暂无数据</span>}
+                            )) : <span className="text-sm text-muted-foreground/80">暂无数据</span>}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-brand-charcoal/10 bg-white">
-                <div className="border-b border-brand-charcoal/10 px-4 py-3 sm:px-6">
-                    <h2 className="text-sm font-medium text-brand-charcoal">最近用户反馈</h2>
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card">
+                <div className="border-b border-border/80 px-4 py-3 sm:px-6">
+                    <h2 className="text-sm font-medium text-foreground">最近用户反馈</h2>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
-                        <thead className="bg-brand-charcoal/[0.03] text-brand-charcoal/50">
+                        <thead className="bg-brand-charcoal/[0.03] text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-2 font-medium sm:px-6">时间</th>
                                 <th className="px-4 py-2 font-medium">会话</th>
@@ -260,24 +260,24 @@ export default async function ReportQualityPage() {
                                 <th className="px-4 py-2 font-medium">备注</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-brand-charcoal/[0.06]">
+                        <tbody className="divide-y divide-border/70">
                             {feedback.recent.length > 0 ? feedback.recent.map((row) => (
                                 <tr key={row.id}>
-                                    <td className="px-4 py-2 text-brand-charcoal/60 sm:px-6" title={`首次反馈：${row.createdAt.toLocaleString("zh-CN")}`}>
+                                    <td className="px-4 py-2 text-muted-foreground sm:px-6" title={`首次反馈：${row.createdAt.toLocaleString("zh-CN")}`}>
                                         {row.updatedAt.toLocaleString("zh-CN")}
                                     </td>
-                                    <td className="max-w-[140px] truncate px-4 py-2 font-mono text-[11px] text-brand-charcoal/60">{row.sessionId}</td>
-                                    <td className="px-4 py-2 text-brand-charcoal/60">{targetTypeLabel(row.targetType)} · {row.targetKey}</td>
+                                    <td className="max-w-[140px] truncate px-4 py-2 font-mono text-[11px] text-muted-foreground">{row.sessionId}</td>
+                                    <td className="px-4 py-2 text-muted-foreground">{targetTypeLabel(row.targetType)} · {row.targetKey}</td>
                                     <td className="px-4 py-2">
                                         <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] ${verdictTone(row.verdict)}`}>
                                             {verdictLabel(row.verdict)}
                                         </span>
                                     </td>
-                                    <td className="max-w-[240px] truncate px-4 py-2 text-brand-charcoal/60" title={row.note || ""}>{row.note || "—"}</td>
+                                    <td className="max-w-[240px] truncate px-4 py-2 text-muted-foreground" title={row.note || ""}>{row.note || "—"}</td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-brand-charcoal/45">暂无用户反馈</td>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground/80">暂无用户反馈</td>
                                 </tr>
                             )}
                         </tbody>
@@ -285,24 +285,24 @@ export default async function ReportQualityPage() {
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-brand-charcoal/10 bg-white p-4 sm:p-6">
-                <h2 className="text-sm font-medium text-brand-charcoal">文案来源分布</h2>
+            <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-6">
+                <h2 className="text-sm font-medium text-foreground">文案来源分布</h2>
                 <div className="mt-3 flex flex-wrap gap-2">
                     {bySource.length > 0 ? bySource.map((item) => (
-                        <span key={item.source} className="rounded-full border border-brand-charcoal/10 px-3 py-1 text-xs text-brand-charcoal/70">
+                        <span key={item.source} className="rounded-full border border-border/80 px-3 py-1 text-xs text-foreground/75">
                             {narrativeSourceLabel(item.source)} · {item.count}
                         </span>
-                    )) : <span className="text-sm text-brand-charcoal/45">暂无数据</span>}
+                    )) : <span className="text-sm text-muted-foreground/80">暂无数据</span>}
                 </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-brand-charcoal/10 bg-white">
-                <div className="border-b border-brand-charcoal/10 px-4 py-3 sm:px-6">
-                    <h2 className="text-sm font-medium text-brand-charcoal">最近规则兜底报告</h2>
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card">
+                <div className="border-b border-border/80 px-4 py-3 sm:px-6">
+                    <h2 className="text-sm font-medium text-foreground">最近规则兜底报告</h2>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
-                        <thead className="bg-brand-charcoal/[0.03] text-brand-charcoal/50">
+                        <thead className="bg-brand-charcoal/[0.03] text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-2 font-medium sm:px-6">时间</th>
                                 <th className="px-4 py-2 font-medium">会话</th>
@@ -313,20 +313,20 @@ export default async function ReportQualityPage() {
                                 <th className="px-4 py-2 font-medium">耗时</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-brand-charcoal/[0.06]">
+                        <tbody className="divide-y divide-border/70">
                             {recentFallbacks.length > 0 ? recentFallbacks.map((row) => (
                                 <tr key={row.sessionId}>
-                                    <td className="px-4 py-2 text-brand-charcoal/60 sm:px-6">{row.createdAt.toLocaleString("zh-CN")}</td>
-                                    <td className="max-w-[140px] truncate px-4 py-2 font-mono text-[11px] text-brand-charcoal/60">{row.sessionId}</td>
-                                    <td className="px-4 py-2 text-brand-charcoal/60">{row.model || "—"}</td>
-                                    <td className="max-w-[260px] truncate px-4 py-2 text-brand-charcoal/60" title={row.fallbackReason || ""}>{row.fallbackReason || "—"}</td>
-                                    <td className="px-4 py-2 tabular-nums text-brand-charcoal/60">{row.diagnosisFindingCount}</td>
-                                    <td className="px-4 py-2 tabular-nums text-brand-charcoal/60">{row.issueCount}</td>
-                                    <td className="px-4 py-2 tabular-nums text-brand-charcoal/60">{row.durationMs ? `${(row.durationMs / 1000).toFixed(1)}s` : "—"}</td>
+                                    <td className="px-4 py-2 text-muted-foreground sm:px-6">{row.createdAt.toLocaleString("zh-CN")}</td>
+                                    <td className="max-w-[140px] truncate px-4 py-2 font-mono text-[11px] text-muted-foreground">{row.sessionId}</td>
+                                    <td className="px-4 py-2 text-muted-foreground">{row.model || "—"}</td>
+                                    <td className="max-w-[260px] truncate px-4 py-2 text-muted-foreground" title={row.fallbackReason || ""}>{row.fallbackReason || "—"}</td>
+                                    <td className="px-4 py-2 tabular-nums text-muted-foreground">{row.diagnosisFindingCount}</td>
+                                    <td className="px-4 py-2 tabular-nums text-muted-foreground">{row.issueCount}</td>
+                                    <td className="px-4 py-2 tabular-nums text-muted-foreground">{row.durationMs ? `${(row.durationMs / 1000).toFixed(1)}s` : "—"}</td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-8 text-center text-brand-charcoal/45">暂无规则兜底记录</td>
+                                    <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground/80">暂无规则兜底记录</td>
                                 </tr>
                             )}
                         </tbody>
